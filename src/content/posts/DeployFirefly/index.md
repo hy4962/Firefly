@@ -3,8 +3,8 @@ title: 搭建本站同款博客
 published: 2026-07-12
 description: 使用Vercel,Netlify等搭建本站同款博客
 image: ./cover.png
-tags: [前端, 博客, 搭建, Vercel, Netlify]
-category: 博客
+tags: [前端,博客,网站,搭建,Vercel,Netlify]
+category: 网站
 draft: false
 ---
 
