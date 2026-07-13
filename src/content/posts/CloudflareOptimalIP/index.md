@@ -3,12 +3,12 @@ title: Cloudflare Workers优选IP
 published: 2026-07-12
 description: CloudFlare优选IP
 image: ./cover.png
-tags: [前端,博客,网站,搭建,Cloudflare,Cloudflare Workers]
-category: 网站
+tags: [Cloudflare, Workers, 优选IP, DNS, CDN]
+category: 网络优化
 draft: false
 ---
 
-# 前言
+## 前言
 
 优选IP的主要好处有：
 
@@ -20,7 +20,7 @@ draft: false
 
 不过需要注意的是，**优选 IP 并不会提升 Worker 的计算性能，也不会增加 Cloudflare 的带宽**。它优化的是**客户端到 Cloudflare 边缘节点**这一段网络路径，因此效果会因地区、运营商和时间而有所不同。
 
-# 1.添加路由
+## 1.添加路由
 
 进入自己的Wokers项目，点击域，添加路由，输入自己网站的域名(**注意:此域名必须由Cloudflare托管**)
 
@@ -30,7 +30,7 @@ draft: false
 
 ![添加路由](./route.png)
 
-# 2.选择自己喜欢的优选IP
+## 2.选择自己喜欢的优选IP
 
 [CloudFlare优选Cname域名 - 微测网](https://www.wetest.vip/page/cloudflare/cname.html)
 
@@ -38,13 +38,13 @@ draft: false
 
 
 
-# 3.域名解析cname
+## 3.域名解析CNAME
 
 回到自己域名的DNS解析，**一定要关掉代理**
 
 ![cname](./cname.png)
 
-# 结语
+## 结语
 
 其实这种方式是别人已经优选好了IP，你只是在抄别人的作业
 

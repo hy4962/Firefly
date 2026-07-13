@@ -13,14 +13,6 @@ image: "./models_setting.png"
 pubDate: 2026-03-28
 ---
 
-# Qwen3.5
-
-
-
-​	强，牛逼，不仅是顶级模型，人家还乐意开源，还是多模态模型，最关键的是他**愿意做小体积，让普通民众这些消费级硬件能玩上本地AI**。
-
-
-
 ## 本地部署Qwen3.5
 
 ### 1.首先下载[LM Studio](https://www.lm-studio.me/)
@@ -47,7 +39,7 @@ pubDate: 2026-03-28
 
 
 
-![models](models.png)
+![Qwen3.5模型列表](models.png)
 
 ### 3.修改路径
 
@@ -63,7 +55,7 @@ LM Studio好像一定要嵌套两个文件夹以上才能读取到大模型....
 
 
 
-## 4.模型设置
+### 4.模型设置
 
 GPU卸载就是多少模型运行在VRAM(GPU)上，放不完会跑在DRAM(CPU)上
 

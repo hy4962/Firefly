@@ -2,8 +2,8 @@
 title: "HTTP通讯"
 published: 2026-03-25
 pinned: false
-description: "一个用C#写的破玩意"
-tags: [C#,GitHub]
+description: "使用C# WinForm实现的基于Socket的HTTP通讯练习作品"
+tags: [C#, WinForm, Socket, .NET, GitHub]
 category: "C#"
 author: "站长"
 sourceLink: "https://github.com/hy4962/HTTP-communication"
@@ -13,12 +13,9 @@ image: "./main_ui_2026-03-26_09-39-20.png"
 pubDate: 2026-03-25
 ---
 
-# HTTP通讯
+一个用C#，WinForm，.NET 4.7.2写出来的通讯工具，服务端功能尚未完善。
 
-一个用C#，winform，.net4.7.2写出来的玩意，服务端功能都没写完...
-
-
-![主界面](main_ui_2026-03-26_09-39-20.png)
+![主界面截图](main_ui_2026-03-26_09-39-20.png)
 
 ## V2.0
 
@@ -36,7 +33,7 @@ pubDate: 2026-03-25
 
 ### Socket
 
-..............
+基于 TCP 协议实现客户端与服务端的双向通讯，是本项目的核心网络模块。
 
 
 
