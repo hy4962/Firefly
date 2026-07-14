@@ -9,7 +9,7 @@ export const siteConfig: SiteConfig = {
 	title: "HY",
 
 	// 站点副标题
-	subtitle: "Sleeping",
+	subtitle: "摆烂技术站",
 
 	// 站点 URL
 	site_url: "https://9ll.uk",
