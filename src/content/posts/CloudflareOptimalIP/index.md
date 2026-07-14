@@ -34,7 +34,9 @@ draft: false
 
 [CloudFlare优选Cname域名 - 微测网](https://www.wetest.vip/page/cloudflare/cname.html)
 
-该网站提供了很多优先域名列表，可以自己去测测速然后选择一个\
+[CloudFlare优选域名汇总 - CF优选域名](https://cf.090227.xyz/)
+
+两个网站提供了很多优先域名列表，可以自己去测测速然后选择一个\
 
 
 
