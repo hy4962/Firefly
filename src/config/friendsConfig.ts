@@ -50,6 +50,16 @@ export const friendsConfig: FriendLink[] = [
 		weight: 8,
 		enabled: true,
 	},
+	{
+		title: "霞の葉間",
+		imgurl:
+			"https://kasuha.com/avatar.webp",
+		desc: "光と言葉の狭間",
+		siteurl: "https://kasuha.com",
+		tags: ["Blog"],
+		weight: 10, // 权重，数字越大排序越靠前
+		enabled: true, // 是否启用
+	},
 ];
 
 // 获取启用的友链并进行排序
