@@ -8,7 +8,7 @@
 > 
 > ![Node.js >= 22](https://img.shields.io/badge/node.js-%3E%3D22-brightgreen) 
 ![pnpm >= 9](https://img.shields.io/badge/pnpm-%3E%3D9-blue)
-![Astro](https://img.shields.io/badge/Astro-7.0.2-orange)
+![Astro](https://img.shields.io/badge/Astro-7.0.7-orange)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)
 >
 > [![Stars](https://img.shields.io/github/stars/CuteLeaf/Firefly?style=social)](https://github.com/CuteLeaf/Firefly/stargazers)
@@ -187,6 +187,7 @@ src/
 │   ├── backgroundWallpaper.ts    # Background wallpaper configuration
 │   ├── commentConfig.ts          # Comment system configuration
 │   ├── coverImageConfig.ts       # Cover image configuration
+│   ├── dynamicConfig.ts          # Moments page configuration
 │   ├── effectsConfig.ts          # Animation effects config (sakura, etc.)
 │   ├── expressiveCodeConfig.ts   # Code highlighting configuration
 │   ├── fontConfig.ts             # Font configuration
@@ -197,6 +198,7 @@ src/
 │   ├── musicConfig.ts            # Music player configuration
 │   ├── navBarConfig.ts           # Navbar configuration
 │   ├── pioConfig.ts              # Mascot configuration
+│   ├── mermaidConfig.ts          # Mermaid diagram configuration
 │   ├── plantumlConfig.ts         # PlantUML diagram configuration
 │   ├── profileConfig.ts          # User profile configuration
 │   ├── sidebarConfig.ts          # Sidebar layout configuration
@@ -221,6 +223,24 @@ comment: true    # Enable comments
 ---
 ```
 
+## Moments
+
+Moment files are stored in `src/content/dynamic/`, with one Markdown file per moment. Create one with:
+
+```bash
+pnpm new-d The weather is lovely today
+```
+
+`pnpm new-dynamic <content>` is the equivalent full command. 
+
+```yaml
+---
+published: 2026-07-15 16:15:29
+---
+
+Moment content supports Markdown.
+```
+
 ## 📖 Markdown Extensions
 
 In addition to the default [GitHub Flavored Markdown](https://github.github.com/gfm/) support in Astro, there are some additional Markdown features:
@@ -242,6 +262,8 @@ All commands need to be executed in the project root directory:
 | `pnpm check`               | Check for errors in code                            |
 | `pnpm format`              | Format your code using Biome                        |
 | `pnpm new-post <filename>` | Create new article                                  |
+| `pnpm new-d <content>`     | Create a new moment                                 |
+| `pnpm new-dynamic <content>` | Create a new moment (full command)                |
 | `pnpm astro ...`           | Execute `astro add`, `astro check` and other commands |
 | `pnpm astro --help`        | Display Astro CLI help                              |
 
