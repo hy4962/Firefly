@@ -1,4 +1,15 @@
-# 在 FNOS 上装 iStoreOS 虚拟机，记录一下折腾过程
+---
+title: 在 FNOS 上装 iStoreOS 虚拟机
+published: 2026-07-16
+description: 通过 FNOS 运行 iStoreOS 虚拟机，涵盖镜像转换、QCOW2 替换和首次启动的完整流程
+image: images/21-启动成功.jpg
+tags: [FNOS, iStoreOS , OpenWrt,虚拟机, NAS]
+category: NAS 折腾
+draft: false
+
+---
+
+# 在 FNOS 上装 iStoreOS 虚拟机
 
 前阵子一直在折腾 NAS，用的是 FNOS。用了一段时间感觉还行，但有些网络方面的功能想折腾一下，就想着在上面跑个 iStoreOS 的虚拟机。
 
