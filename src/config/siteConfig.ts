@@ -6,17 +6,17 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "HY",
+	title: "折腾进行时",
 
 	// 站点副标题
-	subtitle: "摆烂技术站",
+	subtitle: "9LL.UK",
 
 	// 站点 URL
 	site_url: "https://9ll.uk",
 
 	// 站点描述
 	description:
-		"一个摆烂的站和一个摆烂的博主，记录一些生活，爱好技术和相关的东西。",
+		"生命不息，折腾不止！一个技术博客？记录一些生活，爱好技术和相关的东西。",
 
 	// 站点关键词
 	keywords: [
