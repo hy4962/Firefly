@@ -1,17 +1,10 @@
 ---
 title: iStoreOS 安装 OpenClash
-description: 在 iStoreOS 虚拟机里装 OpenClash 的折腾记录
-date: 2026-07-17
+published: 2026-07-17
+description: 在 iStoreOS 上通过命令行安装 OpenClash 并配置代理的完整流程，包含依赖安装、ipk 部署和首次使用的详细步骤
+tags: [iStoreOS, OpenClash, OpenWrt, 代理, NAS]
 category: NAS 折腾
-tags:
-  - FNOS
-  - iStoreOS
-  - OpenClash
-  - OpenWrt
-  - NAS
-author: HY
-license: CC BY-NC-SA 4.0
-lastUpdated: 2026-07-17
+draft: false
 ---
 
 上一篇写了怎么在 FNOS 上装 iStoreOS 虚拟机，装完之后总得干点啥吧。iStoreOS 本身就是 OpenWrt 的改版，拿来跑 OpenClash 再合适不过了。
