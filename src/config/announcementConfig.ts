@@ -5,7 +5,7 @@ export const announcementConfig: AnnouncementConfig = {
 	title: "公告",
 
 	// 公告内容
-	content: "欢迎关注微信公众号「折腾进行中」",
+	content: "欢迎关注微信公众号「折腾进行时」",
 
 	// 是否允许用户关闭公告
 	closable: true,
