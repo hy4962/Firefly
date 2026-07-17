@@ -110,8 +110,6 @@ CREATE TABLE IF NOT EXISTS files (
 
 一开始仓库里什么都没有，是空的。
 
-![GitHub Secrets 页面 - 还没有任何机密](./images/github-secrets-empty.png)
-
 点「New repository secret」把需要的值一个个加上。Secrets 是加密存储的，Actions 日志里不会泄露。别用 Variables，public 仓库的话所有人都能看到你的配置。
 
 如果需要配置部署保护规则（比如环境机密），也可以在 Settings → 环境里设置。
