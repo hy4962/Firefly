@@ -16,11 +16,11 @@ export const analyticsConfig: AnalyticsConfig = {
 		// 是否追踪出站链接
 		trackOutboundLinks: true,
 		// 是否收集浏览器性能指标
-		collectWebVitals: false,
+		collectWebVitals: true,
 		// 会话回放配置
 		replays: {
 			// 是否启用会话回放
-			enabled: false,
+			enabled: true,
 			// 录制会话采样率，范围 0-1，例如 0.15 表示记录 15% 的会话
 			sampleRate: 0.15,
 			// 隐私遮罩级别："moderate" 会遮罩所有输入框；"strict" 额外遮罩页面全部文本
