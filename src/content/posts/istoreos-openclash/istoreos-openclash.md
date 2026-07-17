@@ -2,7 +2,7 @@
 title: iStoreOS 安装 OpenClash
 published: 2026-07-17
 description: 在 iStoreOS 上通过命令行安装 OpenClash 并配置代理的完整流程，包含依赖安装、ipk 部署和首次使用的详细步骤
-image: images/cover.png
+image: ./cover.png
 tags: [iStoreOS, OpenClash, OpenWrt, 代理, NAS]
 category: NAS 折腾
 draft: false
