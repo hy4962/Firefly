@@ -161,12 +161,6 @@ CREATE TABLE IF NOT EXISTS files (
 
 部署完成后，记得去管理面板配置存储渠道，不然图片传不上去。
 
-## 另一种部署方式：从 Dashboard 直接连 GitHub
-
-其实 Workers 还有一种更简单的部署方式——直接从 Cloudflare Dashboard 连 GitHub 仓库。在「Workers 和 Pages」页面点「创建应用程序」，选「Continue with GitHub」，授权之后选你的仓库，填一下构建命令就能部署。
-
-不过这种方式需要手动触发，不像 GitHub Actions 那样 push 到 main 就自动跑。两种方式功能完全一样，看你习惯选。
-
 ## 踩坑记录
 
 整个过程其实挺顺利的，就几个小地方需要注意：
