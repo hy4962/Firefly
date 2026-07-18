@@ -5,7 +5,7 @@ description: 用 Vercel + Neon 免费部署 Umami 网站统计系统，从 Fork 
 image: ./umami-article-images/01-umami概览.png
 tags: [Umami, Vercel, Neon, 网站统计, PostgreSQL]
 category: 网站搭建
-draft: true
+draft: false
 ---
 
 # 网站每天多少人访问你知道吗？用 Vercel 零成本搭了一个 Umami 网站统计系统
