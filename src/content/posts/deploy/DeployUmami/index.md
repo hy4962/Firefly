@@ -2,7 +2,7 @@
 title: 网站每天多少人访问你知道吗？用 Vercel 零成本搭了一个 Umami 网站统计系统
 published: 2026-07-18
 description: 用 Vercel + Neon 免费部署 Umami 网站统计系统，从 Fork 项目到上线全流程记录，零成本搞定访客数据
-image: ./umami-article-images/01-umami概览.png
+image: ./01-umami概览.png
 tags: [Umami, Vercel, Neon, 网站统计, PostgreSQL]
 category: 部署
 draft: false
@@ -22,19 +22,19 @@ draft: false
 
 这是 Umami 的概览页面，访客来自哪些国家一目了然，世界地图上直接能看到分布：
 
-![Umami 概览页面](umami-article-images/01-umami概览.png)
+![Umami 概览页面](./01-umami概览.png)
 
 访客数、访问次数、浏览量、跳出率、平均访问时长，数据摆在那里：
 
-![Umami 实时数据](umami-article-images/02-umami实时数据.webp)
+![Umami 实时数据](./images/02-umami实时数据.webp)
 
 热门页面排行也很清楚，哪篇文章有人看、哪篇没人看，心里有数：
 
-![Umami 热门页面](umami-article-images/03-umami热门页面.webp)
+![Umami 热门页面](./images/03-umami热门页面.webp)
 
 还有来源分析，从哪个搜索引擎来的、哪个域名引过来的，都有：
 
-![Umami 来源分析](umami-article-images/04-umami来源分析.webp)
+![Umami 来源分析](./images/04-umami来源分析.webp)
 
 看到这些数据之后，我才真正知道自己网站的流量情况。以前全靠猜，现在数据就摆在后台里。
 
@@ -58,17 +58,17 @@ draft: false
 
 项目地址：`https://github.com/umami-software/umami`
 
-![GitHub 复刻 Umami 项目](umami-article-images/05-github复刻项目.png)
+![GitHub 复刻 Umami 项目](./images/05-github复刻项目.png)
 
 ### 二、在 Vercel 导入项目
 
 登录 Vercel 控制台，左侧菜单点"项目"，然后右上角点"添加 New"→"项目"。
 
-![Vercel 新建项目](umami-article-images/06-vercel新建项目.png)
+![Vercel 新建项目](./images/06-vercel新建项目.png)
 
 在"导入 Git 仓库"下面找到刚复刻的 umami 项目，点"导入"。
 
-![Vercel 导入 Git 仓库](umami-article-images/07-vercel导入仓库.png)
+![Vercel 导入 Git 仓库](./images/07-vercel导入仓库.png)
 
 项目名称可以随便填，我直接用的 "umami"。其他保持默认就行，直接点"部署"。
 
@@ -80,17 +80,17 @@ draft: false
 
 回到 Vercel 控制台，左侧菜单找到"存储"，点进去。然后点右上角的"创建 Database"。
 
-![Vercel 部署设置](umami-article-images/08-vercel部署设置.png)
+![Vercel 部署设置](./images/08-vercel部署设置.png)
 
-![Vercel 存储页面](umami-article-images/09-vercel存储页面.png)
+![Vercel 存储页面](./images/09-vercel存储页面.png)
 
 在弹出的窗口里选 Neon（无服务器 Postgres），然后点"继续"。
 
-![选择 Neon 数据库](umami-article-images/10-选择neon数据库.png)
+![选择 Neon 数据库](./images/10-选择neon数据库.png)
 
 区域选近一点的，我选了 Singapore（Southeast）。其他保持默认，往下拉点"继续"。
 
-![Neon 区域选择](umami-article-images/11-neon区域选择.png)
+![Neon 区域选择](./images/11-neon区域选择.png)
 
 数据库名字可以随便填，确认一下信息没问题就点安装。
 
@@ -106,7 +106,7 @@ draft: false
 
 不过我折腾的过程中遇到了不少问题。你看这个部署记录，一堆红色的"错误"，给我整红了。反复试了好多次才成功，中间有几次差点放弃。
 
-![部署记录——一堆红色错误](umami-article-images/13-部署记录与域名配置.png)
+![部署记录——一堆红色错误](./images/13-部署记录与域名配置.png)
 
 后来发现是数据库连接的问题，重新关联了一次项目之后就好了。如果你也遇到部署失败，先检查一下数据库有没有关联成功。
 
@@ -114,7 +114,7 @@ draft: false
 
 部署成功后，打开你的 Umami 地址（Vercel 给的那个 .vercel.app 域名），就能看到登录页面。
 
-![Umami 登录页面](umami-article-images/12-umami登录页面.webp)
+![Umami 登录页面](./images/12-umami登录页面.webp)
 
 初始账号密码是：
 - 用户名：`admin`

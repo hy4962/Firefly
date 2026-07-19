@@ -2,7 +2,7 @@
 title: Workers 部署一个免费图床
 published: 2026-07-18
 description: 从 Fork 项目到 D1 建表再到 GitHub Actions 自动部署，一步步搭建跑在 Cloudflare Workers 上的免费图床
-image: ./images/imgbed-final-result.png
+image: ./imgbed-final-result.png
 tags: [CloudFlare, Workers, D1, 图床]
 category: 部署
 draft: false
@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS files (
 
 部署完绑定好之后，访问你的 Worker 地址，应该能看到图床界面了。
 
-![部署完成 - CloudFlare ImgBed 图床界面，支持拖拽上传](./images/imgbed-final-result.png)
+![部署完成 - CloudFlare ImgBed 图床界面，支持拖拽上传](./imgbed-final-result.png)
 
 界面还挺好看的，支持拖拽上传、点击上传、Ctrl+V 粘贴上传，底部还有文件管理和统计。默认就能用，挺省心的。
 
