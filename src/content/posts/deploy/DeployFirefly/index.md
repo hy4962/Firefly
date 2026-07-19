@@ -4,7 +4,7 @@ published: 2026-07-15
 description: 不买服务器也能搭一个自己的博客，从 Fork 仓库到博客上线再到日常写文章发布，每一步都写得很细
 image: ./cover.png
 tags: [Astro, Vercel, 博客搭建]
-category: 博客搭建
+category: 部署
 draft: false
 
 ---

@@ -4,7 +4,7 @@ published: 2026-07-18
 description: 从 Fork 项目到 D1 建表再到 GitHub Actions 自动部署，一步步搭建跑在 Cloudflare Workers 上的免费图床
 image: ./images/imgbed-final-result.png
 tags: [CloudFlare, Workers, D1, 图床]
-category: 图床搭建
+category: 部署
 draft: false
 ---
 

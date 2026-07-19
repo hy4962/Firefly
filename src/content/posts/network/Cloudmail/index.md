@@ -4,7 +4,7 @@ published: 2026-07-13
 description: 只需要一个域名，就可以创建多个不同的邮箱，类似各大邮箱平台，本项目可部署到 Cloudflare Workers ，个人0服务器成本，搭建自己的邮箱服务
 image: ./cover.png
 tags: [Cloudflare, Workers, Email, Resend, 邮箱搭建]
-category: 邮箱
+category: 网络
 draft: false
 ---
 

@@ -4,7 +4,7 @@ published: 2026-07-12
 description: 域名托管Cloudflare实现无限收邮箱+Resend发邮件
 image: ./cover.png
 tags: [Cloudflare, Email Routing, Resend, 域名邮箱]
-category: 域名邮箱
+category: 网络
 draft: false
 ---
 

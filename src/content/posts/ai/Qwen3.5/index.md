@@ -1,16 +1,11 @@
 ---
 title: "本地部署Qwen3.5完全指南：从下载到跑起来"
 published: 2026-03-28
-pinned: false
 description: "手把手教你用LM Studio在自己电脑上跑Qwen3.5，量化格式怎么选、显存不够怎么办、GPU卸载设多少，都讲清楚"
-tags: [AI,Qwen3.5,Qwen,LM_Studio,本地部署]
-category: "AI"
-author: "站长"
-sourceLink: "https://github.com/hy4962/MyBlog-Mizuki"
+tags: [AI, Qwen3.5, Qwen, LM Studio, 本地部署]
+category: AI
+image: ./models_setting.png
 draft: false
-date: 2026-03-28
-image: "./models_setting.png"
-pubDate: 2026-03-28
 ---
 
 为什么要折腾本地大模型？原因其实就几个字：**隐私、免费、离线能用**。

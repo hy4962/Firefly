@@ -5,7 +5,7 @@ updated: 2026-07-15
 description: CloudFlare优选IP
 image: ./cover.png
 tags: [Cloudflare, Workers, 优选IP, DNS, CDN]
-category: 网络优化
+category: 网络
 draft: false
 ---
 
