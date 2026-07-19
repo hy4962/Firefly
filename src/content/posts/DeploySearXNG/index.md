@@ -3,6 +3,7 @@ title: Docker 部署 SearXNG 完整教程
 published: 2026-07-19
 description: Docker快速部署 SearXNG 开源元搜索引擎，聚合多个搜索引擎结果，注重隐私的搜索利器。可以给Ai加skills然后调用
 tags: [SearXNG, Docker, NAS, 隐私搜索]
+image: ./cover.png
 category: 网站搭建
 draft: false
 ---
