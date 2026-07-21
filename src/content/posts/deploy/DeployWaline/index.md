@@ -1,6 +1,6 @@
 ---
 title: 用 Vercel + TiDB 搭建 Waline 评论系统
-published: 2026-07-15
+published: 2026-07-21
 description: 用 Vercel 免费部署 Waline 评论服务端，数据库选 TiDB Cloud（免费 5GB），半小时搞定，数据自己掌控
 image: ./cover.png
 tags: [Waline, Vercel, TiDB, 评论系统]
