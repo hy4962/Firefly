@@ -22,22 +22,20 @@ draft: false
 
 ### CPU 与 BIOS 设置
 
-- **禁用 CCD1**
-- **UMAF 分核负压设置**：如下图所示，目前单 CCD 和双 CCD 都在用同一套配置
+- **UMAF 分核负压设置**：如下图所示
 - **关闭 VBS + 内存虚拟化**：使用DGReadiness v3.6进行执行重启后疯狂按F3
 - **频率**：单 CCD 跑 5.2 GHz，双 CCD 跑 4.8 GHz
 
 ![CPU 负压设置](assets/cpu-negative-pressure.jpg)
 
-> 说实话不禁用 CCD1 帧数变化不大（毕竟已经做了全核心分别负压），但温度直接从 98°C 降到 70°C，堪比台式机。我个人更倾向不禁用——不太关心温度，只觉得双 CCD 上限更高，所有后台都可以丢给 CCD1，CCD0 只跑游戏。
+> 尝试禁用CCD1的方案，但是不知道为啥温度反而100°C了，双CCD倒是最多85°C，都是用同一套负压。
 
 ### Process Lasso Pro 配置
 
-单CCD配置目前仅添加了 CS2 的规则：禁用 CPU0 + 提升进程优先级。
+规则添加游戏进程就完事了：禁用 CPU0 + 提升进程优先级。
 
 ![Process Lasso 设置](assets/process-lasso-cs2.png)
 
-> 反正是游戏你就往上面加就完事了
 
 #### 金银核与禁用 CPU0 的原理
 
@@ -110,9 +108,12 @@ HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\PriorityControl
 
 ---
 
-## GPU 超频（NVIDIA）
+## GPU 设置及超频（NVIDIA）
 
 安装厂商官方驱动包，但没安装核显、N 卡驱动和 AMD 安全启动。厂商控制台 CPU 全拉满，然后对 N 卡进行超频：
+
+![N卡控制面板1](assets/gpu-settings.png)
+![N卡控制面板2](assets/gpu-settings2.png)
 
 - **核心频率**：+200 MHz
 - **显存频率**：+500 MHz
