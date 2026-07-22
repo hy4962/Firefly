@@ -152,5 +152,5 @@ HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\PriorityControl
 - **GPU**：核心频率 +200Mhz，显存频率 +500Mhz
 - **内存**：5600C50 → 6000C38
 - **系统**：XOS11 25H2 + Booster 快速最佳设置 + 鼠标设置
-- **电源**：高性能电源计划，取消 USB 节能
+- **电源**：解锁电源计划隐藏选项，使用高性能电源计划并取消 USB 节能
 - **设备管理器**：取消所有 USB 设备"允许计算机关闭此设备以节约电源"
