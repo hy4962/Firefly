@@ -24,11 +24,11 @@ draft: false
 
 - **UMAF 分核负压设置**：如下图所示
 - **关闭 VBS + 内存虚拟化**：使用DGReadiness v3.6进行执行重启后疯狂按F3
-- **频率**：单 CCD 跑 5.2 GHz，双 CCD 跑 4.8 GHz
+- **频率**： 4.8 G
 
 ![CPU 负压设置](assets/cpu-negative-pressure.jpg)
 
-> 尝试禁用CCD1的方案，但是不知道为啥温度反而100°C了，双CCD倒是最多85°C，都是用同一套负压。
+> 尝试禁用CCD1的方案然后跑5.2 G和5.0G，但是温度反而100°C，93°C了，双CCD4.8G倒是最多85°C，都是用同一套负压。
 
 ### Process Lasso Pro 配置
 
