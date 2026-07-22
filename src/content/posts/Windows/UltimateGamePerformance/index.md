@@ -3,7 +3,7 @@ title: "终极游戏性能优化：从系统到硬件的全链路调优"
 published: 2026-07-22
 description: "折腾了一套完整的游戏性能优化方案，涵盖 Windows 系统设置、CPU 调优、GPU 超频、鼠标延迟消除"
 tags: [游戏优化, Windows, CPU超频, GPU超频, 鼠标延迟, 系统优化, NVIDIA]
-image：./assets/cs2.jpg
+image: ./assets/cs2.jpg
 category: Windows
 draft: false
 ---
