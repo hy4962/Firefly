@@ -3,6 +3,7 @@ title: "终极游戏性能优化：从系统到硬件的全链路调优"
 published: 2026-07-22
 description: "折腾了一套完整的游戏性能优化方案，涵盖 Windows 系统设置、CPU 调优、GPU 超频、鼠标延迟消除"
 tags: [游戏优化, Windows, CPU超频, GPU超频, 鼠标延迟, 系统优化, NVIDIA]
+image：./assets/cs2.jpg
 category: Windows
 draft: false
 ---
@@ -13,6 +14,7 @@ draft: false
 - GPU：5070Ti 12G Laptop
 - 内存：16X2 M8D1
 - 系统：XOS11 25H2 V15
+- ![CS2设置](./assets/cs2config.jpg)
 
 ---
 
@@ -22,7 +24,7 @@ draft: false
 
 - **禁用 CCD1**
 - **UMAF 分核负压设置**：如下图所示，目前单 CCD 和双 CCD 都在用同一套配置
-- **关闭 VBS + 内存虚拟化**：使用 [DGReadiness v3.6](assets/dgreadiness_v3.6.zip) 进行执行重启后疯狂按F3
+- **关闭 VBS + 内存虚拟化**：使用DGReadiness v3.6进行执行重启后疯狂按F3
 - **频率**：单 CCD 跑 5.2 GHz，双 CCD 跑 4.8 GHz
 
 ![CPU 负压设置](assets/cpu-negative-pressure.jpg)
