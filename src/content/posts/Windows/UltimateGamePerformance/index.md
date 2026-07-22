@@ -1,34 +1,24 @@
 ---
-title: "终极游戏性能优化：从系统到硬件的全链路调优"
+title: "我的游戏性能优化方案：从系统到硬件折腾了一遍"
 published: 2026-07-22
-description: "折腾了一套完整的游戏性能优化方案，涵盖 Windows 系统设置、CPU 调优、GPU 超频、鼠标延迟消除"
+description: "把 Windows 系统设置、CPU 调优、GPU 超频、鼠标延迟都折腾了一遍，记录一下目前在用的配置"
 tags: [游戏优化, Windows, CPU超频, GPU超频, 鼠标延迟, 系统优化, NVIDIA]
 image: ./assets/cs2.jpg
 category: Windows
 draft: false
 ---
 
-折腾了一套完整的游戏性能优化方案，涵盖 Windows 系统设置、CPU 调优、GPU 超频、鼠标延迟消除等方面。以下是我目前在用的配置：
+折腾了一套游戏性能优化方案，从系统设置到硬件超频都搞了一遍。以下是我目前在用的配置：
 
 - CPU：9955HX
 - GPU：5070Ti 12G Laptop
-- 内存：16X2 M8D1
+- 内存：16X2=32G( 镁光M8D1 )
 - 系统：XOS11 25H2 V15
-- ![CS2设置](./assets/cs2config.jpg)
+![CS2设置](./assets/cs2config.jpg)
 
 ---
 
 ## 系统层面优化
-
-### CPU 与 BIOS 设置
-
-- **UMAF 分核负压设置**：如下图所示
-- **关闭 VBS + 内存虚拟化**：使用DGReadiness v3.6进行执行重启后疯狂按F3
-- **频率**： 4.8 G
-
-![CPU 负压设置](assets/cpu-negative-pressure.jpg)
-
-> 尝试禁用CCD1的方案然后跑5.2 G和5.0G，但是温度反而100°C，93°C了，双CCD4.8G倒是最多85°C，都是用同一套负压。
 
 ### Process Lasso Pro 配置
 
@@ -47,7 +37,7 @@ draft: false
 
 ### 系统快速配置
 
-使用 Bootser 快速设置最佳配置，然后手动恢复 WiFi 和蓝牙为正常打开状态。
+使用 Booster 快速设置最佳配置，然后手动恢复 WiFi 和蓝牙为正常打开状态。
 
 > 提示：这个系统需要在设备管理器里单独手动安装 WiFi 驱动。
 
@@ -84,7 +74,13 @@ HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\PriorityControl
 
 **效果**：修复鼠标拖不动
 
-> 提示：如果没有 USB 设置选项，请参考下图操作：
+> 提示：如果没有 USB 设置选项
+>
+> 则访问注册表`HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00`
+>
+> 在右侧找到 `Attributes`，双击，将数值从 `1` 改为 `2`
+>
+> 或者请参考下图操作：
 
 ![USB 电源设置](assets/usb-power-settings.png)
 
@@ -122,4 +118,39 @@ HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\PriorityControl
 
 ![GPU 超频设置 2](assets/gpu-overclock-metrics.png)
 
-> N卡驱动我自己用596.36-notebook-win10-win11-64bit-international-dch-whql
+> N 卡驱动我自己用 596.36-notebook-win10-win11-64bit-international-dch-whql
+
+
+## BIOS（CPU 和内存）
+### CPU
+
+- **UMAF 分核负压设置**：如下图所示,[Github:hy4962/UMAF_BETA.zip ](https://github.com/hy4962/Share/blob/main/Windows/ZIP/UMAF_BETA.zip)
+- **关闭 VBS + 内存虚拟化**：使用[Github:hy4962/关闭DG和VBS自动包](https://github.com/hy4962/Share/blob/main/Windows/ZIP/关闭DG和VBS自动包.zip)执行重启后疯狂按F3开机即可
+- **频率**： 4.8 G
+
+![CPU 负压设置](assets/cpu-negative-pressure.jpg)
+
+> 尝试禁用CCD1的方案然后跑5.2 G和5.0G，但是温度反而100°C，93°C了，双CCD4.8G倒是最多85°C，都是用同一套负压。奇怪...
+
+### 内存条
+
+本人是**镁光 M8D1**，原生 5600c50，超到 6000c38。我的作业貌似非常保守，这个也是超别人的
+
+![ZenTimings](./assets/ZenTimings.jpg)
+
+
+
+![UMAF_SPD](./assets/umaf_spd.jpg)
+
+
+
+# 省流版
+
+总结一下核心配置：
+
+- **CPU**：4.8G + 全核分核负压
+- **GPU**：核心频率 +200Mhz，显存频率 +500Mhz
+- **内存**：5600C50 → 6000C38
+- **系统**：XOS11 25H2 + Booster 快速最佳设置 + 鼠标设置
+- **电源**：高性能电源计划，取消 USB 节能
+- **设备管理器**：取消所有 USB 设备"允许计算机关闭此设备以节约电源"
