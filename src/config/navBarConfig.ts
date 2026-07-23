@@ -92,7 +92,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				name: "本站评论系统",
 				url: "https://waline.9ll.uk/",
 				external: true,
-				icon: "material-symbols:message",
+				icon: "material-symbols:chat",
 			},
 
 			// 免费图床
