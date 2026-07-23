@@ -87,12 +87,20 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "fa7-brands:github",
 			},
 
-			// 站点统计
+			// 本站评论系统
 			{
-				name: "站点统计",
-				url: "https://umami.9ll.uk/share/Z4DD4Y3q9CTFpBeM",
+				name: "本站评论系统",
+				url: "https://waline.9ll.uk/",
 				external: true,
-				icon: "material-symbols:analytics",
+				icon: "material-symbols:message",
+			},
+
+			// 免费图床
+			{
+				name: "免费图床",
+				url: "https://imgbed.9ll.uk/",
+				external: true,
+				icon: "material-symbols:image",
 			},
 
 			// 邮箱
@@ -101,6 +109,22 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				url: "https://email.9ll.uk/",
 				external: true,
 				icon: "material-symbols:mail",
+			},
+
+			// 网站监控
+			{
+				name: "网站监控",
+				url: "https://monitor.9ll.uk/?view=websites",
+				external: true,
+				icon: "material-symbols:monitoring",
+			},
+
+			// 站点统计
+			{
+				name: "站点统计",
+				url: "https://umami.9ll.uk/share/Z4DD4Y3q9CTFpBeM",
+				external: true,
+				icon: "material-symbols:analytics",
 			},
 		],
 	});
