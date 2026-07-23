@@ -94,6 +94,14 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				external: true,
 				icon: "material-symbols:analytics",
 			},
+
+			// 邮箱
+			{
+				name: "免费邮局",
+				url: "https://email.9ll.uk/",
+				external: true,
+				icon: "material-symbols:mail",
+			},
 		],
 	});
 
