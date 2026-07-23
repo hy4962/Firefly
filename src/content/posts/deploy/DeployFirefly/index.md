@@ -6,7 +6,6 @@ image: ./cover.png
 tags: [Astro, Vercel, 博客搭建]
 category: 部署
 draft: false
-
 ---
 
 很多人想搭一个自己的博客，但真正开始的时候才发现：
