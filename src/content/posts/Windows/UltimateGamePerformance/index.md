@@ -134,7 +134,7 @@ HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\PriorityControl
 
 ### 内存条
 
-本人是**镁光 M8D1**，原生 5600c50，超到 6000c38。我的作业貌似非常保守，这个也是超别人的
+本人是**镁光 M8D1**，原生 5600c46，101ns，超到 6000c38，85ns到88ns。我的作业貌似非常保守，这个也是超别人的
 
 ![ZenTimings](./assets/ZenTimings.jpg)
 
