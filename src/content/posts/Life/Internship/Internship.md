@@ -2,7 +2,7 @@
 title: 站长实习经历
 published: 2026-07-24
 description: 释怀的似了
-image:/cover.png
+image: ./cover.png
 tags: [实习, 生活, 工作]
 category: 生活
 draft: false
