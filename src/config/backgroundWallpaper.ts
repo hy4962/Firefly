@@ -43,6 +43,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			"assets/images/DesktopWallpaper/three.webp",
 			"assets/images/DesktopWallpaper/7.png",
 			"assets/images/DesktopWallpaper/8.png",
+			"assets/images/DesktopWallpaper/9.png",
 			// "https://t.alcy.cc/ycy",
 		],
 		// 移动背景图片（支持单张或多张随机）
@@ -50,6 +51,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		mobile: [
 			"assets/images/MobileWallpaper/1.png",
 			"assets/images/MobileWallpaper/2.png",
+			"assets/images/MobileWallpaper/3.png",
 			"assets/images/DesktopWallpaper/cover.avif",
 		],
 		// 背景视频播放地址
