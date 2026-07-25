@@ -42,7 +42,6 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			"assets/images/DesktopWallpaper/cover.avif",
 			"assets/images/DesktopWallpaper/three.webp",
 			"assets/images/DesktopWallpaper/7.png",
-			"assets/images/DesktopWallpaper/8.png",
 			"assets/images/DesktopWallpaper/9.png",
 			// "https://t.alcy.cc/ycy",
 		],
