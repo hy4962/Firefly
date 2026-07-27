@@ -38,7 +38,31 @@ cache/
 package/
 .obsidian/
 
-# vibe coding
+# vibe coding / AI agent
 .codex*
 .claude
 .mimocode
+.cursor
+.copilot
+.devbox
+.replit
+.codespace
+.codesandbox
+.stackblitz
+.omo/
+.aider*
+.windsurf
+.continue
+.codeium
+.tabnine
+.bytecode
+
+# IDE
+.vscode/
+.vs/
+.eslintcache
+.prettiercache
+.cache/
+.jest/
+.nyc_output/
+.coverage/
