@@ -3,7 +3,7 @@ title: "给 Cloudflare Tunnel 后面的 API 开启 CORS"
 published: 2026-07-28
 description: "记录如何通过 Cloudflare 响应头转换规则，为 Tunnel 后面的 Memos API 添加 CORS 配置。"
 tags: [Cloudflare, Tunnel, CORS, Memos]
-category: "network"
+category: 网络
 draft: false
 ---
 
