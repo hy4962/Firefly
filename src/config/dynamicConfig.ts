@@ -30,7 +30,7 @@ export const dynamicConfig: DynamicConfig = {
 		enable: true,
 
 		// Memos 实例地址
-		apiUrl: "https://memos.9ll.uk/",
+		apiUrl: "https://memos.9ll.uk",
 
 		// Memos 用户标识，如 "users/你的memos用户名"，用于过滤指定用户的动态
 		parent: "users/hy4962",
