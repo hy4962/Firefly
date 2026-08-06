@@ -2,7 +2,7 @@
 title: "ComfyUI 图像放大工作流：从文生图工作流中抽取的独立放大方案"
 published: 2026-08-06
 description: "分享我从 ComfyUI 文生图工作流中抽取的独立图像放大工作流，包含模型配置、节点设置和使用心得"
-image: ./images/workflow-overview.png
+image: ./fengmian.png
 tags: ["ComfyUI", "图像放大", "AI绘画", "工作流", "动漫"]
 category: "ai"
 draft: false

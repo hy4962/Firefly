@@ -4,7 +4,7 @@ published: 2026-07-22
 updated: 2026-07-27
 description: "把 Windows 系统设置、CPU 调优、GPU 超频、鼠标延迟都折腾了一遍，记录一下目前在用的配置"
 tags: [游戏优化, Windows, CPU超频, GPU超频, 鼠标延迟, 系统优化, NVIDIA]
-image: assets/cs2.jpg
+image: ./fengmian.png
 category: Windows
 draft: false
 ---

@@ -3,7 +3,7 @@ title: Cloudflare Workers优选IP
 published: 2026-07-12
 updated: 2026-07-15
 description: CloudFlare优选IP
-image: ./cover.png
+image: ./fengmian.png
 tags: [Cloudflare, Workers, 优选IP, DNS, CDN]
 category: 网络
 draft: false

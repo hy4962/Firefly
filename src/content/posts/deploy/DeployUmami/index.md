@@ -2,7 +2,7 @@
 title: 网站每天多少人访问你知道吗？用 Vercel 零成本搭了一个 Umami 网站统计系统
 published: 2026-07-18
 description: 用 Vercel + Neon 免费部署 Umami 网站统计系统，从 Fork 项目到上线全流程记录，零成本搞定访客数据
-image: ./01-umami概览.png
+image: ./fengmian.png
 tags: [Umami, Vercel, Neon, 网站统计, PostgreSQL]
 category: 部署
 draft: false

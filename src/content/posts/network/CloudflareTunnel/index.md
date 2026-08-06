@@ -2,7 +2,7 @@
 title: Cloudflare Tunnel Docker部署教程
 published: 2026-07-18
 description: 用Docker部署Cloudflare Tunnel，把内网服务暴露到公网
-image: ./fengmian.png
+image: ./cover.png
 tags: [Cloudflare, Tunnel, Docker, 内网穿透]
 category: 网络
 draft: false
