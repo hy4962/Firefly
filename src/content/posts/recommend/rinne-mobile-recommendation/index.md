@@ -2,6 +2,7 @@
 title: 手机上终于有个像样的 Galgame 管理器了
 published: 2026-07-25
 description: RinneMobile 是一款手机端 Galgame 管理器，支持 KRKR、ONScripter 等多种引擎，统一管理本地游戏和应用，还能通过 WebDAV 云同步数据。
+image: ./images/home-index.png
 tags: [Galgame, RinneMobile, 手机, 游戏管理, Android]
 category: 推荐
 draft: false
@@ -10,6 +11,8 @@ draft: false
 # 手机上终于有个像样的 Galgame 管理器了
 
 前几天刷 GitHub 的时候，无意间看到一个叫 RinneMobile 的项目。
+
+https://github.com/Weiss-UltimateSavior/RinneMobile
 
 ![RinneMobile 界面](images/theme1.jpg)
 

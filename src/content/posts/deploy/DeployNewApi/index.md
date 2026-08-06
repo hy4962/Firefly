@@ -2,7 +2,7 @@
 title: "Docker 一键部署 NewApi API 中转站"
 published: 2026-07-28
 description: "NewApi 是目前大多数 API 中转站都在用的统一网关管理工具，支持几乎所有主流 AI 模型接入，可对外售卖也可个人使用"
-image: ./cover.png
+image: ./fengmian.png
 tags: [Docker, API, NewApi, 部署, PostgreSQL, Redis]
 category: 部署
 draft: false
