@@ -4,13 +4,15 @@ published: 2026-08-06
 description: "分享我从 ComfyUI 文生图工作流中抽取的独立图像放大工作流，包含模型配置、节点设置和使用心得"
 image: ./fengmian.png
 tags: ["ComfyUI", "图像放大", "AI绘画", "工作流", "动漫"]
-category: "ai"
+category: "AI"
 draft: false
 ---
 
 最近在用 ComfyUI 做图像放大，发现把放大功能从文生图工作流里抽出来单独用，确实方便很多。
 
 之前文生图工作流里也带放大功能，但每次想单独放大一张图，还得加载整个文生图流程，加载模型多、显存占用大，而且参数混在一起不好调。干脆直接抽出来，做成一个独立的放大工作流。
+
+[Share/Comfyui/Workflow/放大.json at main · hy4962/Share](https://github.com/hy4962/Share/blob/main/Comfyui/Workflow/放大.json)
 
 ## 为什么单独抽出来
 

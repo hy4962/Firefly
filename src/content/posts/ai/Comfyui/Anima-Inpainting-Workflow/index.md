@@ -4,7 +4,7 @@ published: 2026-08-09
 description: "一个好用的 ComfyUI 局部重绘工作流，用 Anima 模型修复换装/修复手指脚趾也很方便"
 image: ./fengmian.png
 tags: ["ComfyUI", "Anima", "局部重绘", "AI绘画", "人像修复"]
-category: "ai"
+category: "AI"
 draft: false
 ---
 
