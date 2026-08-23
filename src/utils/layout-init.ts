@@ -1,4 +1,3 @@
-import { showBanner } from "@/utils/banner-utils";
 import {
 	registerContentOverflowListeners,
 	scheduleContentOverflowEnhancements,
@@ -25,6 +24,11 @@ import { initTouchCodeCopyReveal } from "@/utils/touch-copy-utils";
 
 /** 布局初始化编排（从 Layout.astro 迁出） */
 export function initLayout(): void {
+	// 防止 Swup 切页重跑模块化脚本时重复注册监听器/钩子（一次性注册；
+	// 切页后的页面状态刷新由下方 swup 钩子与一次性注册的 document 监听器负责）
+	if (window.__fireflyLayoutInit) return;
+	window.__fireflyLayoutInit = true;
+
 	initializeFloatingPanels();
 
 	setClickOutsideToClose("display-setting", [
@@ -60,11 +64,9 @@ export function initLayout(): void {
 	// 页面加载完成后初始化banner和内容溢出容器
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", () => {
-			showBanner();
 			scheduleContentOverflowEnhancements();
 		});
 	} else {
-		showBanner();
 		scheduleContentOverflowEnhancements();
 	}
 
@@ -88,7 +90,11 @@ export function initLayout(): void {
 	}
 
 	initImageLoadFadeIn();
-	document.addEventListener("astro:page-load", initImageLoadFadeIn);
+	// 切页换入后延到下一帧再重扫 LQIP fade-in，避免 astro:page-load 在同帧叠加
+	// 一堆游标/事件重扫阻塞换入首帧（swup:contentReplaced 已 rAF，一并延后）
+	document.addEventListener("astro:page-load", () => {
+		requestAnimationFrame(initImageLoadFadeIn);
+	});
 	document.addEventListener("swup:contentReplaced", () => {
 		requestAnimationFrame(initImageLoadFadeIn);
 	});
