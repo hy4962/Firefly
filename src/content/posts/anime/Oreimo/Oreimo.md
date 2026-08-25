@@ -2,9 +2,9 @@
 title: 《俺妹》观后感
 published: 2026-07-21
 description: 《俺の妹がこんなに可愛いわけがない》观后感，聊聊剧情节奏、角色塑造和结局争议。
-tags: [俺妹, 动漫, 观后感, 桐乃, 黑猫]
+tags: [俺妹, 动漫评论, 观后感, 桐乃, 黑猫]
 image: ./cover.png
-category: ACG
+category: 动漫
 draft: false
 ---
 

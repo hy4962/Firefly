@@ -2,8 +2,8 @@
 title: "Krea2 四视图生成：必备模型与可选 LoRA 分享"
 published: 2026-08-10
 description: "分享 Krea2 四视图生成的必备模型和可选 LoRA。"
-tags: ["Krea2", "ComfyUI", "AI绘画", "模型分享", "LoRA"]
-category: "AI"
+tags: [Krea2, ComfyUI, AI绘画, 模型分享, LoRA]
+category: AI
 image: ./fengmian.png
 draft: false
 ---

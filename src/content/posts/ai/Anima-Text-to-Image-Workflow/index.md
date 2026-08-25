@@ -2,7 +2,7 @@
 title: "Anima 文生图工作流分享"
 published: 2026-07-27
 description: "ComfyUI 跑 Anima 模型的文生图工作流，三个模型文件怎么放、turbo lora 怎么用、提示词在哪找，整理了一下分享出来"
-tags: [AI, ComfyUI, Anima, 文生图, AI绘图]
+tags: [ComfyUI, Anima, 文生图, AI绘画]
 category: AI
 image: ./fengmian.png
 draft: false

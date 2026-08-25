@@ -2,7 +2,7 @@
 title: "优化鼠标跟手性，顺便解决了完美死斗跳 ms 的问题"
 published: 2026-07-21
 description: "用 BoosterX 解锁 USB 高级选项，调整电源计划和设备管理器设置，解决鼠标延迟高、不跟手的问题"
-tags: [鼠标, USB, 电源计划, BoosterX, 游戏优化, Windows]
+tags: [鼠标优化, USB, 电源计划, BoosterX, 游戏优化]
 category: Windows
 image: ./boosterx-cover.png
 draft: false

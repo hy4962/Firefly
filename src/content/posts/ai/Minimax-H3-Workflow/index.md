@@ -3,7 +3,7 @@ title: "MiniMax H3 工作流分享：不用4步LoRA，速度还快5倍"
 published: 2026-08-11
 description: "分享一个 MiniMax H3 的 ComfyUI 工作流，不用官方4步LoRA，生成速度和质量反而更好"
 image: ./images/cover.webp
-tags: [MiniMax, ComfyUI, AI视频, 工作流, 视频生成]
+tags: [MiniMax, ComfyUI, AI视频, 工作流]
 category: AI
 draft: false
 ---

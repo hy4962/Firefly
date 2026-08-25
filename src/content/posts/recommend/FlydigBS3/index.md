@@ -3,8 +3,8 @@ title: "压风散热器 Flydigi BS3：主要是为了给硬盘降温和防尘"
 published: 2026-08-10
 description: "买了飞智 BS3，主要解决 GW7000 2TB 打游戏 62 度的问题，顺带防尘，没下官方软件，用的是开源的 THRM。"
 image: ./images/thrm-poster-light.png
-tags: ["推荐", "散热", "笔记本", "硬件", "THRM"]
-category: recommend
+tags: [散热, 笔记本, 硬件, THRM, 飞智]
+category: 推荐
 draft: false
 ---
 

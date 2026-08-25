@@ -3,7 +3,7 @@ title: "Docker 部署 MaiMBot QQ 机器人：从拉镜像到跑起来"
 published: 2026-08-23
 description: "用 Docker Compose 一键跑起 MaiMBot + NapCat + sqlite-web 三件套，附完整 compose 文件、QQ 扫码登录、正向 WebSocket 配置和白的名单踩坑。"
 image: ./cover.png
-tags: [MaiMBot, QQ机器人, Docker, NapCat, 部署]
+tags: [MaiMBot, QQ机器人, Docker, NapCat]
 category: 部署
 draft: true
 ---

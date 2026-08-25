@@ -2,7 +2,7 @@
 title: SillyTavern（酒馆）无限制 AI 角色对话部署指南
 published: 2026-07-24
 description: 开源 AI 角色对话前端 SillyTavern 部署教程，支持 OpenAI、Claude、Gemini 等多种模型，本地运行数据自主，角色扮演和写作辅助都能玩。
-tags: [SillyTavern, AI, 角色对话, Windows]
+tags: [SillyTavern, AI角色对话, 部署指南, 酒馆]
 image: ./fengmian.png
 category: 推荐
 draft: false

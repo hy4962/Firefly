@@ -2,9 +2,9 @@
 title: 《零之使魔》观后感
 published: 2026-07-19
 description: 经典异世界恋爱动画《零之使魔》观后感，聊聊剧情节奏、感情线处理和人物塑造方面的优缺点。
-tags: [零之使魔, 动漫, 观后感, 异世界, 傲娇]
+tags: [零之使魔, 动漫评论, 观后感, 异世界, 傲娇]
 image: ./cover.jpg
-category: ACG
+category: 动漫
 draft: false
 ---
 

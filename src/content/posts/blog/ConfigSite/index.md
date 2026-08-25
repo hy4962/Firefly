@@ -4,7 +4,7 @@ published: 2026-07-26
 description: 详细讲解 Firefly 博客的配置文件，包括站点标题、主题色、页面开关、文章列表等，让你的博客从默认模板变成自己的风格
 image: ./cover.png
 tags: [Firefly, 博客配置, Astro, 静态博客]
-category: 博客指南
+category: 博客
 draft: false
 ---
 

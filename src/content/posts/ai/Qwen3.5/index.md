@@ -2,7 +2,7 @@
 title: "本地部署Qwen3.5完全指南：从下载到跑起来"
 published: 2026-03-28
 description: "手把手教你用LM Studio在自己电脑上跑Qwen3.5，量化格式怎么选、显存不够怎么办、GPU卸载设多少，都讲清楚"
-tags: [AI, Qwen3.5, Qwen, LM Studio, 本地部署]
+tags: [Qwen3.5, LM Studio, 本地部署, 大语言模型]
 category: AI
 image: ./models_setting.png
 draft: false
