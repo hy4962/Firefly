@@ -353,3 +353,268 @@ B站没有批量修改稿件可见性的功能。如果你有一百多个视频�
 ```
 
 如果你有批量处理B站视频的需求，这个脚本应该能帮你省不少时间。用之前记得先备份，毕竟批量操作出了错不太好恢复。
+
+
+
+
+
+最后再分享一个设置为公开可见的脚本，直接叫我的zcode+dsv4f在上面的基础直接改的
+```javascript
+// ==UserScript==
+// @name         B站批量公开投稿
+// @namespace    https://bilibili.com/
+// @version      1.0.0
+// @description  批量将B站稿件设置为"公开可见"，支持自定义起止页，自动翻页
+// @match        https://member.bilibili.com/platform/upload-manager/article*
+// @match        https://member.bilibili.com/platform/upload/video/frame*
+// @grant        none
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    const ST = 'bili_batch_public_v1';
+    const QU = 'bili_batch_public_queue_v1';
+    const LIST_URL = 'https://member.bilibili.com/platform/upload-manager/article';
+    const eUrl = b => 'https://member.bilibili.com/platform/upload/video/frame?type=edit&bvid=' + b;
+    const slp = ms => new Promise(r => setTimeout(r, ms));
+
+    function gs() { try { return JSON.parse(localStorage.getItem(ST)); } catch (e) { return null; } }
+    function ss(s) { localStorage.setItem(ST, JSON.stringify(s)); }
+    function cs() { localStorage.removeItem(ST); localStorage.removeItem(QU); }
+    function gq() { try { return JSON.parse(localStorage.getItem(QU)) || []; } catch (e) { return []; } }
+    function sq(q) { localStorage.setItem(QU, JSON.stringify(q)); }
+
+    function curPg() {
+        const m = location.href.match(/[?&]page=(\d+)/);
+        return m ? parseInt(m[1]) : 1;
+    }
+    function isLP() { return location.href.includes('/upload-manager/article'); }
+    function isEP() { return location.href.includes('/upload/video/frame'); }
+
+    function collect() {
+        const links = document.querySelectorAll('a[href*="/video/BV"]');
+        const seen = new Set();
+        const q = [];
+        let sk = 0;
+        links.forEach(a => {
+            const m = a.href.match(/\/video\/(BV[a-zA-Z0-9]+)/);
+            if (!m || seen.has(m[1])) return;
+            seen.add(m[1]);
+            const row = a.closest('li, div, [class*="item"]');
+            // 跳过已经是公开的（没有"仅自己可见"标记的视为公开）
+            if (row && !row.textContent.includes('仅自己可见')) sk++;
+            else q.push(m[1]);
+        });
+        return { queue: [...new Set(q)], skipped: sk };
+    }
+
+    function mkPanel() {
+        if (document.getElementById('bs-panel')) return;
+        const p = document.createElement('div');
+        p.id = 'bs-panel';
+        p.style.cssText = `
+            position: fixed; z-index: 999999; right: 20px; top: 100px;
+            width: 270px; padding: 15px; background: #18191c; color: #fff;
+            border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.35);
+            font-size: 14px; font-family: Arial, sans-serif;
+        `;
+        p.innerHTML = `
+            <div style="font-size:16px;font-weight:bold;margin-bottom:10px;">B站批量公开</div>
+            <div id="bs-cur" style="margin-bottom:6px;color:#aaa;">当前页：第 ${curPg()} 页</div>
+            <div id="bs-st" style="margin-bottom:10px;">状态：等待开始</div>
+            <div id="bs-cnt" style="margin-bottom:12px;">已公开：0　跳过：0　失败：0</div>
+            <div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:12px;color:#aaa;">从第</span>
+                <input id="bs-sp" type="number" min="1" max="99" value="1"
+                    style="width:45px;padding:4px;border:1px solid #555;border-radius:4px;background:#2a2a2a;color:#fff;text-align:center;font-size:13px;">
+                <span style="font-size:12px;color:#aaa;">页到第</span>
+                <input id="bs-ep" type="number" min="1" max="99" value="99"
+                    style="width:45px;padding:4px;border:1px solid #555;border-radius:4px;background:#2a2a2a;color:#fff;text-align:center;font-size:13px;">
+                <span style="font-size:12px;color:#aaa;">页</span>
+            </div>
+            <button id="bs-go" style="width:100%;padding:8px;border:0;border-radius:6px;
+                background:#00aeec;color:#fff;cursor:pointer;margin-bottom:6px;">开始批量公开</button>
+            <button id="bs-stp" style="width:100%;padding:8px;border:0;border-radius:6px;
+                background:#444;color:#fff;cursor:pointer;margin-bottom:6px;">停止</button>
+            <button id="bs-rst" style="width:100%;padding:6px;border:0;border-radius:6px;
+                background:#333;color:#aaa;cursor:pointer;font-size:12px;">重置状态</button>
+            <div style="margin-top:10px;color:#aaa;font-size:12px;line-height:1.5;">
+                自动翻页处理到结束页。<br>已公开的自动跳过。<br>面板在列表页和编辑页都会显示。
+            </div>
+        `;
+        document.body.appendChild(p);
+
+        const sp = localStorage.getItem('bs_sp');
+        const ep = localStorage.getItem('bs_ep');
+        if (sp) document.getElementById('bs-sp').value = sp;
+        if (ep) document.getElementById('bs-ep').value = ep;
+
+        document.getElementById('bs-sp').onchange = () => localStorage.setItem('bs_sp', document.getElementById('bs-sp').value);
+        document.getElementById('bs-ep').onchange = () => localStorage.setItem('bs_ep', document.getElementById('bs-ep').value);
+
+        document.getElementById('bs-go').onclick = function () {
+            if (gs() && gs().running) { stUI('运行中，请先停止'); return; }
+            const sp = Math.max(1, parseInt(document.getElementById('bs-sp').value) || 1);
+            const ep = Math.max(sp, parseInt(document.getElementById('bs-ep').value) || 99);
+            cs();
+            ss({
+                running: true, collected: false, reachedStart: false,
+                processed: 0, skipped: 0, failed: 0, queue: [],
+                startPage: sp, endPage: ep, currentPage: 0, done: false
+            });
+            sq([]);
+            localStorage.setItem('bs_sp', String(sp));
+            localStorage.setItem('bs_ep', String(ep));
+            stUI('开始（第 ' + sp + '~' + ep + ' 页）');
+            location.href = LIST_URL + (sp > 1 ? '?page=' + sp : '');
+        };
+
+        document.getElementById('bs-stp').onclick = () => { cs(); stUI('已停止'); updP(); };
+        document.getElementById('bs-rst').onclick = () => { cs(); stUI('已重置'); updP(); };
+    }
+
+    function updP() {
+        const s = gs();
+        const el = document.getElementById('bs-cnt');
+        const pel = document.getElementById('bs-cur');
+        if (el && s) el.textContent = '已公开：' + (s.processed || 0) + '　跳过：' + (s.skipped || 0) + '　失败：' + (s.failed || 0);
+        else if (el) el.textContent = '已公开：0　跳过：0　失败：0';
+        if (pel) pel.textContent = '当前页：第 ' + curPg() + ' 页（目标 ' + (s ? s.startPage + '~' + s.endPage : '-') + '）';
+    }
+    function stUI(t) { const el = document.getElementById('bs-st'); if (el) el.textContent = '状态：' + t; }
+
+    function advance() {
+        const s = gs();
+        if (!s || !s.running || !isLP()) return;
+        if (s.done) return;
+
+        s.currentPage = curPg();
+        ss(s);
+        updP();
+
+        if (!s.reachedStart) {
+            if (curPg() < s.startPage) {
+                stUI('跳转到第 ' + s.startPage + ' 页...');
+                location.href = LIST_URL + '?page=' + s.startPage;
+                return;
+            }
+            s.reachedStart = true;
+            ss(s);
+        }
+
+        if (curPg() > s.endPage) { finish(); return; }
+
+        if (!s.collected) {
+            const { queue, skipped } = collect();
+            if (queue.length === 0 && document.querySelectorAll('a[href*="/video/BV"]').length === 0) {
+                stUI('等待页面加载...');
+                setTimeout(() => { if (gs() && gs().running && !gs().done) advance(); }, 2000);
+                return;
+            }
+            s.skipped = (s.skipped || 0) + skipped;
+            s.queue = queue;
+            s.collected = true;
+            ss(s);
+            sq(queue);
+
+            if (queue.length === 0) {
+                stUI('本页无待处理，进入下一页');
+                s.collected = false; ss(s); nextPage();
+                return;
+            }
+            goEdit();
+            return;
+        }
+
+        if (s.queue.length > 0) { goEdit(); return; }
+        s.collected = false; ss(s); nextPage();
+    }
+
+    function goEdit() {
+        const s = gs();
+        if (!s || !s.running) return;
+        if (!s.queue || s.queue.length === 0) { advance(); return; }
+        const next = s.queue.shift();
+        sq(s.queue);
+        ss(s);
+        stUI('处理 ' + next + ' | 第 ' + s.currentPage + '/' + s.endPage + ' 页');
+        location.href = eUrl(next);
+    }
+
+    function nextPage() {
+        const s = gs();
+        if (!s || !s.running || s.done) return;
+        if (curPg() >= s.endPage) { finish(); return; }
+        stUI('进入第 ' + (curPg() + 1) + ' 页...');
+        s.collected = false; ss(s);
+        location.href = LIST_URL + '?page=' + (curPg() + 1);
+    }
+
+    function finish() {
+        const s = gs(); if (!s) return;
+        s.done = true; ss(s);
+        alert('🎉 全部完成！\n已公开：' + (s.processed || 0) + '，跳过：' + (s.skipped || 0) + '，失败：' + (s.failed || 0));
+        cs(); stUI('全部完成');
+    }
+
+    async function handleEP() {
+        const s = gs();
+        if (!s || !s.running || s.done) return;
+        updP(); stUI('正在编辑...');
+        await slp(2000);
+
+        let ok = false, clicked = false;
+        const labels = document.querySelectorAll('span.label');
+        for (const l of labels) { if (l.textContent.trim().startsWith('更多设置')) { l.click(); clicked = true; break; } }
+        if (!clicked) {
+            const titles = document.querySelectorAll('div.title');
+            for (const t of titles) { if (t.textContent.trim().startsWith('更多设置')) { t.click(); clicked = true; break; } }
+        }
+        if (!clicked) {
+            const all = document.querySelectorAll('span, div, a');
+            for (const e of all) { if (e.textContent.trim().startsWith('更多设置')) { e.click(); clicked = true; break; } }
+        }
+
+        if (clicked) {
+            await slp(1200);
+            const containers = document.querySelectorAll('.check-radio-v2-container');
+            if (containers.length >= 2) {
+                const isChecked = containers[0].querySelector('.check-radio-v2-box-checked') !== null;
+                if (!isChecked) {
+                    // 点击"公开可见"（第一个容器）
+                    const radio = containers[0].querySelector('.check-radio-v2-box, span');
+                    if (radio) radio.click(); else containers[0].click();
+                    await slp(800);
+                }
+                const sub = document.querySelector('span.submit-add');
+                if (sub) { sub.click(); ok = true; }
+                else {
+                    const all = document.querySelectorAll('div, button, span');
+                    for (const e of all) { if (e.textContent.trim() === '立即投稿') { e.click(); ok = true; break; } }
+                }
+            }
+        }
+
+        const st = gs();
+        if (st) { if (ok) st.processed = (st.processed || 0) + 1; else st.failed = (st.failed || 0) + 1; ss(st); }
+        updP();
+        stUI(ok ? '已提交，返回列表...' : '失败，返回列表...');
+        await slp(2500);
+        const st2 = gs();
+        const pg = st2 && st2.currentPage ? st2.currentPage : 1;
+        location.href = LIST_URL + (pg > 1 ? '?page=' + pg : '');
+    }
+
+    setTimeout(function () { mkPanel(); updP(); }, 500);
+
+    if (isLP()) {
+        setTimeout(function () {
+            const s = gs();
+            if (s && s.running && !s.done) { stUI('自动继续...'); updP(); advance(); updP(); }
+        }, 2000);
+    }
+
+    if (isEP()) { handleEP(); }
+})();
+```
