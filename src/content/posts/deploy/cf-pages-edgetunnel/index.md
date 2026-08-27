@@ -5,7 +5,7 @@ description: "用 Cloudflare Pages 白嫖部署 cmliu 开源的 edgetunnel，绑
 image: ./cover.png
 tags: [Cloudflare, edgetunnel, 节点, 科学上网]
 category: 网络
-draft: true
+draft: false
 ---
 
 最近收藏的两篇教程都在推同一个东西——cmliu 开源的 [edgetunnel](https://github.com/cmliu/edgetunnel)，部署到 Cloudflare 上就能搭一个自己的节点，不用买服务器，Cloudflare 的免费额度直接白嫖。反正流程不复杂，我就自己动手过了一遍，把步骤和要注意的点记下来。
