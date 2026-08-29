@@ -2,10 +2,10 @@
 title: "DSH 迁移 Docker 翻车四连：AI 全程远程替我修好了"
 published: 2026-08-29
 description: "把 Windows 上的 DSH（DeepSeek Harness）连同插件配置迁移到 NAS 的 Docker 容器，启动即崩、连炸四个坑。最后全靠 AI 通过 SSH 远程诊断、打补丁、重装依赖，全程自动修好。"
-image: ./images/cover.webp
+image: ./cover.png
 tags: [DSH, DeepSeek Harness, Docker, 迁移, SSH, AI 运维]
 category: AI
-draft: true
+draft: false
 ---
 
 我在 Windows 上用 DSH（DeepSeek Harness）跑了一阵子，陆陆续续装了十好几个插件：dshmarket、dsh-chat-import、dsh-vision-router、dsh-agent-teams、dsh-bill，乱七八糟一堆。用着是挺爽，但有个问题一直膈应：这玩意就住在我这台 Windows 上，想让它一直挂机，电脑就得一直开着，费电。
@@ -68,6 +68,8 @@ docker run --rm \
 web profile 装完再补 dsh-tui 那个 profile，同一个套路：`cd /root/.dsh/profiles/dsh-tui && pnpm install --prod --frozen-lockfile`。
 
 关键点就三个：`--rm` 用完即毁，`--entrypoint /bin/bash` 跳过正常启动命令直接给 shell，`-v` 挂载同一个数据卷。等于在容器外面修容器里面的世界，那个崩掉的容器根本不用管。装完确认插件都回来了：dshmarket、dsh-bill、dsh-vision-router、@nanmicoder/dsh-agent-teams，一个不少。
+
+![](./images/image.png)
 
 ## 坑三：凭据文件权限 666，安全校验拦路
 
@@ -147,11 +149,3 @@ Error: dsh-tui requires an interactive terminal (stdout must be a TTY).
 ## 写在最后
 
 这次折腾给我最大的感受倒不是 DSH 迁成功了，而是「AI 全自动运维」这状态离日常生活真不远了。一个能 SSH、能判断挂载关系、能自己打补丁重启再验证的 agent，处理这种环境迁移问题已经挺能打。当然它也不是万能的，中间好几次我都怀疑它要卡住了，结果它就是硬生生把四个坑一个个填平。
-
-*写于 2026 年 8 月，折腾 DSH Windows → Docker 迁移的记录*
-
-## 图片建议
-
-- 位置：文章「坑二」之后
-- 作用：展示容器从 Exited 到 Up 的状态对比 / 一次性容器执行 pnpm install 的终端输出
-- 推荐尺寸：封面 1200×630，正文图宽度不超过 1600

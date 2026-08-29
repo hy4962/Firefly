@@ -101,6 +101,4 @@ edgetunnel 需要一个 KV 来存配置数据，不然后台很多东西没法�
 ## 参考资料
 
 - [Edgetunnel 2.0 全新版本 - CMLiussss Blog](https://eo.blog.cmliussss.com/p/edt2/)
-- [2026 最强 Cloudflare 免费节点 - 零度博客](https://www.freedidi.com/23618.html)（文中部分配图取自此篇）
-
-*写于 2026 年 8 月，折腾记录*
+- [2026 最强 Cloudflare 免费节点 - 零度博客](https://www.freedidi.com/23618.html)
