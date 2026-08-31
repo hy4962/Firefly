@@ -2,6 +2,7 @@
 title: "GNAME 白嫖 .eu.cc 免费域名：注册续费都 0 元，还能托管 Cloudflare"
 published: 2026-08-30
 description: "GNAME 的 .eu.cc 免费注册活动：每个账号可领 3 张全额抵扣券，注册和续费都是 0 元，溢价域名除外，还能托管到 Cloudflare。整理了领券注册流程、续费入口的坑和接入 Cloudflare 的步骤。"
+image: ./cover.jpg
 tags: [域名, 免费域名, GNAME, Cloudflare, eu.cc]
 category: 网络
 draft: false

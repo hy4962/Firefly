@@ -2,7 +2,7 @@
 title: "DeepSeek Harness 上服务器：官方没出 Docker，社区镜像这么选"
 published: 2026-08-29
 description: "官方 dsh 只发 npm 包，Web 模式还只允许监听 127.0.0.1。整理两个社区 Docker 镜像的命令、环境变量和选择建议。"
-image: ./images/cover.webp
+image: ./images/cover.png
 tags: [DeepSeek Harness, Docker, NAS, 部署, 服务器]
 category: 部署
 draft: false
