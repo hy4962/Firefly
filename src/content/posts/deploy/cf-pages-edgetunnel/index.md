@@ -1,6 +1,7 @@
 ---
 title: "不用服务器自建节点：Cloudflare Pages 部署 edgetunnel"
 published: 2026-08-27
+updated: 2026-08-31
 description: "用 Cloudflare Pages 白嫖部署 cmliu 开源的 edgetunnel，绑上 KV 就能在后台生成订阅，全程不需要服务器。"
 image: ./cover.png
 tags: [Cloudflare, edgetunnel, 节点, 科学上网]
@@ -81,7 +82,7 @@ edgetunnel 需要一个 KV 来存配置数据，不然后台很多东西没法�
 
 ![edgetunnel 后台设置页面，顶部获取节点链接和自适应订阅](./images/image-007.webp)
 
-上面就是节点链接和订阅地址，复制到 v2rayNG、Clash Verge 这类客户端导入就能用了。右上角还有个"我是高手！我就是要折腾！"的入口，想玩优选 IP、ProxyIP、订阅转换的可以从那里深入，我目前还没折腾到那一步。
+上面就是节点链接和订阅地址，复制到 v2rayNG、Clash Verge 这类客户端导入就能用了，软路由上跑 [OpenClash](/posts/network/istoreosinstallopenclash/istoreosinstallopenclash/) 的话订阅直接导进去，全家设备都能走。右上角还有个"我是高手！我就是要折腾！"的入口，想玩优选 IP、ProxyIP、订阅转换的可以从那里深入，我目前还没折腾到那一步——优选 IP 单独写过一篇：[Cloudflare Workers优选IP](/posts/network/cloudflareoptimalip/)。
 
 ## 踩坑与提醒
 

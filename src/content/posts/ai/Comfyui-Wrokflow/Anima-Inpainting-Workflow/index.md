@@ -1,6 +1,7 @@
 ---
 title: "Anima 局部重绘工作流分享"
 published: 2026-08-09
+updated: 2026-08-31
 description: "一个好用的 ComfyUI 局部重绘工作流，用 Anima 模型修复换装/修复手指脚趾也很方便"
 image: ./fengmian.png
 tags: [ComfyUI, Anima, 局部重绘, AI绘画, 人像修复]
@@ -18,7 +19,7 @@ draft: false
 
 用的是 Anima 这个模型：[Anima - base-v1.0 | Anima Checkpoint | Civitai](https://civitai.red/models/2458426/anima?modelVersionId=2945208)
 
-右边三个模型都要下载，别漏了。
+右边三个模型都要下载，别漏了。三个文件放哪个目录、turbo lora 怎么用，之前那篇 [Anima 文生图工作流](/posts/ai/comfyui-wrokflow/anima-text-to-image-workflow/)里写过，这里就不重复了。
 
 ![模型选择](./images/model-select.png)
 

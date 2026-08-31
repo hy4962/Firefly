@@ -1,6 +1,7 @@
 ---
 title: Cloudflare+Resend域名邮箱
 published: 2026-07-12
+updated: 2026-08-31
 description: 域名托管Cloudflare实现无限收邮箱+Resend发邮件
 image: ./cover.png
 tags: [Cloudflare, Email Routing, Resend, 域名邮箱]
@@ -52,7 +53,7 @@ draft: false
 
 ## 结语
 
-Resend只能添加一个域名挺伤的，其实还有一个专门做了一套可以运行在workers的开源项目，这两天我部署一个玩玩
+Resend只能添加一个域名挺伤的，其实还有一个专门做了一套可以运行在workers的开源项目，叫 CloudMail，收发一体，我后来部署了一版，过程写在[这篇文章](/posts/network/cloudmail/)里，比这套组合还省事。
 
 
 

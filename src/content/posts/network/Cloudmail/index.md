@@ -1,6 +1,7 @@
 ---
 title: CloudMail 一个基于Workers无限收发邮箱的开源项目
 published: 2026-07-13
+updated: 2026-08-31
 description: 只需要一个域名，就可以创建多个不同的邮箱，类似各大邮箱平台，本项目可部署到 Cloudflare Workers ，个人0服务器成本，搭建自己的邮箱服务
 image: ./cover.png
 tags: [Cloudflare, Workers, Email, Resend, 邮箱搭建]
@@ -15,6 +16,8 @@ draft: false
 当然，你也能用它来**管理不同平台的账号邮箱**，把注册邮箱和私人邮箱分开，更加安全，可以**完全隐藏自己的真实邮箱**
 
 > **前提条件：** 你的域名必须已托管至 Cloudflare（即 NS 服务器指向 Cloudflare）。
+
+之前用 Cloudflare Email Routing + Resend 折腾过一套收发域名邮箱（[那篇在这](/posts/network/cloudflareemailrouting/)），收件靠路由转发、发件靠 Resend API，能用但功能比较散。
 
 （昨天还想着自己用 WPF 做一个调用 Resend API 的项目呢...今天就发现了更好的开源方案）
 
@@ -44,7 +47,7 @@ draft: false
 | `admin`      |  ✅   | 管理员邮箱地址，例如 `admin@example.com`                     |
 | `jwt_secret` |  ✅   | JWT 密钥，随便输入一串字符串即可，**不要包含特殊字符**       |
 
-> ⚠️ **建议：** 如果你还没有绑定自定义域名到 Worker，推荐先绑定再配置环境变量。绑定域名的方式见优选 IP 文章。
+> ⚠️ **建议：** 如果你还没有绑定自定义域名到 Worker，推荐先绑定再配置环境变量。绑定域名的方式见[优选 IP 那篇文章](/posts/network/cloudflareoptimalip/)。
 
 ![环境变量配置](./images/string.png)
 

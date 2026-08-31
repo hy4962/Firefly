@@ -1,7 +1,7 @@
 ---
 title: "我的游戏性能优化方案：从系统到硬件折腾了一遍"
 published: 2026-07-22
-updated: 2026-07-27
+updated: 2026-08-31
 description: "把 Windows 系统设置、CPU 调优、GPU 超频、鼠标延迟都折腾了一遍，记录一下目前在用的配置"
 tags: [游戏优化, 系统优化, CPU超频, GPU超频, 鼠标延迟, NVIDIA]
 image: ./fengmian.png
@@ -100,7 +100,7 @@ draft: false
 
 ## 鼠标延迟
 
-最后处理鼠标问题，这一套搞完鼠标就不拖了。
+最后处理鼠标问题，这一套搞完鼠标就不拖了。鼠标跟手性这块我单独深挖过一篇，BoosterX 解锁 USB 选项那套折腾更细：[优化鼠标跟手性，顺便解决了完美死斗跳 ms 的问题](/posts/windows/mouseoptimization/)。
 
 ### 1. 关闭鼠标加速
 

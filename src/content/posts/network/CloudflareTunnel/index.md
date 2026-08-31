@@ -1,6 +1,7 @@
 ---
 title: Cloudflare Tunnel Docker部署教程
 published: 2026-07-18
+updated: 2026-08-31
 description: 用Docker部署Cloudflare Tunnel，把内网服务暴露到公网
 image: ./cover.png
 tags: [Cloudflare, Tunnel, Docker, 内网穿透]
@@ -60,6 +61,8 @@ SSH 到你的服务器，把刚才复制的命令粘贴进去。第一次跑会�
 
 到这里正常来说就结束了，通过 `fnos.9ll.us` 就能访问你 NAS 上的服务了。
 
+对了，如果你暴露的是给网页前端调用的 API，大概率还会撞上跨域问题。我给 Tunnel 后面的 Memos API 补 CORS 的过程记在[这篇](/posts/network/cloudflare_cors/)里，遇到的话可以参考。
+
 ## 代理环境下的坑
 
 但是，如果你的 Docker 宿主机开了代理，而且 tunnel 流量也被代理了，那可能会连不上。
@@ -90,6 +93,8 @@ api.cloudflare.com
 ![fnOS Tunnel应用设置](./images/step09-fnos-tunnel-app.png)
 
 我个人还是推荐 Docker 方式，毕竟出了问题排查起来更方便，日志也能直接看。
+
+最后补一句：把内网服务挂到公网不止 Tunnel 这一条路。我后来在家里那种只有 IPv6 的环境下，又用 Lucky + Cloudflare 搞了一套[双栈 HTTPS 方案](/posts/network/ipv6-cloudflare-lucky/)，不走隧道，有公网 IPv6 的话值得看看。
 
 ---
 

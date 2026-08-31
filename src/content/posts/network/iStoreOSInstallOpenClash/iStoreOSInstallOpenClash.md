@@ -1,6 +1,7 @@
 ---
 title: iStoreOS 安装 OpenClash
 published: 2026-07-17
+updated: 2026-08-31
 description: 在 iStoreOS 上通过命令行安装 OpenClash 并配置代理的完整流程，包含依赖安装、ipk 部署和首次使用的详细步骤
 image: ./fengmian.png
 tags: [iStoreOS, OpenClash, OpenWrt, 代理, NAS]
@@ -8,7 +9,7 @@ category: 网络
 draft: false
 ---
 
-上一篇写了怎么在 FNOS 上装 iStoreOS 虚拟机，装完之后总得干点啥吧。iStoreOS 本身就是 OpenWrt 的改版，拿来跑 OpenClash 再合适不过了。
+上一篇写了[怎么在 FNOS 上装 iStoreOS 虚拟机](/posts/network/fnosvmistoreos/fnos-istoreos/)，装完之后总得干点啥吧。iStoreOS 本身就是 OpenWrt 的改版，拿来跑 OpenClash 再合适不过了。
 
 其实我之前一直用的是软路由方案，后来换了 NAS 就想着能不能把软路由也虚拟化了，省一台设备。装完 iStoreOS 虚拟机之后第一件事，就是把 OpenClash 搞上。
 
@@ -84,7 +85,7 @@ opkg install bash iptables dnsmasq-full curl ca-bundle ipset ip-full iptables-mo
 
 ![Mihomo 管理页面](./images/07-Mihomo管理页面.jpg)
 
-内核下好之后，导入你的订阅就可以用了。
+内核下好之后，导入你的订阅就可以用了。订阅哪来都行，想零成本自建的话，可以看我用 Cloudflare Pages 白嫖节点那篇：[不用服务器自建节点](/posts/deploy/cf-pages-edgetunnel/)。
 
 ## 极简流程
 

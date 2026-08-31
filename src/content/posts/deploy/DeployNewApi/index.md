@@ -1,6 +1,7 @@
 ---
 title: "Docker 一键部署 NewApi API 中转站"
 published: 2026-07-28
+updated: 2026-08-31
 description: "NewApi 是目前大多数 API 中转站都在用的统一网关管理工具，支持几乎所有主流 AI 模型接入，可对外售卖也可个人使用"
 image: ./fengmian.png
 tags: [Docker, API, NewApi, 部署, PostgreSQL, Redis]
@@ -162,3 +163,5 @@ NewApi 内置了几乎全球所有主流官方模型的预设配置，OpenAI、A
 ---
 
 配置完成后，所有请求统一走 NewApi 转发。额度管理、调用记录、限流规则都在一个地方，不用再到各个项目里单独维护 key 了。
+
+我的这套服务跑在内网，想在外面访问的话，我是配合 Cloudflare + Lucky 搞的双栈域名反代，过程记在[这篇](/posts/network/ipv6-cloudflare-lucky/)里，有需要可以参考。

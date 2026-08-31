@@ -1,6 +1,7 @@
 ---
 title: SillyTavern（酒馆）无限制 AI 角色对话部署指南
 published: 2026-07-24
+updated: 2026-08-31
 description: 开源 AI 角色对话前端 SillyTavern 部署教程，支持 OpenAI、Claude、Gemini 等多种模型，本地运行数据自主，角色扮演和写作辅助都能玩。
 tags: [SillyTavern, AI角色对话, 部署指南, 酒馆]
 image: ./fengmian.png
@@ -88,7 +89,7 @@ git clone https://github.com/SillyTavern/SillyTavern-Launcher.git && cd SillyTav
 - **OpenAI**（GPT-4、GPT-3.5 等）
 - **Claude**（Anthropic 的模型）
 - **Gemini**（Google 的模型）
-- **本地模型**（通过 Ollama，LMstudio 等方式运行）
+- **本地模型**（通过 Ollama，LMstudio 等方式运行——本地模型怎么跑，可以看我那篇 [Qwen3.5 本地部署指南](/posts/ai/qwen35/)）
 
 在酒馆界面的设置里填上你的 API Key 就能连上，操作不复杂。
 
@@ -144,6 +145,8 @@ git clone https://github.com/SillyTavern/SillyTavern-Launcher.git && cd SillyTav
 这个得说一下。酒馆本身免费，但 API 调用是收费的。不同的模型价格不一样，用之前最好了解一下计费方式，免得月底看到账单吓一跳。
 
 如果预算有限，可以考虑用一些提供免费额度的服务，或者跑本地模型（不过本地模型对显卡有要求）。
+
+另外，要是你和我一样手上攒了一堆不同家的 key，可以自己搭一个 [NewApi 中转站](/posts/deploy/deploynewapi/)统一收口，酒馆里只填一个地址一个 key 就行，换模型也不用到处改配置。
 
 ## 最后说两句
 

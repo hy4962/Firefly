@@ -1,6 +1,7 @@
 ---
 title: "只有 IPv6 也能实现公网 IPV4 访问：Cloudflare + Lucky 白嫖双栈 HTTPS"
 published: 2026-08-28
+updated: 2026-08-31
 description: "家里设备只有 IPv6 出口：Lucky 做 DDNS 把 IPv6 同步到 Cloudflare，再靠 Cloudflare 代理免费实现双栈访问、去掉端口号和全链路 HTTPS。"
 image: ./cover.png
 tags: [内网穿透, Lucky, Cloudflare, IPv6, 双栈, HTTPS]
@@ -8,7 +9,7 @@ category: 网络
 draft: false
 ---
 
-我这边网络情况比较特殊，公网只有 IPv6 出口，没有公网 IPv4。内网跑着飞牛 NAS（fnos）和 new-api 之类的服务，想在外面访问，走 IPv4 的路全堵死了。
+我这边网络情况比较特殊，公网只有 IPv6 出口，没有公网 IPv4。内网跑着飞牛 NAS（fnos）和 new-api（[Docker 部署记录](/posts/deploy/deploynewapi/)）之类的服务，想在外面访问，走 IPv4 的路全堵死了。
 
 后来折腾出这么一套组合：**Lucky 做 DDNS 把 IPv6 同步到 Cloudflare，再让 Cloudflare 当代理**。白嫖到三样东西：
 
@@ -60,6 +61,8 @@ draft: false
 
 > [!NOTE] 另一种路子
 > 如果你的 IPv6 源站 80 端口可以直接访问，这步可以跳过，Lucky 的 Web 服务直接用 80 端口就行。好处是不走 Cloudflare，网速快非常多；代价是没法双栈访问，外面的 IPv4 进不来。选哪个自己掂量。
+>
+> 连公网 IPv6 都没有的环境，这套方案就玩不转了，那就只剩 [Cloudflare Tunnel](/posts/network/cloudflaretunnel/) 这种穿透方案，部署教程我也写过。
 
 ## 第四步：Lucky 添加 Web 服务
 
@@ -87,25 +90,27 @@ draft: false
 
 1. **加密模式改回「完整（严格）」**：SSL/TLS → 配置加密模式，选「完整（严格）」，它会验证源站证书。
 
-   ![Cloudflare 加密模式改回「完整（严格）」，要求验证源站证书](./images/image-008.webp)
+![Cloudflare 加密模式改回「完整（严格）」，要求验证源站证书](./images/image-008.webp)
 
 2. **创建源站证书**：SSL/TLS → 源服务器 → Origin 证书，创建一张 Cloudflare 签发的免费源站证书（选你要加密的域名就行）。
 
-   ![Cloudflare Origin 证书列表：*.547466.xyz 与 547466.xyz，有效期到 2041](./images/image-009.webp)
+![Cloudflare Origin 证书列表：*.547466.xyz 与 547466.xyz，有效期到 2041](./images/image-009.webp)
 
-3. **把证书存成 txt**：生成后页面上有「源证书」和「私钥」两段 PEM 内容，分别复制保存成两个文件（我存的是 `yuan.txt` 和 `key.txt`）。
+3.**把证书存成 txt**：生成后页面上有「源证书」和「私钥」两段 PEM 内容，分别复制保存成两个文件（我存的是 `yuan.txt` 和 `key.txt`）。
 
-   ![Cloudflare 源证书安装页：PEM 格式的源证书和私钥，分别保存为文件](./images/image-010.webp)
+![Cloudflare 源证书安装页：PEM 格式的源证书和私钥，分别保存为文件](./images/image-010.webp)
 
 4. **Lucky 上传证书**：Lucky → SSL/TLS 证书 → 添加证书，方式选「文件」，证书选 `yuan.txt`，Key 选 `key.txt`。
 
    ![Lucky SSL/TLS 证书管理：以文件方式添加证书（yuan.txt / key.txt）](./images/image-011.webp)
 
-5. **Web 服务开启 TLS**：回到 Web 服务那条规则，把 TLS 打开（最低版本 TLS1.2），选刚上传的证书。
+5. **Web 服务开启 TLS**：回到 Web 服务那条规则，把 TLS 打开（最低版本 TLS1.2）
 
    ![Lucky Web 服务规则开启 TLS（TLS 开关高亮）](./images/image-012.webp)
 
 这样就是全链路 HTTPS：浏览器 → Cloudflare（CF 泛域名证书）→ 源站（Origin 证书）。
+
+> lucky里面也可以直接申请Let's Encrypt的证书，那个也行。加了证书之后，⚠️访问一定记得要带https！
 
 ## 极简流程
 

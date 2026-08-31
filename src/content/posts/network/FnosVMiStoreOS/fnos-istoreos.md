@@ -1,6 +1,7 @@
 ---
 title: 在 FNOS 上装 iStoreOS 虚拟机
 published: 2026-07-16
+updated: 2026-08-31
 description: 通过 FNOS 运行 iStoreOS 虚拟机，涵盖镜像转换、QCOW2 替换和首次启动的完整流程
 image: ./fengmian.jpg
 tags: [FNOS, iStoreOS, OpenWrt, 虚拟机, NAS]
@@ -134,6 +135,8 @@ FNOS 新建虚拟机会自动生成一个 .qcow2 文件，但我们要把这个�
 说实话，在 FNOS 上装 iStoreOS 不算复杂，就是镜像转换和替换这个环节稍微绕一点。核心思路就是用 V2V 把 .img 转成 .qcow2，然后替换掉 FNOS 自动生成的那个文件。
 
 装好之后能开机了，配置和具体玩法我后面再写一篇文章细说。反正先跑起来再说，后面慢慢折腾。
+
+后来那篇也写好了：装完第一件事就是拿它跑 [OpenClash](/posts/network/istoreosinstallopenclash/istoreosinstallopenclash/)，把软路由的代理功能整起来。
 
 ## 极简流程
 

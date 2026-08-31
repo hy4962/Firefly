@@ -1,6 +1,7 @@
 ---
 title: 折腾博客的第一步：不用服务器搭建 Firefly 博客
 published: 2026-07-15
+updated: 2026-08-31
 description: 不买服务器也能搭一个自己的博客，从 Fork 仓库到博客上线再到日常写文章发布，每一步都写得很细
 image: ./cover.png
 tags: [Astro, Vercel, 博客搭建]
@@ -110,7 +111,7 @@ export const siteConfig: SiteConfig = {
 - `profileConfig.ts` — 头像、简介、社交链接
 - `navBarConfig.ts` — 顶部导航栏
 - `sidebarConfig.ts` — 侧边栏
-- `commentConfig.ts` — 评论系统（支持 Twikoo、Waline、Giscus，这个之后我有详细的搭建，也是vercel或者cf workers）
+- `commentConfig.ts` — 评论系统（支持 Twikoo、Waline、Giscus，Waline 的详细搭建我写过：[用 Vercel + TiDB 搭建 Waline 评论系统](/posts/deploy/deploywaline/)）
 
 具体怎么改看 [Firefly 官方文档](https://docs-firefly.cuteleaf.cn/zh/guide/getting-started.html)，写得比较全。
 
@@ -195,6 +196,6 @@ Push 上去，Vercel 自动构建，一两分钟后新文章上线。不需要�
 
 
 
-后面**我还会继续记录 Firefly 的一些配置，比如评论系统、Umami 网站统计、自定义主题修改等**。如果你也喜欢折腾自己的小网站，可以一起交流。
+后面**我把 Firefly 的配套也陆续记录完了：[Waline 评论系统](/posts/deploy/deploywaline/)、[Umami 网站统计](/posts/deploy/deployumami/)、[配置文件详解](/posts/blog/configsite/)都有了，按需取用**。如果你也喜欢折腾自己的小网站，可以一起交流。
 
 有不懂的问题**直接在评论区问**

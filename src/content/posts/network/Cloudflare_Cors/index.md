@@ -1,6 +1,7 @@
 ---
 title: "给 Cloudflare Tunnel 后面的 API 开启 CORS"
 published: 2026-07-28
+updated: 2026-08-31
 description: "记录如何通过 Cloudflare 响应头转换规则，为 Tunnel 后面的 Memos API 添加 CORS 配置。"
 tags: [Cloudflare, Tunnel, CORS, Memos]
 image: ./fengmian.png
@@ -10,7 +11,7 @@ draft: false
 
 # 给 Cloudflare Tunnel 后面的 API 开启 CORS
 
-我的 Memos API 通过 Cloudflare Tunnel 暴露在 `memos.9ll.uk`，前端则运行在 `9ll.uk`。两个地址的来源不同，浏览器发起 API 请求时就会受到同源策略限制，需要在响应中补上 CORS 相关响应头。
+我的 Memos API 通过 [Cloudflare Tunnel](/posts/network/cloudflaretunnel/) 暴露在 `memos.9ll.uk`，前端则运行在 `9ll.uk`。两个地址的来源不同，浏览器发起 API 请求时就会受到同源策略限制，需要在响应中补上 CORS 相关响应头。
 
 这里没有修改 Memos 本身，而是直接使用 Cloudflare 的响应头转换规则，在响应返回浏览器之前添加所需的 CORS 头。
 

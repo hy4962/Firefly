@@ -1,6 +1,7 @@
 ---
 title: Firefly 博客配置指南：从默认到属于你自己的博客
 published: 2026-07-26
+updated: 2026-08-31
 description: 详细讲解 Firefly 博客的配置文件，包括站点标题、主题色、页面开关、文章列表等，让你的博客从默认模板变成自己的风格
 image: ./cover.png
 tags: [Firefly, 博客配置, Astro, 静态博客]
@@ -8,7 +9,7 @@ category: 博客
 draft: false
 ---
 
-上一篇我讲了怎么从零搭建 Firefly 博客，从 Fork 仓库到 Vercel 部署，最后博客上线了。
+上一篇我讲了[怎么从零搭建 Firefly 博客](/posts/deploy/deployfirefly/)，从 Fork 仓库到 Vercel 部署，最后博客上线了。
 
 但上线只是开始。
 

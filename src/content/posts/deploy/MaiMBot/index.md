@@ -5,7 +5,7 @@ description: "用 Docker Compose 一键跑起 MaiMBot + NapCat + sqlite-web 三�
 image: ./cover.png
 tags: [MaiMBot, QQ机器人, Docker, NapCat]
 category: 部署
-draft: true
+draft: false
 ---
 
 ## 为什么要折腾
@@ -235,7 +235,7 @@ docker logs maim-bot-core
 
 ## 第五步：配置模型
 
-剩下的就是模型了，MaiMBot 支持各种 OpenAI 兼容接口。在 WebUI 的模型配置里填上你的 API 地址、Key 和模型名，保存之后到群里发条消息试试。
+剩下的就是模型了，MaiMBot 支持各种 OpenAI 兼容接口。在 WebUI 的模型配置里填上你的 API 地址、Key 和模型名，保存之后到群里发条消息试试。key 攒多了不好管理的话，可以看看我写的 [NewApi 部署教程](/posts/deploy/deploynewapi/)，自建一个中转站统一收口。
 
 ## 踩坑记录
 

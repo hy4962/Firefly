@@ -1,6 +1,7 @@
 ---
 title: 网站每天多少人访问你知道吗？用 Vercel 零成本搭了一个 Umami 网站统计系统
 published: 2026-07-18
+updated: 2026-08-31
 description: 用 Vercel + Neon 免费部署 Umami 网站统计系统，从 Fork 项目到上线全流程记录，零成本搞定访客数据
 image: ./fengmian.png
 tags: [Umami, Vercel, Neon, 网站统计, PostgreSQL]
@@ -10,7 +11,7 @@ draft: false
 
 # 网站每天多少人访问你知道吗？用 Vercel 零成本搭了一个 Umami 网站统计系统
 
-搭了网站之后，我一直想看看每天到底有多少人来访问。
+搭了网站之后，我一直想看看每天到底有多少人来访问。（网站本身怎么搭的，之前写过：[不用服务器搭建 Firefly 博客](/posts/deploy/deployfirefly/)）
 
 说实话，之前一直没搞统计，不是不想看数据，就是觉得 Google Analytics 太重了，配一堆东西看着就头大。后来我一想，有没有那种简单点的，能直接看到访客数、来源、热门页面就够了。
 

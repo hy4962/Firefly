@@ -1,6 +1,7 @@
 ﻿---
 title: "MiniMax H3 工作流分享：不用4步LoRA，速度还快5倍"
 published: 2026-08-11
+updated: 2026-08-31
 description: "分享一个 MiniMax H3 的 ComfyUI 工作流，不用官方4步LoRA，生成速度和质量反而更好"
 image: ./images/cover.webp
 tags: [MiniMax, ComfyUI, AI视频, 工作流]
@@ -65,7 +66,7 @@ MiniMax H3 官方说 3060 能跑，但实际上很多人跑起来还是很吃力
 4. 直接用于生成即可
 
 > [!WARNING] 关于提示词模型
-> 强烈建议本地部署 Qwen 3.5 无审查版本来生成提示词。哪怕是 Grok，也容易遭到拒绝回答。
+> 强烈建议本地部署 Qwen 3.5 无审查版本来生成提示词，怎么在自己电脑上跑起来，可以看我那篇[本地部署 Qwen3.5 完全指南](/posts/ai/qwen35/)。哪怕是 Grok，也容易遭到拒绝回答。
 
 ## 细节设置
 

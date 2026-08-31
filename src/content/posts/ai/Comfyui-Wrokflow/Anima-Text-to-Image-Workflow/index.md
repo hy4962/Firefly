@@ -1,6 +1,7 @@
 ---
 title: "Anima 文生图工作流分享"
 published: 2026-07-27
+updated: 2026-08-31
 description: "ComfyUI 跑 Anima 模型的文生图工作流，三个模型文件怎么放、turbo lora 怎么用、提示词在哪找，整理了一下分享出来"
 tags: [ComfyUI, Anima, 文生图, AI绘画]
 category: AI
@@ -10,7 +11,7 @@ draft: false
 
 前阵子在 B 站刷到了 [每日提钢小助手5号](https://space.bilibili.com/3690999272442168) 分享的 Anima 工作流，折腾了一下，感觉挺好用的，就想着整理出来分享一下。
 
-这篇只包含文生图的部分。放大我单独抽出来做了另一套工作流，不喜欢混在一起，下次再发。
+这篇只包含文生图的部分。放大我单独抽出来做了另一套工作流，不喜欢混在一起，后来整理成[独立的图像放大工作流](/posts/ai/comfyui-wrokflow/upscaleworkflow/)发出来了。
 
 ---
 
@@ -69,4 +70,4 @@ draft: false
 
 ---
 
-折腾完感觉这套工作流比我之前用的顺多了，尤其是 turbo lora 那块，8 步出图速度很快，质量我觉得够用。放大的部分下次单独发。
+折腾完感觉这套工作流比我之前用的顺多了，尤其是 turbo lora 那块，8 步出图速度很快，质量我觉得够用。放大的部分单独发了一篇。另外用 Anima 做局部重绘的工作流我也整理了一份：[Anima 局部重绘工作流分享](/posts/ai/comfyui-wrokflow/anima-inpainting-workflow/)，换装、修手指脚趾都挺好使。
