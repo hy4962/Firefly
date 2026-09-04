@@ -36,6 +36,7 @@ draft: false
 
 1. **Hobby 计划只能选 1 个区域。** 默认北美组的华盛顿 `iad1` 是勾着的，你要是直接跑去亚太组再勾一个，就变成同时选中两个区域，Hobby 直接不允许。正确姿势是先把 `iad1` 的勾取消掉，再勾自己想要的区域，保证最后只剩一个。要是带着两个区域的配置去部署，会报 `upgrade_required` 的错，而且界面上就一句莫名其妙的 unexpected error，原因藏在部署记录里，挺坑的。
 2. **改完要重新部署。** Save 之后记得去 Deployments 里 Redeploy 一次，不然设置改了跟没改一样。
+![alt text](./images/image.png)
 
 ## 要不要改
 
@@ -58,10 +59,3 @@ draft: false
 
 - [你的vercel项目，还能更快 - UpXuu's blog](https://upxuu.com/posts/vercel666)
 - [Configuring regions for Vercel Functions - Vercel Docs](https://vercel.com/docs/functions/configuring-functions/region)
-
-## 图片建议
-
-- 位置：「怎么改」第 3 步后面，截一张自己后台的 Function Region 面板（别用别人的，截图里带账号名）
-- 保存为：`images/image-001.webp`，在第 3 步后加一行 `![Vercel Function Region 区域选择面板](./images/image-001.webp)`
-- 作用：展示按大洲分组的手风琴和单选状态
-- 推荐尺寸：正文图宽度不超过 1600

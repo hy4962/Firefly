@@ -2,7 +2,7 @@
 title: "Lucky + 阿里云 ESA 反代家里内网服务：只需要一个备案域名"
 published: 2026-09-04
 description: "用阿里云 ESA 当国内加速入口，Lucky 负责反代家里内网服务：DDNS、证书、回源规则、CNAME 解析一套流程记录，顺便踩了回源 HOST 的坑。"
-image: ./images/cover.webp
+image: ./cover.png
 tags: [内网穿透, Lucky, 阿里云, ESA, 反向代理, IPv6]
 category: 网络
 draft: false
@@ -106,6 +106,6 @@ ESA → 规则 → 回源规则，新建一条：
 >
 > 直接把域名选择NS接入ESA，在lucky里面选择阿里云ESA的DDNS解析泛域名，然后在ESA将泛域名解析的代理状态打开
 >
-> 去配置回源16666
+> 去配置回源16666，配置好两边的证书
 >
 > 回lucky反代各种服务即可
