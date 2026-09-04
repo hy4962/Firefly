@@ -132,25 +132,6 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			// 过渡效果: 'fade' 渐变 | 'zoom' 缩放 | 'slide' 滑动 | 'kenburns' 旋转木马
 			transitionEffect: "zoom",
 		},
-	},
-	// Banner模式特有配置
-	banner: {
-		// 图片位置
-		// 支持所有CSS object-position值，如: 'top', 'center', 'bottom', 'left top', 'right bottom', '25% 75%', '10px 20px'..
-		// 如果不知道怎么配置百分百之类的配置，推荐直接使用：'center'居中，'top'顶部居中，'bottom' 底部居中，'left'左侧居中，'right'右侧居中
-		position: "0% 20%",
-		// 文章横幅信息："description" 显示描述，"meta" 显示日期、字数和阅读时长
-		postInfo: {
-			mode: "description",
-		},
-		// 导航栏配置
-		navbar: {
-			// 导航栏透明模式："semi" 半透明，"full" 完全透明，"semifull" 动态透明
-			transparentMode: "semi",
-			// 毛玻璃模糊度，0 即关闭导航栏的毛玻璃
-			// 注意：导航栏子菜单与浮动面板始终保留毛玻璃，模糊度跟随此项但有最小值
-			blur: 5,
-		},
 		// 水波纹动画效果配置，开启会影响页面性能，增加内存占用，请根据自己的喜好开启
 		waves: {
 			enable: {
@@ -172,6 +153,25 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			height: "10%",
 		},
 	},
+	// Banner模式特有配置
+	banner: {
+		// 图片位置
+		// 支持所有CSS object-position值，如: 'top', 'center', 'bottom', 'left top', 'right bottom', '25% 75%', '10px 20px'..
+		// 如果不知道怎么配置百分百之类的配置，推荐直接使用：'center'居中，'top'顶部居中，'bottom' 底部居中，'left'左侧居中，'right'右侧居中
+		position: "0% 20%",
+		// 文章横幅信息："description" 显示描述，"meta" 显示日期、字数和阅读时长
+		postInfo: {
+			mode: "description",
+		},
+		// 导航栏配置
+		navbar: {
+			// 导航栏透明模式："semi" 半透明，"semifull" 动态透明，"none" 纯色不透明
+			transparentMode: "semi",
+			// 毛玻璃模糊度，0 即关闭导航栏的毛玻璃
+			// 注意：导航栏子菜单与浮动面板始终保留毛玻璃，模糊度跟随此项但有最小值
+			blur: 12,
+		},
+	},
 	// 覆盖透明覆盖模式特有配置
 	overlay: {
 		// 层级，确保壁纸在背景层
@@ -184,16 +184,19 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		cardOpacity: 0.6,
 	},
 	// 全屏壁纸模式特有配置
-	// 全屏模式下壁纸固定全屏显示，首屏居中标题，内容区在首屏之下、下滑时覆盖壁纸
 	// 壁纸模糊度(blur)、卡片透明度(cardOpacity)、层级(zIndex) 复用上方 overlay 模式的配置；
-	// 背景透明度(opacity)不适用（全屏壁纸不透明）；导航栏透明模式由卡片透明度控制，脱离 banner 的 navbar 配置
+	// 背景透明度(opacity)不适用（全屏壁纸不透明）；导航栏透明模式由 fullscreen.navbar.transparentMode 控制，脱离 banner 的 navbar 配置
 	fullscreen: {
+		// 布局模式："classic" 经典文档流全屏壁纸，"hero" 固定全屏首屏壁纸
+		layout: "classic",
 		// 图片位置
 		position: "center",
 		// 全屏壁纸模式的导航栏配置
 		navbar: {
-			// 是否开启动态透明：开启后首页顶部导航栏透明，下滑后变不透明（仅首页生效）
-			dynamicTransparent: false,
+			// 导航栏透明模式："semi" 半透明，"semifull" 动态透明（仅首页顶部透明、下滑玻璃化；非首页均跟卡片半透明）
+			transparentMode: "semifull",
+			// 导航栏毛玻璃模糊度，0 即关闭（玻璃态生效）
+			blur: 12,
 		},
 		// 首页下滑时壁纸模糊渐变开关（从 0 渐变为 overlay.blur 的最大模糊）
 		// 关闭后该设备上全屏壁纸保持清晰（首页与非首页都不模糊），设置面板的模糊度滑块也会隐藏

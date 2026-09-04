@@ -8,7 +8,11 @@ import {
 	WALLPAPER_NONE,
 	WALLPAPER_OVERLAY,
 } from "@constants/constants";
-import type { LIGHT_DARK_MODE, WALLPAPER_MODE } from "@/types/config";
+import type {
+	FullscreenWallpaperLayout,
+	LIGHT_DARK_MODE,
+	WALLPAPER_MODE,
+} from "@/types/config";
 import {
 	backgroundWallpaper,
 	displaySettingsConfig,
@@ -296,12 +300,70 @@ export function syncBannerHomeTextVisibility(): void {
 	overlay.classList.toggle("hidden", !show);
 }
 
+export function getDefaultFullscreenLayout(): FullscreenWallpaperLayout {
+	return backgroundWallpaper.fullscreen?.layout ?? "classic";
+}
+
+export function getStoredFullscreenLayout(): FullscreenWallpaperLayout {
+	const defaultLayout = getDefaultFullscreenLayout();
+	if (
+		typeof localStorage === "undefined" ||
+		typeof localStorage.getItem !== "function"
+	) {
+		return defaultLayout;
+	}
+	const stored = localStorage.getItem("fullscreenLayout");
+	return stored === "hero" || stored === "classic" ? stored : defaultLayout;
+}
+
+export function applyFullscreenLayoutToDocument(
+	layout: FullscreenWallpaperLayout,
+	animate = true,
+): void {
+	if (typeof document === "undefined") return;
+
+	const safeLayout: FullscreenWallpaperLayout =
+		layout === "hero" ? "hero" : "classic";
+	const html = document.documentElement;
+	if (animate) {
+		html.classList.add("is-fullscreen-layout-transitioning");
+		window.setTimeout(() => {
+			html.classList.remove("is-fullscreen-layout-transitioning");
+		}, 520);
+	}
+	html.setAttribute("data-fullscreen-layout", safeLayout);
+
+	const mode = html.getAttribute("data-wallpaper-mode");
+	const transparent =
+		mode === WALLPAPER_OVERLAY ||
+		(mode === WALLPAPER_FULLSCREEN && safeLayout === "hero");
+	document.body?.classList.toggle("wallpaper-transparent", transparent);
+	window.dispatchEvent(
+		new CustomEvent("fullscreenLayoutChange", {
+			detail: { layout: safeLayout },
+		}),
+	);
+}
+
+export function setFullscreenLayout(layout: FullscreenWallpaperLayout): void {
+	const safeLayout: FullscreenWallpaperLayout =
+		layout === "hero" ? "hero" : "classic";
+	if (
+		typeof localStorage !== "undefined" &&
+		typeof localStorage.setItem === "function"
+	) {
+		localStorage.setItem("fullscreenLayout", safeLayout);
+	}
+	applyFullscreenLayoutToDocument(safeLayout);
+}
+
 export function applyWallpaperModeToDocument(
 	mode: WALLPAPER_MODE,
 	animate = true,
 ): void {
 	const html = document.documentElement;
-	const prevMode = html.getAttribute("data-wallpaper-mode");
+	const isHeroFullscreen =
+		html.getAttribute("data-fullscreen-layout") === "hero";
 
 	// 先启用过渡类再设置模式：确保 --content-top 变化时 top 过渡已激活（否则位置瞬间到位不动画）
 	if (animate) {
@@ -315,32 +377,14 @@ export function applyWallpaperModeToDocument(
 	html.setAttribute("data-wallpaper-mode", mode);
 
 	// 首页标题显示：按当前模式 + 是否首页同步 hidden 类（SSR 按 config 默认模式渲染 hidden，
-	// 模式运行时切换后需同步）。放在标题动画之前，让下方动画的 !contains("hidden") 判断拿到最新状态。
+	// 模式运行时切换后需同步）。
 	syncBannerHomeTextVisibility();
 
 	// 卡片透明类：唯一运行时写入者（解析期由 body 起始脚本写入）
-	const transparent = mode === "overlay" || mode === "fullscreen";
+	const transparent =
+		mode === WALLPAPER_OVERLAY ||
+		(mode === WALLPAPER_FULLSCREEN && isHeroFullscreen);
 	document.body.classList.toggle("wallpaper-transparent", transparent);
-
-	// 标题上下移动动画：banner ↔ fullscreen 切换时 wrapper 高度瞬时变化，
-	// 用 transform 补偿后滑到居中位置（首页标题可见时才动画）
-	if (
-		(mode === WALLPAPER_FULLSCREEN && prevMode === WALLPAPER_BANNER) ||
-		(mode === WALLPAPER_BANNER && prevMode === WALLPAPER_FULLSCREEN)
-	) {
-		const title = document.querySelector(
-			".banner-home-text-overlay",
-		) as HTMLElement | null;
-		if (title && !title.classList.contains("hidden")) {
-			const deltaVh = mode === WALLPAPER_FULLSCREEN ? -17.5 : 17.5;
-			title.style.transition = "none";
-			title.style.transform = `translateY(${deltaVh}vh)`;
-			void title.offsetWidth;
-			title.style.transition =
-				"transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
-			title.style.transform = "translateY(0)";
-		}
-	}
 
 	updateNavbarTransparency(mode);
 	window.dispatchEvent(
@@ -365,23 +409,18 @@ export function updateNavbarTransparency(mode: WALLPAPER_MODE): void {
 		transparentMode = "none";
 		blurAmount = 0;
 	} else if (mode === WALLPAPER_FULLSCREEN) {
-		// 全屏壁纸模式：脱离 banner 导航栏配置，导航栏默认完全透明
-		// （透明度由卡片透明度 cardOpacity 经 wallpaper-transparent 控制）；
-		// 若开启 fullscreen.navbar.dynamicTransparent，首页顶部透明、下滑后变不透明（semifull）
+		// 全屏壁纸：首页 + semifull 动态透明，其余半透明玻璃
 		const isHomePage = checkIsHomePage(window.location.pathname);
-		const dynamicTransparent =
-			backgroundWallpaper.fullscreen?.navbar?.dynamicTransparent ?? false;
-		if (isHomePage && dynamicTransparent) {
-			transparentMode = "semifull";
-			blurAmount = 0;
-		} else {
-			transparentMode = "none";
-			blurAmount = 0;
-		}
+		const fsMode =
+			backgroundWallpaper.fullscreen?.navbar?.transparentMode || "semifull";
+		const glassBlur = backgroundWallpaper.fullscreen?.navbar?.blur ?? 20;
+		transparentMode = fsMode === "semifull" && isHomePage ? "semifull" : "semi";
+		blurAmount = glassBlur;
 	} else {
-		// Banner模式：使用配置的透明模式和模糊效果
-		transparentMode =
-			backgroundWallpaper.banner?.navbar?.transparentMode || "semi";
+		// Banner模式：semifull 仅首页动态，非首页与 fullscreen 一致为半透明
+		const isHomePage = checkIsHomePage(window.location.pathname);
+		const tMode = backgroundWallpaper.banner?.navbar?.transparentMode || "semi";
+		transparentMode = tMode === "semifull" && !isHomePage ? "semi" : tMode;
 		blurAmount = backgroundWallpaper.banner?.navbar?.blur ?? 20;
 	}
 
@@ -602,7 +641,7 @@ export function applyStoredOverlaySettingsToDocument(): void {
 
 // Waves animation functions
 export function getDefaultWavesEnabled(): boolean {
-	const wavesConfig = backgroundWallpaper.banner?.waves?.enable;
+	const wavesConfig = backgroundWallpaper.common?.waves?.enable;
 	if (typeof wavesConfig === "object") {
 		// 如果是分设备配置，检查当前设备
 		const isMobile =
@@ -660,7 +699,7 @@ export function applyWavesEnabledToDocument(enabled: boolean): void {
 
 // Gradient transition functions
 export function getDefaultGradientEnabled(): boolean {
-	const gradientConfig = backgroundWallpaper.banner?.gradient?.enable;
+	const gradientConfig = backgroundWallpaper.common?.gradient?.enable;
 	if (typeof gradientConfig === "object") {
 		const isMobile =
 			typeof window !== "undefined" ? window.innerWidth < 768 : false;
