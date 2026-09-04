@@ -33,32 +33,23 @@ export const friendsConfig: FriendLink[] = [
 		enabled: true, // 是否启用
 	},
 	{
-		title: "Firefly Docs",
-		imgurl: "https://docs-firefly.cuteleaf.cn/logo.png",
-		desc: "Firefly主题模板文档",
-		siteurl: "https://docs-firefly.cuteleaf.cn",
-		tags: ["Docs"],
-		weight: 9,
-		enabled: true,
-	},
-	{
-		title: "Astro",
-		imgurl: "https://avatars.githubusercontent.com/u/44914786?v=4&s=640",
-		desc: "The web framework for content-driven websites. ⭐️ Star to support our work!",
-		siteurl: "https://github.com/withastro/astro",
-		tags: ["Framework"],
-		weight: 8,
-		enabled: true,
-	},
-	{
 		title: "霞の葉間",
 		imgurl:
 			"https://kasuha.com/avatar.webp",
 		desc: "光と言葉の狭間",
 		siteurl: "https://kasuha.com",
 		tags: ["Blog"],
-		weight: 10, // 权重，数字越大排序越靠前
+		weight: 20, // 权重，数字越大排序越靠前
 		enabled: true, // 是否启用
+	},
+	{
+		title: "UpXuu's blog",
+		imgurl: "https://upxuu.com/images/me.jpg",
+		desc: "逐光而上",
+		siteurl: "https://upxuu.com",
+		tags: ["Blog"],
+		weight: 30,
+		enabled: true,
 	},
 ];
 

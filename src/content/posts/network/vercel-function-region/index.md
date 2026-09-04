@@ -4,8 +4,8 @@ published: 2026-09-04
 description: "发现 Vercel Functions 默认区域在美国 iad1，进后台改一下 Function Region 就能让动态请求少跑一趟美国，顺带记录 Hobby 计划只能选一个区域的坑。"
 image: ./images/cover.webp
 tags: [Vercel, Functions, 部署, 提速]
-category: 部署
-draft: true
+category: 网络
+draft: false
 ---
 
 前几天刷到 UpXuu 的一篇文章，说 Vercel 项目还有地区之分。我第一反应是不对啊，Vercel 不是自带全球 CDN 吗，怎么还分地区？结果点进自己项目后台一看，好家伙，Functions 默认全跑在美国华盛顿（`iad1`），这入口藏得是真深。

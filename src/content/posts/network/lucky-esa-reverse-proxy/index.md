@@ -5,7 +5,7 @@ description: "用阿里云 ESA 当国内加速入口，Lucky 负责反代家里�
 image: ./images/cover.webp
 tags: [内网穿透, Lucky, 阿里云, ESA, 反向代理, IPv6]
 category: 网络
-draft: true
+draft: false
 ---
 
 想在外面访问家里的内网服务？之前写过一篇 [Cloudflare + Lucky 的方案](/posts/network/ipv6-cloudflare-lucky/)，能用是能用，但 CF 的节点都在境外，国内访问速度基本看运气。这次换成阿里云 ESA（边缘安全加速平台），节点在国内，走的是正经加速线路。
