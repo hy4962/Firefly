@@ -30,7 +30,7 @@ const pages = resolvePageToggles({
 	// VNDB页面开关
 	vndb: false,
 	// MyAnimeList页面开关
-	mal: true,
+	mal: false,
 
 	// ── 关于 (About) ──────────────────────────────────
 
