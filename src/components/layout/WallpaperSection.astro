@@ -2,9 +2,11 @@
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import ScrollDownIndicator from "@/components/controls/ScrollDownIndicator.astro";
 import BackgroundPlayer from "@/components/features/BackgroundPlayer.astro";
+import HomeWallpaperDecor from "@/components/features/HomeWallpaperDecor.astro";
 import BannerHomeTextOverlay from "@/components/layout/BannerHomeTextOverlay.astro";
 import BannerPostMetaOverlay from "@/components/layout/BannerPostMetaOverlay.astro";
 import { backgroundWallpaper } from "@/config";
+import { homeCardConfig } from "@/config/homeCardConfig";
 import type {
 	BannerPostMeta,
 	BannerVisibilityState,
@@ -19,6 +21,8 @@ interface Props {
 }
 
 const { state, backgroundImages, title, bannerPostMeta } = Astro.props;
+// 首页装饰卡片（HomeWallpaperDecor）：启用时替代默认的 homeText 文字覆盖层
+const homeCardEnabled = homeCardConfig.enable === true;
 const wallpaperPosition = state.isFullscreenMode
 	? (backgroundWallpaper.fullscreen?.position ??
 		backgroundWallpaper.banner?.position)
@@ -538,7 +542,7 @@ const wallpaperPosition = state.isFullscreenMode
     </div>
 
     <div id="banner-overlay-container" class="absolute inset-0 z-20 pointer-events-none transition-swup-fade">    <!-- Home page text overlay - 始终渲染以便切换模式时控制显示 -->
-    <BannerHomeTextOverlay showHomeText={state.showHomeText} initialRandomSubtitle={state.initialRandomSubtitle} />
+    <BannerHomeTextOverlay showHomeText={state.showHomeText && !homeCardEnabled} initialRandomSubtitle={state.initialRandomSubtitle} />
 
     <!-- Non-home non-post page title overlay (desktop only) -->
     {state.showBannerPageTitle && (
@@ -556,6 +560,9 @@ const wallpaperPosition = state.isFullscreenMode
     <BannerPostMetaOverlay showBannerPostMeta={state.showBannerPostMeta} bannerPostInfoMode={state.bannerPostInfoMode} bannerDescriptionWidth={state.bannerDescriptionWidth} bannerPostMeta={bannerPostMeta} />
 
     </div>
+
+    <!-- 首页装饰卡片 + 可拖拽贴纸（配置见 src/config/homeCardConfig.ts，显隐由组件内 CSS 门控） -->
+    {homeCardEnabled && <HomeWallpaperDecor />}
 
     <!-- Fullscreen 模式下显示向下滚动指示器（仅首页显示；放在 overlay 容器外，避免被标题视差 transform 带离）。
          始终渲染：壁纸区在 Swup 容器外、切页不重渲染，若首开非首页则指示器不会出现。

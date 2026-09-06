@@ -1,0 +1,1258 @@
+---
+/**
+ * 首页壁纸装饰层：个人卡片（毛玻璃 + 胶带 + 波浪下划线 + 彩色标签）+ 可拖拽贴纸 + 便签。
+ * 灵感来自 rainzt.cn（Jarvis0227/Aemeath），为 Firefly 重新实现为独立组件：
+ * - 配置见 src/config/homeCardConfig.ts
+ * - 挂载点仅 WallpaperSection.astro 中一行，不侵入主题其他文件
+ * - 显隐由 CSS 门控（body.is-home + html[data-wallpaper-mode]），Swup 切页无需重新渲染
+ * - 贴纸支持按住拖动（Pointer Events，自动限制在壁纸范围内），刷新后恢复初始位置
+ */
+import { Icon } from "astro-icon/components";
+import ImageWrapper from "@/components/common/ImageWrapper.astro";
+import { homeCardConfig } from "@/config/homeCardConfig";
+import { profileConfig } from "@/config/profileConfig";
+import { siteConfig } from "@/config/siteConfig";
+
+const config = homeCardConfig;
+const identity = config.identity || profileConfig.name;
+const cardTitle = config.title || siteConfig.title;
+const subtitle = config.subtitle || profileConfig.bio;
+
+// 场景贴纸基准宽度：px 为上限，随视口宽度/高度按比例缩小
+const stickerWidth = (width: number) =>
+	`min(${width}px, ${(width / 19.2).toFixed(4)}vw, ${(width / 9.125).toFixed(4)}vh)`;
+
+// 头像贴纸：只在窄屏时收缩（vw 系数更大）
+const avatarStickerWidth = (width: number) =>
+	`min(${width}px, ${(width / 4.3333).toFixed(4)}vw)`;
+
+const stickerStyle = (sticker: {
+	top: number;
+	left: number;
+	rotate: number;
+	width: number;
+}) =>
+	`inset: ${sticker.top}% auto auto ${sticker.left}%; --home-wallpaper-sticker-rotation: ${sticker.rotate}deg; --home-wallpaper-sticker-w: ${stickerWidth(sticker.width)};`;
+
+const isExternal = (url: string) => url.startsWith("http");
+---
+
+{config.enable && (
+    <div class="home-wallpaper-decor" data-home-wallpaper-decor>
+        <div class="home-wallpaper-decor__stickers" aria-hidden="true">
+            {config.stickers.map((sticker) => (
+                <div
+                    class="home-wallpaper-sticker"
+                    data-home-wallpaper-sticker
+                    data-home-wallpaper-mobile={String(sticker.mobile)}
+                    style={stickerStyle(sticker)}
+                    data-home-wallpaper-initial-style={stickerStyle(sticker)}
+                >
+                    <img
+                        src={sticker.src}
+                        alt=""
+                        draggable="false"
+                        loading="eager"
+                        decoding="async"
+                        referrerpolicy="no-referrer"
+                    />
+                </div>
+            ))}
+            <div
+                class="home-wallpaper-sticker home-wallpaper-sticker--note home-wallpaper-sticker--fixed"
+                style={`inset: ${config.note.top}% auto auto ${config.note.left}%;`}
+            >
+                <span>{config.note.text}</span>
+            </div>
+        </div>
+
+        <article class="home-wallpaper-card">
+            <div class="home-wallpaper-card__content">
+                <div class="home-wallpaper-card__avatar-wrap">
+                    <div class="home-wallpaper-card__avatar overflow-hidden relative">
+                        <ImageWrapper
+                            src={profileConfig.avatar ?? ""}
+                            alt={`${identity}头像`}
+                            class="w-full h-full object-cover"
+                            width={256}
+                            widths={[128, 256]}
+                            sizes="(min-width: 768px) 64px, 56px"
+                            loading="eager"
+                            position="center"
+                        />
+                    </div>
+                    <img
+                        class="home-wallpaper-card__avatar-sticker"
+                        data-home-wallpaper-sticker
+                        data-home-wallpaper-avatar-sticker
+                        src={config.avatarSticker.src}
+                        alt=""
+                        draggable="false"
+                        loading="eager"
+                        decoding="async"
+                        referrerpolicy="no-referrer"
+                        style={`width: ${avatarStickerWidth(config.avatarSticker.width)} !important;`}
+                    />
+                </div>
+                <p class="home-wallpaper-card__identity">
+                    <span class="home-wallpaper-card__identity-mark" aria-hidden="true"></span>
+                    <span class="home-wallpaper-card__motion-text">{identity}</span>
+                </p>
+                <h1><span class="home-wallpaper-card__motion-text">{cardTitle}</span></h1>
+                <p class="home-wallpaper-card__subtitle">
+                    <span class="home-wallpaper-card__motion-text">{subtitle}</span>
+                </p>
+                <nav class="home-wallpaper-card__nav" aria-label="首页快捷导航">
+                    {config.navLinks.map((link) => (
+                        <a href={link.url}>
+                            <span class="home-wallpaper-card__motion-text">{link.name}</span>
+                        </a>
+                    ))}
+                </nav>
+                <div class="home-wallpaper-card__socials" aria-label="社交链接">
+                    {config.socials.map((social) => (
+                        social.copy ? (
+                            <button
+                                type="button"
+                                class="home-wallpaper-card__social-link"
+                                aria-label={social.name}
+                                data-home-wallpaper-copy={social.copy}
+                            >
+                                <span class="home-wallpaper-card__social-icon" aria-hidden="true">
+                                    <Icon name={social.icon} />
+                                </span>
+                            </button>
+                        ) : (
+                            <a
+                                class="home-wallpaper-card__social-link"
+                                aria-label={social.name}
+                                href={social.url}
+                                target={isExternal(social.url ?? "") ? "_blank" : undefined}
+                                rel={isExternal(social.url ?? "") ? "me noopener noreferrer" : undefined}
+                            >
+                                <span class="home-wallpaper-card__social-icon" aria-hidden="true">
+                                    <Icon name={social.icon} />
+                                </span>
+                            </a>
+                        )
+                    ))}
+                </div>
+                <div class="home-wallpaper-copy-toast" data-home-wallpaper-copy-toast role="status" aria-live="polite" aria-atomic="true"></div>
+            </div>
+        </article>
+    </div>
+    )}
+
+<script is:inline data-swup-ignore-script>
+    (() => {
+        if (window.__homeWallpaperDecorBound) return;
+        window.__homeWallpaperDecorBound = true;
+
+        // 移动端贴纸随机投放区域（百分比，避开中间的卡片）
+        const MOBILE_STICKER_ZONES = [
+            { minX: 3, maxX: 24, minY: 18, maxY: 36 },
+            { minX: 76, maxX: 94, minY: 18, maxY: 36 },
+            { minX: 3, maxX: 23, minY: 51, maxY: 70 },
+            { minX: 77, maxX: 94, minY: 51, maxY: 70 },
+        ];
+
+        const shuffled = (items) => {
+            const copy = [...items];
+            for (let index = copy.length - 1; index > 0; index -= 1) {
+                const swapIndex = Math.floor(Math.random() * (index + 1));
+                [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+            }
+            return copy;
+        };
+
+        const isMobileLayout = () => window.matchMedia("(max-width: 767px)").matches;
+
+        const randomizeMobileStickers = (decor) => {
+            if (!isMobileLayout()) return;
+            const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
+            const wallpaperRect = wallpaper.getBoundingClientRect();
+            const stickers = [
+                ...decor.querySelectorAll(
+                    '[data-home-wallpaper-sticker][data-home-wallpaper-mobile="true"]',
+                ),
+            ];
+            if (!wallpaperRect.width || !wallpaperRect.height || stickers.length === 0) return;
+
+            shuffled(stickers).forEach((sticker, index) => {
+                const zone = MOBILE_STICKER_ZONES[index % MOBILE_STICKER_ZONES.length];
+                const stickerRect = sticker.getBoundingClientRect();
+                const stickerWidth = (stickerRect.width / wallpaperRect.width) * 100;
+                const stickerHeight = (stickerRect.height / wallpaperRect.height) * 100;
+                const maxLeft = Math.max(2, 96 - stickerWidth);
+                const maxTop = Math.max(2, 96 - stickerHeight);
+                const left = Math.min(maxLeft, zone.minX + Math.random() * (zone.maxX - zone.minX));
+                const top = Math.min(maxTop, zone.minY + Math.random() * (zone.maxY - zone.minY));
+                sticker.style.inset = "auto";
+                sticker.style.left = `${left}%`;
+                sticker.style.top = `${top}%`;
+                sticker.style.right = "auto";
+                sticker.style.bottom = "auto";
+            });
+        };
+
+        const restoreDesktopStickerPositions = (decor) => {
+            if (isMobileLayout()) return;
+            decor.querySelectorAll("[data-home-wallpaper-initial-style]").forEach((sticker) => {
+                const initialStyle = sticker.getAttribute("data-home-wallpaper-initial-style");
+                if (initialStyle) sticker.setAttribute("style", initialStyle);
+            });
+        };
+
+        const bindMobileStickerLayout = (decor) => {
+            const mediaQuery = window.matchMedia("(max-width: 767px)");
+            const applyLayout = () => {
+                if (mediaQuery.matches) {
+                    window.requestAnimationFrame(() => randomizeMobileStickers(decor));
+                } else {
+                    restoreDesktopStickerPositions(decor);
+                }
+            };
+            applyLayout();
+            mediaQuery.addEventListener?.("change", applyLayout);
+        };
+
+        const getDecor = () => document.querySelector(".home-wallpaper-decor");
+
+        // 入场动画：等贴纸图片就绪后加 is-ready；is-motion-settled 在动画结束后固化终态
+        const revealDecor = (decor, replay = false) => {
+            if (!(decor instanceof HTMLElement)) return;
+            if (replay) {
+                decor.classList.remove("is-ready");
+                decor.querySelectorAll(".is-motion-settled").forEach((element) => {
+                    element.classList.remove("is-motion-settled");
+                });
+                void decor.offsetWidth;
+            } else if (decor.dataset.revealBound === "true") {
+                return;
+            }
+            decor.dataset.revealBound = "true";
+            if (decor.dataset.motionCleanupBound !== "true") {
+                decor.dataset.motionCleanupBound = "true";
+                decor.addEventListener("animationend", (event) => {
+                    if (
+                        event.target instanceof HTMLElement &&
+                        event.animationName.startsWith("home-wallpaper-")
+                    ) {
+                        event.target.classList.add("is-motion-settled");
+                    }
+                });
+            }
+
+            const images = [...decor.querySelectorAll("img")];
+            const waitForImage = (image) => {
+                if (image.complete) return Promise.resolve();
+                return new Promise((resolve) => {
+                    let settled = false;
+                    const finish = () => {
+                        if (settled) return;
+                        settled = true;
+                        resolve();
+                    };
+                    image.addEventListener("load", finish, { once: true });
+                    image.addEventListener("error", finish, { once: true });
+                    window.setTimeout(finish, 1400);
+                });
+            };
+
+            Promise.all(images.map(waitForImage)).then(() => {
+                if (!decor.isConnected) return;
+                window.requestAnimationFrame(() => {
+                    window.requestAnimationFrame(() => decor.classList.add("is-ready"));
+                });
+            });
+        };
+
+        // 壁纸区在 Swup 容器外，切页不重渲染；返回首页时（body.is-home 变化）重播入场动画
+        const bindHomeReturnReplay = () => {
+            if (document.body.dataset.homeDecorReplayBound === "true") return;
+            document.body.dataset.homeDecorReplayBound = "true";
+            let wasHome = document.body.classList.contains("is-home");
+            const observer = new MutationObserver(() => {
+                const isHome = document.body.classList.contains("is-home");
+                if (isHome && !wasHome) {
+                    const decor = getDecor();
+                    if (decor) revealDecor(decor, true);
+                }
+                wasHome = isHome;
+            });
+            observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+
+            window.addEventListener("wallpaperModeChange", (event) => {
+                const mode = event.detail?.mode;
+                if (
+                    (mode === "banner" || mode === "fullscreen") &&
+                    document.body.classList.contains("is-home")
+                ) {
+                    const decor = getDecor();
+                    if (decor) revealDecor(decor, true);
+                }
+            });
+        };
+
+        const bindHomeWallpaperStickers = () => {
+            const decor = getDecor();
+            if (!decor || decor.getAttribute("data-stickers-bound") === "true") return;
+            decor.setAttribute("data-stickers-bound", "true");
+            bindMobileStickerLayout(decor);
+            revealDecor(decor);
+            bindHomeReturnReplay();
+
+            const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
+            const stickers = decor.querySelectorAll("[data-home-wallpaper-sticker]");
+
+            stickers.forEach((sticker) => {
+                if (sticker.dataset.dragBound === "true") return;
+                sticker.dataset.dragBound = "true";
+                let dragState = null;
+                const isAvatarSticker = sticker.hasAttribute("data-home-wallpaper-avatar-sticker");
+
+                sticker.addEventListener("pointerdown", (event) => {
+                    if (event.button !== 0 && event.pointerType !== "touch") return;
+                    if (sticker.classList.contains("home-wallpaper-sticker--fixed")) return;
+
+                    const wallpaperRect = wallpaper.getBoundingClientRect();
+                    const stickerRect = sticker.getBoundingClientRect();
+                    const baseTranslateX =
+                        Number.parseFloat(sticker.getAttribute("data-home-wallpaper-drag-x") || "0") || 0;
+                    const baseTranslateY =
+                        Number.parseFloat(sticker.getAttribute("data-home-wallpaper-drag-y") || "0") || 0;
+                    dragState = {
+                        startX: event.clientX,
+                        startY: event.clientY,
+                        isAvatarSticker,
+                        left: stickerRect.left - wallpaperRect.left,
+                        top: stickerRect.top - wallpaperRect.top,
+                        maxLeft: Math.max(0, wallpaperRect.width - stickerRect.width),
+                        maxTop: Math.max(0, wallpaperRect.height - stickerRect.height),
+                        translateX: baseTranslateX,
+                        translateY: baseTranslateY,
+                    };
+
+                    sticker.setPointerCapture?.(event.pointerId);
+                    sticker.classList.add("is-dragging");
+                    if (!isAvatarSticker) {
+                        sticker.style.left = `${dragState.left}px`;
+                        sticker.style.top = `${dragState.top}px`;
+                        sticker.style.right = "auto";
+                        sticker.style.bottom = "auto";
+                    }
+                    sticker.style.zIndex = "8";
+                });
+
+                sticker.addEventListener("pointermove", (event) => {
+                    if (!dragState) return;
+                    event.preventDefault();
+                    if (dragState.isAvatarSticker) {
+                        dragState.translateX = dragState.translateX + event.clientX - dragState.startX;
+                        dragState.translateY = dragState.translateY + event.clientY - dragState.startY;
+                        dragState.startX = event.clientX;
+                        dragState.startY = event.clientY;
+                        // 写 CSS 变量而非 style.transform：fullscreen 下主题对 img 的
+                        // transform: scale(1.05) !important 会压过内联 transform
+                        sticker.style.setProperty("--avatar-sticker-tx", `${dragState.translateX}px`);
+                        sticker.style.setProperty("--avatar-sticker-ty", `${dragState.translateY}px`);
+                        return;
+                    }
+                    const nextLeft = Math.min(
+                        dragState.maxLeft,
+                        Math.max(0, dragState.left + event.clientX - dragState.startX),
+                    );
+                    const nextTop = Math.min(
+                        dragState.maxTop,
+                        Math.max(0, dragState.top + event.clientY - dragState.startY),
+                    );
+                    sticker.style.left = `${nextLeft}px`;
+                    sticker.style.top = `${nextTop}px`;
+                });
+
+                const stopDragging = (event) => {
+                    if (!dragState) return;
+                    if (sticker.hasPointerCapture?.(event.pointerId)) {
+                        sticker.releasePointerCapture?.(event.pointerId);
+                    }
+                    if (dragState.isAvatarSticker) {
+                        sticker.setAttribute("data-home-wallpaper-drag-x", String(dragState.translateX));
+                        sticker.setAttribute("data-home-wallpaper-drag-y", String(dragState.translateY));
+                    }
+                    dragState = null;
+                    sticker.classList.remove("is-dragging");
+                    sticker.style.zIndex = "";
+                };
+
+                sticker.addEventListener("pointerup", stopDragging);
+                sticker.addEventListener("pointercancel", stopDragging);
+                // 阻止 iOS 长按弹出的图片菜单干扰拖拽
+                sticker.addEventListener("contextmenu", (event) => event.preventDefault());
+            });
+        };
+
+        const bindHomeWallpaperCopyLinks = () => {
+            const decor = getDecor();
+            if (!(decor instanceof HTMLElement) || decor.dataset.copyBound === "true") return;
+            const copyLinks = decor.querySelectorAll("[data-home-wallpaper-copy]");
+            const toast = decor.querySelector("[data-home-wallpaper-copy-toast]");
+            if (!(toast instanceof HTMLElement) || copyLinks.length === 0) return;
+
+            decor.dataset.copyBound = "true";
+            let toastTimer = 0;
+
+            const showToast = (message, isError = false) => {
+                toast.textContent = message;
+                toast.classList.toggle("is-error", isError);
+                toast.classList.add("is-visible");
+                window.clearTimeout(toastTimer);
+                toastTimer = window.setTimeout(() => {
+                    toast.classList.remove("is-visible");
+                }, 1800);
+            };
+
+            const fallbackCopy = (value) => {
+                const input = document.createElement("textarea");
+                input.value = value;
+                input.setAttribute("readonly", "");
+                input.style.position = "fixed";
+                input.style.top = "-9999px";
+                input.style.left = "-9999px";
+                input.style.opacity = "0";
+                document.body.appendChild(input);
+                input.focus();
+                input.select();
+                let copied = false;
+                try {
+                    copied = document.execCommand("copy");
+                } catch {
+                    copied = false;
+                }
+                input.remove();
+                return copied;
+            };
+
+            copyLinks.forEach((copyLink) => {
+                if (copyLink.dataset.copyBound === "true") return;
+                copyLink.dataset.copyBound = "true";
+                copyLink.addEventListener("click", async (event) => {
+                    event.preventDefault();
+                    const value = copyLink.getAttribute("data-home-wallpaper-copy")?.trim();
+                    if (!value) {
+                        showToast("复制失败，请手动复制", true);
+                        return;
+                    }
+                    let copied = false;
+                    if (navigator.clipboard?.writeText) {
+                        try {
+                            await navigator.clipboard.writeText(value);
+                            copied = true;
+                        } catch {
+                            copied = false;
+                        }
+                    }
+                    if (!copied) copied = fallbackCopy(value);
+                    showToast(copied ? "已复制" : "复制失败，请手动复制", !copied);
+                });
+            });
+        };
+
+        const bindAll = () => {
+            bindHomeWallpaperStickers();
+            bindHomeWallpaperCopyLinks();
+        };
+        bindAll();
+        // 壁纸区在 Swup 容器外理论上只渲染一次，这里防御性重绑（内部均有去重标记）
+        document.addEventListener("swup:page:view", bindAll);
+        document.addEventListener("astro:page-load", bindAll);
+    })();
+</script>
+
+<style is:global>
+    /* ========== 显隐门控：仅首页 + banner/fullscreen 壁纸模式显示 ========== */
+    .home-wallpaper-decor {
+        --home-wallpaper-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+        position: absolute;
+        inset: 0;
+        z-index: 25; /* 高于壁纸图(5)/遮罩(10)/文字覆盖层(20)，低于导航栏 */
+        display: block;
+        overflow: hidden;
+        pointer-events: none;
+        isolation: isolate;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+            opacity 0.26s ease,
+            visibility 0s linear 0.26s;
+    }
+    html[data-wallpaper-mode="banner"] body.is-home .home-wallpaper-decor,
+    html[data-wallpaper-mode="fullscreen"] body.is-home .home-wallpaper-decor {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.26s ease;
+    }
+    /* 卡片启用时，隐藏主题运行时脚本（syncBannerHomeTextVisibility）强制显示的默认横幅文字，
+       选择器与上方显隐规则同域（仅首页 + banner/fullscreen 模式），不影响其他模式 */
+    html[data-wallpaper-mode="banner"] body.is-home .banner-home-text-overlay,
+    html[data-wallpaper-mode="fullscreen"] body.is-home .banner-home-text-overlay {
+        display: none !important;
+    }
+    html.is-page-transitioning .home-wallpaper-decor {
+        opacity: 0;
+    }
+
+    @keyframes home-wallpaper-card-enter {
+        0% {
+            opacity: 0;
+            transform: translate(-50%, calc(-50% + 22px)) scale(0.965);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+    @keyframes home-wallpaper-content-enter {
+        0% {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @keyframes home-wallpaper-sticker-enter {
+        0% {
+            opacity: 0;
+            transform: translateY(20px) scale(0.82) rotate(var(--home-wallpaper-sticker-rotation));
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotate(var(--home-wallpaper-sticker-rotation));
+        }
+    }
+    @keyframes home-wallpaper-note-enter {
+        0% {
+            opacity: 0;
+            transform: translateY(-14px) rotate(8deg) scale(0.86);
+        }
+        to {
+            opacity: 1;
+            transform: rotate(4deg) scale(1);
+        }
+    }
+    @keyframes home-wallpaper-note-enter-mobile {
+        0% {
+            opacity: 0;
+            transform: translate(-50%, -14px) rotate(8deg) scale(0.86);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%) rotate(4deg) scale(1);
+        }
+    }
+    @keyframes home-wallpaper-tag-enter {
+        0% {
+            opacity: 0;
+            transform: translateY(16px) scale(0.86) rotate(var(--home-wallpaper-tag-rotation));
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotate(var(--home-wallpaper-tag-rotation));
+        }
+    }
+    @keyframes home-wallpaper-card-text-hover {
+        0% {
+            transform: translateZ(0) rotate(0);
+        }
+        30% {
+            transform: translate3d(0, -1.2px, 0) rotate(-0.45deg);
+        }
+        55% {
+            transform: translate3d(0, 0.35px, 0) rotate(0.22deg);
+        }
+        78% {
+            transform: translate3d(0, -0.65px, 0) rotate(-0.12deg);
+        }
+        to {
+            transform: translate3d(0, -0.55px, 0) rotate(0);
+        }
+    }
+
+    .home-wallpaper-decor.is-ready .home-wallpaper-card {
+        animation: home-wallpaper-card-enter 0.76s var(--home-wallpaper-motion-ease) both;
+        animation-delay: 80ms;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__avatar-wrap,
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__identity,
+    .home-wallpaper-decor.is-ready .home-wallpaper-card h1,
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle,
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__nav {
+        animation: home-wallpaper-content-enter 0.52s var(--home-wallpaper-motion-ease) both;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__avatar-wrap {
+        animation-delay: 0.21s;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__identity {
+        animation-delay: 0.3s;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card h1 {
+        animation-delay: 0.36s;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle {
+        animation-delay: 0.43s;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__nav {
+        animation-delay: 0.5s;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__social-link {
+        --home-wallpaper-tag-rotation: 2deg;
+        --home-wallpaper-tag-delay: 0.57s;
+        animation: home-wallpaper-tag-enter 0.62s var(--home-wallpaper-motion-ease) both;
+        animation-delay: var(--home-wallpaper-tag-delay);
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__social-link:nth-child(2) {
+        --home-wallpaper-tag-rotation: -2deg;
+        --home-wallpaper-tag-delay: 625ms;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__social-link:nth-child(3) {
+        --home-wallpaper-tag-delay: 0.68s;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__social-link:nth-child(4) {
+        --home-wallpaper-tag-delay: 735ms;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__social-link:nth-child(5) {
+        --home-wallpaper-tag-delay: 0.79s;
+    }
+    .home-wallpaper-decor.is-ready .is-motion-settled {
+        animation: none !important;
+        opacity: 1 !important;
+    }
+
+    /* ========== 个人卡片 ========== */
+    .home-wallpaper-card {
+        --home-wallpaper-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='8' viewBox='0 0 18 8'%3E%3Cpath d='M0 4C1.5 1.1 3 1.1 4.5 4S7.5 6.9 9 4S12 1.1 13.5 4S16.5 6.9 18 4' fill='none' stroke='%23f2b3bf' stroke-linecap='round' stroke-width='3.2' opacity='.52'/%3E%3Cpath d='M0 3.5C1.5 1.1 3 1.1 4.5 3.5S7.5 5.9 9 3.5S12 1.1 13.5 3.5S16.5 5.9 18 3.5' fill='none' stroke='%23fff9ef' stroke-linecap='round' stroke-width='1.55'/%3E%3C/svg%3E");
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 2;
+        width: min(calc(100vw - 2rem), 520px);
+        padding: 2.2rem 2.15rem 0;
+        color: #fffaf3f5;
+        text-align: center;
+        transform: translate(-50%, -50%);
+        isolation: isolate;
+        /* 卡片盒模型较大，避免透明区域挡住下方内容面板的点击；
+           交互只交给真正的链接/按钮/贴纸 */
+        pointer-events: none;
+    }
+    .home-wallpaper-card__nav a,
+    .home-wallpaper-card__social-link,
+    .home-wallpaper-card__avatar-sticker,
+    .home-wallpaper-card__identity,
+    .home-wallpaper-card h1,
+    .home-wallpaper-card__subtitle {
+        pointer-events: auto;
+    }
+    .home-wallpaper-card::before {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        content: "";
+        background: transparent;
+        border: 1px dashed rgba(255, 246, 219, 0.2);
+        border-radius: 10px 7px 12px 8px;
+        box-shadow:
+            0 22px 54px #11111933,
+            0 7px 20px #1111191f,
+            0 0 26px #11111914,
+            inset 0 1px #ffffff1a;
+        -webkit-backdrop-filter: blur(2px) saturate(1.02);
+        backdrop-filter: blur(2px) saturate(1.02);
+        transform: rotate(-0.45deg);
+    }
+    .home-wallpaper-card::after {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        width: 84px;
+        height: 20px;
+        content: "";
+        background: repeating-linear-gradient(-45deg, #fff4b8d1 0 5px, #efce6fd1 5px 10px);
+        box-shadow: 0 2px 5px #2921191f;
+        transform: translate(-50%) rotate(0.6deg);
+    }
+    .home-wallpaper-card__content {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .home-wallpaper-card__avatar-wrap {
+        position: relative;
+        flex: 0 0 auto;
+        width: 64px;
+        height: 64px;
+    }
+    .home-wallpaper-card__avatar {
+        width: 100%;
+        height: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.78);
+        border-radius: 15px;
+        background: #ffffffd1;
+        box-shadow: 0 6px 16px #171a242e;
+    }
+    .home-wallpaper-card__avatar img {
+        opacity: 1;
+        object-fit: cover;
+    }
+    .home-wallpaper-card__avatar-sticker {
+        position: absolute;
+        top: -0.65rem;
+        left: calc(100% - 0.95rem);
+        z-index: 2;
+        display: block;
+        max-width: none;
+        height: auto;
+        /* 拖拽位移经 CSS 变量生效：fullscreen 模式下主题对容器内 img 有
+           transform: scale(1.05) !important，内联 transform 打不过 !important */
+        transform: translate(var(--avatar-sticker-tx, 0px), var(--avatar-sticker-ty, 0px));
+        cursor: grab;
+        pointer-events: auto;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-drag: none;
+        -webkit-touch-callout: none;
+        filter: drop-shadow(0 5px 7px rgba(28, 22, 28, 0.25));
+    }
+    .home-wallpaper-card__avatar-sticker:active,
+    .home-wallpaper-card__avatar-sticker.is-dragging {
+        cursor: grabbing;
+    }
+    .home-wallpaper-card__identity {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin: 0.78rem 0 0.3rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-shadow: 0 1px 8px rgba(23, 17, 20, 0.35);
+    }
+    .home-wallpaper-card__identity-mark {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #f2b3bf;
+        box-shadow: 0 0 0 2px #ffffff1a;
+        transform: rotate(15deg);
+    }
+    .home-wallpaper-card h1 {
+        position: relative;
+        display: inline-block;
+        margin: 0;
+        font-size: clamp(2.1rem, 4.2vw, 3.35rem);
+        font-weight: 750;
+        line-height: 1;
+        letter-spacing: -0.035em;
+        text-shadow: 0 3px 12px rgba(18, 17, 22, 0.42);
+    }
+    .home-wallpaper-card__subtitle {
+        display: inline-block;
+        position: relative;
+        max-width: 34rem;
+        margin: 0.75rem 0 0;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        color: #fff7eceb;
+        text-shadow: 0 2px 8px rgba(18, 17, 22, 0.36);
+    }
+    .home-wallpaper-card__identity,
+    .home-wallpaper-card h1,
+    .home-wallpaper-card__subtitle {
+        transition:
+            color 0.18s ease,
+            text-shadow 0.18s ease;
+    }
+    .home-wallpaper-card__motion-text {
+        display: inline-block;
+        transform-origin: center;
+        transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .home-wallpaper-card h1::after,
+    .home-wallpaper-card__subtitle::after {
+        position: absolute;
+        left: 0.04em;
+        right: 0.04em;
+        bottom: -0.28rem;
+        height: 0.38rem;
+        content: "";
+        background-image: var(--home-wallpaper-wave);
+        background-position: left center;
+        background-repeat: repeat-x;
+        background-size: 16px 6px;
+        opacity: 0;
+        pointer-events: none;
+        transform: scaleX(0.15);
+        transform-origin: left center;
+        transition:
+            opacity 0.18s ease,
+            transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .home-wallpaper-card__subtitle::after {
+        bottom: -0.16rem;
+        height: 0.3rem;
+        background-size: 14px 5px;
+    }
+    .home-wallpaper-card__nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.35rem 1.05rem;
+        margin-top: 1.1rem;
+    }
+    .home-wallpaper-card__nav a {
+        position: relative;
+        padding: 0.15rem 0.1rem 0.22rem;
+        color: #fff9eff0;
+        font-size: 0.78rem;
+        font-weight: 650;
+        line-height: 1;
+        text-decoration: none;
+        text-shadow: 0 1px 7px rgba(18, 17, 22, 0.32);
+        transition:
+            color 0.18s ease,
+            text-shadow 0.18s ease;
+    }
+    .home-wallpaper-card__nav a::after {
+        position: absolute;
+        left: 0.1rem;
+        right: 0.1rem;
+        bottom: -0.28rem;
+        height: 0.46rem;
+        content: "";
+        background-image: var(--home-wallpaper-wave);
+        background-position: left center;
+        background-repeat: repeat-x;
+        background-size: 18px 8px;
+        opacity: 1;
+        pointer-events: none;
+        filter: drop-shadow(0 1px 1px rgba(18, 17, 22, 0.3));
+        transition:
+            opacity 0.18s ease,
+            filter 0.18s ease;
+    }
+    .home-wallpaper-card__nav a:hover,
+    .home-wallpaper-card__nav a:focus-visible,
+    .home-wallpaper-card__nav a:active {
+        color: #fff;
+        text-shadow: 0 2px 10px rgba(255, 224, 198, 0.28);
+    }
+    .home-wallpaper-card h1:hover::after,
+    .home-wallpaper-card h1:focus-visible::after,
+    .home-wallpaper-card h1:active::after,
+    .home-wallpaper-card__subtitle:hover::after,
+    .home-wallpaper-card__subtitle:focus-visible::after,
+    .home-wallpaper-card__subtitle:active::after {
+        opacity: 0.9;
+        transform: scaleX(1);
+    }
+    .home-wallpaper-card__nav a:focus-visible,
+    .home-wallpaper-card__social-link:focus-visible {
+        outline: 2px solid rgba(255, 236, 170, 0.95);
+        outline-offset: 4px;
+    }
+    .home-wallpaper-card__identity:hover .home-wallpaper-card__motion-text,
+    .home-wallpaper-card__identity:active .home-wallpaper-card__motion-text,
+    .home-wallpaper-card h1:hover .home-wallpaper-card__motion-text,
+    .home-wallpaper-card h1:focus-visible .home-wallpaper-card__motion-text,
+    .home-wallpaper-card h1:active .home-wallpaper-card__motion-text,
+    .home-wallpaper-card__subtitle:hover .home-wallpaper-card__motion-text,
+    .home-wallpaper-card__subtitle:focus-visible .home-wallpaper-card__motion-text,
+    .home-wallpaper-card__nav a:hover .home-wallpaper-card__motion-text,
+    .home-wallpaper-card__nav a:focus-visible .home-wallpaper-card__motion-text,
+    .home-wallpaper-card__nav a:active .home-wallpaper-card__motion-text {
+        animation: home-wallpaper-card-text-hover 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* 彩色标签社交按钮 */
+    .home-wallpaper-card__socials {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 1.15rem;
+        margin-bottom: -49px;
+    }
+    .home-wallpaper-card__social-link {
+        --social-tag-color: rgba(255, 150, 165, 0.95);
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        width: 36px;
+        height: 49px;
+        padding: 0 0 8px;
+        border: 0;
+        color: #5a1020;
+        font-size: 0.97rem;
+        font-family: inherit;
+        text-decoration: none;
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+        cursor: pointer;
+        overflow: visible;
+        isolation: isolate;
+        transform: rotate(var(--home-wallpaper-tag-rotation, 2deg));
+        transform-origin: 50% 0;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .home-wallpaper-card__social-link::before {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        content: "";
+        background-color: var(--social-tag-color);
+        background-image: repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.25) 0 2px,
+            transparent 2px 7px
+        );
+        border-radius: 0 0 4px 4px;
+        box-shadow: 2px 4px 10px #00000040;
+        pointer-events: none;
+        transform-origin: 50% 0;
+        transition:
+            transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+            box-shadow 0.3s ease;
+    }
+    .home-wallpaper-card__social-icon {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        pointer-events: none;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .home-wallpaper-card__social-icon svg {
+        display: block;
+        width: 1em;
+        height: 1em;
+    }
+    .home-wallpaper-card__social-link:nth-child(2) {
+        --social-tag-color: rgba(255, 210, 80, 0.95);
+        --home-wallpaper-tag-rotation: -2deg;
+        color: #553500;
+        transform: rotate(-2deg);
+    }
+    .home-wallpaper-card__social-link:nth-child(3) {
+        --social-tag-color: rgba(144, 211, 173, 0.95);
+        color: #174b38;
+    }
+    .home-wallpaper-card__social-link:nth-child(4) {
+        --social-tag-color: rgba(135, 190, 236, 0.95);
+        color: #173b61;
+    }
+    .home-wallpaper-card__social-link:nth-child(5) {
+        --social-tag-color: rgba(246, 184, 98, 0.95);
+        color: #5b3510;
+    }
+    .home-wallpaper-card__social-link:hover,
+    .home-wallpaper-card__social-link:focus-visible {
+        transform: none;
+    }
+    .home-wallpaper-card__social-link:hover::before,
+    .home-wallpaper-card__social-link:focus-visible::before {
+        box-shadow: 2px 6px 14px #52402633;
+        transform: scaleY(1.3265);
+    }
+    .home-wallpaper-card__social-link:hover .home-wallpaper-card__social-icon,
+    .home-wallpaper-card__social-link:focus-visible .home-wallpaper-card__social-icon {
+        transform: translateY(16px);
+    }
+    .home-wallpaper-copy-toast {
+        position: absolute;
+        bottom: -3.35rem;
+        left: 50%;
+        z-index: 4;
+        max-width: calc(100vw - 2rem);
+        padding: 0.42rem 0.8rem;
+        border: 1px solid rgba(255, 249, 239, 0.26);
+        border-radius: 999px;
+        color: #fffbf4f5;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        background: #2a1c20b8;
+        box-shadow: 0 5px 14px #110f1338;
+        backdrop-filter: blur(6px);
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(-50%, 0.45rem);
+        transition:
+            opacity 0.18s ease,
+            transform 0.18s ease;
+    }
+    .home-wallpaper-copy-toast.is-visible {
+        opacity: 1;
+        transform: translate(-50%);
+    }
+    .home-wallpaper-copy-toast.is-error {
+        color: #fff1e8;
+        background: #6a3029c7;
+    }
+
+    /* ========== 贴纸 ========== */
+    .home-wallpaper-decor__stickers {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+    }
+    .home-wallpaper-sticker {
+        --home-wallpaper-sticker-rotation: 0deg;
+        position: absolute;
+        display: grid;
+        place-items: center;
+        width: var(--home-wallpaper-sticker-w, auto);
+        min-width: 42px;
+        min-height: 42px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: grab;
+        pointer-events: auto;
+        touch-action: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+    .home-wallpaper-sticker:active,
+    .home-wallpaper-sticker.is-dragging {
+        cursor: grabbing;
+    }
+    .home-wallpaper-sticker--fixed {
+        cursor: default;
+        pointer-events: none;
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-sticker:not(.home-wallpaper-sticker--fixed) {
+        animation: home-wallpaper-sticker-enter 0.76s var(--home-wallpaper-motion-ease) both;
+        animation-delay: 0.52s;
+    }
+    .home-wallpaper-sticker img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 104px;
+        object-fit: contain;
+        pointer-events: none;
+        filter: drop-shadow(0 7px 10px rgba(28, 22, 28, 0.27));
+    }
+    .home-wallpaper-sticker--note {
+        top: 79%;
+        left: 53%;
+        width: 84px;
+        min-height: 63px;
+        padding: 14px 9px 9px;
+        color: #6a5430;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1.35;
+        background: #fff1a8;
+        box-shadow: 4px 6px 12px #2d241d33;
+        transform: rotate(4deg);
+    }
+    .home-wallpaper-decor.is-ready .home-wallpaper-sticker--note {
+        animation: home-wallpaper-note-enter 0.68s var(--home-wallpaper-motion-ease) both;
+        animation-delay: 0.49s;
+    }
+    .home-wallpaper-sticker--note::before {
+        position: absolute;
+        top: -7px;
+        left: 50%;
+        width: 42px;
+        height: 13px;
+        content: "";
+        background: repeating-linear-gradient(-45deg, #87c1a3bf 0 5px, #b1dcbbbd 5px 10px);
+        transform: translate(-50%) rotate(4deg);
+    }
+
+    /* 中屏 */
+    @media (min-width: 768px) and (max-width: 1199px) {
+        .home-wallpaper-card {
+            width: min(calc(100vw - 1.5rem), 440px);
+            padding: 1.65rem 1.45rem 0;
+        }
+        .home-wallpaper-card h1 {
+            font-size: clamp(1.85rem, 5.5vw, 2.8rem);
+        }
+        .home-wallpaper-card__subtitle {
+            margin-top: 0.62rem;
+            font-size: 0.84rem;
+        }
+        .home-wallpaper-card__nav {
+            gap: 0.3rem 0.75rem;
+            margin-top: 0.85rem;
+        }
+        .home-wallpaper-card__nav a {
+            font-size: 0.72rem;
+        }
+        .home-wallpaper-card__socials {
+            gap: 9px;
+            margin-top: 0.88rem;
+        }
+        .home-wallpaper-card__social-link {
+            width: 32px;
+            height: 44px;
+            padding-bottom: 7px;
+            font-size: 0.88rem;
+        }
+        .home-wallpaper-copy-toast {
+            bottom: -3rem;
+        }
+    }
+
+    /* 移动端：仅显示 mobile 贴纸（由脚本随机投放到四角），便签居中到顶部 */
+    @media (max-width: 767px) {
+        .home-wallpaper-card {
+            width: min(calc(100vw - 2rem), 360px);
+            padding: 1.7rem 1rem 0;
+        }
+        .home-wallpaper-card::after {
+            width: 70px;
+            height: 17px;
+        }
+        .home-wallpaper-card__avatar {
+            border-radius: 13px;
+        }
+        .home-wallpaper-card__avatar-wrap {
+            width: 56px;
+            height: 56px;
+        }
+        .home-wallpaper-card__avatar-sticker {
+            top: -0.55rem;
+            left: calc(100% - 0.7rem);
+        }
+        .home-wallpaper-card__identity {
+            margin-top: 0.62rem;
+            font-size: 0.7rem;
+        }
+        .home-wallpaper-card h1 {
+            font-size: clamp(1.95rem, 10vw, 2.6rem);
+        }
+        .home-wallpaper-card__subtitle {
+            margin-top: 0.6rem;
+            font-size: 0.78rem;
+        }
+        .home-wallpaper-card__nav {
+            gap: 0.35rem 0.72rem;
+            margin-top: 0.88rem;
+        }
+        .home-wallpaper-card__nav a {
+            font-size: 0.7rem;
+        }
+        .home-wallpaper-card__socials {
+            margin-top: 0.9rem;
+        }
+        .home-wallpaper-sticker[data-home-wallpaper-mobile="false"] {
+            display: none;
+        }
+        .home-wallpaper-sticker[data-home-wallpaper-mobile="true"] {
+            display: grid;
+            width: clamp(44px, 14vw, 64px);
+        }
+        .home-wallpaper-sticker--note.home-wallpaper-sticker--fixed {
+            display: grid;
+            inset: 8% auto auto 50% !important;
+            width: min(116px, 31vw);
+            min-height: 54px;
+            padding: 12px 8px 8px;
+            font-size: 0.65rem;
+            transform: translate(-50%) rotate(4deg);
+        }
+        .home-wallpaper-decor.is-ready .home-wallpaper-sticker--note {
+            animation-name: home-wallpaper-note-enter-mobile;
+        }
+    }
+
+    /* fullscreen 模式豁免：主题对壁纸容器内所有 img 施加了
+       width/height 100% + object-fit cover + blur + scale(1.05)（见 layout-styles.css
+       html[data-wallpaper-mode="fullscreen"] #wallpaper-wrapper img 等 3 条规则，
+       最高特异性 (1,2,2)），会把贴纸图裁切放大并连带模糊。
+       这里借助 .home-wallpaper-decor 提升一级特异性至 (1,3,x) 确保覆盖 */
+    html[data-wallpaper-mode="fullscreen"] #wallpaper-wrapper .home-wallpaper-decor .home-wallpaper-sticker img,
+    html[data-wallpaper-mode="fullscreen"]
+        #wallpaper-wrapper
+        .home-wallpaper-decor
+        img.home-wallpaper-card__avatar-sticker,
+    #wallpaper-wrapper.wallpaper-fullscreen .home-wallpaper-decor .home-wallpaper-sticker img,
+    #wallpaper-wrapper.wallpaper-fullscreen
+        .home-wallpaper-decor
+        img.home-wallpaper-card__avatar-sticker {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 104px;
+        object-fit: contain !important;
+        object-position: center !important;
+        filter: none !important;
+        opacity: 1 !important;
+    }
+    /* 场景贴纸图撤销主题 scale；头像贴纸的 transform 走拖拽变量（含 !important 对冲主题的 scale） */
+    html[data-wallpaper-mode="fullscreen"] #wallpaper-wrapper .home-wallpaper-decor .home-wallpaper-sticker img,
+    #wallpaper-wrapper.wallpaper-fullscreen .home-wallpaper-decor .home-wallpaper-sticker img {
+        transform: none !important;
+    }
+    html[data-wallpaper-mode="fullscreen"]
+        #wallpaper-wrapper
+        .home-wallpaper-decor
+        img.home-wallpaper-card__avatar-sticker,
+    #wallpaper-wrapper.wallpaper-fullscreen
+        .home-wallpaper-decor
+        img.home-wallpaper-card__avatar-sticker {
+        transform: translate(var(--avatar-sticker-tx, 0px), var(--avatar-sticker-ty, 0px)) !important;
+    }
+    /* 卡片头像恢复清晰（保留 100%/cover 尺寸，仅去掉模糊与放大） */
+    html[data-wallpaper-mode="fullscreen"] #wallpaper-wrapper .home-wallpaper-decor .home-wallpaper-card__avatar img,
+    #wallpaper-wrapper.wallpaper-fullscreen .home-wallpaper-decor .home-wallpaper-card__avatar img {
+        filter: none !important;
+        transform: none !important;
+    }
+
+    /* 减弱动态效果 */
+    @media (prefers-reduced-motion: reduce) {
+        .home-wallpaper-decor {
+            opacity: 1;
+            visibility: visible;
+            transition: none;
+        }
+        .home-wallpaper-decor.is-ready .home-wallpaper-card,
+        .home-wallpaper-decor.is-ready .home-wallpaper-card__avatar-wrap,
+        .home-wallpaper-decor.is-ready .home-wallpaper-card__identity,
+        .home-wallpaper-decor.is-ready .home-wallpaper-card h1,
+        .home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle,
+        .home-wallpaper-decor.is-ready .home-wallpaper-card__nav,
+        .home-wallpaper-decor.is-ready .home-wallpaper-card__social-link,
+        .home-wallpaper-decor.is-ready .home-wallpaper-sticker {
+            animation: none !important;
+            opacity: 1 !important;
+        }
+        .home-wallpaper-card__identity,
+        .home-wallpaper-card h1,
+        .home-wallpaper-card__subtitle,
+        .home-wallpaper-card__nav a,
+        .home-wallpaper-card__motion-text,
+        .home-wallpaper-card__social-link,
+        .home-wallpaper-copy-toast,
+        .home-wallpaper-card__social-link::before,
+        .home-wallpaper-card__social-icon {
+            transition: none;
+        }
+        .home-wallpaper-card h1::after,
+        .home-wallpaper-card__subtitle::after,
+        .home-wallpaper-card__nav a::after {
+            transition: none;
+        }
+    }
+</style>
