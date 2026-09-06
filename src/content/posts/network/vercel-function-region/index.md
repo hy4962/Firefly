@@ -2,7 +2,7 @@
 title: "Vercel 函数默认跑在美国：改个 Region 让响应更快"
 published: 2026-09-04
 description: "发现 Vercel Functions 默认区域在美国 iad1，进后台改一下 Function Region 就能让动态请求少跑一趟美国，顺带记录 Hobby 计划只能选一个区域的坑。"
-image: ./images/cover.webp
+image: ./cover.webp
 tags: [Vercel, Functions, 部署, 提速]
 category: 网络
 draft: false
