@@ -1,0 +1,703 @@
+---
+/**
+ * 博客更新日志页面主体（参考 rainzt.cn 的 blog-changelog 结构重制）
+ * 结构：hero 统计卡 + 返回导航 + 按日倒序时间线（日期列 / 圆点轴 / 卡片）
+ * 每个条目：版本徽章 + kind 短语 + h2 标题 + 总结 + <details> 折叠明细 + 标签
+ * 所有样式自包含，CSS 变量复用 Firefly 主题（--line-divider 等），合并上游安全。
+ * 数据来自 src/config/blogChangelogConfig.ts
+ */
+import { blogChangelogConfig } from "@/config/blogChangelogConfig";
+
+const entries = blogChangelogConfig;
+
+const formatDate = (date: string) => {
+	const d = new Date(`${date}T00:00:00`);
+	return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+};
+
+const totalItems = entries.reduce((sum, entry) => sum + entry.items.length, 0);
+const dateSpan = entries.length
+	? `${entries[entries.length - 1].date.slice(2, 7).replace("-", ".")}—${entries[0].date.slice(2, 7).replace("-", ".")}`
+	: "—";
+// 当前版本 = 数组第一项
+const currentVersion = entries[0]?.version ?? "V1.0";
+
+// kind 徽章配色（按条目顺序循环）
+const KIND_VARIANTS = ["blue", "mint", "gold", "violet"] as const;
+const kindVariant = (index: number) =>
+	KIND_VARIANTS[index % KIND_VARIANTS.length];
+---
+
+<div class="blog-changelog-page">
+    <header class="blog-changelog-hero card-base">
+        <div class="blog-changelog-hero__topline">
+            <div class="blog-changelog-kicker">
+                <span></span><span>BLOG CHANGELOG</span><span>/</span><span>PUBLIC RECORD</span>
+            </div>
+        </div>
+        <div class="blog-changelog-hero__main">
+            <div class="blog-changelog-hero__copy">
+                <h1 id="blog-changelog-title">博客日志</h1>
+                <p class="blog-changelog-hero__lead">这里记录这个博客从上线、写作到页面迭代的每一个重要节点，每一次都按真实改动整理，展开即可查看完整变更说明。</p>
+                <p class="blog-changelog-hero__rule">版本规则：Major 代表结构级升级 · Minor 代表新功能 · Patch 代表修复、内容与维护</p>
+            </div>
+            <div class="blog-changelog-stats" aria-label="博客更新日志统计">
+                <span><strong>{currentVersion}</strong><small>当前版本</small></span>
+                <span><strong>{entries.length}</strong><small>个更新日</small></span>
+                <span><strong>{totalItems}</strong><small>条详细记录</small></span>
+                <span><strong>{dateSpan}</strong><small>时间跨度</small></span>
+            </div>
+        </div>
+    </header>
+
+    <nav class="blog-changelog-nav card-base" aria-label="日志页面导航">
+        <a href="/about/" class="blog-changelog-nav__back">
+            <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="m7.825 13l4.9 4.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-6.6-6.6q-.15-.15-.213-.325T4.426 12t.063-.375t.212-.325l6.6-6.6q.275-.275.688-.275t.712.275q.3.3.3.713t-.3.712L7.825 11H19q.425 0 .713.288T20 12t-.288.713T19 13z"/>
+            </svg>
+            关于我
+        </a>
+        <span>按日倒序 · 建站以来</span>
+    </nav>
+
+    <ol class="blog-changelog-list">
+        {entries.map((entry, entryIndex) => (
+            <li class="blog-changelog-entry" id={`blog-changelog-${entry.date}`}>
+                <div class="blog-changelog-date">
+                    <time datetime={entry.date}>{formatDate(entry.date)}</time>
+                    <span>第 {entries.length - entryIndex} 次记录</span>
+                </div>
+                <div class="blog-changelog-rail" aria-hidden="true">
+                    <span></span>
+                </div>
+                <article class={`blog-changelog-card blog-changelog-card--${kindVariant(entryIndex)}`}>
+                    <header class="blog-changelog-card__header">
+                        <div class="blog-changelog-card__meta">
+                            <div class="blog-changelog-card__labels">
+                                <span class="blog-changelog-version">{entry.version}</span>
+                                <span class={`blog-changelog-kind blog-changelog-kind--${kindVariant(entryIndex)}`}>{entry.title}</span>
+                            </div>
+                            <span>{entry.items.length} 条记录</span>
+                        </div>
+                        <h2>{entry.summary}</h2>
+                        <p>{entry.description}</p>
+                    </header>
+                    <details class="blog-changelog-details" open>
+                        <summary>
+                            <span>查看当天详细记录</span>
+                            <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="M11.625 14.913q-.175-.063-.325-.213l-4.6-4.6q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l3.9 3.9l3.9-3.9q.275-.275.7-.275t.7.275t.275.7t-.275.7l-4.6 4.6q-.15.15-.325.213t-.375.062t-.375-.062"/>
+                            </svg>
+                        </summary>
+                        <div class="blog-change-points">
+                            <div class="blog-change-points__column">
+                                {entry.items.filter((_, i) => i % 2 === 0).map((item, i) => (
+                                    <details class="blog-change-point" open style={`--point-order: ${i * 2};`}>
+                                        <summary>
+                                            <span class="blog-change-point__number">{String(i * 2 + 1).padStart(2, "0")}</span>
+                                            <strong>{item.category} · 具体变更</strong>
+                                            <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path fill="currentColor" d="M11.625 14.913q-.175-.063-.325-.213l-4.6-4.6q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l3.9 3.9l3.9-3.9q.275-.275.7-.275t.7.275t.275.7t-.275.7l-4.6 4.6q-.15.15-.325.213t-.375.062t-.375-.062"/>
+                                            </svg>
+                                        </summary>
+                                        <div class="blog-change-point__body">
+                                            <p>{item.text}</p>
+                                        </div>
+                                    </details>
+                                ))}
+                            </div>
+                            <div class="blog-change-points__column">
+                                {entry.items.filter((_, i) => i % 2 === 1).map((item, i) => (
+                                    <details class="blog-change-point" open style={`--point-order: ${i * 2 + 1};`}>
+                                        <summary>
+                                            <span class="blog-change-point__number">{String(i * 2 + 2).padStart(2, "0")}</span>
+                                            <strong>{item.category} · 具体变更</strong>
+                                            <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path fill="currentColor" d="M11.625 14.913q-.175-.063-.325-.213l-4.6-4.6q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l3.9 3.9l3.9-3.9q.275-.275.7-.275t.7.275t.275.7t-.275.7l-4.6 4.6q-.15.15-.325.213t-.375.062t-.375-.062"/>
+                                            </svg>
+                                        </summary>
+                                        <div class="blog-change-point__body">
+                                            <p>{item.text}</p>
+                                        </div>
+                                    </details>
+                                ))}
+                            </div>
+                        </div>
+                    </details>
+                    <div class="blog-changelog-tags" aria-label="更新标签">
+                        {entry.tags.map((tag) => <span>{tag}</span>)}
+                    </div>
+                </article>
+            </li>
+        ))}
+    </ol>
+</div>
+
+<style is:global>
+    .blog-changelog-page {
+        width: 100%;
+        max-width: 72rem;
+        margin: 0 auto;
+        padding-bottom: 1rem;
+    }
+
+    /* ===== hero ===== */
+    .blog-changelog-hero {
+        padding: clamp(1.1rem, 2.4vw, 2rem);
+        border: 1px solid var(--line-divider);
+        background-color: var(--card-bg) !important;
+    }
+
+    .blog-changelog-hero__topline,
+    .blog-changelog-kicker,
+    .blog-changelog-nav,
+    .blog-changelog-stats,
+    .blog-changelog-card__meta,
+    .blog-changelog-details summary {
+        display: flex;
+        align-items: center;
+    }
+
+    .blog-changelog-hero__topline {
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .blog-changelog-hero__main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(15rem, 21rem);
+        align-items: end;
+        gap: clamp(1.5rem, 4vw, 3.5rem);
+        margin-top: 0.9rem;
+    }
+
+    .blog-changelog-hero__copy {
+        min-width: 0;
+    }
+
+    .blog-changelog-kicker {
+        gap: 0.45rem;
+        color: var(--content-meta);
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+    }
+
+    .blog-changelog-kicker > span:first-child {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: var(--primary);
+        box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--primary) 15%, transparent);
+    }
+
+    .blog-changelog-nav {
+        justify-content: space-between;
+        gap: 0.8rem;
+        margin: 1rem 0;
+        padding: 0.72rem 1rem;
+        border: 1px solid var(--line-divider);
+        color: var(--content-meta);
+        font-size: 0.68rem;
+        background-color: var(--card-bg) !important;
+    }
+
+    .blog-changelog-nav__back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--primary);
+        font-size: 0.72rem;
+        font-weight: 760;
+        text-decoration: none;
+    }
+
+    .blog-changelog-nav a:hover,
+    .blog-changelog-nav a:focus-visible {
+        color: var(--text-color);
+        outline: none;
+    }
+
+    .blog-changelog-hero h1 {
+        margin: 0 0 0.45rem;
+        color: var(--text-color);
+        font-size: clamp(1.65rem, 3vw, 2.5rem);
+        font-weight: 850;
+        letter-spacing: -0.045em;
+    }
+
+    .blog-changelog-hero__lead {
+        max-width: 62ch;
+        margin: 0;
+        color: var(--content-meta);
+        font-size: 0.88rem;
+        line-height: 1.8;
+    }
+
+    .blog-changelog-hero__rule {
+        margin: 0.55rem 0 0;
+        color: var(--primary);
+        font-size: 0.68rem;
+        font-weight: 720;
+        line-height: 1.6;
+    }
+
+    .blog-changelog-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem;
+        align-self: stretch;
+        padding-left: 1.1rem;
+        border-left: 1px solid var(--line-divider);
+    }
+
+    .blog-changelog-stats span {
+        display: flex;
+        min-height: 3.1rem;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 0.15rem;
+        padding: 0.38rem 0.6rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 15%, var(--line-divider));
+        border-radius: 0.45rem;
+        background-color: var(--card-bg);
+        color: var(--content-meta);
+        font-size: 0.64rem;
+    }
+
+    .blog-changelog-stats strong {
+        color: var(--primary);
+        font-size: 1.02rem;
+        font-weight: 850;
+        line-height: 1;
+    }
+
+    .blog-changelog-stats small {
+        font-size: 0.68rem;
+    }
+
+    /* ===== 时间线 ===== */
+    .blog-changelog-list {
+        position: relative;
+        display: grid;
+        gap: 1rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .blog-changelog-list::before {
+        content: "";
+        position: absolute;
+        left: 8.15rem;
+        top: 0.7rem;
+        bottom: 0.7rem;
+        width: 1px;
+        background: linear-gradient(to bottom, color-mix(in srgb, var(--primary) 38%, var(--line-divider)), var(--line-divider));
+    }
+
+    .blog-changelog-entry {
+        display: grid;
+        grid-template-columns: 7.25rem 1.8rem minmax(0, 1fr);
+        gap: 0.9rem;
+        min-width: 0;
+    }
+
+    .blog-changelog-date {
+        display: grid;
+        align-content: start;
+        justify-items: end;
+        gap: 0.28rem;
+        padding-top: 0.8rem;
+        text-align: right;
+    }
+
+    .blog-changelog-date time {
+        color: var(--text-color);
+        font-size: 0.72rem;
+        font-weight: 780;
+        line-height: 1.35;
+        white-space: nowrap;
+    }
+
+    .blog-changelog-date span {
+        color: var(--content-meta);
+        font-size: 0.62rem;
+        line-height: 1.35;
+    }
+
+    .blog-changelog-rail {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        min-height: 100%;
+    }
+
+    .blog-changelog-rail span {
+        position: relative;
+        z-index: 1;
+        width: 0.7rem;
+        height: 0.7rem;
+        margin-top: 0.88rem;
+        border: 2px solid var(--card-bg);
+        border-radius: 999px;
+        background: var(--primary);
+        box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--primary) 13%, transparent);
+    }
+
+    /* ===== 条目卡片 ===== */
+    .blog-changelog-card {
+        min-width: 0;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--line-divider);
+        border-radius: 0.78rem;
+        box-shadow: 0 0.35rem 0.95rem #3a5b8908;
+        background-color: var(--card-bg) !important;
+    }
+
+    .blog-changelog-card__header {
+        display: grid;
+        gap: 0.42rem;
+    }
+
+    .blog-changelog-card__meta {
+        justify-content: space-between;
+        gap: 0.6rem;
+        color: var(--content-meta);
+        font-size: 0.64rem;
+    }
+
+    .blog-changelog-card__labels {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        min-width: 0;
+    }
+
+    .blog-changelog-version {
+        color: var(--primary);
+        font-size: 0.68rem;
+        font-weight: 850;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+
+    .blog-changelog-kind {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.45rem;
+        padding: 0.2rem 0.45rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider));
+        border-radius: 0.4rem;
+        background-color: var(--card-bg);
+        color: var(--primary);
+        font-size: 0.62rem;
+        font-weight: 780;
+        line-height: 1.2;
+    }
+
+    .blog-changelog-kind--mint {
+        border-color: color-mix(in srgb, #42c7b0 22%, var(--line-divider));
+        background: color-mix(in srgb, #42c7b0 8%, var(--card-bg));
+        color: #159b8b;
+    }
+
+    .blog-changelog-kind--gold {
+        border-color: color-mix(in srgb, #f0b933 24%, var(--line-divider));
+        background: color-mix(in srgb, #f0b933 9%, var(--card-bg));
+        color: #b37a05;
+    }
+
+    .blog-changelog-kind--violet {
+        border-color: color-mix(in srgb, #8b78db 22%, var(--line-divider));
+        background: color-mix(in srgb, #8b78db 8%, var(--card-bg));
+        color: #7361c8;
+    }
+
+    .blog-changelog-card h2 {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 0.97rem;
+        font-weight: 780;
+        letter-spacing: -0.015em;
+        line-height: 1.45;
+    }
+
+    .blog-changelog-card__header > p {
+        margin: 0;
+        color: var(--content-meta);
+        font-size: 0.76rem;
+        line-height: 1.72;
+    }
+
+    /* ===== 折叠明细 ===== */
+    .blog-changelog-details {
+        margin-top: 0.8rem;
+        border-top: 1px solid var(--line-divider);
+    }
+
+    .blog-changelog-details summary {
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding-top: 0.68rem;
+        color: var(--primary);
+        font-size: 0.7rem;
+        font-weight: 760;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .blog-changelog-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .blog-changelog-details > summary svg {
+        font-size: 1rem;
+        transition: transform 0.18s;
+    }
+
+    .blog-changelog-details[open] > summary svg {
+        transform: rotate(180deg);
+    }
+
+    .blog-changelog-details:not([open]) > summary svg {
+        transform: rotate(0);
+    }
+
+    .blog-changelog-details summary:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+        outline-offset: 0.2rem;
+        border-radius: 0.25rem;
+    }
+
+    .blog-changelog-details > .blog-change-points {
+        max-height: 48rem;
+        overflow: hidden;
+        transition: max-height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s, margin-top 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .blog-changelog-details:not([open]) > .blog-change-points {
+        display: grid;
+        max-height: 0;
+        margin-top: 0;
+        opacity: 0;
+    }
+
+    .blog-change-points {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+        margin-top: 0.7rem;
+        --blog-point-body-height: 3.75rem;
+    }
+
+    .blog-change-points__column {
+        display: grid;
+        gap: 0.7rem;
+        align-content: start;
+        min-width: 0;
+    }
+
+    .blog-change-point {
+        min-width: 0;
+        order: var(--point-order);
+        padding: 0 0.72rem 0.72rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 17%, var(--line-divider));
+        border-radius: 0.72rem;
+        box-shadow: 0 0.3rem 0.9rem #3a5b890a;
+        transition: border-color 0.18s, padding 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+        background-color: var(--card-bg) !important;
+    }
+
+    .blog-change-point:not([open]) {
+        padding-bottom: 0;
+    }
+
+    .blog-change-point > summary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 2.4rem;
+        padding: 0.52rem 0;
+        color: var(--text-color);
+        font-size: 0.68rem;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .blog-change-point > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .blog-change-point > summary svg {
+        margin-left: auto;
+        color: var(--content-meta);
+        font-size: 0.95rem;
+        transition: transform 0.18s;
+    }
+
+    .blog-change-point[open] > summary svg {
+        transform: rotate(180deg);
+    }
+
+    .blog-change-point:not([open]) > summary svg {
+        transform: rotate(0);
+    }
+
+    .blog-change-point__number {
+        display: inline-grid;
+        width: 1.5rem;
+        height: 1.5rem;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line-divider));
+        border-radius: 0.35rem;
+        background-color: var(--card-bg);
+        color: var(--primary);
+        font-size: 0.6rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .blog-change-point__body {
+        display: block;
+        height: var(--blog-point-body-height, 3.75rem);
+        max-height: none;
+        min-height: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+        padding: 0.58rem 0.05rem 0 2.22rem;
+        border-top: 1px solid var(--line-divider);
+        opacity: 1;
+        transition: height 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s, padding 0.32s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s;
+    }
+
+    .blog-change-point:not([open]) > .blog-change-point__body {
+        display: block;
+        height: 0;
+        max-height: 0;
+        min-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-top-color: #0000;
+        opacity: 0;
+    }
+
+    .blog-change-point__body p {
+        margin: 0;
+        min-height: 0;
+        color: var(--content-meta);
+        font-size: 0.72rem;
+        line-height: 1.72;
+    }
+
+    /* ===== 标签 ===== */
+    .blog-changelog-tags {
+        display: flex;
+        gap: 0.28rem;
+        flex-wrap: wrap;
+        margin-top: 0.72rem;
+    }
+
+    .blog-changelog-tags span {
+        border: 1px solid var(--line-divider);
+        padding: 0.2rem 0.38rem;
+        border-radius: 0.35rem;
+        background-color: var(--card-bg);
+        color: var(--btn-content);
+        font-size: 0.6rem;
+        line-height: 1.2;
+    }
+
+    /* ===== 响应式 ===== */
+    @media (width <= 700px) {
+        .blog-changelog-hero__topline {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .blog-changelog-hero__main {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .blog-changelog-stats {
+            padding: 0.9rem 0 0;
+            border-top: 1px solid var(--line-divider);
+            border-left: 0;
+        }
+
+        .blog-changelog-nav {
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .blog-changelog-nav > span {
+            order: 3;
+            width: 100%;
+        }
+
+        .blog-changelog-list::before {
+            left: 6.05rem;
+        }
+
+        .blog-changelog-entry {
+            grid-template-columns: 5.3rem 1rem minmax(0, 1fr);
+            gap: 0.52rem;
+        }
+
+        .blog-changelog-date {
+            justify-items: start;
+            text-align: left;
+        }
+
+        .blog-changelog-card {
+            padding: 0.78rem;
+        }
+
+        .blog-changelog-date time {
+            font-size: 0.66rem;
+            white-space: normal;
+        }
+
+        .blog-changelog-date span,
+        .blog-changelog-card__meta,
+        .blog-changelog-kind {
+            font-size: 0.58rem;
+        }
+
+        .blog-changelog-card h2 {
+            font-size: 0.88rem;
+        }
+
+        .blog-changelog-card__header > p {
+            font-size: 0.7rem;
+        }
+
+        .blog-change-points {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+
+        .blog-change-points__column {
+            display: contents;
+        }
+
+        .blog-change-points__column + .blog-change-points__column {
+            padding-left: 0;
+            border-left: 0;
+        }
+
+        .blog-change-point__body {
+            height: var(--blog-point-body-height, 3.75rem);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .blog-changelog-details > .blog-change-points,
+        .blog-change-point__body,
+        .blog-changelog-details > summary svg,
+        .blog-change-point > summary svg {
+            transition: none;
+        }
+    }
+</style>

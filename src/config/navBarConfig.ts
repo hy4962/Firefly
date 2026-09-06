@@ -88,6 +88,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 打赏
 			LinkPresets.Sponsor,
 
+			// 博客日志
+			{
+				name: "博客日志",
+				url: "/blog-changelog/",
+				icon: "material-symbols:history",
+			},
+
 			// 关于页面
 			LinkPresets.About,
 
