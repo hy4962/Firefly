@@ -11,16 +11,16 @@ export interface HomeCardSticker {
 	src: string;
 	/** 标识名，仅用于备注，不展示 */
 	name: string;
-	/** 距壁纸容器顶部的百分比（0-100） */
-	top: number;
+	/** 距壁纸容器顶部的百分比（与 bottom 二选一） */
+	top?: number;
+	/** 距壁纸容器底部的百分比（与 top 二选一；一排贴纸用 bottom 锚定可保证脚踩同一条地面线） */
+	bottom?: number;
 	/** 距壁纸容器左侧的百分比（0-100） */
 	left: number;
 	/** 基准宽度（px），随视口按比例缩放 */
 	width: number;
 	/** 旋转角度（deg，正数为顺时针） */
 	rotate: number;
-	/** 移动端是否显示（移动端仅显示为 true 的贴纸，位置随机投放到四角避让卡片） */
-	mobile: boolean;
 }
 
 export interface HomeCardNavLink {
@@ -99,72 +99,66 @@ export const homeCardConfig = {
 		left: 70.5,
 	},
 
-	// 场景贴纸：桌面端按 top/left 百分比定位（贴纸列表顺序即拖拽层级，后者在上）
-	// 移动端仅显示 mobile: true 的贴纸，随机投放到卡片两侧的四块区域
+	// 场景贴纸：按百分比定位，top（距顶）或 bottom（距底）二选一 + left
+	// （贴纸列表顺序即拖拽层级，后者在上；一排贴纸用 bottom 锚定可对齐地面线）
+	// 桌面与移动端使用同一套布局，移动端由脚本按卡片位置自适应换算
 	// 素材来自 rainzt.cn 演示，可自行替换为 public/images/home-stickers/ 下的其他图片
 	stickers: [
 		{
 			src: "/images/home-stickers/blonde-idol.webp",
 			name: "金发偶像",
-			top: 18,
-			left: 84,
+			top: 20,
+			left: 1.2,
 			width: 112,
 			rotate: 4,
-			mobile: true,
 		},
 		{
 			src: "/images/home-stickers/blue-witch.webp",
 			name: "蓝发魔女",
-			top: 72,
-			left: 10,
+			bottom: 5,
+			left: 1.2,
 			width: 98,
 			rotate: -5,
-			mobile: true,
 		},
 		{
 			src: "/images/home-stickers/white-haired-reader.webp",
 			name: "白发读者",
-			top: 20,
-			left: 3,
+			bottom: 5,
+			left: 48,
 			width: 96,
 			rotate: 4,
-			mobile: false,
 		},
 		{
 			src: "/images/home-stickers/bamboo-girl.webp",
 			name: "竹哒",
-			top: 77,
-			left: 35.5,
+			top: 20,
+			left: 94,
 			width: 88,
 			rotate: 4,
-			mobile: false,
 		},
 		{
 			src: "/images/home-stickers/aqua-singer.webp",
 			name: "初音",
-			top: 75,
-			left: 61,
+			bottom: 5,
+			left: 94,
 			width: 96,
 			rotate: 5,
-			mobile: true,
 		},
 		{
 			src: "/images/home-stickers/pink-bows.webp",
 			name: "粉蝴蝶结",
-			top: 76,
-			left: 72,
+			bottom: 5,
+			left: 61.5,
 			width: 92,
 			rotate: -4,
-			mobile: false,
 		},
 		{
 			src: "/images/home-stickers/brown-lightning.webp",
 			name: "棕发闪电",
-			top: 60,
-			left: 89.5,
+			bottom: 5,
+			left: 34.5,
 			width: 100,
 			rotate: -4,
-			mobile: true,
 		},
 	] satisfies HomeCardSticker[],
 };

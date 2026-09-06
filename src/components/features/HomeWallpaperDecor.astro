@@ -19,20 +19,31 @@ const cardTitle = config.title || siteConfig.title;
 const subtitle = config.subtitle || profileConfig.bio;
 
 // 场景贴纸基准宽度：px 为上限，随视口宽度/高度按比例缩小
-const stickerWidth = (width: number) =>
-	`min(${width}px, ${(width / 19.2).toFixed(4)}vw, ${(width / 9.125).toFixed(4)}vh)`;
+// STICKER_SCALE 整体缩放系数（改这里即全局放大/缩小贴纸）
+const STICKER_SCALE = 1.25;
+const stickerWidth = (width: number) => {
+	const w = width * STICKER_SCALE;
+	return `min(${w.toFixed(2)}px, ${(w / 19.2).toFixed(4)}vw, ${(w / 9.125).toFixed(4)}vh)`;
+};
 
 // 头像贴纸：只在窄屏时收缩（vw 系数更大）
 const avatarStickerWidth = (width: number) =>
 	`min(${width}px, ${(width / 4.3333).toFixed(4)}vw)`;
 
+// 贴纸定位：top（距顶）或 bottom（距底，一排贴纸脚踩同一地面线）二选一
 const stickerStyle = (sticker: {
-	top: number;
+	top?: number;
+	bottom?: number;
 	left: number;
 	rotate: number;
 	width: number;
-}) =>
-	`inset: ${sticker.top}% auto auto ${sticker.left}%; --home-wallpaper-sticker-rotation: ${sticker.rotate}deg; --home-wallpaper-sticker-w: ${stickerWidth(sticker.width)};`;
+}) => {
+	const vertical =
+		sticker.bottom !== undefined
+			? `auto auto ${sticker.bottom}%`
+			: `${sticker.top ?? 0}% auto auto`;
+	return `inset: ${vertical} ${sticker.left}%; --home-wallpaper-sticker-rotation: ${sticker.rotate}deg; --home-wallpaper-sticker-w: ${stickerWidth(sticker.width)};`;
+};
 
 const isExternal = (url: string) => url.startsWith("http");
 ---
@@ -44,7 +55,6 @@ const isExternal = (url: string) => url.startsWith("http");
                 <div
                     class="home-wallpaper-sticker"
                     data-home-wallpaper-sticker
-                    data-home-wallpaper-mobile={String(sticker.mobile)}
                     style={stickerStyle(sticker)}
                     data-home-wallpaper-initial-style={stickerStyle(sticker)}
                 >
@@ -148,50 +158,128 @@ const isExternal = (url: string) => url.startsWith("http");
         if (window.__homeWallpaperDecorBound) return;
         window.__homeWallpaperDecorBound = true;
 
-        // 移动端贴纸随机投放区域（百分比，避开中间的卡片）
-        const MOBILE_STICKER_ZONES = [
-            { minX: 3, maxX: 24, minY: 18, maxY: 36 },
-            { minX: 76, maxX: 94, minY: 18, maxY: 36 },
-            { minX: 3, maxX: 23, minY: 51, maxY: 70 },
-            { minX: 77, maxX: 94, minY: 51, maxY: 70 },
-        ];
-
-        const shuffled = (items) => {
-            const copy = [...items];
-            for (let index = copy.length - 1; index > 0; index -= 1) {
-                const swapIndex = Math.floor(Math.random() * (index + 1));
-                [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
-            }
-            return copy;
-        };
-
         const isMobileLayout = () => window.matchMedia("(max-width: 767px)").matches;
 
-        const randomizeMobileStickers = (decor) => {
+        // 移动端布局：与桌面端同一套结构（左列 / 右列 / 底部一排），但全部
+        // 相对卡片实际位置换算——顶部两张贴在卡片上方两侧，底部五个脚踩
+        // 同一条地面线（卡片下方），中间三个在左右两列之间等距分布，
+        // 保证任意窄屏都不遮挡卡片内容。
+        const applyMobileStickerLayout = (decor) => {
             if (!isMobileLayout()) return;
             const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
             const wallpaperRect = wallpaper.getBoundingClientRect();
+            const card = decor.querySelector(".home-wallpaper-card");
             const stickers = [
                 ...decor.querySelectorAll(
-                    '[data-home-wallpaper-sticker][data-home-wallpaper-mobile="true"]',
+                    ".home-wallpaper-sticker:not(.home-wallpaper-sticker--fixed)",
                 ),
             ];
-            if (!wallpaperRect.width || !wallpaperRect.height || stickers.length === 0) return;
+            if (
+                !wallpaperRect.width ||
+                !wallpaperRect.height ||
+                stickers.length === 0 ||
+                !(card instanceof HTMLElement)
+            ) {
+                return;
+            }
 
-            shuffled(stickers).forEach((sticker, index) => {
-                const zone = MOBILE_STICKER_ZONES[index % MOBILE_STICKER_ZONES.length];
-                const stickerRect = sticker.getBoundingClientRect();
-                const stickerWidth = (stickerRect.width / wallpaperRect.width) * 100;
-                const stickerHeight = (stickerRect.height / wallpaperRect.height) * 100;
-                const maxLeft = Math.max(2, 96 - stickerWidth);
-                const maxTop = Math.max(2, 96 - stickerHeight);
-                const left = Math.min(maxLeft, zone.minX + Math.random() * (zone.maxX - zone.minX));
-                const top = Math.min(maxTop, zone.minY + Math.random() * (zone.maxY - zone.minY));
-                sticker.style.inset = "auto";
-                sticker.style.left = `${left}%`;
-                sticker.style.top = `${top}%`;
-                sticker.style.right = "auto";
-                sticker.style.bottom = "auto";
+            const cardRect = card.getBoundingClientRect();
+            const cardTopPct =
+                ((cardRect.top - wallpaperRect.top) / wallpaperRect.height) * 100;
+
+            // 贴纸宽度与 CSS clamp(55px, 17.5vw, 80px) 保持一致，直接按公式算，
+            // 数字 = 桌面基准 44/64 乘以 1.25（与服务端 STICKER_SCALE 同步）
+            const clampWidthPx = Math.min(80, Math.max(55, wallpaperRect.width * 0.175));
+            const clampWidthPct = (clampWidthPx / wallpaperRect.width) * 100;
+            // 贴纸图片统一 4:3 比例（1086x1448 webp）
+            const clampHeightPct = ((clampWidthPx * 4) / 3 / wallpaperRect.height) * 100;
+
+            // 解析桌面端初始定位，识别列归属（左列 <20%，右列 >80%，其余为底部中间排）。
+            // inset 简写交给浏览器解析（临时元素），比正则可靠
+            const parseInset = (initial) => {
+                const probeEl = document.createElement("div");
+                probeEl.style.cssText = initial;
+                const top = Number.parseFloat(probeEl.style.top);
+                const bottom = Number.parseFloat(probeEl.style.bottom);
+                const left = Number.parseFloat(probeEl.style.left);
+                return {
+                    top: Number.isFinite(top) ? top : undefined,
+                    bottom: Number.isFinite(bottom) ? bottom : undefined,
+                    left: Number.isFinite(left) ? left : 50,
+                };
+            };
+            const items = stickers.map((sticker) => {
+                const initial =
+                    sticker.getAttribute("data-home-wallpaper-initial-style") || "";
+                const parsed = parseInset(initial);
+                return {
+                    sticker,
+                    top: parsed.top,
+                    bottom: parsed.bottom,
+                    left: parsed.left,
+                    widthPct: clampWidthPct,
+                };
+            });
+
+            const sideMargin = 1.2;
+            const gap = 2;
+            const leftColumn = items.filter((item) => item.left < 20);
+            const rightColumn = items.filter((item) => item.left > 80);
+            const middleRow = items
+                .filter((item) => item.left >= 20 && item.left <= 80)
+                .sort((a, b) => a.left - b.left);
+
+            const place = (item, horizontal, vertical) => {
+                const s = item.sticker;
+                s.style.inset = "auto";
+                s.style.left = "auto";
+                s.style.right = "auto";
+                s.style.top = "auto";
+                s.style.bottom = "auto";
+                if (horizontal.mode === "right") {
+                    s.style.right = `${horizontal.value}%`;
+                } else {
+                    s.style.left = `${horizontal.value}%`;
+                }
+                if (vertical.mode === "bottom") {
+                    s.style.bottom = `${vertical.value}%`;
+                } else {
+                    s.style.top = `${vertical.value}%`;
+                }
+            };
+
+            // 顶部两列：贴在卡片上方，底边距卡片顶 3%
+            const topYPct = Math.max(
+                1,
+                Math.min(20, cardTopPct - 3 - clampHeightPct),
+            );
+
+            // 底部中间排：在左右两列之间等分空档，每个贴纸居中于自己的槽位
+            const leftColWidth = Math.max(0, ...leftColumn.map(() => clampWidthPct));
+            const rightColWidth = clampWidthPct;
+            const rowStart = sideMargin + leftColWidth + gap;
+            const rowEnd = 100 - sideMargin - rightColWidth - gap;
+
+            leftColumn.forEach((item) => {
+                const isTop = item.top !== undefined;
+                place(
+                    item,
+                    { mode: "left", value: sideMargin },
+                    isTop ? { mode: "top", value: topYPct } : { mode: "bottom", value: item.bottom ?? 5 },
+                );
+            });
+            rightColumn.forEach((item) => {
+                const isTop = item.top !== undefined;
+                place(
+                    item,
+                    { mode: "right", value: sideMargin },
+                    isTop ? { mode: "top", value: topYPct } : { mode: "bottom", value: item.bottom ?? 5 },
+                );
+            });
+            middleRow.forEach((item, index) => {
+                const slot = (rowEnd - rowStart) / middleRow.length;
+                const leftPct = rowStart + slot * index + (slot - item.widthPct) / 2;
+                place(item, { mode: "left", value: leftPct }, { mode: "bottom", value: item.bottom ?? 5 });
             });
         };
 
@@ -207,13 +295,24 @@ const isExternal = (url: string) => url.startsWith("http");
             const mediaQuery = window.matchMedia("(max-width: 767px)");
             const applyLayout = () => {
                 if (mediaQuery.matches) {
-                    window.requestAnimationFrame(() => randomizeMobileStickers(decor));
+                    // 同步执行：读 rect 会强制布局，无需 rAF；
+                    // rAF 在后台标签页不触发会导致布局不生效
+                    applyMobileStickerLayout(decor);
                 } else {
                     restoreDesktopStickerPositions(decor);
                 }
             };
             applyLayout();
+            // 字体/图片就绪后卡片尺寸才稳定，再校准一次
+            window.addEventListener("load", applyLayout);
+            window.setTimeout(applyLayout, 400);
             mediaQuery.addEventListener?.("change", applyLayout);
+            // 兜底：部分环境（视口仿真等）媒体查询 change 事件不可靠，用 resize 防抖补一层
+            let resizeTimer = 0;
+            window.addEventListener("resize", () => {
+                window.clearTimeout(resizeTimer);
+                resizeTimer = window.setTimeout(applyLayout, 120);
+            });
         };
 
         const getDecor = () => document.querySelector(".home-wallpaper-decor");
@@ -671,17 +770,6 @@ const isExternal = (url: string) => url.startsWith("http");
         backdrop-filter: blur(2px) saturate(1.02);
         transform: rotate(-0.45deg);
     }
-    .home-wallpaper-card::after {
-        position: absolute;
-        top: -10px;
-        left: 50%;
-        width: 84px;
-        height: 20px;
-        content: "";
-        background: repeating-linear-gradient(-45deg, #fff4b8d1 0 5px, #efce6fd1 5px 10px);
-        box-shadow: 0 2px 5px #2921191f;
-        transform: translate(-50%) rotate(0.6deg);
-    }
     .home-wallpaper-card__content {
         position: relative;
         display: flex;
@@ -1120,10 +1208,6 @@ const isExternal = (url: string) => url.startsWith("http");
             width: min(calc(100vw - 2rem), 360px);
             padding: 1.7rem 1rem 0;
         }
-        .home-wallpaper-card::after {
-            width: 70px;
-            height: 17px;
-        }
         .home-wallpaper-card__avatar {
             border-radius: 13px;
         }
@@ -1156,12 +1240,9 @@ const isExternal = (url: string) => url.startsWith("http");
         .home-wallpaper-card__socials {
             margin-top: 0.9rem;
         }
-        .home-wallpaper-sticker[data-home-wallpaper-mobile="false"] {
-            display: none;
-        }
-        .home-wallpaper-sticker[data-home-wallpaper-mobile="true"] {
-            display: grid;
-            width: clamp(44px, 14vw, 64px);
+        /* 手机端全部贴纸参与布局，宽度统一收缩（位置由脚本按卡片自适应换算） */
+        .home-wallpaper-sticker {
+            width: clamp(55px, 17.5vw, 80px);
         }
         .home-wallpaper-sticker--note.home-wallpaper-sticker--fixed {
             display: grid;

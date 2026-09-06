@@ -76,8 +76,9 @@ export const homeCardConfig = {
     // ...
   ],
   stickers: [
-    // top/left 是百分比定位，rotate 是角度，mobile 决定移动端是否显示
-    { src: "/images/home-stickers/blonde-idol.webp", name: "金发偶像", top: 18, left: 84, width: 112, rotate: 4, mobile: true },
+    // top（距顶）或 bottom（距底）二选一，一排贴纸用 bottom 锚定对齐地面线
+    { src: "/images/home-stickers/blonde-idol.webp", name: "金发偶像", top: 20, left: 1.2, width: 112, rotate: 4 },
+    { src: "/images/home-stickers/blue-witch.webp", name: "蓝发魔女", bottom: 5, left: 1.2, width: 98, rotate: -5 },
     // ...
   ],
 };
@@ -108,17 +109,24 @@ html[data-wallpaper-mode="fullscreen"] body.is-home .home-wallpaper-decor {
 
 入场动画则是等所有贴纸图片加载完后给容器加 `is-ready` 类触发，动画播完再用 `animationend` 事件打上 `is-motion-settled` 标记固化终态。另外加了个 `MutationObserver` 盯着 `body` 的 class，每次从别的页面回首页时重播一遍入场动画。
 
-## 贴纸布局：给卡片的可交互区让路
+## 贴纸布局：从随手摆到强迫症对齐
 
 贴纸位置全用百分比，但默认值不能随便摆——卡片居中占了大约 34%~66% 的横向空间，导航链接和社交标签都在卡片下半部，贴纸直接压上去会挡住点击。
 
-所以布局原则很简单：**上半区放两侧，中部贴边，底部一排"站在"波浪线上**。贴纸宽度用了 `min()` 做响应式收缩：
+最终的布局结构是：**左列（金发偶像上、蓝发魔女下）、右列（竹哒上、初音下）、底部中间一排三个**。宽度用 `min()` 做响应式收缩：
 
 ```css
 width: min(105px, 5.4688vw, 11.5068vh);
 ```
 
-移动端更直接：只有配置里 `mobile: true` 的贴纸会显示，由脚本随机投放到卡片两侧的四块区域，每次刷新位置都不一样，便签则自动居中到顶部。
+中间排一开始我用 `top` 定位，结果贴纸身高不一，头顶齐了脚不齐，怎么看怎么别扭。后来把底部一排全改成 `bottom` 锚定——不管多高，脚都踩在同一条地面线上，瞬间工整了：
+
+```ts
+// bottom（距底）或 top（距顶）二选一
+{ name: "蓝发魔女", bottom: 5, left: 1.2, width: 98, rotate: -5 },
+```
+
+手机端不再搞特殊化：同一套结构，由脚本按卡片实际位置换算坐标——顶部两张贴在卡片上方两侧，底部五个照旧站在地面线上，便签自动居中到顶部。这部分的坑在下面展开。
 
 ## 踩坑记录
 
@@ -211,15 +219,32 @@ sticker.style.setProperty("--avatar-sticker-ty", `${translateY}px`);
 
 变量赋值是内联的，规则里带 `!important` 的 `transform` 引用的还是这份值，两边不打架。
 
+### 坑 5：移动端随机投放，是我自己想当然
+
+一开始照搬参考站的移动端方案：只显示 4 张 `mobile: true` 的贴纸，随机投放到四块写死的百分比区域。结果上线一看不对劲——区域是死的，卡片却是活的，窄屏下卡片占掉九成宽，两块"侧边区域"直接压在卡片上，一张贴纸骑在社交标签上，另外三张干脆没显示。
+
+![手机端最初的随机投放，贴纸压在卡片上](./images/image-005.webp)
+
+想明白了就把"随机投放"整个删掉：移动端显示全部贴纸，布局和桌面端同一套结构，坐标由脚本按卡片实际边界换算——顶部两张贴在卡片上方，底部五个 `bottom` 锚定在卡片下方，中间三个在左右两列之间等分槽位。这样不管屏幕多窄都自适应。
+
+### 坑 6：布局代码写完了，后台标签页里根本不跑
+
+自适应布局写完，我自己截图验证，发现贴纸时对时不对，纯属玄学。排查半天是两个坑叠一起：
+
+1. 布局被包在 `requestAnimationFrame` 里——后台标签页的 rAF 是不触发的，页面在后台加载时布局永远不执行
+2. 依赖 `matchMedia` 的 `change` 事件切换布局——部分环境（视口仿真等）这个事件压根不派发
+
+解法：布局改同步执行（读 `getBoundingClientRect` 本身就会强制布局，不需要 rAF），再补 `load` 事件、`setTimeout` 校准和防抖 `resize` 监听兜底。顺手把贴纸坐标的解析从正则换成了临时元素 + `cssText`，让浏览器自己拆 `inset` 简写——之前那个正则压根没算上百分号，一直匹配失败，全靠默认值兜底。
+
 ## 效果
 
-移动端只保留四张贴纸，随机撒在卡片两侧，便签居中到顶部：
+手机端不再是另一套布局：和桌面端同一套结构，脚本按卡片实际位置自适应换算，便签自动居中到顶部：
 
-![移动端效果](./images/image-005.webp)
+![手机端效果，全部贴纸自适应排布](./images/image-006.webp)
 
 拖拽是按下即拖，Pointer Events 鼠标触屏通用，位置限制在壁纸范围内，点击邮箱标签会弹"已复制"的 toast：
 
-![拖拽和复制 toast 的验证](./images/image-006.webp)
+![拖拽和复制 toast 的验证](./images/image-007.webp)
 
 刷新后贴纸会回到初始位置，这点是故意的——位置记忆听着美好，但访客拖乱之后就再也回不去了，参考站也是这么做的。
 
@@ -230,7 +255,7 @@ sticker.style.setProperty("--avatar-sticker-ty", `${translateY}px`);
 3. 新建 `src/components/features/HomeWallpaperDecor.astro`，HTML/CSS/JS 自包含
 4. `WallpaperSection.astro` 里加一个挂载点，同时把 `showHomeText` 短路掉
 5. 显隐交给 `body.is-home` + `data-wallpaper-mode` 的 CSS 门控
-6. 踩坑修复：压默认文字、放开卡片点击、fullscreen 豁免、CSS 变量拖拽
+6. 踩坑修复：压默认文字、放开卡片点击、fullscreen 豁免、CSS 变量拖拽、移动端自适应布局
 
 ## 写在最后
 

@@ -51,6 +51,15 @@ export const friendsConfig: FriendLink[] = [
 		weight: 30,
 		enabled: true,
 	},
+	{
+		title: "朝朝听雨",
+		imgurl: "https://rainzt.cn/zzty.png",
+		desc: "物物而不物于物，念念而不念于念",
+		siteurl: "https://rainzt.cn/",
+		tags: ["Blog"],
+		weight: 10, // 权重，数字越大排序越靠前
+		enabled: true, // 是否启用
+	},
 ];
 
 // 获取启用的友链并进行排序
