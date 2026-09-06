@@ -78,7 +78,7 @@ export const homeCardConfig = {
   stickers: [
     // top（距顶）或 bottom（距底）二选一，一排贴纸用 bottom 锚定对齐地面线
     { src: "/images/home-stickers/blonde-idol.webp", name: "金发偶像", top: 20, left: 1.2, width: 112, rotate: 4 },
-    { src: "/images/home-stickers/blue-witch.webp", name: "蓝发魔女", bottom: 5, left: 1.2, width: 98, rotate: -5 },
+    { src: "/images/home-stickers/roxy.webp", name: "蓝发魔女", bottom: 5, left: 1.2, width: 98, rotate: -5 },
     // ...
   ],
 };

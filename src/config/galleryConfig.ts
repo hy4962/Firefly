@@ -17,7 +17,7 @@ export const galleryConfig: GalleryConfig = {
 		// 每添加一个数组项就相当于添加了一个相册，记得在 public/gallery/ 目录下创建对应的子目录并放入图片
 		
 		{
-			id: "blog-2026",
+			id: "blog",
 			name: "博客截图",
 			description: "博客首页的截图记录。",
 			location: "Firefly 博客",
