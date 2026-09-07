@@ -30,6 +30,41 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.2",
+		title: "CDN 缓存",
+		date: "2026-09-08",
+		summary: "页面全部缓存到边缘节点",
+		description:
+			"vercel.json 按资源类型分层设置缓存头：HTML 边缘缓存一天、哈希资源一年不可变，部署后自动预热全站缓存，新文章发布依旧即时可见",
+		items: [
+			{
+				category: "性能",
+				text: "HTML 页面新增 s-maxage=86400 边缘缓存，CDN 节点直接吐页面；浏览器端保持 max-age=0，发新文章立即可见",
+			},
+			{
+				category: "性能",
+				text: "/_astro/ 哈希静态资源缓存一年并标记 immutable，重新部署自动换哈希无需手动刷新",
+			},
+			{
+				category: "性能",
+				text: "/assets/、/pagefind/、/pio/ 等静态资源缓存 30 天，过期后由 CDN 后台重新验证更新",
+			},
+			{
+				category: "性能",
+				text: "/api/ 数据接口边缘缓存 1 小时，浏览器端不缓存",
+			},
+			{
+				category: "自动化",
+				text: "新增 Cache Warm 工作流：每次部署后自动从 sitemap 提取全站 URL 预热边缘缓存，并统计命中率",
+			},
+			{
+				category: "自动化",
+				text: "预热脚本多轮并发请求直到 HIT 率达标，日志直接输出在 Actions 运行记录",
+			},
+		],
+		tags: ["缓存", "CDN", "性能", "自动化"],
+	},
+	{
 		version: "V1.1",
 		title: "朋友圈",
 		date: "2026-09-07",

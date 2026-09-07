@@ -1,0 +1,40 @@
+name: Cache Warm
+
+# 部署后预热 Vercel 边缘缓存：从 sitemap 提取全站 URL 逐个请求，
+# 让新部署的 CDN 缓存提前填满，避免每个页面的第一个访客吃 MISS。
+# 仅在 push 到部署分支（HY）时触发；预热脚本自身产生的任何提交都不会再次触发本工作流。
+
+on:
+  push:
+    branches: [HY]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cache-warm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 等待 Vercel 完成新部署
+        if: github.event_name == 'push'
+        run: sleep 120
+
+      - name: 预热并统计命中率
+        env:
+          BASE_URL: https://www.9ll.uk
+          PARALLEL: 4
+          REQUEST_TIMEOUT: 30
+          HIT_TARGET: 80
+          MAX_CYCLES: 4
+          INTERVAL_SECONDS: 20
+          TZ: Asia/Shanghai
+        run: bash .github/scripts/cache-warm.sh
