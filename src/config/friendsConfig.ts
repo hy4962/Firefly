@@ -60,6 +60,53 @@ export const friendsConfig: FriendLink[] = [
 		weight: 10, // 权重，数字越大排序越靠前
 		enabled: true, // 是否启用
 	},
+	// 加入的项目（博客社区与交流项目）
+	{
+		title: "博友圈",
+		imgurl: "https://www.boyouquan.com/assets/images/sites/logo/logo-small.png",
+		desc: "让我们跨越山海彼此相连，一起用文字打败时间！",
+		siteurl: "https://www.boyouquan.com/home",
+		tags: ["项目", "博客社区", "友链互推", "RSS"],
+		weight: 9,
+		enabled: true,
+	},
+	{
+		title: "博客星球",
+		imgurl: "https://www.blogplanet.cn/img/bkxq.png",
+		desc: "每一个博客都是一个独立星球！",
+		siteurl: "https://www.blogplanet.cn/",
+		tags: ["项目", "博客社区", "博客收录", "博主交流"],
+		weight: 8,
+		enabled: true,
+	},
+	{
+		title: "八零圈",
+		imgurl: "https://80tz.cn/assets/images/sites/logo/logo-small.svg",
+		desc: "自由、共享，给原创博客写作一个空间！",
+		siteurl: "https://www.80tz.cn/home",
+		tags: ["项目", "博客社区", "原创写作", "友链交流"],
+		weight: 7,
+		enabled: true,
+	},
+	{
+		title: "BlogsClub",
+		imgurl: "https://www.blogsclub.org/usr/themes/default/favicon.png",
+		desc: "BlogsClub是一个互联网独立博客俱乐部。",
+		siteurl: "https://www.blogsclub.org/",
+		tags: ["项目", "博客社区", "博主交流", "博客收录"],
+		weight: 6,
+		enabled: true,
+	},
+	{
+		title: "中文独立博客聚合列表",
+		imgurl:
+			"https://blogroll.online/wp-content/uploads/2026/07/android-chrome-512x512-1.png",
+		desc: "又一个博客聚合站",
+		siteurl: "https://blogroll.online/",
+		tags: ["项目", "博客聚合", "博客收录", "博客社区"],
+		weight: 5,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
