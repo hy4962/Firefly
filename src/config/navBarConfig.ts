@@ -36,19 +36,18 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		],
 	});
 
-	//社交及其子菜单
+	// 朋友圈（友链 RSS 聚合时间线）
 	links.push({
-		name: "社交",
-		url: "#",
-		icon: "material-symbols:group",
-		children: [
-			// 友链
-			LinkPresets.Friends,
-
-			// 留言
-			LinkPresets.Guestbook,
-		],
+		name: "朋友圈",
+		url: "/moments/",
+		icon: "material-symbols:rss-feed-rounded",
 	});
+
+	// 友链
+	links.push(LinkPresets.Friends);
+
+	// 留言
+	links.push(LinkPresets.Guestbook);
 
 	// 我的及其子菜单
 	links.push({

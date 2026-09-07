@@ -4,6 +4,8 @@ export type FriendLink = {
 	imgurl: string; // 头像图片URL
 	desc: string; // 友链描述
 	siteurl: string; // 友链地址
+	// RSS/Atom 地址，可留空并由朋友圈页面自动探测（先猜常见路径，再解析首页 <link rel="alternate">）
+	rss?: string | string[];
 	tags?: string[]; // 标签数组
 	weight: number; // 权重，数字越大排序越靠前
 	enabled: boolean; // 是否启用

@@ -23,6 +23,16 @@ export const friendsPageConfig: FriendsPageConfig = {
 // 友链配置
 export const friendsConfig: FriendLink[] = [
 	{
+		title: "折腾进行时",
+		imgurl: "https://www.9ll.uk/assets/images/avatar.avif",
+		desc: "生命不息，折腾不止！",
+		siteurl: "https://www.9ll.uk",
+		rss: "/rss.xml", // 本站 RSS，使自己的文章进入朋友圈时间线并标记"本站主理人"
+		tags: ["Blog"],
+		weight: 100, // 权重，数字越大排序越靠前
+		enabled: true, // 是否启用
+	},
+	{
 		title: "夏夜流萤",
 		imgurl:
 			"https://weavatar.com/avatar/d252655d40d6874417a720bad0a6c5f77f8f6a1fd2f882f8f338402dc37e4190?s=640",
@@ -34,8 +44,7 @@ export const friendsConfig: FriendLink[] = [
 	},
 	{
 		title: "霞の葉間",
-		imgurl:
-			"https://kasuha.com/avatar.webp",
+		imgurl: "https://kasuha.com/avatar.webp",
 		desc: "光と言葉の狭間",
 		siteurl: "https://kasuha.com",
 		tags: ["Blog"],
@@ -56,6 +65,8 @@ export const friendsConfig: FriendLink[] = [
 		imgurl: "https://rainzt.cn/zzty.png",
 		desc: "物物而不物于物，念念而不念于念",
 		siteurl: "https://rainzt.cn/",
+		// RSS/Atom 地址（可选）：填了优先使用，不填则由朋友圈页面自动探测。
+		// 例：rss: "/rss.xml" 或 rss: ["https://example.com/feed/", "/atom.xml"]
 		tags: ["Blog"],
 		weight: 10, // 权重，数字越大排序越靠前
 		enabled: true, // 是否启用
@@ -90,7 +101,8 @@ export const friendsConfig: FriendLink[] = [
 	},
 	{
 		title: "BlogsClub",
-		imgurl: "https://www.blogsclub.org/usr/themes/default/favicon.png",
+		// 站点防盗链（Referer 校验），本地托管头像并由友链页 referrerpolicy="no-referrer" 加载
+		imgurl: "/assets/images/friends/blogsclub-favicon.png",
 		desc: "BlogsClub是一个互联网独立博客俱乐部。",
 		siteurl: "https://www.blogsclub.org/",
 		tags: ["项目", "博客社区", "博主交流", "博客收录"],

@@ -1,0 +1,56 @@
+name: Refresh Friends Feed
+
+# 定时刷新朋友圈快照：抓取友链 RSS/Atom 写入
+# src/data/friends-feed-snapshot.json 并提交。
+# 该提交会触发 Pages 部署（deploy.yml），朋友圈内容因此保持新鲜。
+# 抓取失败不会报错——friends-feed.ts 会自动回退到旧快照。
+
+on:
+  schedule:
+    # UTC 01:30 = 北京时间 09:30，每天一次
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write # 自动提交快照需要写权限
+
+concurrency:
+  group: friends-feed-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Refresh friends feed snapshot
+        run: npx tsx scripts/refresh-friends-feed.ts
+
+      - name: Commit snapshot if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- src/data/friends-feed-snapshot.json; then
+            echo "No changes to commit."
+          else
+            git add src/data/friends-feed-snapshot.json
+            git commit -m "chore: refresh friends feed snapshot"
+            git push
+          fi
