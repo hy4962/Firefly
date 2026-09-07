@@ -30,6 +30,53 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.1",
+		title: "朋友圈",
+		date: "2026-09-07",
+		summary: "友链更新聚成一条时间线",
+		description:
+			"新增 /moments/ 朋友圈页面，构建时抓取全部友链的 RSS/Atom 合流成时间线，快照兜底加每天定时刷新，纯静态不用服务器",
+		items: [
+			{
+				category: "朋友圈",
+				text: "新增朋友圈页面：聚合所有启用友链的最新文章，按时间倒序展示，支持分页",
+			},
+			{
+				category: "朋友圈",
+				text: '构建时抓取 RSS/Atom：友链配置新增可选 rss 字段，未填写的站点自动探测常见路径和首页 <link rel="alternate"> 标签',
+			},
+			{
+				category: "朋友圈",
+				text: "随机文章卡片：每 5 秒自动换一篇（可关闭），本站文章标蓝色徽章、推荐友链标金色徽章",
+			},
+			{
+				category: "自动化",
+				text: "新增 GitHub Actions 定时任务，每天 09:30 刷新友链快照并自动提交，提交联动站点重新部署",
+			},
+			{
+				category: "自动化",
+				text: "抓取结果写入 src/data/friends-feed-snapshot.json 快照兜底，单站失败不阻断构建",
+			},
+			{
+				category: "修复",
+				text: '友链页与朋友圈头像统一加 referrerpolicy="no-referrer"，解决 BlogsClub 头像防盗链 404',
+			},
+			{
+				category: "修复",
+				text: "BlogsClub 头像改为本地托管，不再依赖对方站点资源",
+			},
+			{
+				category: "导航",
+				text: "朋友圈、友链、留言提为一级导航，移除社交子菜单",
+			},
+			{
+				category: "内容",
+				text: "发布文章《给博客装了个朋友圈：把友链的更新聚成一条时间线》",
+			},
+		],
+		tags: ["朋友圈", "RSS", "自动化", "导航", "修复"],
+	},
+	{
 		version: "V1.0",
 		title: "首页贴纸卡片",
 		date: "2026-09-06",
