@@ -22,6 +22,10 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=86400, max-age=0, must-revalidate"
         }
       ]
     },
@@ -58,15 +62,6 @@
         {
           "key": "Cache-Control",
           "value": "public, s-maxage=3600, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, s-maxage=86400, max-age=0, must-revalidate"
         }
       ]
     }
