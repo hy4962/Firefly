@@ -51,7 +51,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "自动化",
-				text: "新增 GitHub Actions 定时任务，每天 09:30 刷新友链快照并自动提交，提交联动站点重新部署",
+				text: "新增 GitHub Actions 定时任务，每周六 06:00 刷新友链快照并自动提交，提交联动站点重新部署",
 			},
 			{
 				category: "自动化",

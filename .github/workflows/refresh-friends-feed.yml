@@ -2,13 +2,13 @@ name: Refresh Friends Feed
 
 # 定时刷新朋友圈快照：抓取友链 RSS/Atom 写入
 # src/data/friends-feed-snapshot.json 并提交。
-# 该提交会触发 Pages 部署（deploy.yml），朋友圈内容因此保持新鲜。
+# 提交推送到 HY 分支后，Vercel 检测到新提交会自动重新构建部署，朋友圈内容因此保持新鲜。
 # 抓取失败不会报错——friends-feed.ts 会自动回退到旧快照。
 
 on:
   schedule:
-    # UTC 01:30 = 北京时间 09:30，每天一次
-    - cron: "30 1 * * *"
+    # UTC 周五 22:00 = 北京时间周六 06:00，每周一次
+    - cron: "0 22 * * 5"
   workflow_dispatch:
 
 permissions:
