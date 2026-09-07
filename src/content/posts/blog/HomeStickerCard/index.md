@@ -76,9 +76,9 @@ export const homeCardConfig = {
     // ...
   ],
   stickers: [
-    // top（距顶）或 bottom（距底）二选一，一排贴纸用 bottom 锚定对齐地面线
+    // 具体使用时，每一项只需要管这五个值
     { src: "/images/home-stickers/blonde-idol.webp", name: "金发偶像", top: 20, left: 1.2, width: 112, rotate: 4 },
-    { src: "/images/home-stickers/roxy.webp", name: "蓝发魔女", bottom: 5, left: 1.2, width: 98, rotate: -5 },
+    { src: "/images/home-stickers/blue-witch.webp", name: "蓝发魔女", bottom: 5, left: 1.2, width: 98, rotate: -5 },
     // ...
   ],
 };
@@ -86,7 +86,47 @@ export const homeCardConfig = {
 
 以后合并上游，就算 `WallpaperSection.astro` 被改了，冲突也就几行，手工处理一下就完事。
 
-## 显隐方案：不跟 Swup 纠缠，交给 CSS
+## 使用指南：怎么改成自己的
+
+先说清楚数据流：**配置文件只描述内容，组件负责渲染，主题只提供一个挂载点**。日常改内容，你只需要动 `homeCardConfig.ts` 一个文件。
+
+### 换文字和链接
+
+- `identity` / `title` / `subtitle`：卡片上三行字，留空会自动回退到 `profileConfig` 和 `siteConfig` 里的名字、站点标题、签名
+- `navLinks`：卡片标题下方的快捷导航，数组每一项 `{ name, url }`
+- `socials`：彩色标签社交按钮，最多 5 个，颜色按顺序自动循环。`url` 是跳转，`copy` 是点击复制（邮箱、微信号这种就适合用 `copy`）
+
+### 改贴纸
+
+场景贴纸每一项的字段含义：
+
+| 字段 | 含义 | 说明 |
+|---|---|---|
+| `src` | 图片路径 | public 目录的绝对路径，如 `/images/home-stickers/xxx.webp` |
+| `name` | 备注名 | 不显示，只是给自己看的 |
+| `top` / `bottom` | 纵向定位 | 距容器顶/底的百分比，二选一；一排贴纸用 `bottom` 才能对齐地面线 |
+| `left` | 横向定位 | 距容器左侧的百分比 |
+| `width` | 基准宽度 | px 为单位，实际渲染按视口自动缩放 |
+| `rotate` | 旋转角度 | 度数，正数顺时针 |
+
+纵向用 `top` 还是 `bottom` 取决于贴纸在哪一排：**底部那排全部用 `bottom`**，这样无论贴纸多高，脚都踩在同一条线上；左右两列的上半部分用 `top`。
+
+还有一个 1.25 倍的全局缩放系数在组件里（`HomeWallpaperDecor.astro` 顶部的 `STICKER_SCALE`），想要所有贴纸一起变大变小改它就行，不用一个个调 `width`。
+
+### 替换素材
+
+新贴纸丢进 `public/images/home-stickers/`，然后改对应条目的 `src`。两个注意点：
+
+1. 图片别太大——贴纸实际只显示几十到一百多像素宽，源图 360px 宽以内足够，太大只会白烧流量
+2. 底部一排的贴纸如果新素材身高差得特别大，地面线是靠 `bottom` 锚定保证的，不用管高度
+
+### 关闭整套装饰
+
+`enable: false`，组件整个不渲染，默认的横幅文字会自己回来，什么都不用动。
+
+## 实现细节
+
+### 显隐：不跟 Swup 纠缠，交给 CSS
 
 Firefly 的壁纸区在 Swup 容器外面，切页不重渲染。这意味着装饰层不能依赖"重新渲染时判断是不是首页"，得自己处理显隐。
 
@@ -126,7 +166,17 @@ width: min(105px, 5.4688vw, 11.5068vh);
 { name: "蓝发魔女", bottom: 5, left: 1.2, width: 98, rotate: -5 },
 ```
 
-手机端不再搞特殊化：同一套结构，由脚本按卡片实际位置换算坐标——顶部两张贴在卡片上方两侧，底部五个照旧站在地面线上，便签自动居中到顶部。这部分的坑在下面展开。
+### 拖拽的实现
+
+拖拽用 Pointer Events，鼠标和触屏一套代码。指针按下时记录贴纸相对壁纸容器的坐标，移动时换算成 `left/top` 并夹在壁纸范围内（`Math.max(0, Math.min(容器宽 - 贴纸宽, ...))`），配合 `setPointerCapture` 保证拖出元素外也不丢事件。移动端额外禁掉长按弹菜单的 `contextmenu` 和 iOS 的 `touch-callout`。
+
+头像小贴纸的位移写 CSS 变量而不是 `style.transform`，这是踩坑 4 的教训——fullscreen 模式下主题有 `transform: scale(1.05) !important`，内联 transform 打不过它。
+
+刷新后贴纸回到初始位置是故意的：不做 localStorage 记忆，访客拖乱之后下次进来还是整齐的。
+
+### 移动端的自适应
+
+手机端和桌面端是同一套结构，靠脚本换算：解析每个贴纸初始配置里的 `top/bottom/left` 识别它属于左列、右列还是中间排，然后按卡片实际边界重排——顶部两张贴卡片上方两侧，底部五个 `bottom` 锚定在卡片下方，中间三个在左右两列之间等宽槽位居中。布局时机挂 `load` + `setTimeout` + 防抖 `resize` 兜底（后台标签页里 rAF 不触发，这个坑下面细说）。
 
 ## 踩坑记录
 
@@ -235,6 +285,17 @@ sticker.style.setProperty("--avatar-sticker-ty", `${translateY}px`);
 2. 依赖 `matchMedia` 的 `change` 事件切换布局——部分环境（视口仿真等）这个事件压根不派发
 
 解法：布局改同步执行（读 `getBoundingClientRect` 本身就会强制布局，不需要 rAF），再补 `load` 事件、`setTimeout` 校准和防抖 `resize` 监听兜底。顺手把贴纸坐标的解析从正则换成了临时元素 + `cssText`，让浏览器自己拆 `inset` 简写——之前那个正则压根没算上百分号，一直匹配失败，全靠默认值兜底。
+
+### 坑 7：贴纸素材太大了
+
+做完才反应过来，8 张贴纸原图全是 1086×1448 的高清图，加起来 1.6MB，而它们实际只显示不到 150px 宽——下载量是显示需求的十倍。用 ffmpeg 压到 360px 宽之后总共 330KB，肉眼看不出差别：
+
+```bash
+cd public/images/home-stickers
+for f in *.webp; do
+  ffmpeg -y -loglevel error -i "$f" -vf "scale=360:-1" -quality 82 "tmp/$f"
+done
+```
 
 ## 效果
 
