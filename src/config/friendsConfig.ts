@@ -28,6 +28,7 @@ export const friendsConfig: FriendLink[] = [
 		desc: "生命不息，折腾不止！",
 		siteurl: "https://www.9ll.uk",
 		rss: "/rss.xml", // 本站 RSS，使自己的文章进入朋友圈时间线并标记"本站主理人"
+		homepage: "https://www.9ll.uk/gallery/blog/homepage.png", // 首页照片
 		tags: ["Blog"],
 		weight: 100, // 权重，数字越大排序越靠前
 		enabled: true, // 是否启用
@@ -67,6 +68,8 @@ export const friendsConfig: FriendLink[] = [
 		siteurl: "https://rainzt.cn/",
 		// RSS/Atom 地址（可选）：填了优先使用，不填则由朋友圈页面自动探测。
 		// 例：rss: "/rss.xml" 或 rss: ["https://example.com/feed/", "/atom.xml"]
+		// 填了 RSS 的文章会进入本站朋友圈时间线（/moments/），与博主互动联动。
+		// homepage（可选）：首页照片/截图，用于展示，不填则不显示。
 		tags: ["Blog"],
 		weight: 10, // 权重，数字越大排序越靠前
 		enabled: true, // 是否启用

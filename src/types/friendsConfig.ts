@@ -6,6 +6,8 @@ export type FriendLink = {
 	siteurl: string; // 友链地址
 	// RSS/Atom 地址，可留空并由朋友圈页面自动探测（先猜常见路径，再解析首页 <link rel="alternate">）
 	rss?: string | string[];
+	// 首页照片/截图（可选），用于展示，不填则不显示
+	homepage?: string;
 	tags?: string[]; // 标签数组
 	weight: number; // 权重，数字越大排序越靠前
 	enabled: boolean; // 是否启用
