@@ -2,6 +2,7 @@
 title: "给博客加上 Vercel 边缘缓存：顺便把那些英文术语整明白了"
 published: 2026-09-08
 description: "给博客页面设置分层缓存头，让 CDN 直接吐页面而不是每次都回源，再配一个部署后自动预热的工作流，顺手把 max-age、s-maxage、HIT/MISS 这些缓存术语一个个讲明白"
+image: ./cover.png
 tags: [Vercel, 缓存, CDN, 博客优化]
 category: 部署
 draft: false
