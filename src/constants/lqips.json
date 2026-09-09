@@ -303,5 +303,22 @@
   "src:content/posts/ai/Comfyui-Wrokflow/Anima-Inpainting-Workflow/images/paint-mask.png": "819180788074645d59",
   "src:content/posts/ai/Comfyui-Wrokflow/Anima-Inpainting-Workflow/images/open-mask.png": "4b46433a2d2e342a2a",
   "src:content/posts/ai/Comfyui-Wrokflow/Anima-Inpainting-Workflow/images/model-select.png": "685c6d515f67413b39",
-  "src:content/projects/images/firefly.avif": "b5b0b3bcb6bbe0e0df"
+  "public:gallery/mobile-wallpaper/3.png": "a8947bcec0b5998574",
+  "public:gallery/mobile-wallpaper/2.png": "eee1d3edded0e4d3c6",
+  "public:gallery/mobile-wallpaper/1.png": "e6ccb9cea794bba0a4",
+  "public:gallery/desktop-wallpaper/three.webp": "968989a48973b9a49a",
+  "public:gallery/desktop-wallpaper/cover.avif": "efdfcff1e2d3e8e0dd",
+  "public:gallery/desktop-wallpaper/9.png": "917a73d4b98f9e7b6f",
+  "public:gallery/desktop-wallpaper/7.png": "ecd4c7fefbf8cebab9",
+  "public:assets/images/avatar.avif": "d1b473ccb06ccbc2a4",
+  "src:content/projects/images/comfyui-prompt-studio.png": "f2f2f5f0f6eceef3f4",
+  "public:assets/images/friends/blogsclub-favicon.png": "1f52a01e54a31d54a5",
+  "src:content/posts/deploy/VercelCdnCache/cover.png": "d6dde9ecf0f7e3eaf4",
+  "src:content/posts/blog/FriendsMoments/images/image-001.webp": "d0c4b8dad3cadcd5cc",
+  "src:content/posts/blog/FriendsMoments/images/cover.webp": "bdafabc8bdb9ece6d9",
+  "public:gallery/design-assets/5.png": "f7b44bf7ac43efb757",
+  "public:gallery/design-assets/4.png": "fbebcdfbf0dafbedd5",
+  "public:gallery/design-assets/3.png": "e6bca3778297a0b3b3",
+  "public:gallery/design-assets/2.png": "f0ab4df2a840ef9930",
+  "public:gallery/design-assets/1.png": "f9b95cf3ab53f3bc58"
 }
