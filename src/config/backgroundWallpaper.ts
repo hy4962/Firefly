@@ -40,17 +40,17 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		// desktop: "assets/images/DesktopWallpaper/d1.avif",
 		desktop: [
 			"assets/images/DesktopWallpaper/cover.avif",
-			"assets/images/DesktopWallpaper/three.webp",
-			"assets/images/DesktopWallpaper/7.png",
-			"assets/images/DesktopWallpaper/9.png",
+			"assets/images/DesktopWallpaper/three.avif",
+			"assets/images/DesktopWallpaper/7.avif",
+			"assets/images/DesktopWallpaper/9.avif",
 			// "https://t.alcy.cc/ycy",
 		],
 		// 移动背景图片（支持单张或多张随机）
 		// mobile: "assets/images/MobileWallpaper/m1.avif",
 		mobile: [
-			"assets/images/MobileWallpaper/1.png",
-			"assets/images/MobileWallpaper/2.png",
-			"assets/images/MobileWallpaper/3.png",
+			"assets/images/MobileWallpaper/1.avif",
+			"assets/images/MobileWallpaper/2.avif",
+			"assets/images/MobileWallpaper/3.avif",
 			"assets/images/DesktopWallpaper/cover.avif",
 		],
 		// 背景视频播放地址

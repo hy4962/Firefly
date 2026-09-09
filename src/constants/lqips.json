@@ -25,13 +25,7 @@
   "src:assets/images/暂存/3.png": "e6bca3778297a0b3b3",
   "src:assets/images/暂存/2.png": "f0ab4df2a840ef9930",
   "src:assets/images/暂存/1.png": "f9b95cf3ab53f3bc58",
-  "src:assets/images/MobileWallpaper/3.png": "a8947bcec0b5998574",
-  "src:assets/images/MobileWallpaper/2.png": "eee1d3edded0e4d3c6",
-  "src:assets/images/MobileWallpaper/1.png": "e6ccb9cea794bba0a4",
-  "src:assets/images/DesktopWallpaper/three.webp": "968989a48973b9a49a",
   "src:assets/images/DesktopWallpaper/cover.avif": "efdfcff1e2d3e8e0dd",
-  "src:assets/images/DesktopWallpaper/9.png": "917a73d4b98f9e7b6f",
-  "src:assets/images/DesktopWallpaper/7.png": "ecd4c7fefbf8cebab9",
   "public:assets/images/sponsor/alipay.jpg": "8181817f7f7f8e8e8e",
   "src:content/posts/Windows/UltimateGamePerformance/fengmian.png": "bcaea08273622f2820",
   "src:content/posts/Windows/opencode-shortcut/cover.png": "18181a121214101010",
@@ -320,5 +314,11 @@
   "public:gallery/design-assets/4.png": "fbebcdfbf0dafbedd5",
   "public:gallery/design-assets/3.png": "e6bca3778297a0b3b3",
   "public:gallery/design-assets/2.png": "f0ab4df2a840ef9930",
-  "public:gallery/design-assets/1.png": "f9b95cf3ab53f3bc58"
+  "public:gallery/design-assets/1.png": "f9b95cf3ab53f3bc58",
+  "src:assets/images/MobileWallpaper/3.avif": "a9947bcebfb5998574",
+  "src:assets/images/MobileWallpaper/2.avif": "eee1d3edded0e4d3c6",
+  "src:assets/images/MobileWallpaper/1.avif": "e6ccb9cea794bba0a5",
+  "src:assets/images/DesktopWallpaper/three.avif": "978888a08572b8a199",
+  "src:assets/images/DesktopWallpaper/9.avif": "917a73d4b98f9e7b6f",
+  "src:assets/images/DesktopWallpaper/7.avif": "ecd4c7fefbf8cebab9"
 }

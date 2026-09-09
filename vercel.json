@@ -25,7 +25,7 @@
         },
         {
           "key": "Cache-Control",
-          "value": "public, s-maxage=86400, max-age=0, must-revalidate"
+          "value": "public, s-maxage=86400, stale-while-revalidate=604800, max-age=0, must-revalidate"
         }
       ]
     },
