@@ -47,7 +47,7 @@ draft: false
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Cache-Control", "value": "public, s-maxage=86400, max-age=0, must-revalidate" }
+        { "key": "Cache-Control", "value": "public, s-maxage=86400, stale-while-revalidate=604800, max-age=0, must-revalidate" }
       ]
     },
     {
@@ -74,13 +74,35 @@ draft: false
 
 | 路径 | 策略 | 为什么 |
 |---|---|---|
-| 其他所有（HTML 页面） | 边缘缓存 1 天，浏览器每次重新验证 | CDN 直接吐页面，但发新文章后老读者刷新立刻看到新版 |
+| 其他所有（HTML 页面） | 边缘缓存 1 天，过期后 7 天内先吐旧页面同时后台更新，浏览器每次重新验证 | CDN 直接吐页面，但发新文章后老读者刷新立刻看到新版；缓存过期瞬间访客不用等回源，直接拿旧页面秒开 |
 | `/_astro/` | 一年 + `immutable` | 全是带哈希的构建产物，文件名变了缓存自然换新 |
 | `/assets/`、`/pagefind/`、`/pio/` | 30 天 + 过期后后台更新 | 手动放进去的静态文件，搜索索引、阅读器组件这类 |
 | `/api/` | 边缘缓存 1 小时，浏览器不缓存 | 文章元数据、评论数据，旧一小时无伤大雅 |
 
 > [!NOTE] 为什么要 1 天而不是十年
 > 那两篇文章（尤其第二篇）建议把 HTML 边缘缓存直接拉到十年，理由是"重新部署会自动失效，设多长都行"。理是这个理，但我想的是：万一哪天 Vercel 某个区域的失效信号出岔子，TTL 一天最多让那个区域吐一天旧页面，十年就是吐到你手动清缓存为止。正常场景下两者效果完全一样，那我选风险小的。
+
+## 后续优化：给缓存加"过期续命"
+
+上面这套配置跑了几天，有个小毛病一直没解决：**每天凌晨缓存过期那一刻，第一个访客要干等回源**，快则几百毫秒，慢则一两秒，全看 Vercel 源站当时的状态。
+
+2026-09-10 给 HTML 规则加了 `stale-while-revalidate=604800`：
+
+```diff
+- "public, s-maxage=86400, max-age=0, must-revalidate"
++ "public, s-maxage=86400, stale-while-revalidate=604800, max-age=0, must-revalidate"
+```
+
+意思是：缓存过期后 7 天内，CDN 先把旧页面**秒开**给访客，同时在后台悄悄去源站拉新页面，拉完更新缓存，下一个访客看到的就是新的。这 7 天是兜底窗口，正常部署会主动清缓存，根本用不上；真出了异常也有旧页面顶着，不会白屏。
+
+改完用 `curl -sI` 验证，响应头里能看到新指令：
+
+```bash
+curl -sI https://www.9ll.uk/ | grep -i cache-control
+# Cache-Control: public, s-maxage=86400, stale-while-revalidate=604800, max-age=0, must-revalidate
+```
+
+这个改动和原来的 `s-maxage=86400` 是互补关系：一天内正常缓存，一天到七天之间过期续命，七天之后彻底重新验证。浏览器端 `max-age=0` 不变，发新文章依旧立即可见。
 
 ## 部署后自动预热
 

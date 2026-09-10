@@ -3,7 +3,7 @@ title: 在 FNOS 上装 iStoreOS 虚拟机
 published: 2026-07-16
 updated: 2026-08-31
 description: 通过 FNOS 运行 iStoreOS 虚拟机，涵盖镜像转换、QCOW2 替换和首次启动的完整流程
-image: ./fengmian.jpg
+image: ./fengmian.png
 tags: [FNOS, iStoreOS, OpenWrt, 虚拟机, NAS]
 category: 网络
 draft: false

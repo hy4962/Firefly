@@ -127,6 +127,8 @@ const randomArticleItems = JSON.stringify(
 						class="moments-random-article__link"
 						data-random-article-link
 						href="/posts/"
+						target="_blank"
+						rel="noopener noreferrer"
 						aria-label="打开随机文章"
 					>
 						<strong data-random-article-title>正在挑选一篇文章…</strong>
@@ -477,6 +479,8 @@ const randomArticleItems = JSON.stringify(
 						const picked = pool[Math.floor(Math.random() * pool.length)];
 						lastArticleLink = picked.link;
 						articleLink.href = picked.link;
+						articleLink.target = "_blank";
+						articleLink.rel = "noopener noreferrer";
 						articleLink.removeAttribute("aria-disabled");
 						articleLink.setAttribute("aria-label", `阅读随机文章：${picked.title}`);
 						articleTitle.textContent = picked.title || "随机文章";
@@ -532,6 +536,22 @@ const randomArticleItems = JSON.stringify(
 						}
 						renderRandomArticle();
 					};
+
+					const handleRandomArticleLinkClick = (event) => {
+						if (!(articleLink instanceof HTMLAnchorElement)) return;
+						const href = articleLink.href;
+						if (!href || articleLink.getAttribute("aria-disabled") === "true") {
+							event.preventDefault();
+							return;
+						}
+						// 站点使用 Swup 无刷新切换页面，它会拦截站内链接并在当前标签页加载，
+						// 这里统一拦截并以原生新标签页打开，确保外链和本站链接行为一致
+						event.preventDefault();
+						event.stopPropagation();
+						window.open(href, "_blank", "noopener,noreferrer");
+					};
+					articleLink?.addEventListener("click", handleRandomArticleLinkClick);
+					cleanups.push(() => articleLink?.removeEventListener("click", handleRandomArticleLinkClick));
 
 					const handleRandomArticleRefresh = () => {
 						if (candidates.length > 0) renderRandomArticle();
