@@ -59,6 +59,7 @@ package/
 .codeium
 .tabnine
 .bytecode
+.workbuddy/
 
 # IDE
 .vscode/

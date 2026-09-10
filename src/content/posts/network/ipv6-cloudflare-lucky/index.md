@@ -1,7 +1,7 @@
 ---
 title: "只有 IPv6 也能实现公网 IPV4 访问：Cloudflare + Lucky 白嫖双栈 HTTPS"
 published: 2026-08-28
-updated: 2026-08-31
+updated: 2026-09-10
 description: "家里设备只有 IPv6 出口：Lucky 做 DDNS 把 IPv6 同步到 Cloudflare，再靠 Cloudflare 代理免费实现双栈访问、去掉端口号和全链路 HTTPS。"
 image: ./cover.png
 tags: [内网穿透, Lucky, Cloudflare, IPv6, 双栈, HTTPS]
@@ -18,6 +18,8 @@ draft: false
 - 全链路 HTTPS
 
 全程没花一分钱。记录一下怎么接的。
+
+> 补充一下：这套方案的核心就一句——**边缘节点双栈，回源单栈**，家里只有 IPv6 就让双栈的边缘当门面，IPv4 的访客也能进来。所以它是通用的，换哪个边缘平台都成立。后来我又用阿里云 ESA 在国内复刻了一遍，节点在境内、国内访问更稳，代价是域名得备案，细节写在 [Lucky + 阿里云 ESA 那篇](/posts/network/lucky-esa-reverse-proxy/) 里。
 
 ## 准备工作
 
