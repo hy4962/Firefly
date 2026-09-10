@@ -27,18 +27,11 @@ export const galleryConfig: GalleryConfig = {
 		{
 			id: "firefly-2026",
 			name: "可爱流萤",
-			description: "飞萤之火自无梦的长夜亮起，绽放在终竟的明天。",
+			description: "飞萤之火自无梦的长夜亮起，绽放在终竟的明天。流萤壁纸与主题默认素材合集。",
 			location: "崩坏：星穹铁道",
 			date: "2026-01-01",
-			tags: ["崩坏星穹铁道", "流萤"],
-		},
-		{
-			id: "firefly-wallpaper",
-			name: "流萤壁纸",
-			description: "来自 Firefly 主题默认素材的流萤壁纸合集。",
-			location: "崩坏：星穹铁道",
-			date: "2026-09-10",
 			tags: ["崩坏星穹铁道", "流萤", "壁纸"],
+			cover: "/gallery/firefly-2026/d1.avif",
 		},
 		{
 			id: "desktop-wallpaper",
