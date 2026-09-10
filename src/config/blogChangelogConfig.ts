@@ -30,6 +30,33 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.3",
+		title: "壁纸瘦身",
+		date: "2026-09-10",
+		summary: "首屏图片体积砍掉 93%",
+		description:
+			"把 7 张壁纸从 PNG 批量转成 WebP q90，总量从 14.3MB 压到 1.0MB；同时给 CDN 缓存加了过期续命机制，访客永远秒开旧页面，后台静默更新",
+		items: [
+			{
+				category: "性能",
+				text: "壁纸全部转成 WebP q90：桌面端 4 张 + 移动端 3 张，总计 1.0MB（原 PNG 14.3MB），首屏图片加载量减 93%",
+			},
+			{
+				category: "性能",
+				text: "新增 scripts/compress-wallpapers.ts：一键压缩壁纸到指定质量，支持强制重跑，以后换壁纸跑一遍就行",
+			},
+			{
+				category: "性能",
+				text: "vercel.json HTML 缓存加 stale-while-revalidate=604800：CDN 缓存过期后先给访客旧页面秒开，后台同时拉新页面更新缓存",
+			},
+			{
+				category: "维护",
+				text: "壁纸配置同步更新为 .webp 路径，构建验证通过",
+			},
+		],
+		tags: ["性能", "壁纸", "CDN", "缓存"],
+	},
+	{
 		version: "V1.2",
 		title: "CDN 缓存",
 		date: "2026-09-08",

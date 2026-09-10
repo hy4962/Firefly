@@ -16,7 +16,7 @@ const DIRS = [
 ];
 
 const EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif"]);
-const QUALITY = 85;
+const QUALITY = 90;
 // q85 压缩后文件大小范围：66KB-162KB，q60 为 46KB-114KB，存在重叠无法通过文件大小区分
 // 强制重新压缩所有文件（设为 true 以应用当前 QUALITY 设置）
 const FORCE = true;
@@ -35,10 +35,10 @@ async function main() {
 			const filePath = path.join(dir, file);
 			const before = (await stat(filePath)).size;
 
-			// 已压缩过的 avif 直接跳过（幂等，可重复运行）
+			// 已压缩过的 webp 直接跳过（幂等，可重复运行）
 			// 注意：如需强制重新压缩（如更改质量设置），请设置 FORCE = true
-			if (!FORCE && path.extname(file).toLowerCase() === ".avif" && before < 800 * 1024) {
-				console.log(`跳过（已是小体积 avif）: ${file}`);
+			if (!FORCE && path.extname(file).toLowerCase() === ".webp" && before < 800 * 1024) {
+				console.log(`跳过（已是小体积 webp）: ${file}`);
 				totalBefore += before;
 				totalAfter += before;
 				continue;
@@ -51,11 +51,11 @@ async function main() {
 
 			const outPath = path.join(
 				dir,
-				`${path.basename(file, path.extname(file))}.avif`,
+				`${path.basename(file, path.extname(file))}.webp`,
 			);
 			const buf = await img
 				.resize({ width: resizeWidth, withoutEnlargement: true })
-				.avif({ quality: QUALITY })
+				.webp({ quality: QUALITY })
 				.toBuffer();
 
 			await writeFile(outPath, buf);
