@@ -5,6 +5,8 @@
 > 仓库状态：`HY` 分支相对 `upstream/master` 为 **0 落后 / 315 领先**，上游已全部合入
 >
 > **执行进度：P0-1 / P0-2 / P0-4 已完成（见第九节「执行记录」）；P0-6 由你本人于 20:35 完成；P0-5 决定保留。**
+>
+> **➡️ 第二轮复测（部署后）见第十节 —— 第一轮改动已全部上线生效；LCP 从 6.2 s 降到中位数 5.3 s，但移动端分数仍在中位数 64，瓶颈已从"等贴纸图"转移到"首屏 hero 由 JS 生成 + Swup 预取抢带宽"。**
 
 ---
 
@@ -403,6 +405,71 @@ const widths = [400, 640, 828];
 
 当前 `HY` 相对 `upstream/master` 是 0 落后 / 315 领先，说明你的合并流程是健康的。要维持下去：
 
+### 8.0 现状量化（2026-09-12 实测，回答"改动会不会影响合并"）
+
+`git diff --numstat upstream/master` 的全量统计：
+
+| 指标 | 数值 |
+| --- | --- |
+| 与上游不同的文件 | **664 个**（文本 301 + 二进制 363） |
+| 文本改动行数合计 | **37,278 行** |
+| 我们删掉、上游仍存在的文件 | **18 个** |
+| 上游独有提交数 | **0**（上游的提交你全都有） |
+
+**改动量 Top 8（每次合并的手工大头）：**
+
+```
+  1207 /  984  pnpm-lock.yaml                          ← 上游几乎每次发版都动
+  2151 /    0  src/pages/moments.astro                 ← 零冲突资产（上游没有）
+   158 / 1338  src/layouts/Layout.astro                ← 重度分叉，核心成本
+  1343 /    0  src/components/features/HomeWallpaperDecor.astro  ← 零冲突资产
+    76 / 1117  src/layouts/MainGridLayout.astro        ← 重度分叉
+     0 / 1003  src/content/posts/markdown-tutorial.md  ← 删掉了上游的示例文章
+   743 /    0  src/content/posts/life/Internship/Internship.md
+   703 /    0  src/components/features/ChangelogTimeline.astro
+   109 /  497  src/utils/setting-utils.ts              ← 重度分叉
+```
+
+**⚠️ 最值得注意的一类：18 个「你删了、上游还在」的文件**
+
+```
+src/content/posts/markdown-tutorial.md   1003 行     src/content/posts/markdown-plantuml.md    250
+src/content/posts/code-examples.md        472        src/content/posts/mdx-example.mdx         162
+src/content/posts/markdown-mermaid.md     333        src/content/posts/guide/firefly-wiki-link.md 137
+src/content/posts/markdown-extended.md    281        src/content/posts/guide/index.md          120
+src/content/posts/guide/firefly-layout-system.md 250  src/content/posts/encrypted-demo.md     116
+… 以及 katex-math-example.md / firefly.md / video.md / draft.md / 4 个 dynamic 条目
+```
+
+这些全是**上游的示例内容**（教程、演示文章等），你为了自己的站点清掉了它们。
+上游只要更新其中任何一个，git 就会报 **modify/delete 冲突**（"他改了，你删了"）——
+这是所有冲突里最烦的一类，因为每次都要手工 `git rm` 确认一次。
+**建议：把"遇到这类文件就统一 `git rm`"写进你的合并 checklist**，别每次现想。
+
+### 本次 4 处改动对合并的实际影响（很小）
+
+| 文件 | 改动前差异 | 改动后差异 | 新增的冲突面 |
+| --- | --- | --- | --- |
+| `astro.config.mjs` | 17 / 3 | **13 / 2** | **负**——还原成上游写法，差异反而变小了 |
+| `src/components/widget/Profile.astro` | 10 / 31 | 11 / 33 | 一处 2 行 |
+| `src/config/booknavConfig.ts` | 159 / 1 | 160 / 2 | 一处 1 行 |
+| `vercel.json` | 31 / 0 | 49 / 0 | 纯追加 18 行 |
+
+- 前两处的 Profile / booknav 各只有**一处 1–2 行**改动，只有当上游**同时改动同一行**时才会冲突，
+  且届时是行级冲突，一眼能解。
+- `vercel.json` 是**纯新增、零删除**，而且插入点落在上游文件根本没有的区域
+  （上游的 vercel.json 到 `/_astro/` 规则就结束了，后面 `/assets/`、`/pagefind|pio/`、`/api/`、我新加的
+  `/images/` `/favicon/` 全是你/我追加的）——除非上游恰好在同一位置追加规则，否则不冲突。
+- `docs/pagespeed-optimization.md` 上游完全没有这个文件，**零冲突**。
+
+**结论：这 4 处不影响你长期合并。** 合并永远能跑完，区别只是要不要手工解冲突；
+这 4 行最多给你增加"一次 2 行的行级冲突"的概率，而其中一处还让差异变小了。
+真正决定你合并成本的是上面那 664 个文件 / 3.7 万行，不是这次这几行。
+
+**复盘：本次所有改动都遵守了"优先落在上游不存在的文件或配置项、且尽量只动 1–2 行"的原则，
+唯一例外是 `Profile.astro` 动了一处上游未改的行（2 行），属于可接受的低风险取舍。**
+
+
 1. **优先改"上游不存在的文件"**。下面这些是你自己的新增资产，改动零冲突：
    - `src/components/features/HomeWallpaperDecor.astro`
    - `src/components/layout/WallpaperSection.astro`
@@ -467,3 +534,561 @@ rm public/favicon/favicon-192.png               # 移除新增 PNG
 备份另存于 `.workbuddy/tmp/stickers-orig-backup/` 与 `.workbuddy/tmp/favicon-orig-backup/`。
 
 **注意：以上改动尚未构建部署，线上仍是旧版本。**
+
+---
+
+## 十、第二轮复测（部署后 · 2026-09-11 23:45）
+
+> 工具：Lighthouse 13.4.1 本地跑 `https://www.9ll.uk/`（与 PSI 同一套审计引擎，移动端默认节流）
+> 仓库状态：`upstream/master...HEAD` = **0 落后 / 316 领先**，上游已全部合入（健康）
+>
+> ⚠️ **你给的 PSI 链接本身跑失败了**：`https://pagespeed.web.dev/analysis/https-www-9ll-uk/c5i93nt0nw?form_factor=mobile`
+> 报告里没有任何分数，实验室诊断报 `RPC::DEADLINE_EXCEEDED: context deadline exceeded`。
+> 这本身是个信号（见 10.3），下面所有数据都是本地实测。
+
+### 10.1 先确认：第一轮改动确实已经上线
+
+| 资产 | 上一轮前 | 线上实测（现在） | 结论 |
+| --- | --- | --- | --- |
+| `/favicon/favicon.ico` | 87,889 B | **8,976 B**（magic `000001000300` = 真 ICO） | ✅ 已部署 |
+| `/favicon/favicon-192.png` | 不存在 | **12,670 B**（`89504e47` = PNG） | ✅ 已部署 |
+| `miku.webp` | 58,922 B | **21,406 B** | ✅ 已部署 |
+| `madoka.webp` | 43,382 B | **16,546 B** | ✅ 已部署 |
+| `blonde-idol.webp` | 45,144 B | **16,626 B** | ✅ 已部署 |
+| `/images/home-stickers/` 合计 | 339,148 B | **129,874 B** | ✅ 与文档数字完全一致 |
+
+`HomeWallpaperDecor.astro` 的两处改动也在（第 348 行 `.home-wallpaper-card img`、第 361 行 `setTimeout(finish, 400)`）。
+
+**所以第一轮的账是实的：LCP 从 6.2 s 降到中位数 5.3 s。**
+
+### 10.2 复测数据（移动端连跑 4 次）
+
+| 轮次 | perf | FCP | LCP | SI | TBT | 总传输 | Image | Fetch | Script | 请求数 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| M1 | 68 | 3475 ms | 4599 ms | 9374 ms | 4 ms | 1405.0 KiB | 627.7 | 483.4 | 171.3 | 88 |
+| M2 | 56 | 7259 ms | 8761 ms | 10375 ms | 2 ms | 1405.1 KiB | 627.6 | 483.5 | 171.4 | 81 |
+| M3 | 61 | 4461 ms | 5962 ms | 9106 ms | 2 ms | 1405.1 KiB | 627.8 | 483.3 | 171.4 | 81 |
+| M4 | 74 | 2655 ms | 4307 ms | 8291 ms | 12 ms | 1405.1 KiB | 627.7 | 483.3 | 171.5 | 81 |
+| **中位数** | **64** | **3968 ms** | **5280 ms** | **9240 ms** | — | **1405 KiB** | **628** | **483** | **171** | — |
+
+桌面端（同一份代码，两次，区别只在有没有 `--disable-gpu`）：
+
+| 轮次 | perf | FCP | LCP | SI | 总传输 | Fetch |
+| --- | --- | --- | --- | --- | --- | --- |
+| D1 `--disable-gpu` | 67 | 2369 ms | 2780 ms | 6171 ms | 2058.8 KiB | 924.3 |
+| D2 带 GPU | **89** | 1170 ms | 1547 ms | 1945 ms | 2176.7 KiB | 1042.3 |
+
+Accessibility 96 / 95，Best Practices 100，SEO 100，TBT ≈ 0，CLS = 0 —— 这些和上一轮一致。
+
+### 10.3 最重要的观察：**字节数是恒定的，时间全在抖**
+
+4 次移动端跑的**总传输量每次都精确地是 1405.1 KiB**（Image 627.7 / Fetch 483.4 / Script 171.4），
+但 FCP 在 **2.7 – 7.3 s** 之间摆动、分数 56 – 74。
+
+**这说明瓶颈不是"下了多少字节"，而是"多少请求在同一条模拟 1.6 Mbps 的管道上抢"。**
+88 个请求里有近一半（14 个 Fetch + 24 个 Image）对首屏毫无贡献，却把关键资源排到了后面。
+
+这同时也是**你那份 PSI 报告直接超时（`RPC::DEADLINE_EXCEEDED`）的合理解释**——
+Lighthouse 的 network-dependency-tree 显示，Swup 的预取请求一直排队到 **30 秒**才下完：
+
+```
+/ (607 ms) → page.js (768) → preload-helper.js (1485) → Swup.modern.js (12046!)
+                                  → SwupPreloadPlugin.js (11867)
+                                     ├─ /sponsor/  30623 ms
+                                     ├─ /rss/      28599 ms
+                                     ├─ /about/    24543 ms
+                                     ├─ /friends/  22446 ms
+                                     └─ /dynamic/  22444 ms
+```
+
+**一个页面的加载过程被拖到 30 秒还没收尾，Google 的采集端超时是可以预期的。**
+
+### 10.4 LCP / FCP 的真实瓶颈：首屏 hero 完全由 JS 生成
+
+**LCP 元素两次实测都是同一个**：
+
+```
+article.home-wallpaper-card > div.home-wallpaper-card__content > h1.is-motion-settled > span.home-wallpaper-card__motion-text
+label: 折腾进行时
+```
+
+LCP 拆解：`timeToFirstByte` 258–284 ms，**`elementRenderDelay` 2328–3246 ms**。
+
+`elementRenderDelay` 为什么还是这么大，链条是这样的：
+
+```
+HTML 开始解析
+  → 3 个 CSS 阻塞首屏（40.4 KB，Lighthouse 估 380 ms）
+  → 解析到 WallpaperSection 的内联脚本
+      → initBannerCarousel() 执行
+      → materialize(firstSlide, true)：把 <template> 里的 <picture> 克隆进 DOM
+        ← 到这一刻浏览器才开始下载壁纸！
+  → 壁纸下载完 → 才能画出第一帧  ← FCP 卡在这
+  → HomeWallpaperDecor 的 revealDecor()
+      → 等 .home-wallpaper-card img（头像 + 头像贴纸）加载完
+      → 2 × requestAnimationFrame → 加 is-ready
+  → .home-wallpaper-card  animation-delay: 80ms
+  → h1                      animation-delay: 0.36s   ← 硬编码 440 ms
+  → h1 入场 keyframe 起点是 opacity: 0，而 Chrome 不把 opacity:0 的元素算作 LCP
+  → LCP 记录
+```
+
+**关键事实（本轮新查出来的）**：首页 HTML 里有 **9 个 `<template>`**，
+壁纸的 `<picture>` 全在里面，**页面上没有任何 `<link rel="preload" as="image">`**。
+
+```html
+<!-- 线上首页 HTML 的实际结构 -->
+<template>
+  <div class="object-cover h-full w-full overflow-hidden relative">
+    <div class="lqip-placeholder absolute inset-0 pointer-events-none"
+         style="background: linear-gradient(135deg, #e5c9b7 0%, #d1ac98 50%, #bea3a7 100%)"></div>
+    <picture><source srcset="/_astro/1.Bn08FcSA_1BiSrC.webp 640w, ..."></picture>
+  </div>
+</template>
+```
+
+也就是说：**浏览器在解析 HTML 时既看不到壁纸图，也看不到那个廉价的 LQIP 渐变占位**——
+两者都要等内联脚本跑完、克隆进 DOM 才存在。首屏第一眼的 paint 被整条 JS 链串行地挡住了。
+
+> 这解释了为什么「把 LCP 元素从等贴纸改成等头像」只换回了 1 s：
+> 真正的问题不是"等哪几张图"，而是**首屏 hero 是运行时生成的，浏览器无从提前发现**。
+
+#### 10.4.1 逐帧截图 + 网络时间线（实测证据）
+
+不要只看数字。把 Lighthouse 的 `screenshot-thumbnails` 里的 base64 帧导出来直接看，
+首屏体验是一目了然的（脚本要点：`data` 字段是 **data URL**，必须 `v.split(',',1)[1]` 再 base64 解码，
+直接 `b64decode(data)` 会得到 `75ab5a8a` 这种垃圾头）：
+
+| 时刻 | 帧大小 | 屏幕上是什么 |
+| --- | --- | --- |
+| 0.87 s | 1.2 KB | **全白** |
+| 1.74 s | 1.2 KB | **全白** |
+| 2.62 s | 15.9 KB | 首屏一次性出现：卡片 + h1「折腾进行时」+ 8 张贴纸；**背景只是纯色（LQIP/页面底色）** |
+| 3.49 s | 14.7 KB | 同上，没变化 |
+| 4.36 s | 29.7 KB | **真壁纸照片到达**，背景换成实拍图 |
+| 5.23 s | 30.3 KB | 稳定 |
+
+对应的网络时间（同一次跑的 M4：FCP 2655 ms / LCP 4307 ms）：
+
+```
+图片                       开始(ms)   结束(ms)    体积
+8 张贴纸                   ~499       ~1014      14–21 KB 各
+卡片头像 + 头像贴纸          499       861/1013   4.3 / 17.3 / 5.6 KB
+3.DCPC6UnX  ← 本次随机首张壁纸  638       4310      89.0 KB   ← 3.67 秒才下完
+1.Bn08FcSA  ← 轮播第 2 张     5640      12552     55.9 KB
+2.DQDMqYrj  ← 轮播第 3 张     15260     22660     41.9 KB
+```
+
+**两个独立的原因，各占一半责任：**
+
+1. **起点晚了约 340 ms**。壁纸请求直到 **638 ms** 才发出——因为它在 `<template>` 里，
+   浏览器解析 HTML 阶段完全看不到这张图，必须等内联 `initBannerCarousel()` 执行、
+   `materialize()` 克隆进 DOM 才开始下载。HTML 的 TTFB 只有 ~260 ms，CSS 在 538–612 ms 就绪，
+   也就是说这 340 ms 纯粹是"等 JS"。
+2. **下载速度只有约 24 KB/s**。89 KB ÷ 3.67 s ≈ 24 KB/s，而模拟带宽是 1.6 Mbps（≈200 KB/s）——
+   **这张图只拿到了 12% 的带宽**，因为同一条管道上有 87 个请求在抢，其中 483 KB 就是 Swup 预取。
+
+> 所以 **#1（关掉 Swup 预取）会顺带大幅缓解第 2 点**：抢带宽的大户被拿掉了，
+> 壁纸能拿到接近全部带宽。第 1 点（起点晚）则要靠下面 #2 的改动解决。
+
+**#2 的两个方案分别修哪一段：**
+
+| 方案 | 修什么 | 代价 |
+| --- | --- | --- |
+| A. 把 LQIP 色块从 `<template>` 移出来直接渲染 | 白屏 2.6 s 那一段 → 变成"立刻有接近最终观感的色块" | 无。但 **CSS 渐变能否被 Chrome 算作 FCP 内容存疑**，所以主要是观感改善，分数不保证 |
+| B. 首张壁纸直接写进 HTML + `<link rel="preload" as="image" fetchpriority="high">` | 起点晚 340 ms 那一段，并让它在带宽竞争里排前面 | 随机首张从"每次访问换一张"变成"每次构建换一张" |
+
+`getLqipProps(src, basePath, isPublic)` 是纯函数（`src/utils/lqip-utils.ts`），可直接在 frontmatter 调用，
+所以方案 A 技术上没有障碍。
+
+### 10.5 与上一轮的差异：轮播把壁纸从 1 张变成 3 张
+
+`backgroundWallpaper.ts` 在 20:35 把 `carousel.enable` 改成了 `true`，`interval: 5000`，`effect: "zoom"`。
+
+轮播脚本的机制（`WallpaperSection.astro` 第 240–271、417–469 行）：
+
+- `materialize()` 从 `<template>` 克隆一张进 DOM，**插入的那一刻才开始下载**
+- 首张用 `fetchpriority="high"`；`materializeAhead()` 预取下一张，但已经做了 `requestIdleCallback` 延迟（第 456–464 行），这块是干净的
+- `startAutoPlay()` 立刻启动，**每 5 秒克隆下一张** → 约 15 秒内 4 张壁纸全部下载完
+
+实测代价（`image-delivery-insight` 里的实际 URL）：
+
+| 端 | 壁纸 | 体积 | 实际像素 → 显示尺寸 |
+| --- | --- | --- | --- |
+| 移动 | `3.DCPC6UnX` | 90,868 B | 738×1472 → 463×823（浪费 59,016 B） |
+| 移动 | `1.Bn08FcSA` | 56,992 B | 735×1471 → 463×823（浪费 36,901 B） |
+| 移动 | `2.DQDMqYrj` | 42,658 B | 735×1471 → 463×823（浪费 27,620 B） |
+| 桌面 | `three.CgenYltt` | 171.2 KiB | — |
+| 桌面 | `9.SrdOYzl_` | 144.9 KiB | — |
+| 桌面 | `7.DZkJnfUw` | 80.7 KiB | — |
+
+移动端图片桶实测 **627.7 KiB**，其中壁纸约 190 KiB。上一轮只有随机命中 1 张。
+贴纸从 331 KB 压到 130 KB 抵消了一部分，所以总量没涨太多，但**关键窗口内多出来的这 2 张壁纸是实打实的争用来源**。
+
+> 注意：`hasMultipleImages = desktop.length > 1 || mobile.length > 1`（`banner-visibility-utils.ts:176`）
+> 跟轮播开关**无关**。4 张壁纸的 `<template>` 结构在轮播关掉时也存在，只是那时只有 1 张会被克隆进 DOM。
+
+### 10.6 桌面端：先修正我自己的一次测量误差
+
+我第一遍用 `--disable-gpu` 跑出 **67 分**，那是**不可信的**：
+
+这个页面合成负载很重（轮播 `effect-zoom` 持续 transform、`fullscreen.blurRamp` 的 `filter: blur()`、卡片的 `backdrop-filter` 毛玻璃），
+在软件渲染下会严重失真。带 GPU 复跑是 **89 分**（FCP 1.2 s / LCP 1.5 s / SI 1.9 s）。
+
+**所以桌面端是从 100 掉到约 89，不是 67。** 掉分主要来自轮播带来的持续重绘和 +38 KiB 传输。
+
+**结论：以后所有对比都要固定 GPU 参数，并且移动端取 3 次中位数——单次数字没有意义。**
+
+### 10.7 第二轮优先级清单（按性价比排序）
+
+| # | 改动 | 位置 | 合并风险 | 预期收益 |
+| --- | --- | --- | --- | --- |
+| **1** | Swup 视口预取关掉（上一轮 P0-3，仍未做） | `astro.config.mjs:137` | **低**（配置文件，且这行是你自己加的第 135–138 行） | 移动端 **-483 KiB / -14 请求**；桌面端 -924~1042 KiB。这是唯一能同时改善 FCP / LCP / SI 的一项 || **2** | 让首屏 hero 可被提前发现 | `src/components/layout/WallpaperSection.astro` | **无**（642 行全新增，上游没有） | FCP 中位数 3.97 s 主要卡在这条串行链上 |
+| **3** | 列表封面 `widths` 加小档，或 `quality: 85 → 78` | `CoverImage.astro:68` / `siteConfig.ts:345` | 中 / **很低** | 封面共约 320 KiB，Lighthouse 报可省 250 KiB |
+| ~~4~~ | ~~壁纸轮播 `zoom → fade`~~ **← 本项撤回，见 10.9** | `backgroundWallpaper.ts:131` | — | ~~移动端 SI 一直卡在 8.3–10.4 s，zoom 的持续重绘是嫌疑之一~~ 查了 CSS：这是**错误推断** |
+| **5** | 贴纸再降一档 192 → 144 | `public/images/home-stickers/*.webp` | **无** | 约 -55~60 KiB |
+| **6** | 静态资产补缓存头 | `vercel.json` | **低** | 不影响 PSI 分数（都是冷启动），但重复访问收益明显 |
+| **7** | 修 booknav 的 404 | `src/config/booknavConfig.ts:88` | 低 | 消一个线上 404（已实测确认） |
+| **8** | 侧边栏头像改 lazy + 合理 sizes | `src/components/widget/Profile.astro:36-39` | 低 | -13.5 KiB，且不再和 LCP 抢 `fetchpriority` |
+
+#### #1 关掉 Swup 视口预取
+
+```js
+// astro.config.mjs 第 135–138 行（现在是 —— 上游原版是 preload: true，这是你自己改的）
+preload: {
+  hover: true,
+  visible: true,
+},
+// 改为
+preload: {
+  hover: true,
+  visible: false,
+},
+```
+
+**代价**：触屏没有 hover，移动端首次点某个链接会变成"手指按下才开始抓"（约 0.3–1.5 s），
+同一会话再点同一页仍命中内存缓存。桌面端因 hover 覆盖了悬停→点击的时间，基本无感。
+
+> **修正上一节的措辞**：第 196 行原来写"移动端用户点击链接会回到『现抓现切』"，不准确。
+> 预加载插件共四个通道（`mouseenter` / `touchstart` / `focus` / 视口），关掉 `visible` 只去掉第四个，
+> 移动端的 `touchstart` 通道仍在（手指按下即高优先级插队）。详见第十一节。
+
+**但注意**：现在这 483 KiB 是压在**首屏**上的，抢的是 LCP 的通道。把它挪到"用户真的点了链接"之后再发生，整体体验是变好的。
+
+#### #2 让首屏 hero 可被提前发现（本轮最有价值的改动）
+
+两个方案，A 改动小、B 收益大：
+
+**方案 A（推荐先做）**：把 LQIP 渐变占位层从 `<template>` 挪出来，直接渲染在 `.slide-item` 里。
+
+```astro
+<!-- WallpaperSection.astro 第 45–61 行附近 -->
+{backgroundImages.mobile.map((src, index) => (
+    <div class:list={["slide-item block lg:hidden", index === 0 && "active"]} data-index={index}>
+        {/* LQIP 渐变层提到 template 外面：它是一个纯 CSS 渐变，解析 HTML 时就能画，
+            这样浏览器不必等内联脚本执行完才有第一帧内容 */}
+        <div class="lqip-placeholder absolute inset-0 pointer-events-none"
+             style={`background: ${getLqipGradient(src)?.bg ?? "var(--page-bg)"}`}
+             aria-hidden="true"></div>
+        <template>
+            <ImageWrapper ... />
+        </template>
+    </div>
+))}
+```
+
+> 需要从 `src/constants/lqips.json` 取该图对应的渐变色（文件里已有 `public:assets/images/moe-icp.png` 这类条目）。
+> `<picture>` 仍留在 template 里，所以不会让 4 张图都开始下载。
+
+**方案 B（收益更大，但要接受一个行为变化）**：把"随机首张"从运行时改到构建时，
+首张壁纸直接写进 HTML 并加预加载。
+
+```astro
+<!-- 首张不再用 Math.random() 挑，而是构建时定下来，直接渲染，不进 template -->
+<link rel="preload" as="image" fetchpriority="high" href={firstWallpaperUrl} />
+<ImageWrapper src={backgroundImages.mobile[0]} loading="eager" fetchpriority="high" ... />
+```
+
+**代价**：随机从「每次访问换一张」变成「每次构建/部署换一张」。
+**收益**：浏览器在解析 HTML 阶段就开始下载壁纸，FCP 和 LCP 一起前移——这是目前唯一能绕开
+「脚本 → 克隆 → 下载」这条串行链的办法。
+
+#### #3 封面宽度（两条路，选一条）
+
+```ts
+// 路线 A：零代码，只改配置（合并风险很低）
+// src/config/siteConfig.ts 第 345 行
+quality: 85,   // → 78
+
+// 路线 B：更激进，改组件（该文件你已改 21 行，属中等风险）
+// src/components/common/CoverImage.astro 第 68 行
+const widths = [828];          // → const widths = [400, 640, 828];
+```
+
+实测 10 张封面每张都被判定"比显示尺寸大 40–50%"（如 `cover.DmYuCQNo` 828×414 → 显示 368×207，浪费 46,858 B）。
+**建议先走 A**，一毛钱风险都没有。
+
+#### #5 贴纸 192 → 144
+
+显示尺寸实测 **72×96 CSS px**（Lighthouse 同时报"压缩率还可以更高"和"比显示尺寸大"）。
+192 宽 ≈ 2.67×，压到 **144×192** 刚好覆盖 2× DPR，预计省 55–60 KiB。
+零合并风险（`public/` 静态资产），原图备份策略见第一节 P0-1。
+
+#### #6 静态资产补缓存头
+
+`vercel.json` 已经有 `/_astro/`、`/assets/`、`/pagefind|pio/`、`/api/` 四组规则，
+但 `/images/` 和 `/favicon/` 会落到第 8–9 行的 catch-all：
+
+```
+Cache-Control: public, s-maxage=86400, stale-while-revalidate=604800, max-age=0, must-revalidate
+                                        ↑ 这半段没问题            ↑ 这半段才是问题
+```
+
+`max-age=0, must-revalidate` = 浏览器每次访问都要重新校验，`/images/home-stickers/*.webp` 和 favicon 全部受影响。
+照抄 `/assets/` 那段加两条规则即可：
+
+```json
+{
+  "source": "/images/(.*)",
+  "headers": [
+    { "key": "Cache-Control", "value": "public, max-age=2592000, stale-while-revalidate=604800, must-revalidate" }
+  ]
+},
+{
+  "source": "/favicon/(.*)",
+  "headers": [
+    { "key": "Cache-Control", "value": "public, max-age=2592000, stale-while-revalidate=604800, must-revalidate" }
+  ]
+}
+```
+
+> 注意这批文件**不带内容哈希**，所以将来改图要用改名的办法让缓存失效。
+
+#### #4 壁纸轮播的取舍
+
+`carousel.enable: true` 是你的视觉偏好，**不强行建议关**。想留住轮播又想少付代价，有一个低风险选项：
+
+```ts
+// src/config/backgroundWallpaper.ts 第 127–134 行
+carousel: {
+  enable: true,
+  interval: 5000,
+  transitionEffect: "zoom",   // → "fade"
+},
+```
+
+`zoom` 需要持续做 `transform` 重绘，在移动端 4× CPU 节流下对 Speed Index 不友好。
+`fade` 只动 opacity，合成开销小得多。视觉上从"缓慢推镜"变成"交叉淡入"，看你取舍。
+
+#### 不建议动（沿用上一轮结论）
+
+| 项 | 理由 |
+| --- | --- |
+| `inlineStylesheets: 'always'` | 破坏 Swup 跨页 CSS 缓存，得不偿失 |
+| umami `recorder.js`（45 KiB，`unused-javascript` 唯一点名） | TBT 是 0 ms，它不是瓶颈，关掉白丢你要的数据 |
+| `Layout.astro` 里的 preconnect / SakuraEffect | 收益小，而该文件已删 1338 行 / 加 158 行，重度分叉，不值得再加手工合并成本 |
+| `fullscreen.blurRamp` 的 mobile | 这是合成开销而非 LCP 问题；要动先固定 GPU 参数测一次再说 |
+
+### 10.8 方法学提醒（下一轮务必遵守）
+
+1. **移动端必须取 3 次中位数**。同一份代码连跑 4 次：perf `68 / 56 / 61 / 74`，FCP `2.7 / 7.3 / 4.5 / 2.7 s`。
+   单次数字不可用于对比。而字节数 4 次完全一致（1405.1 KiB）——**抖动全部来自请求争用**。
+2. **固定 `--disable-gpu` 与否**。这个页面合成负载重，桌面端会因为这一个参数差 22 分（67 vs 89）。
+   建议统一**不加** `--disable-gpu`（更接近真实浏览器与 PSI）。
+3. **对比要在同一时间窗内做**。线上部署状态、Vercel 边缘缓存 `age` 都会影响结果。
+4. **判定文件归属要两个命令都查**（`git cat-file -e` + `git diff --numstat`），这条沿用上一轮教训。
+
+### 10.9 第二轮执行记录（2026-09-12 00:15）
+
+| # | 改动 | 文件 | diff | 状态 |
+| --- | --- | --- | --- | --- |
+| 1 | Swup 视口预取关掉 | `astro.config.mjs:135` | +1 / -4 | ✅ 已执行 |
+| 7 | booknav 的 404 | `src/config/booknavConfig.ts:88` | +1 / -1 | ✅ 已执行 |
+| 8 | 侧边栏头像改懒加载 | `src/components/widget/Profile.astro:36-37` | +1 / -2 | ✅ 已执行 |
+| 6 | 静态资源缓存头 | `vercel.json` | +18 | ✅ 已执行 |
+| ~~4~~ | ~~轮播 zoom→fade~~ | — | — | ❌ **撤回**，理由见下 |
+| 2 | hero 提前可发现 | `WallpaperSection.astro` | — | 待你决定 A / B |
+| 3 | 封面 quality 85→78 | `src/config/siteConfig.ts:345` | — | 未做 |
+| 5 | 贴纸 192→144 | `public/images/home-stickers/` | — | 未做 |
+
+**#1 的写法说明**：没有写 `visible: false`，而是直接还原成上游的 `preload: true`。
+两者运行时完全等价（见 §11.1 的运行时验证），但这样这一行与上游**字节一致**——
+`git diff upstream/master -- astro.config.mjs` 里已经完全没有 preload 相关差异。
+这是本轮唯一一条能**减少**将来合并负担的改动。
+
+**#4 撤回的理由（我上一轮的推断是错的）**：
+当时写"`effect-zoom` 的持续重绘拖累 Speed Index"，属于没查证就下结论。
+这次读了 `src/styles/layout-styles.css:327-334`：
+
+```css
+.effect-zoom .slide-item        { transition-property: opacity, transform; transform: scale(1.08); }
+.effect-zoom .slide-item.active { transform: scale(1); }
+```
+
+**`zoom` 不是持续运行的动画**，只是一次性的 1000ms 过渡（`.slide-item` 基础规则里
+`transition-duration: 1000ms`）——每 5 秒切换时播一次 1 秒的 opacity + transform。
+`fade` 只是把 `transition-property` 从 `opacity, transform` 收成 `opacity`，差一个 GPU 合成的
+transform，**在带宽瓶颈面前完全不可测**。
+
+而且首张壁纸的入场过渡已经被处理好了（`WallpaperSection.astro:421-434` 先 `style.transition = 'none'`
+再加 `active`，避免首帧被 1s 过渡推迟），所以也没有"首屏被 zoom 拖慢"的问题。
+
+**结论：这项没有性能收益，纯属视觉偏好。既然没收益，就不该拿你的观感去换——故不改。**
+如果你单纯更喜欢交叉淡入的观感，改 `backgroundWallpaper.ts:131` 的 `"zoom"` → `"fade"` 即可，一行。
+
+**#8 的实现说明**：`loading="eager"` → `"lazy"`，并删掉 `fetchpriority="high"`。
+后者其实更值得删——头像被显式标成高优先级，而真正的 LCP 元素（首屏壁纸）反而只有默认优先级，
+两者在抢同一条管道。没动 `widths={[350]}` / `sizes="350px"`：实测图源 350×350，
+在移动端 192 CSS px 容器里按 2.6× DPR 换算本就需要约 500px，**这张图其实已经偏小**，
+Lighthouse 报的"浪费 13.5 KB"是它那套偏保守的超尺寸判定（见附一认知 1 的说明），压缩它只会让画面更糊。
+
+**#6 的验证**：`vercel.json` 现在 7 条规则，JSON 合法。已线上实测确认**更具体的规则能覆盖 `/(.*)` 通配**：
+`/_astro/` 返回 `max-age=31536000, immutable`、`/assets/` 返回 `max-age=2592000`，
+而 `/images/` 和 `/favicon/` 目前确实拿到通配的 `max-age=0, must-revalidate`（就是问题所在）。
+所以新规则部署后生效。
+
+**#6 没加 `/gallery/`**：里面的图你会换，而文件名不带内容哈希，加了 30 天缓存后换图要等缓存过期才可见。
+想加的话照抄 `/images/` 那条即可。
+
+**尚未构建部署。** 回滚：`git checkout -- <file>`。
+
+---
+
+## 十一、Swup 预取机制详解（读源码确认）
+
+> 来源：`node_modules/.../@swup/preload-plugin@3.2.11/dist/index.module.js.map`（含未压缩源码）、
+> `@swup/astro@1.8.0/src/script.ts`。**不是推断，是源码事实。**
+
+### 11.1 `preload` 选项是怎么映射的
+
+```js
+// @swup/astro/src/script.ts 第 50–54 行
+if (typeof preload === 'object') {
+  preload = { hover: preload.hover ?? true, visible: preload.visible ?? false };
+} else {
+  preload = { hover: preload, visible: false };   // ← 上游的 preload: true 走这一支
+}
+// 第 92 行
+SwupPreloadPlugin: preload
+  ? { preloadHoveredLinks: preload.hover, preloadVisibleLinks: preload.visible }
+  : false
+```
+
+**结论：上游的 `preload: true` 就等于 `{ hover: true, visible: false }` —— `visible` 默认是关的。**
+所以 `visible: true` 是本次 fork 自己打开的；建议关掉不是"偏离上游"，而是**回到上游默认**。
+（另外第 44–47 行：`if (!cache) preload = false` —— 关掉 swup 的 cache 会连带关掉全部预取。）
+
+#### 运行时验证（最硬的证据，可复跑）
+
+不用只信源码，**直接调用库自己的生成器**看它产出什么参数：
+
+```js
+// 存成 .mjs 后 node 执行；路径指向 pnpm 里的 @swup/astro
+const { buildInitScript } = await import(pathToFileURL(
+  "…/node_modules/.pnpm/@swup+astro@1.8.0_…/node_modules/@swup/astro/dist/script.js"
+).href);
+
+for (const opts of [{ preload: true }, { preload: { hover: true, visible: true } }, {}]) {
+  const out = buildInitScript(opts);
+  console.log(out.match(/new SwupPreloadPlugin\((.*?)\)/)?.[1]);
+}
+```
+
+实测输出（`@swup/astro@1.8.0` + `@swup/preload-plugin@3.2.11`）：
+
+| 传入的 `preload` | 生成的插件参数 | 视口预取 |
+| --- | --- | --- |
+| `true`（**上游写法**） | `{"preloadHoveredLinks":true,"preloadVisibleLinks":false}` | **关** |
+| （不传该选项） | `{"preloadHoveredLinks":true,"preloadVisibleLinks":false}` | **关** |
+| `{ hover: true, visible: false }` | `{"preloadHoveredLinks":true,"preloadVisibleLinks":false}` | **关** |
+| `{ hover: true, visible: true }`（**本站现状**） | `{"preloadHoveredLinks":true,"preloadVisibleLinks":true}` | **开** |
+
+三层默认互相印证，`visible` 都是 `false`：
+
+1. `@swup/astro` 映射：`else { preload = { hover: preload, visible: false } }`（`src/script.ts:53`）
+2. 即使传对象且不带 `visible`：`visible: preload.visible ?? false`（同文件 `:51`）
+3. 插件自身默认：`preloadVisibleLinks: { enabled: false, … }`（`preload-plugin/src/index.ts:86-87`）
+
+**改动风险因此很低**：把 `visible` 改成 `false` 只是让配置回到"和上游完全一致"的状态，
+将来合并上游时这一行甚至可能不再产生 diff。
+
+### 11.2 四个触发通道，`visible` 只管其中一个
+
+`@swup/preload-plugin` 的 `mount()` 里挂了四组监听：
+
+| 通道 | 守卫条件 | 源码位置 |
+| --- | --- | --- |
+| `mouseenter` | `deviceSupportsHover()` 为真才执行 | `onMouseEnter` |
+| `touchstart` | **`deviceSupportsHover()` 为假才执行**（触屏设备） | `onTouchStart` |
+| `focus` | 无守卫，键盘 Tab 聚焦即触发 | `onFocus` |
+| IntersectionObserver | `preloadVisibleLinks.enabled` 为真才挂 | `preloadVisibleLinks()` |
+
+`deviceSupportsHover()` = `window.matchMedia("(hover: hover)").matches`。
+
+**所以关掉 `visible` 只去掉第四个通道**，前三者全保留，其中 `touchstart` 让移动端"手指按下即高优先级预取"。
+说成"移动端退回现抓现切"是不准确的。
+
+### 11.3 视口通道的具体参数（为什么这里特别贵）
+
+```js
+preloadVisibleLinks: {
+  enabled: false,        // 上游默认
+  threshold: 0.2,        // 链接 20% 面积可见
+  delay: 500,            // 需持续可见 500ms
+  containers: ['body'],  // ← 扫整页所有链接
+  ignore: () => false
+}
+```
+
+观察器（`src/observer.ts`）用 `document.querySelectorAll("body a[*|href]")` 扫全页链接，
+在 `whenIdle()`（`requestIdleCallback`）里执行，并且每次 `page:view` 都会 `update()` 重扫。
+
+触发后走 `queue`（`throttle: 5`，**并发上限 5**），`performPreload()` 用 **`fetch()`** 取页面 HTML，
+解析成 `PageData` 存进 `swup.cache`。导航时 `page:load` 钩子发现缓存命中就**直接返回该 Promise**，跳过真实请求。
+
+### 11.4 为什么在本站是 483 KiB
+
+预取的是**页面 HTML 本身**。这个主题每页 HTML 压缩后 **68–74 KB**（未压缩约 430 KB，大量内联脚本）。
+首页第一屏恰好有 7 个合格链接：
+
+```
+首页卡片导航：/archive/ 72.1 KB  /friends/ 70.4  /dynamic/ 66.8  /guestbook/ 65.6  /about/ 65.5
+卡片社交按钮：/rss/ 67.6 KB     /sponsor/ 67.0
+                       合计 475–483 KiB ≈ 移动端总流量的 34%
+```
+
+在 1.6 Mbps 模拟带宽下相当于**凭空多出约 2.4 秒纯下载**，插在 LCP 需要的壁纸 / CSS / 头像前面抢通道。
+`network-dependency-tree` 里这批请求最后一个完成于 **30.6 秒**。
+
+**判据是单页 HTML 体积**：若单页只有 15 KB，预取 7 页才 105 KB，`visible: true` 是个合理特性，不该无脑关。
+
+### 11.5 关掉之后会发生什么
+
+**不会坏的部分**：hover / touchstart / focus 三条通道全保留；`preloadInitialPage: true`（缓存当前页 DOM，
+浏览器返回键瞬时）不受影响；`cache: true` 不受影响 → 同一会话再点同一页仍 0 延迟。
+
+**会变的只有一点**：
+
+| 场景 | 现在 | 改后 |
+| --- | --- | --- |
+| 手机首次点某导航链接 | 已预载，0 ms | 按下才开始抓，约 0.3–1.5 s |
+| 手机再点同一链接 | 0 ms | 0 ms（内存缓存） |
+| 桌面悬停→点击 | ≈0 ms | ≈0 ms（mouseenter 覆盖了悬停到点击的间隔） |
+| 首屏额外传输 | +483 KiB | 0 |
+
+### 11.6 不想全关的折中写法
+
+`preload` 里的 `visible` 可以传对象，plugin 会 `{...defaults, enabled: true, ...你的值}`：
+
+```js
+preload: {
+  hover: true,
+  // 提高门槛 + 延后触发：只有大面积、长时间可见的链接才预取
+  visible: { threshold: 0.5, delay: 2000 },
+  // 或者：只观察内容区，把 hero / 页脚里的链接排除在外
+  // visible: { containers: ["#swup-container"] },
+},
+```
+
+`containers: ["#swup-container"]` 的依据：首页卡片（`HomeWallpaperDecor`）挂在 `#wallpaper-wrapper` 里，
+不在 swup 的容器列表中，所以这条能砍掉上面那 7 个链接。**但落地前建议先跑一遍确认哪些链接还落在容器内。**

@@ -33,8 +33,7 @@ const className = Astro.props.class;
       src={profileConfig.avatar || ""}
       alt="Profile Image of the Author"
       class="profile-avatar-image mx-auto lg:w-full h-full lg:mt-0"
-      loading="eager"
-      fetchpriority="high"
+      loading="lazy"
       widths={[350]}
       sizes="350px"
     />

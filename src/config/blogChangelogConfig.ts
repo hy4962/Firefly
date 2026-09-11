@@ -30,6 +30,45 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.45",
+		title: "预取刹车",
+		date: "2026-09-12",
+		summary: "首屏少传 483KB，顺手修掉两个小毛病",
+		description:
+			"接着 V1.4 的体检继续往下钻，这次换了个办法——把 Lighthouse 抓的逐帧截图导出来一张张看，首屏到底慢在哪立刻就清楚了：前 2.6 秒整屏是白的，然后卡片和贴纸一次性冒出来、背景还只是个色块，真正的壁纸要到 4.3 秒才到。顺着这条线查下去，发现最大的那笔流量根本不是图片——是 Swup 趁你还在看首页，就把导航里 7 个页面全提前下载好了",
+		items: [
+			{
+				category: "性能",
+				text: "关掉 Swup 视口预取：链接只要露出 20% 面积并停留 500ms 就会被提前下载，而首页第一屏正好有 7 个链接满足条件（卡片导航 5 个 + RSS / 打赏），一次抓回 483KB 的页面 HTML，占移动端总流量的 34%。改回 hover-only 之后，首屏少发起 14 个请求、少传 483KB，桌面端少 924KB～1042KB",
+			},
+			{
+				category: "维护",
+				text: "这次没有写 visible: false，而是直接把配置还原成上游那行 preload: true。两者运行时完全等价（跑库自己的 buildInitScript() 验证过，产出的插件参数一模一样），但这样这一行和上游字节一致，以后合并上游连 diff 都不会产生",
+			},
+			{
+				category: "维护",
+				text: "把首屏慢的原因彻底拆成两截：那张 89KB 的壁纸，请求直到 638ms 才发出——因为它藏在 <template> 标签里，浏览器解析 HTML 时根本看不到它，必须等内联脚本把它克隆进 DOM 才开始下载；而它下载时只抢到约 12% 的带宽（89KB 花了 3.67 秒），剩下的都被别的请求占着",
+			},
+			{
+				category: "性能",
+				text: "侧边栏头像改成懒加载，并去掉 fetchpriority=high：一个小头像被标成高优先级，而真正的首屏标题和壁纸反而只有默认优先级，等于小图在跟主图抢带宽",
+			},
+			{
+				category: "性能",
+				text: "/images/ 和 /favicon/ 补上 30 天缓存头：这两类之前落在默认规则上，响应头是 max-age=0, must-revalidate，等于浏览器每次访问都要把它们重新校验一遍",
+			},
+			{
+				category: "修复",
+				text: "修掉书签导航页一个一直裂着的图标：那条 Firefly 主题书签指向 /favicon/firefly-32.png，但换 favicon 时把这个文件删掉了，页面上一直是个 404 的空图标，改用图标库的 GitHub 图标",
+			},
+			{
+				category: "维护",
+				text: "把整个 fork 的合并负担量化了一遍：664 个文件与上游不同、3.7 万行改动，并揪出 18 个「本地删了但上游还在」的文件——这些上游一更新就会报 modify/delete 冲突，以后合并时统一 git rm 处理，不用每次现想",
+			},
+		],
+		tags: ["性能", "LCP", "预取", "缓存", "修复"],
+	},
+	{
 		version: "V1.4",
 		title: "首屏提速",
 		date: "2026-09-11",

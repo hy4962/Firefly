@@ -48,6 +48,24 @@
       ]
     },
     {
+      "source": "/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000, stale-while-revalidate=604800, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/favicon/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000, stale-while-revalidate=604800, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/(pagefind|pio)/(.*)",
       "headers": [
         {
