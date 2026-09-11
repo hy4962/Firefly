@@ -9,40 +9,40 @@
       ],
       "items": [
         {
+          "title": "手机上的 AI Agent：用 Operit 帮我看住了挂机的虚拟机",
+          "link": "https://www.9ll.uk/posts/recommend/operit-ai/",
+          "description": "Operit 是一个安卓上的开源 AI Agent 平台，能直接操作手机。我拿它排查了虚拟机挂机几小时就卡死的问题，最后它给我写了个看门狗程序，检测到卡死就自动重启虚拟机和里面的两个实例。",
+          "publishedAt": "2026-09-10T00:00:00.000Z"
+        },
+        {
+          "title": "给博客加上 Vercel 边缘缓存：顺便把那些英文术语整明白了",
+          "link": "https://www.9ll.uk/posts/deploy/vercelcdncache/",
+          "description": "给博客页面设置分层缓存头，让 CDN 直接吐页面而不是每次都回源，再配一个部署后自动预热的工作流，顺手把 max-age、s-maxage、HIT/MISS 这些缓存术语一个个讲明白",
+          "publishedAt": "2026-09-08T00:00:00.000Z"
+        },
+        {
           "title": "给博客加了张更新日志页",
           "link": "https://www.9ll.uk/posts/blog/blogchangelog/",
-          "description": "羡慕 rainzt.cn 的博客日志页，把它的页面结构扒下来，用 Firefly 自己的组件体系重做了一遍。全程只新增三个文件，不碰主题源码，以后合并上游更新不受影响。",
+          "description": "羡慕 rainzt.cn 的博客日志页，把它的页面结构扒下来，用 Firefly 自己的组件体系重做了一遍。全程只新增三个文件，不碰主题源码，以后合并上游更新不受影响。顺便把折叠动画从 max-height 换成了 grid-template-rows。",
+          "publishedAt": "2026-09-07T00:00:00.000Z"
+        },
+        {
+          "title": "给博客装了个朋友圈：把友链的更新聚成一条时间线",
+          "link": "https://www.9ll.uk/posts/blog/friendsmoments/",
+          "description": "羡慕 rainzt.cn 的朋友圈，把它搬进自己的 Firefly：构建时抓取所有友链的 RSS 合流成时间线，快照兜底，GitHub Actions 每天自动刷新。纯静态，不用服务器，只新增文件不碰主题源码。",
           "publishedAt": "2026-09-07T00:00:00.000Z"
         },
         {
           "title": "给博客首页加了张可拖拽贴纸卡片：一次合并友好的魔改",
           "link": "https://www.9ll.uk/posts/blog/homestickercard/",
-          "description": "看到 rainzt.cn 的首页毛玻璃卡片和能拖动的贴纸羡慕了，扒下来装到自己的 Firefly 上。全程只新增文件不动主题源码，以后还能正常合并上游更新，顺便踩了一堆 CSS 的坑。",
+          "description": "看到 rainzt.cn 的首页毛玻璃卡片和能拖动的贴纸羡慕了，扒下来装到自己的 Firefly 上。全程只新增文件不动主题源码，以后还能正常合并上游更新，顺便踩了一堆 CSS 的坑。后来又按性能数据把入场动画拆成两段、关掉了 Swup 视口预取。",
           "publishedAt": "2026-09-06T00:00:00.000Z"
         },
         {
-          "title": "Lucky + 阿里云 ESA 反代家里内网服务：只需要一个备案域名",
+          "title": "Lucky + 阿里云 ESA 反代家里内网服务：一个备案域名实现 IPv4/IPv6 双栈",
           "link": "https://www.9ll.uk/posts/network/lucky-esa-reverse-proxy/",
-          "description": "用阿里云 ESA 当国内加速入口，Lucky 负责反代家里内网服务：DDNS、证书、回源规则、CNAME 解析一套流程记录，顺便踩了回源 HOST 的坑。",
+          "description": "用阿里云 ESA 当国内加速入口，Lucky 负责反代家里内网服务：DDNS、证书、回源规则、CNAME 解析一套流程记录，顺便踩了回源 HOST 和证书配置的坑。和 Cloudflare + Lucky 那篇是同一原理，边缘节点换到国内，同样实现 IPv4/IPv6 双栈访问。",
           "publishedAt": "2026-09-04T00:00:00.000Z"
-        },
-        {
-          "title": "Vercel 函数默认跑在美国：改个 Region 让响应更快",
-          "link": "https://www.9ll.uk/posts/network/vercel-function-region/",
-          "description": "发现 Vercel Functions 默认区域在美国 iad1，进后台改一下 Function Region 就能让动态请求少跑一趟美国，顺带记录 Hobby 计划只能选一个区域的坑。",
-          "publishedAt": "2026-09-04T00:00:00.000Z"
-        },
-        {
-          "title": "GNAME 白嫖 .eu.cc 免费域名：注册续费都 0 元，还能托管 Cloudflare",
-          "link": "https://www.9ll.uk/posts/network/gname-free-eu-cc/",
-          "description": "GNAME 的 .eu.cc 免费注册活动：每个账号可领 3 张全额抵扣券，注册和续费都是 0 元，溢价域名除外，还能托管到 Cloudflare。整理了领券注册流程、续费入口的坑和接入 Cloudflare 的步骤。",
-          "publishedAt": "2026-08-30T00:00:00.000Z"
-        },
-        {
-          "title": "DSH 迁移 Docker 翻车四连：AI 全程远程替我修好了",
-          "link": "https://www.9ll.uk/posts/ai/dsh-migrate-docker-ai-repair/",
-          "description": "把 Windows 上的 DSH（DeepSeek Harness）连同插件配置迁移到 NAS 的 Docker 容器，启动即崩、连炸四个坑。最后全靠 AI 通过 SSH 远程诊断、打补丁、重装依赖，全程自动修好。",
-          "publishedAt": "2026-08-29T00:00:00.000Z"
         }
       ]
     },
@@ -53,6 +53,12 @@
         "https://upxuu.com/rss.xml"
       ],
       "items": [
+        {
+          "title": "「说说」undefined",
+          "link": "https://upxuu.com/talk/20260909004617/",
+          "description": "i just want to be left alone no think no talk only clear ​why not zh? no courage 在发生了一些事情后，有感而发 祝我平安",
+          "publishedAt": "2026-09-08T16:46:17.000Z"
+        },
         {
           "title": "「说说」一次就好，我陪你去到天涯海角",
           "link": "https://upxuu.com/talk/20260906203359/",
@@ -82,12 +88,6 @@
           "link": "https://upxuu.com/posts/%E5%88%9D%E4%B8%89%E4%BB%8E%E5%B7%AE%E7%82%B9%E6%B2%A1%E5%90%83%E4%B8%8A%E9%A5%AD%E5%BC%80%E5%A7%8B/",
           "description": "又开始无限循环的生活 今天作业也是非常少啊，晚自习俩小时就写完了😄 upxuu 决定抽出 10mi",
           "publishedAt": "2026-09-01T12:57:01.000Z"
-        },
-        {
-          "title": "「说说」初三，再出发！",
-          "link": "https://upxuu.com/talk/20260901062655/",
-          "description": "真的太快了，转眼就初三了，印象里我还刚上初一呢 简单定点小目标吧 第一次月考进 80/2450 十月一前做完河北前 5 年的数学中考题（虽然好像没这么多时间🌚） 每个月至少更一篇文章证明我还活着🥲 就这样吧，坐牢去咯 !https://img.upxuu.lcrworld.xyz/images/2026/9/1/202609010630",
-          "publishedAt": "2026-08-31T22:26:55.000Z"
         }
       ]
     },
@@ -140,7 +140,8 @@
       "friendUrl": "https://blog.cuteleaf.cn",
       "feedUrl": "https://blog.cuteleaf.cn/rss.xml",
       "feedUrls": [
-        "https://blog.cuteleaf.cn/rss.xml"
+        "https://blog.cuteleaf.cn/rss.xml",
+        "https://blog.cuteleaf.cn/atom.xml"
       ],
       "items": [
         {
@@ -152,7 +153,7 @@
         {
           "title": "GitHub PR 拉取、编辑与推送工作流",
           "link": "https://blog.cuteleaf.cn/posts/dev-notes/github-pr-edit-workflow/",
-          "description": "<p>作为仓库维护者，有时需要在合并 PR 之前对提交者的代码进行修改。本文记录如何拉取别人的 PR 到本地、编辑后推回原 PR 的完整流程。</p> <section><h2>前提条件<a href=\"#前提条件\"><span>#</span></a></h2><ul> <li>你有仓库的维护者权限</li> <li>PR 开启了 <strong>“Allow edits from maintainers”</strong>（允许维护者编辑）</li> </ul></section> <section><h2>1. 拉取 PR 到本地<a href=\"#1-拉取-pr-到本地\"><span>#</span></a></h2><p>",
+          "description": "",
           "publishedAt": "2026-06-11T00:00:00.000Z"
         },
         {
@@ -234,40 +235,40 @@
       ],
       "items": [
         {
-          "title": "水拍石：博客动静的选择",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.leitao.cn%2F10790.html",
-          "description": "动态博客和静态博客的选择，一直是博客人的纠结之处。我也不例外，几度纠结，最近又折腾了一波后，又一次选择了wordpress。 之所以一直想尝试静态博客，最主要的原因是它速度快，可以部署在存储桶里，静态...",
-          "publishedAt": "2026-09-02T08:10:32.000Z"
+          "title": "响石潭：甲午海战，大梦初醒",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiangshitan.com%2Fpost%2F3510.html",
+          "description": "七月份时候去了趟威海。到了威海，刘公岛是一定要去的，脑海中浮现出“邓世昌”三个字。岛不大，东西长四公里，南北最宽处两公里。明朝为防倭寇，在这里设卫屯兵；到了清朝，北洋水师选了这里做基地，成了整个东亚最受瞩目的地方。入口处一块大石头，刻着&quot;威震海疆&quot;四个红字。站在那儿，心里多少有些沉重。这四个字，当年是多少人的期望，最后又成了多少人的遗憾。 中国甲午战争博物馆就在岛上。建筑很特别，像一艘即将起航的船，上面立着一尊海军雕像，举着望远镜，望着大海。雕像的原型，据说是北洋水师提督丁汝昌。走进展厅，迎面墙上写着梁启超的话：&quot;唤起吾国四千年之大梦，实自甲午一役始也。&quot;甲午之前，大清虽打了两次鸦片战争，签了",
+          "publishedAt": "2026-09-08T11:39:45.000Z"
         },
         {
-          "title": "陈锐同学：黄果树，山水自有答案",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.chenrui.com%2Fpost%2F3509.html",
-          "description": "继续说贵州。提到贵州，第一个跳入脑海的景点就是黄果树，有点类似 &quot;不到长城非好汉&quot; 的意味。黄果树古称白水河瀑布，位于安顺市镇宁布依族苗族自治县，瀑布高77.8米，宽101米，属喀斯特地貌中的侵蚀裂点型瀑布。去的时候景区人非常多。进了大门并不能直接看见瀑布，需要乘坐景区观光车。车子七拐八绕，穿过马路，路过村庄民居，辗转许久才抵达游览入口。 跟着熙熙攘攘的人群往前走，远远就能够望见黄果树瀑布的轮廓。景区广播不断提示，前方一百多米就是最佳观景点，提醒游客不要停留造成拥堵。再往前走近，才算真正看见黄果树瀑布。客观来讲，并没有想象中那么雄伟宏大。当天天色阴沉，没有遇见水雾折射形成的彩虹，但水汽十足，水花四处飞溅，就算站在",
-          "publishedAt": "2026-09-06T01:12:02.000Z"
+          "title": "朱小呆：方寸纸笔，藏着年少最温柔的书信时光",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fzhujay.com%2Fblog%2Fblog_detail.html%3Fid%3D1278",
+          "description": "本文作者在博客发起明信片互换活动，已有 32 位博友参与，他自己也乐于参加其他博友的互寄活动。苦等一整个暑假，他收到 Goodboyboy 用心寄来的明信片，简短留言满含心意。这唤起作者的回忆：初中时通过点石文化结识七八位笔友，日日等候回信。时过境迁笔友早已失联，手写卡片，是他对那段纸笔书信青春的怀念。",
+          "publishedAt": "2026-09-10T02:13:52.000Z"
         },
         {
-          "title": "我是军爸：参观宇树机器人",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fme.xu19.com%2Fvisit-hangzhou-unitree-technology-co-ltd-robot-performance%2F",
-          "description": "前天去到宇树杭州总部，是在滨江区的一个创业园区中，感叹这么大的公司居然没有自己的大楼。宇树的工作人员告诉我，每天参观的人数络绎不绝，甚至出现了黄牛倒卖参观名额的事件，官方声明宇树的参观时免费的，不收取任何费用。 最近几年宇树这个名字非常炙手可热，短视频到处都能刷到宇树机器人的表演视频。宇树科技今年8月份在科创板上市，最高峰股价1100元，市值最高超4000多亿元，有人中签开盘卖出就赚了50万，就像中彩票一样令人兴奋。 让我印象最深刻的是宇树机器狗的宣传视频，以前都是看美国波斯顿动力的机器人视频，看了十几年，当时觉得很牛，现在对比了宇树机器狗和人性机器人的视频后，尤其是机器狗高速穿越不同地形的灵活英姿，简直就不是一个时代的产物，这里想",
-          "publishedAt": "2026-09-05T15:54:13.000Z"
+          "title": "云风的 BLOG：暑假的英语补习",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.codingnow.com%2F2026%2F09%2Fsummer.html",
+          "description": "对云豆来说，这个暑假特别长。 他小学毕业了，6 月中就已放暑假，9 月 1 日方开学进入初中。自然没有学校布置的暑假作业。我不想他整个假期都沉迷在短视频和蛋仔派对中，所以每天给他安排了英语学习。 7 月初，我记录过对孩子之前的英文辅导。先前，我用的《英语在用：剑桥初级英语语法》给他补习基础语法。学习的效果还可以，原本以为可以在暑假过渡到中级本。但读了两天后就发现完全进行不下去。倒不是中级语法难度大了很多，而是他本身的阅读能力跟不上。 阅读不仅仅是 “英文” 语言的问题，换成中文也一样。所以，我换了一套书：《Basic Reading 1200 Key Words》 我的想法是这样的：首先应该通过阅读扩大他的单词量；其次他真的需要增加",
+          "publishedAt": "2026-09-09T06:53:21.000Z"
         },
         {
-          "title": "记录生活，精彩一刻：人到中年，小事与心事",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.9sb.net%2Farchives%2Fin-middle-age-small-things-and-worries.html",
-          "description": "人到中年，最明显的感受就是，身体不会再跟自己开玩笑了。以前总觉得年轻就是本钱，熬熬夜、忙忙碌碌都无所谓，身体总能扛过去。可到了四十多岁，一点疏忽，身体就会给出最直接的提醒。 这几天我一直莫名头疼，是一阵阵的阵痛，算不上剧痛，却反反复复让人不得安宁。下午抽空去诊所测了血压，结果数值偏高，问题根源一目了然。高压一百五，低压一百一，属于明显的高血压症状，头疼就是身体发出的预警信号。 以前总觉得高血压是老年病，离自己很远，真落到自己身上，才真切感受到中年的无奈。不敢再心存侥幸，已经预约好明天上午去医院做详细检查，好好调理身体。也终于明白，人到这个年纪，健康真的比什么都重要，不能再肆意消耗自己。 相比于身体的烦心事，生活里的一点小换新，倒是给",
-          "publishedAt": "2026-09-05T12:43:37.000Z"
+          "title": "风渡言：关于手机和孩子教育",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.fdsay.com%2F2026%2F09%2Fguan-yu-shou-ji-he-hai-zi-jiao-yu%2F",
+          "description": "昨天晚上10点多，关了灯准备睡觉的时候，听到楼下忽然传来一声“把我手机给我”的声音，乍一听以为是一个女的跟人吵架，仔细一听又觉得不像。 后来吵吵嚷嚷的声音持续不止，大多都是那个要手机的声音一直在吵着要手机。 到11点多的时候，忍不住站在窗边仔细听了一会儿，发现那个声音应该是一个正处在变声期的青少年，另外一个声音应该是他的老父亲。 两人争吵到什么地步呢？ 孩子一直嚷嚷着“把我手机还给我，我着急用”、“不用你管，我死了都不用你管”，吵到后面着急了甚至开始骂娘，什么“我X你X”这种脏话都骂了出来。 我觉得老父亲脾气挺好的 […]",
+          "publishedAt": "2026-09-09T06:29:24.000Z"
         },
         {
-          "title": "Happy花椒：工作之余，邂逅七日长安",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.quhj.com%2F451.html",
-          "description": "这次到西安，一共七天时间，一半处理工作事务，一半用来感受这座古城，出差旅行两不误，过得充实又惬意。 白天大多时间留给工作，忙完手头的事务，傍晚和空闲时段就出门走走。不用赶特种兵式的行程，慢悠悠体会长安的烟火与历史。 闲暇的时候，我登上西安城墙，沿着厚实的青砖路散步，晚风拂过，脚下是历经千年的城墙，放眼望去，新旧城市景色交织，古今仿佛就在眼前交融。晚上去大唐不夜城逛逛，灯火璀璨，仿唐建筑流光溢彩，处处都能感受到盛唐氛围，热闹却不喧嚣。 抽了完整的半天，去看兵马俑。站在庞大的俑坑前，看着一排排神态各异的陶俑，真切体会到历史课本里的震撼，千年前的大秦风貌，就这样展现在眼前。也走进陕西历史博物馆，一件件文物静静陈列，诉说着十三朝古都的兴衰过",
-          "publishedAt": "2026-09-05T10:59:36.000Z"
+          "title": "水拍石：为你的发言付费",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.leitao.cn%2F10861.html",
+          "description": "今年暑假在那拉提旅游时，晚上在一个民族餐厅就餐，餐厅表演区有两位靓丽的少女表演助兴：一位汉族女孩唱歌，一位维族女孩跳舞。食客可以点歌，也可以点舞，无论是点那种，都只需付十元。同时餐厅也为了满足部分客人...",
+          "publishedAt": "2026-09-09T01:49:04.000Z"
         },
         {
-          "title": "梅之夏：好人日，聊公益",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.mcenahle.page%2F2026%2F09%2F05%2F470%2F",
-          "description": "阅读引言 社会上始终对慈善组织存在质疑声，而我依旧愿意给他们“送钱”。这是为什么呢？是因为我“傻得可爱”吗？一位历史名人的话，或许能给出答案…… 据说今天是中华慈善日哈。今天也看到了B站给了我一个“年度大好人”的金色徽章，其实一开始我还是很不屑一顾的，主要是我的 charity.mcenahle.page 已经记录了几个捐款的事情了。而之后我在B站看到“B站公益”的视频（BV1LLtz6CE8U ）中有几条评论，就感觉得写一些东西在这里了。 之前的那篇文章《我与公益事业》呢，主要是写了些我的善意如何落实到行动当中——就是依然愿意捐款嘛。最终也以“只是作为一个普通参与者，我能做的有限；只要自己经过思考后做出了选择，并且没有留下遗憾，这",
-          "publishedAt": "2026-09-05T00:08:33.000Z"
+          "title": "秋記Autumn：假如让你回到18岁，你愿意吗？",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.zhyok.cn%2Farchives%2F478%2F",
+          "description": "前几天有人被问到，要是能回到18岁，愿不愿意。还没等回答，那边又补了一句：人生轨迹不会变，也没有选择的权利，回去就是白回去。 这下有意思了，细想一下，回去干嘛呢？18岁那年发生的事，一样都不会少。会喜欢上同一个人，会在同一个夏天填同一张志愿表，会犯一样的错，走一样的弯路。明明知道前面有坑，还得眼睁睁看着自己跳进去，一句话都不能多说。这哪是重来一遍，这分明是重新受一遍罪。 年纪小的时候觉得18岁金贵，是因为总觉得那些亏白吃了。后来就不这么想了。当年熬的夜、丢的人、上过的当，一样一样掰开看，其实都换成了别的东西。要是真回去把这些全抹了，如今这个人大概也就没了。 所以答案是：不愿意。不是嘴硬，是真想明白了。18岁好在哪儿？好在那会儿什么都",
+          "publishedAt": "2026-09-08T23:57:00.000Z"
         }
       ]
     },
@@ -279,28 +280,40 @@
       ],
       "items": [
         {
-          "title": "小猪的博客：指太阳说日",
+          "title": "小朱的生活：问道先问心",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fbbs.80tz.cn%2F2026%2F09%2F08%2Fsuan%2F",
+          "description": "六爻算尽天下事，梅花化解天下苦，然奇门遁甲之后一局叫问心 大六壬最后一课叫归真，六爻卜筮最后一爻叫自省，梅花易数最后一象叫守静，太乙神数最后一盘叫无悔，易经大道最后一卦叫诚正，天意不可违，因果不可改. 但诸位：得到未必是福，失去也未必是祸，机关算尽，抵不过冥冥安排，术数万千，终不向外求，问道先问心，返璞方归真，落子皆无悔，自省常守静，心正方为正，我是小朱，陌生人祝您越来越好..",
+          "publishedAt": "2026-09-07T22:09:09.000Z"
+        },
+        {
+          "title": "小朱的生活：废史论",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fbbs.80tz.cn%2F2026%2F09%2F08%2Fshi%2F",
+          "description": "废史论 今之教者，以史从中考黜之。灭人之国，必先去其史，此非威严也。前见未远兮，苏联之王赵瑜回时1 9883年而国崩，当是时也。史书进坟，真理蒙尘。青年穆迷西风，心无所属。堂堂大国，不亡于炮火而亡于忘本，可不痛乎？ 使者，非检测之谓也，乃民族之魂魄，家国之根基。昔者仲尼作春秋而乱臣贼子惧，司马氏著史记而千古风古存，始之为用上以召天道，下以正人伦，中以利万事之准绳。固始在则纲常在，死亡则人伦乱欲。知大道必先为史今，欲废其事而清崎教。呜呼。何其备也夫。减负者，当山崎之慢，不可伤其根本，使学者非徒记诵之劳也，实乃精神之滋养，骨血之灌注。经费始于中考，则天下学子必气势如敝履。 史记不传，则国魂日销，名破月损三代而后谁复知先烈之血，山河之恸？",
+          "publishedAt": "2026-09-07T08:09:09.000Z"
+        },
+        {
+          "title": "小朱的生活：指太阳说日",
           "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fbbs.80tz.cn%2F2026%2F09%2F07%2Fri%2F",
           "description": "恋曲1990 您的浏览器不支持 audio 元素。 贫穷的本质：生态位而非能力决定命运 2000年前，李斯就看透了贫穷的本质。很多人至今还觉得一个人穷是因为他不努力、不聪明或者运气不好。2000年前，大秦丞相李斯就用一个极其冷酷的故事，把这个安慰弱者的谎言给戳得粉碎。贫穷的本质从来不是能力问题，而是你的生态位问题。 李斯年轻的时候只是个看守粮仓的小公务员，有天他上厕所，看到厕所里的耗子在吃脏东西，一听到人声或者狗叫就吓得惊慌逃窜，活得极其卑微狼狈。后来他去巡视粮仓，发现粮仓里的耗子吃着饱满的小麦，住在宽敞的屋檐下，看到人走过来，连眼皮都不抬一下，大摇大摆百活得极其滋润体面。里斯盯着这两只耗子，当场顿悟了一句流传千古的扎心名言，人之贤",
           "publishedAt": "2026-09-06T17:09:09.000Z"
+        },
+        {
+          "title": "姓王者的博客：【AI流水账】我先修好 Thunderbird 的 SSL，再用 Codex 读取东北大学邮箱",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fxingwangzhe.fun%2Fposts%2Fneu-mail-codex-20260909%2F",
+          "description": "AI流水账式记录：我作为计算机专业学生，先排查同级软件工程专业同学的东北大学邮箱 Thunderbird 客户端 SSL 证书问题，再开发只读 IMAP/MCP 插件让 Codex 读取真实收件箱。",
+          "publishedAt": "2026-09-09T15:00:00.000Z"
+        },
+        {
+          "title": "徐建伟：所谓自愿",
+          "link": "https://www.80tz.cn/go?from=feed&link=http%3A%2F%2Fwww.xulog.cn%2Findex.php%3Fact%3Dpl%26id%3D1215",
+          "description": "我就是看不惯这“官僚作风”，完全没必要的，国家减免了孩子们的学费，那辅导费相比就起来了，记得我上学那会儿有课本作业费，但没辅导费，现在是没作业费，辅导费猛的剧增，是上级的意思还是下面学校在暗箱操作，不说那么透大家都知道什么意思！当然有家长会说你爱买不买，老师又没强迫你！可我同事说她班主任给她打电话说全班就你孩子没买辅导书，我只简单的问了一句最后怎么说，我同事说交钱买书！呵呵，拿着孩子学习做当盾牌，真正获利的是谁我想都懂，这个社会就这样，我也只能吐槽一下而已，笑笑罢了",
+          "publishedAt": "2026-09-07T06:42:50.000Z"
         },
         {
           "title": "小黄的博客：给静态博客文章添加Lottie表情包",
           "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fblog.weasel6.cn%2Fposts%2Flottie%2F",
           "description": "前言# 看到标题旁边可爱生动的表情包了吗？这是在《让Halo博客支持Lottie动画文件渲染》一文中发现的好东西，查阅了一下Lottie动画的原理，原来QQ上的超级表情就是Lottie动画，该文作者为Halo做了Lottie动画插件，使用Halo的朋友可以看看他的文章。想给我的静态博客也添加这个有趣的功能，感觉能给文章增添一些趣味性，于是新的折腾之旅开始了。 为什么选择用Lottie动画# 和GIF相比，Lottie极小的体积带来近乎瞬时的加载体验，显著提升网页的启动与响应速度。 Lottie不仅支持复杂的视觉效果，而且由于是基于矢量的动画，在任何屏幕尺寸下都能保持清晰锐利。 动画本质是JSON数据，可直接通过修改代码来调整颜色、速",
           "publishedAt": "2026-09-06T10:09:00.000Z"
-        },
-        {
-          "title": "折腾进行中：Lucky + 阿里云 ESA 反代家里内网服务：只需要一个备案域名",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.9ll.uk%2Fposts%2Fnetwork%2Flucky-esa-reverse-proxy%2F",
-          "description": "想在外面访问家里的内网服务？之前写过一篇 Cloudflare + Lucky 的方案，能用是能用，但 CF 的节点都在境外，国内访问速度基本看运气。这次换成阿里云 ESA（边缘安全加速平台），节点在国内，走的是正经加速线路。 前提条件就一个：在国内云服务商那里有一个已经备案的域名。ESA 要接备案域名，没备案的可以直接关掉这个页面了。 买域名、开通 ESA、接入 ESA 这些就不啰嗦了。接入方式我选的是 CNAME，比 NS 接入更通用一些，DNS 控制权还在自己手里。 第一步：Lucky 配一个阿里云 DDNS# 家里宽带有 IPv6，所以先让 Lucky 把家里的 IPv6 地址同步到域名上。DDNS 服务商选阿里云，域名假设",
-          "publishedAt": "2026-09-04T00:00:00.000Z"
-        },
-        {
-          "title": "宗宗酱：徒步重庆铁山坪环线完成",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fygz.ink%2Farchives%2F5711.html",
-          "description": "星期五晚上爬完缙云山后，星期六晚上和朋友约着星期天去爬重庆铁山坪森林步道。我们三人约好后，我从两步路APP上找了一条环线轨迹，从铁山坪轻轨站为起/终点。星期天我七点多就起来收拾，八点左右就到了和那个女生等了我朋友到十点多。我们十点多从女子职业中学旁边的铁山坪森林公园起点开爬。爬到铁山塔那里大概用了两个小时，那个塔在维护进不去就在外面拍照。顺便也到了饭点就在旁边点了一份168的花椒鸡，还挺好吃的。但是我刚坐下来就头晕的不行，同伴连忙给我喝了藿香正气液和葡萄糖口含块。我当时应该是低血糖导致的，心慌的很，饭也没咋吃。吃完休息了下感觉没问题了，我们从饭店一直走到了观景台看三江汇聚地·唐家沱。顺着观景台就一路下撤，全程14公里，海拔500多米",
-          "publishedAt": "2026-08-31T03:13:16.000Z"
         }
       ]
     },
@@ -311,6 +324,24 @@
         "https://www.blogsclub.org/feed/"
       ],
       "items": [
+        {
+          "title": "阿伏伽德罗的云端",
+          "link": "https://www.blogsclub.org/blog/900.html",
+          "description": "阿伏伽德罗的云端",
+          "publishedAt": "2026-09-09T17:17:17.000Z"
+        },
+        {
+          "title": "大橙子的知识杂货铺",
+          "link": "https://www.blogsclub.org/blog/899.html",
+          "description": "大橙子的知识杂货铺",
+          "publishedAt": "2026-09-08T10:44:31.000Z"
+        },
+        {
+          "title": "run",
+          "link": "https://www.blogsclub.org/blog/898.html",
+          "description": "run",
+          "publishedAt": "2026-09-07T13:54:02.000Z"
+        },
         {
           "title": "折腾进行中",
           "link": "https://www.blogsclub.org/blog/897.html",
@@ -328,24 +359,6 @@
           "link": "https://www.blogsclub.org/blog/895.html",
           "description": "圣芙蕾雅",
           "publishedAt": "2026-09-05T23:14:10.000Z"
-        },
-        {
-          "title": "crayonxiaoxin",
-          "link": "https://www.blogsclub.org/blog/894.html",
-          "description": "crayonxiaoxin",
-          "publishedAt": "2026-09-05T13:43:16.000Z"
-        },
-        {
-          "title": "JiaXin&#039;s Blog",
-          "link": "https://www.blogsclub.org/blog/893.html",
-          "description": "JiaXin's Blog",
-          "publishedAt": "2026-09-05T05:25:46.000Z"
-        },
-        {
-          "title": "池泛の小窝",
-          "link": "https://www.blogsclub.org/blog/891.html",
-          "description": "池泛の小窝",
-          "publishedAt": "2026-09-03T07:06:30.000Z"
         }
       ]
     }
