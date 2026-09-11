@@ -317,10 +317,10 @@ const isExternal = (url: string) => url.startsWith("http");
 
         const getDecor = () => document.querySelector(".home-wallpaper-decor");
 
-        // 入场动画：等卡片自身的图片就绪后加 is-ready；is-motion-settled 在动画结束后固化终态
-        // 注意：等待集合只包含 .home-wallpaper-card 内的图片，不含漂浮贴纸。
-        // 漂浮贴纸体积大、且它们的入场动画自带 0.52s 延迟，天然够时间加载；
-        // 若把贴纸纳入等待集合，卡片标题（LCP 元素）会被贴纸下载拖住数秒。
+        // 入场动画：立刻加 is-ready 放行文字动画；卡片图片单独走 is-media-ready 淡入。
+        // 早期实现会先等 .home-wallpaper-card 内的图片加载完再加 is-ready，
+        // 但那会把卡片标题（LCP 元素）的入场一并拖到图片下载完成之后（实测可达数百毫秒甚至数秒）。
+        // 现在文字与图片解耦：文字不等图，图片就绪后自己淡入。
         const revealDecor = (decor, replay = false) => {
             if (!(decor instanceof HTMLElement)) return;
             if (replay) {
@@ -345,29 +345,36 @@ const isExternal = (url: string) => url.startsWith("http");
                 });
             }
 
-            const images = [...decor.querySelectorAll(".home-wallpaper-card img")];
-            const waitForImage = (image) => {
-                if (image.complete) return Promise.resolve();
-                return new Promise((resolve) => {
-                    let settled = false;
-                    const finish = () => {
-                        if (settled) return;
-                        settled = true;
-                        resolve();
-                    };
-                    image.addEventListener("load", finish, { once: true });
-                    image.addEventListener("error", finish, { once: true });
-                    // 兜底：图片迟迟不来也要放行动画，避免 LCP 被无限期拖延
-                    window.setTimeout(finish, 400);
-                });
-            };
-
-            Promise.all(images.map(waitForImage)).then(() => {
-                if (!decor.isConnected) return;
+            // 文字动画不等图片：连读两帧 rAF，确保 is-ready 在首帧后尽快落地
+            window.requestAnimationFrame(() => {
                 window.requestAnimationFrame(() => {
-                    window.requestAnimationFrame(() => decor.classList.add("is-ready"));
+                    if (decor.isConnected) decor.classList.add("is-ready");
                 });
             });
+
+            // 图片独立就绪通道：只影响图片自身的淡入，不再门控文字
+            const images = [...decor.querySelectorAll(".home-wallpaper-card img")];
+            if (images.length > 0) {
+                const markMediaReady = () => {
+                    if (decor.isConnected) decor.classList.add("is-media-ready");
+                };
+                const waitForImage = (image) => {
+                    if (image.complete) return Promise.resolve();
+                    return new Promise((resolve) => {
+                        let settled = false;
+                        const finish = () => {
+                            if (settled) return;
+                            settled = true;
+                            resolve();
+                        };
+                        image.addEventListener("load", finish, { once: true });
+                        image.addEventListener("error", finish, { once: true });
+                        // 兜底：图片迟迟不来也要放行，避免图片永久停在未就绪态
+                        window.setTimeout(finish, 1200);
+                    });
+                };
+                Promise.all(images.map(waitForImage)).then(markMediaReady);
+            }
         };
 
         // 壁纸区在 Swup 容器外，切页不重渲染；返回首页时（body.is-home 变化）重播入场动画
@@ -624,6 +631,19 @@ const isExternal = (url: string) => url.startsWith("http");
             transform: translateY(0);
         }
     }
+    /* 标题专用：0% 即完全不透明。Chrome 不把 opacity:0 的元素计入内容绘制，
+       而标题是 LCP 元素，用 content-enter 会让 LCP 被 delay + 淡入推迟数百毫秒。
+       这里只保留位移动画，LCP 在动画起始帧即可成立。 */
+    @keyframes home-wallpaper-title-enter {
+        0% {
+            opacity: 1;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
     @keyframes home-wallpaper-sticker-enter {
         0% {
             opacity: 0;
@@ -700,7 +720,8 @@ const isExternal = (url: string) => url.startsWith("http");
         animation-delay: 0.3s;
     }
     .home-wallpaper-decor.is-ready .home-wallpaper-card h1 {
-        animation-delay: 0.36s;
+        animation-name: home-wallpaper-title-enter;
+        animation-delay: 0.08s;
     }
     .home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle {
         animation-delay: 0.43s;
@@ -797,6 +818,23 @@ const isExternal = (url: string) => url.startsWith("http");
     .home-wallpaper-card__avatar img {
         opacity: 1;
         object-fit: cover;
+    }
+    /* 图片不再门控文字，但仍需要一次淡入，避免解码完成瞬间硬切换。
+       默认 opacity: 0 会让图片在 is-media-ready 之前不可见，
+       因此这里只在 JS 能接管时（有 .is-ready 的前提下）才隐藏，
+       无 JS 时图片直接可见，不会永久空白。 */
+    .home-wallpaper-decor.is-ready:not(.is-media-ready) .home-wallpaper-card__avatar img {
+        opacity: 0;
+        transition: opacity 0.24s ease;
+    }
+    .home-wallpaper-decor.is-media-ready .home-wallpaper-card__avatar img {
+        opacity: 1;
+        transition: opacity 0.24s ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .home-wallpaper-decor.is-ready:not(.is-media-ready) .home-wallpaper-card__avatar img {
+            opacity: 1;
+        }
     }
     .home-wallpaper-card__avatar-sticker {
         position: absolute;

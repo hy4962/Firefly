@@ -952,6 +952,183 @@ Lighthouse 报的"浪费 13.5 KB"是它那套偏保守的超尺寸判定（见�
 
 **尚未构建部署。** 回滚：`git checkout -- <file>`。
 
+### 10.10 第三轮实测：部署后复测（2026-09-12 00:25）
+
+用户已 push，Vercel 构建部署完成。桌面端跑 5 次、移动端跑 3 次（均为**不带** `--disable-gpu`）。
+
+#### 先验证改动是否真的上线了
+
+| 验证项 | 结果 |
+| --- | --- |
+| `/images/*`、`/favicon/*` 缓存头 | ✅ 返回 `public, max-age=2592000, ...`（原为通配的 `max-age=0, must-revalidate`） |
+| booknav 页的 `/favicon/firefly-32.png` | ✅ 页面里已无该引用（原为 404 空图标） |
+| Swup 预取 | ✅ **预取页面数 16 → 1**，见下表（剩下那 1 个是 `/api/allPostMeta.json`，不是页面预取） |
+
+> 顺带发现：swup 的初始化参数**不在 HTML 里**——因为 `loadOnIdle: true`，初始化脚本被外置成了
+> JS chunk，所以 grep `preloadVisibleLinks` 是 0 次。**验证这类改动要看行为（请求数），不要找配置字符串。**
+
+#### 桌面端（改前只有 1 次带 GPU 样本，基线较弱）
+
+| | 改前·无GPU | 改前·带GPU | **改后 5 次中位数** |
+| --- | --- | --- | --- |
+| Performance | 67 | 89 | **89** |
+| FCP | 2369 ms | 1170 ms | **1097 ms** |
+| LCP | 2780 ms | 1547 ms | **1527 ms** |
+| Speed Index | 6171 ms | 1945 ms | **2108 ms** |
+| **总传输** | 2058.8 KiB | 2176.7 KiB | **1142 KiB（−47%）** |
+| Fetch 桶 | 924.3 KiB | 1042.3 KiB | **8.4 KiB（−99%）** |
+| 预取页面数 | 16 | 16 | **1** |
+| 请求数 | 94 | 87 | **71** |
+
+逐次：perf `[56, 72, 89, 93, 96]`，LCP `[1234, 1389, 1527, 2266, 5462]` ms。
+
+**⚠️ 结论要说清楚：桌面端传输量减半，但分数基本没变（89 → 中位数 89）。**
+原因是桌面端模拟带宽 10 Mbps、且不做 CPU 节流，那 1 MB 预取本来就不在关键路径上——
+桌面端这次收获的是**省流量**（对用户流量、CDN 成本有意义），不是**提分**。
+
+离群那次（perf 56 / LCP 5462 ms）已排查：`server-response-time` 只有 93 ms、文档 567 ms 就绪，
+其余四次 TTFB 也都在 85–115 ms —— **没有任何服务端因素能解释 4.5 秒的空白**，
+判定为本机同时跑多个 Chrome 实例造成的测量干扰，不是站点问题。
+
+#### 移动端（这才是真正的受益场景）
+
+| | 改前 4 次中位数 | **改后 3 次中位数** | 变化 |
+| --- | --- | --- | --- |
+| Performance | 64 | **71** | +7 |
+| FCP | 3968 ms | **3006 ms** | −24% |
+| LCP | 5280 ms | **4506 ms** | −15% |
+| Speed Index | 9240 ms | **8366 ms** | −9% |
+| 总传输 | 1405 KiB | **916 KiB** | −35% |
+| Fetch 桶 | 483.4 KiB | **11.7 KiB** | −98% |
+| 预取页面数 | 8 | **1** | — |
+
+逐次：perf `[59, 71, 78]`，LCP `[3925, 4506, 6664]` ms。
+
+**但移动端的瓶颈没有消失**：图片桶仍是 610 KiB，占新的 916 KiB 总量的 **67%**。
+LCP 4.5 s 里，`elementRenderDelay` 依然是主导——也就是 §10.4 那条
+"首屏 hero 由 JS 生成、壁纸要等脚本克隆才开始下载"的链子**一点没动**。
+关掉预取只是把抢带宽的大户拿掉了，让壁纸下载快了一点。
+
+**所以下一步的优先级没变，还是 #2（hero 提前可发现），其次是图片那两项（#3 封面 / #5 贴纸）。**
+
+### 10.11 ⚠️ 重大更正：#2 的方向是错的，LCP 不是壁纸
+
+上面 10.10 结尾那句"下一步优先 #2"——**在查清 LCP 到底是谁之前就下了结论，是错的**。
+用 `--save-assets` 拿到 Chrome 的**底层 trace**（145 MB），流式解析 `largestContentfulPaint::Candidate`
+事件后，真相反转了。
+
+> 解析要点：Chrome trace 的事件载荷在 **`args.data`**，不是 `data`；`data` 永远是空的。
+> trace 只列了 25 个含 `ContentfulPaint` 的事件，一次流式扫描即可，不必整体 load 145 MB。
+
+#### 决定性证据
+
+```
+[largestContentfulPaint::Candidate]  @ 2614 ms
+   type      text                       ← 文字，不是 image
+   size      15194
+   nodeId    50
+   nodeName  SPAN class='home-wallpaper-card__motion-text'
+   candidateIndex 1                     ← 全程只有这一个候选
+```
+
+后续所有 `NavStartToLargestContentfulPaint::Candidate::AllFrames::UKM` 事件都重复
+`type: text, size: 15194, durationInMilliseconds: 2613` —— **LCP 自始至终没有被图片刷新过**。
+
+Lighthouse 自己的 `lcp-breakdown-insight` 节点也是同一个 h1 span，两个独立来源一致。
+
+**结论：LCP 元素是首页卡片标题「折腾进行时」这段文字。壁纸图片从未参与 LCP 竞争**
+（一张满屏图面积是它的 20 倍以上，如果参与，`type` 必然是 `image`）。
+
+#### 因此以下两条要撤回
+
+| 原判断 | 更正 |
+| --- | --- |
+| "壁纸藏在 `<template>` 里，所以要让它提前可发现" | 壁纸提前下载**不会改善 LCP 分数**，因为壁纸不是 LCP 元素 |
+| "方案 A（LQIP 色块）/ 方案 B（首张壁纸进 HTML + preload）能打 FCP 3.97 s" | **不能**。这两个方案只改善"背景从色块变照片"的**观感**，与 FCP/LCP 指标无关 |
+
+顺带更正 10.4.1 里那句"2.6 s 出现色块、4.3 s 真壁纸到达 → LCP"：4.3 s 是壁纸到达没错，
+但它**不是** LCP。2.6 s 与 4.3 s 之间的 FCP→LCP 间隔，属于**文字**元素之间的差异，不是图片。
+
+#### 真正的门控在哪里（代码事实）
+
+好消息：`body.is-home` 和 `html[data-wallpaper-mode="fullscreen"]` **都是服务端渲染的**
+（线上实测 `<body class="min-h-screen is-home dynamic-navbar" ...>`），
+所以 `.home-wallpaper-decor` 的显隐 CSS 在解析期就满足，**容器本身不挡首帧**。
+
+挡的是**卡片子元素的入场动画**。`HomeWallpaperDecor.astro` 第 685–710 行：
+
+```css
+.home-wallpaper-decor.is-ready .home-wallpaper-card      { animation: home-wallpaper-card-enter 0.76s ... both; animation-delay: 80ms; }
+.home-wallpaper-decor.is-ready .home-wallpaper-card h1   { animation: home-wallpaper-content-enter 0.52s ... both; animation-delay: 0.36s; }
+```
+
+关键在 **`animation-fill-mode: both`**：它表示"动画开始前套用 0% 关键帧"。
+而 `home-wallpaper-content-enter` 的 0% 是 `opacity: 0` —— 所以 **h1 在整个 0.36 s 延迟期间都是透明的**，
+而 Chrome 不把 `opacity: 0` 的元素算作内容绘制。
+
+再往前推一层，`.is-ready` 是 `revealDecor()` 在 `Promise.all(.home-wallpaper-card img)` 完成后
+加 2 次 rAF 才加上的（第 348–370 行）——也就是**还要先等头像和头像贴纸这两张小图**。
+
+所以 LCP 时刻 ≈ `头像图加载完 → is-ready → +0.36 s 动画延迟 → 淡入起点`。
+
+#### 针对性的改法（全部落在同一个文件，零合并风险）
+
+| # | 改动 | 位置 | 风险 | 确定性 |
+| --- | --- | --- | --- | --- |
+| 甲 | 给 h1 用一版**起点 `opacity: 1`** 的入场关键帧（只做位移，不做淡入） | `HomeWallpaperDecor.astro` 第 607–626、702–704 行 | **无** | **确定**消除"透明等待"这一层 |
+| 乙 | `revealDecor()` 不再等卡片图片，直接 rAF 后加 `is-ready` | 同上 第 348–371 行 | **无** | 确定省掉"等两张小图"那一段；代价是动画可能先于头像播完（头像有 LQIP 占位兜着） |
+| 丙 | 缩短 h1 的 `animation-delay`（0.36 s → 0.12 s） | 同上 第 702–704 行 | **无** | 效果温和，但会改变入场节奏 |
+
+**甲和乙可以一起做**，都在 `HomeWallpaperDecor.astro`——该文件 1344 行**全部是你新增的，
+上游不存在**（`git cat-file -e upstream/master:...` = false），改它**零冲突**。
+
+**但要诚实**：M4 那次跑里，三个渲染阻塞 CSS 在 **612 ms** 就全部就绪，FCP 却仍到 2655 ms——
+中间这一大段目前还解释不了（另一层门控尚未定位，可能是字体、也可能是主题运行时脚本）。
+所以**做完甲/乙后必须重测**，不要假定一次到位。
+
+#### 10.12 甲 + 乙实施记录（2026-09-13）
+
+甲和乙**不是对立的备选**，而是链条上两个独立环节，可同时做（这一点最初表述有误，用户指出后更正）。
+
+```
+等图片加载 → .is-ready（乙）→ +0.36s 延迟 → 标题淡入（甲）→ Chrome 认定 LCP
+                ↑                    ↑
+             乙管这段              甲管这段
+```
+
+**甲（标题关键帧）**
+
+新增专属关键帧，起点不透明：
+
+```css
+@keyframes home-wallpaper-title-enter {
+    0% { opacity: 1; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.home-wallpaper-decor.is-ready .home-wallpaper-card h1 {
+    animation-name: home-wallpaper-title-enter;
+    animation-delay: 0.08s;   /* 原 0.36s，且原来借用 content-enter（0% 为 opacity: 0） */
+}
+```
+
+视觉上仍是"从下往上滑入"，但因不透明，LCP 在动画起始帧即可成立。
+**卡片框本体（`home-wallpaper-card-enter`，delay 80ms）有意保持原样**，避免入场节奏改散。
+
+**乙（文字与图片解耦）**
+
+`revealDecor()` 不再 `Promise.all(images...)` 门控 `is-ready`，改为 2×rAF 立刻添加；
+图片另走 `is-media-ready` 通道，只控制自己 0.24s 的淡入，兜底从 400ms 放宽到 **1200ms**
+（已不门控 LCP，可以多等）。
+
+**安全垫（防脚本失效）**：图片隐藏规则写成 `.is-ready:not(.is-media-ready)`，
+即"只有 JS 接管、入场已启动时才隐藏"；无 JS 或 `prefers-reduced-motion` 时图片直接可见。
+
+**备份**：`.workbuddy/tmp/backup-home-wallpaper-decor-before-A.txt`（甲改动前片段）、
+`.workbuddy/tmp/backup-HomeWallpaperDecor-before-B.astro`（乙之前整文件）。
+
+**状态：已实施，尚未重测。** 下次跑 Lighthouse 时重点确认
+（1）LCP 是否下降、（2）612ms → 2655ms 那 2 秒空白是否仍在。
+
 ---
 
 ## 十一、Swup 预取机制详解（读源码确认）

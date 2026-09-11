@@ -5,22 +5,71 @@
  * 每个条目：版本徽章 + kind 短语 + h2 标题 + 总结 + <details> 折叠明细 + 标签
  * 所有样式自包含，CSS 变量复用 Firefly 主题（--line-divider 等），合并上游安全。
  * 数据来自 src/config/blogChangelogConfig.ts
+ *
+ * 分页（V1.6）：本组件是纯展示组件，分页数据由路由层 src/pages/blog-changelog/[...page].astro
+ * 用 getStaticPaths() 生成真实静态路由后传入，详见该文件的注释。
+ * 详情的默认展开态由 JS 处理（见文件末尾脚本）——仅最新一期展开，其余收起。
  */
-import { blogChangelogConfig } from "@/config/blogChangelogConfig";
+import type { ChangelogEntry } from "@/config/blogChangelogConfig";
 
-const entries = blogChangelogConfig;
+interface Props {
+	/** 当前页要渲染的条目（已由路由层切好片） */
+	entries: ChangelogEntry[];
+	/** 全量条目，用于 hero 统计（不随分页变化） */
+	allEntries: ChangelogEntry[];
+	/** 每页更新日数量 */
+	pageSize: number;
+	/** 当前页码，从 1 开始 */
+	currentPage: number;
+	/** 总页数 */
+	totalPages: number;
+}
+
+const { entries, allEntries, pageSize, currentPage, totalPages } =
+	Astro.props;
+
+const totalItems = allEntries.reduce((sum, entry) => sum + entry.items.length, 0);
+const totalEntries = allEntries.length;
+const pageStart = (currentPage - 1) * pageSize;
 
 const formatDate = (date: string) => {
 	const d = new Date(`${date}T00:00:00`);
 	return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
 };
 
-const totalItems = entries.reduce((sum, entry) => sum + entry.items.length, 0);
-const dateSpan = entries.length
-	? `${entries[entries.length - 1].date.slice(2, 7).replace("-", ".")}—${entries[0].date.slice(2, 7).replace("-", ".")}`
+// 时间跨度按全量数据算（hero 是整站统计，不随分页变化）
+const dateSpan = totalEntries
+	? `${allEntries[totalEntries - 1].date.slice(2, 7).replace("-", ".")}—${allEntries[0].date.slice(2, 7).replace("-", ".")}`
 	: "—";
-// 当前版本 = 数组第一项
-const currentVersion = entries[0]?.version ?? "V1.0";
+// 当前版本 = 全量数组第一项
+const currentVersion = allEntries[0]?.version ?? "V1.0";
+
+// --- 分页链接：第 1 页用干净路径，其余用 /blog-changelog/N/ 静态路由 ---
+const pageHref = (page: number) =>
+	page === 1 ? "/blog-changelog/" : `/blog-changelog/${page}/`;
+
+// 页码按钮列表（页数少时全列，多时用省略号收窄）
+type PageToken = number | "gap";
+const pageTokens: PageToken[] = (() => {
+	if (totalPages <= 7) {
+		return Array.from({ length: totalPages }, (_, i) => i + 1);
+	}
+	const tokens: PageToken[] = [1];
+	if (currentPage > 3) tokens.push("gap");
+	for (
+		let p = Math.max(2, currentPage - 1);
+		p <= Math.min(totalPages - 1, currentPage + 1);
+		p++
+	) {
+		tokens.push(p);
+	}
+	if (currentPage < totalPages - 2) tokens.push("gap");
+	tokens.push(totalPages);
+	return tokens;
+})();
+
+const rangeFrom = totalEntries === 0 ? 0 : pageStart + 1;
+const rangeTo = pageStart + entries.length;
 
 // kind 徽章配色（按条目顺序循环）
 const KIND_VARIANTS = ["blue", "mint", "gold", "violet"] as const;
@@ -43,7 +92,7 @@ const kindVariant = (index: number) =>
             </div>
             <div class="blog-changelog-stats" aria-label="博客更新日志统计">
                 <span><strong>{currentVersion}</strong><small>当前版本</small></span>
-                <span><strong>{entries.length}</strong><small>个更新日</small></span>
+                <span><strong>{totalEntries}</strong><small>个更新日</small></span>
                 <span><strong>{totalItems}</strong><small>条详细记录</small></span>
                 <span><strong>{dateSpan}</strong><small>时间跨度</small></span>
             </div>
@@ -57,15 +106,15 @@ const kindVariant = (index: number) =>
             </svg>
             关于我
         </a>
-        <span>按日倒序 · 建站以来</span>
+        <span>按日倒序 · 建站以来{totalPages > 1 ? ` · 第 ${currentPage} / ${totalPages} 页` : ""}</span>
     </nav>
 
     <ol class="blog-changelog-list">
         {entries.map((entry, entryIndex) => (
-            <li class="blog-changelog-entry" id={`blog-changelog-${entry.date}`}>
+            <li class="blog-changelog-entry" id={`blog-changelog-${entry.version.toLowerCase().replace(/\./g, "-")}`}>
                 <div class="blog-changelog-date">
                     <time datetime={entry.date}>{formatDate(entry.date)}</time>
-                    <span>第 {entries.length - entryIndex} 次记录</span>
+                    <span>第 {totalEntries - pageStart - entryIndex} 次记录</span>
                 </div>
                 <div class="blog-changelog-rail" aria-hidden="true">
                     <span></span>
@@ -82,7 +131,8 @@ const kindVariant = (index: number) =>
                         <h2>{entry.summary}</h2>
                         <p>{entry.description}</p>
                     </header>
-                    <details class="blog-changelog-details" open>
+                    {/* 默认展开态交给 JS 控制：仅最新一期展开，其余收起（见文件末尾脚本） */}
+                    <details class="blog-changelog-details" data-changelog-details>
                         <summary>
                             <span>查看当天详细记录</span>
                             <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
@@ -131,7 +181,122 @@ const kindVariant = (index: number) =>
             </li>
         ))}
     </ol>
+
+    {totalPages > 1 && (
+        <nav class="blog-changelog-pager card-base" aria-label="日志分页导航">
+            <div class="blog-changelog-pager__info">
+                共 {totalEntries} 个更新日 · 每页 {pageSize} 期 · 当前显示第 {rangeFrom}–{rangeTo} 期
+            </div>
+            <ul class="blog-changelog-pager__list">
+                <li>
+                    {currentPage > 1 ? (
+                        <a
+                            class="blog-changelog-pager__step"
+                            href={pageHref(currentPage - 1)}
+                            rel="prev"
+                            aria-label="上一页"
+                        >
+                            <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="M14.175 11l-4.9-4.9q-.3-.3-.288-.7t.313-.7q.3-.275.7-.288t.7.288l6.6 6.6q.15.15.213.325t.062.375t-.062.375t-.213.325l-6.6 6.6q-.275.275-.688.275t-.712-.275q-.3-.3-.3-.713t.3-.712L14.175 13H3q-.425 0-.712-.288T2 12t.288-.712T3 11z"/>
+                            </svg>
+                            上一页
+                        </a>
+                    ) : (
+                        <span class="blog-changelog-pager__step blog-changelog-pager__step--disabled" aria-disabled="true">
+                            <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="M14.175 11l-4.9-4.9q-.3-.3-.288-.7t.313-.7q.3-.275.7-.288t.7.288l6.6 6.6q.15.15.213.325t.062.375t-.062.375t-.213.325l-6.6 6.6q-.275.275-.688.275t-.712-.275q-.3-.3-.3-.713t.3-.712L14.175 13H3q-.425 0-.712-.288T2 12t.288-.712T3 11z"/>
+                            </svg>
+                            上一页
+                        </span>
+                    )}
+                </li>
+                {pageTokens.map((token) =>
+                    token === "gap" ? (
+                        <li class="blog-changelog-pager__gap" aria-hidden="true">…</li>
+                    ) : (
+                        <li>
+                            {token === currentPage ? (
+                                <span class="blog-changelog-pager__num blog-changelog-pager__num--current" aria-current="page">{token}</span>
+                            ) : (
+                                <a class="blog-changelog-pager__num" href={pageHref(token)}>{token}</a>
+                            )}
+                        </li>
+                    ),
+                )}
+                <li>
+                    {currentPage < totalPages ? (
+                        <a
+                            class="blog-changelog-pager__step"
+                            href={pageHref(currentPage + 1)}
+                            rel="next"
+                            aria-label="下一页"
+                        >
+                            下一页
+                            <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="m9.825 13l4.9 4.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-6.6-6.6q-.15-.15-.213-.325T6.426 12t.063-.375t.212-.325l6.6-6.6q.275-.275.688-.275t.712.275q.3.3.3.713t-.3.712L9.825 11H21q.425 0 .713.288T22 12t-.288.713T21 13z"/>
+                            </svg>
+                        </a>
+                    ) : (
+                        <span class="blog-changelog-pager__step blog-changelog-pager__step--disabled" aria-disabled="true">
+                            下一页
+                            <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="m9.825 13l4.9 4.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-6.6-6.6q-.15-.15-.213-.325T6.426 12t.063-.375t.212-.325l6.6-6.6q.275-.275.688-.275t.712.275q.3.3.3.713t-.3.712L9.825 11H21q.425 0 .713.288T22 12t-.288.713T21 13z"/>
+                            </svg>
+                        </span>
+                    )}
+                </li>
+            </ul>
+        </nav>
+    )}
 </div>
+
+<script>
+    /**
+     * 详情块的默认展开态：只有「最新一期」默认展开，其余收起。
+     * 不写成服务端 open 属性，是因为要跟随当前页自适应：
+     * 第 1 页展开最新一期，翻到第 2 页就展开当页第一个，不会出现整页全展开。
+     */
+    const openLatest = () => {
+        const all = document.querySelectorAll<HTMLDetailsElement>(
+            ".blog-changelog-details[data-changelog-details]",
+        );
+        all.forEach((el, i) => {
+            el.open = i === 0;
+        });
+    };
+
+    // 用 sessionStorage 记住用户在本页手动展开过，Swup 返回时不要清掉
+    const STORAGE_KEY = "blog-changelog-manual-open";
+
+    const run = () => {
+        const manuallyOpened =
+            sessionStorage.getItem(STORAGE_KEY) === "1";
+        if (!manuallyOpened) openLatest();
+
+        document
+            .querySelectorAll<HTMLDetailsElement>(
+                ".blog-changelog-details[data-changelog-details]",
+            )
+            .forEach((el) => {
+                el.addEventListener("toggle", () => {
+                    // 忽略脚本首次设定的那次
+                    if (el.dataset.initialized === "1") {
+                        sessionStorage.setItem(STORAGE_KEY, "1");
+                    } else {
+                        el.dataset.initialized = "1";
+                    }
+                });
+            });
+    };
+
+    run();
+
+    // Swup 换页后重新执行（普通跳转时无副作用）
+    document.addEventListener("swup:page:view", () => {
+        sessionStorage.removeItem(STORAGE_KEY);
+        run();
+    });
+</script>
 
 <style is:global>
     .blog-changelog-page {
@@ -472,14 +637,15 @@ const kindVariant = (index: number) =>
     }
 
     .blog-changelog-details > .blog-change-points {
-        max-height: 48rem;
+        /* 展开/收起动画同样改用 grid-template-rows 0fr↔1fr，
+           不用 max-height 写死上限，明细再多也不会被裁 */
+        grid-template-rows: 1fr;
         overflow: hidden;
-        transition: max-height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s, margin-top 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+        transition: grid-template-rows 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s, margin-top 0.42s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .blog-changelog-details:not([open]) > .blog-change-points {
-        display: grid;
-        max-height: 0;
+        grid-template-rows: 0fr;
         margin-top: 0;
         opacity: 0;
     }
@@ -489,7 +655,6 @@ const kindVariant = (index: number) =>
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.7rem;
         margin-top: 0.7rem;
-        --blog-point-body-height: 3.75rem;
     }
 
     .blog-change-points__column {
@@ -497,6 +662,8 @@ const kindVariant = (index: number) =>
         gap: 0.7rem;
         align-content: start;
         min-width: 0;
+        /* 允许 grid-template-rows: 0fr 真正收起到 0，同时不裁掉卡片阴影 */
+        min-height: 0;
     }
 
     .blog-change-point {
@@ -559,23 +726,20 @@ const kindVariant = (index: number) =>
     }
 
     .blog-change-point__body {
-        display: block;
-        height: var(--blog-point-body-height, 3.75rem);
-        max-height: none;
+        /* 高度由内容决定（grid-template-rows 0fr↔1fr 做展开动画），
+           不再写死高度，避免长文本被 overflow: hidden 裁掉 */
+        display: grid;
+        grid-template-rows: 1fr;
         min-height: 0;
         box-sizing: border-box;
-        overflow: hidden;
         padding: 0.58rem 0.05rem 0 2.22rem;
         border-top: 1px solid var(--line-divider);
         opacity: 1;
-        transition: height 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s, padding 0.32s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s;
+        transition: grid-template-rows 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s, padding 0.32s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s;
     }
 
     .blog-change-point:not([open]) > .blog-change-point__body {
-        display: block;
-        height: 0;
-        max-height: 0;
-        min-height: 0;
+        grid-template-rows: 0fr;
         padding-top: 0;
         padding-bottom: 0;
         border-top-color: #0000;
@@ -585,9 +749,11 @@ const kindVariant = (index: number) =>
     .blog-change-point__body p {
         margin: 0;
         min-height: 0;
+        overflow: hidden;
         color: var(--content-meta);
         font-size: 0.72rem;
         line-height: 1.72;
+        overflow-wrap: anywhere;
     }
 
     /* ===== 标签 ===== */
@@ -606,6 +772,81 @@ const kindVariant = (index: number) =>
         color: var(--btn-content);
         font-size: 0.6rem;
         line-height: 1.2;
+    }
+
+    /* ===== 分页导航 ===== */
+    .blog-changelog-pager {
+        display: grid;
+        gap: 0.7rem;
+        margin-top: 1.2rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid var(--line-divider);
+        background-color: var(--card-bg) !important;
+    }
+
+    .blog-changelog-pager__info {
+        color: var(--content-meta);
+        font-size: 0.66rem;
+        line-height: 1.6;
+    }
+
+    .blog-changelog-pager__list {
+        display: flex;
+        align-items: center;
+        gap: 0.32rem;
+        flex-wrap: wrap;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .blog-changelog-pager__num,
+    .blog-changelog-pager__step {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.22rem;
+        min-width: 1.85rem;
+        min-height: 1.85rem;
+        padding: 0.2rem 0.5rem;
+        border: 1px solid var(--line-divider);
+        border-radius: 0.4rem;
+        background-color: var(--card-bg);
+        color: var(--btn-content);
+        font-size: 0.68rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        line-height: 1.2;
+        text-decoration: none;
+        transition: border-color 0.18s, color 0.18s, background-color 0.18s;
+    }
+
+    .blog-changelog-pager__num:hover,
+    .blog-changelog-pager__num:focus-visible,
+    .blog-changelog-pager__step:hover,
+    .blog-changelog-pager__step:focus-visible {
+        border-color: color-mix(in srgb, var(--primary) 45%, var(--line-divider));
+        color: var(--primary);
+        outline: none;
+    }
+
+    .blog-changelog-pager__num--current {
+        border-color: var(--primary);
+        background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+        color: var(--primary);
+        font-weight: 850;
+        cursor: default;
+    }
+
+    .blog-changelog-pager__step--disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+    }
+
+    .blog-changelog-pager__gap {
+        padding: 0 0.1rem;
+        color: var(--content-meta);
+        font-size: 0.68rem;
     }
 
     /* ===== 响应式 ===== */
@@ -687,8 +928,14 @@ const kindVariant = (index: number) =>
             border-left: 0;
         }
 
-        .blog-change-point__body {
-            height: var(--blog-point-body-height, 3.75rem);
+        .blog-changelog-details > .blog-change-points {
+            grid-template-rows: none;
+        }
+
+        /* 单列时列容器是 display: contents，卡片成为同级 grid item，
+           grid-template-rows: 0fr 只会收起第一行，这里直接不渲染收起态 */
+        .blog-changelog-details:not([open]) > .blog-change-points {
+            display: none;
         }
     }
 

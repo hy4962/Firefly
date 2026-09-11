@@ -1,0 +1,75 @@
+---
+/**
+ * 博客更新日志页面路由（/blog-changelog/ 与 /blog-changelog/2/ ...）
+ *
+ * 为什么用 [...page] 而不是 ?page=N：
+ * 本博客是纯静态站点（dist 静态产物 → Vercel / CF Pages），静态构建时每个 URL
+ * 只渲染一次，Astro.url.searchParams 永远为空，?page=2 不会产出第二个页面。
+ * 所以分页必须落成「真实路径」，由 getStaticPaths() 在构建期逐页生成。
+ *
+ * 路由映射：
+ *   [...page] 参数为 undefined → /blog-changelog/        （第 1 页）
+ *   [...page] 参数为 ["2"]     → /blog-changelog/2/      （第 2 页）
+ *   ...以此类推，共 ceil(总期数 / 每页期数) 页
+ *
+ * ⚠️ 坑：getStaticPaths() 会被 Astro 单独提取到模块作用域执行，**访问不到 frontmatter
+ * 里定义的任何 const**（报 "PAGE_SIZE is not defined"）。因此每页条数必须在函数体
+ * 内部直接内联为字面量，不能引用外部常量。下方 PAGE_SIZE 仅供模板显示用，两处
+ * 必须保持一致（改动时一起改）。
+ */
+import ChangelogTimeline from "@/components/features/ChangelogTimeline.astro";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { blogChangelogConfig } from "@/config/blogChangelogConfig";
+
+export const prerender = true;
+
+/** 仅供模板显示，真正切片用的字面量内联在 getStaticPaths() 里 */
+const PAGE_SIZE = 10;
+
+export function getStaticPaths() {
+	// 这个 10 必须与上面的 PAGE_SIZE 一致（此处不能用变量，见文件头注释）
+	const totalPages = Math.max(1, Math.ceil(blogChangelogConfig.length / 10));
+
+	return Array.from({ length: totalPages }, (_, i) => {
+		const currentPage = i + 1;
+		const pageStart = i * 10;
+		return {
+			// params.page 为空 → 第 1 页落在 /blog-changelog/
+			params: { page: currentPage === 1 ? undefined : String(currentPage) },
+			props: {
+				currentPage,
+				totalPages,
+				entries: blogChangelogConfig.slice(pageStart, pageStart + 10),
+			},
+		};
+	});
+}
+
+const { entries, currentPage, totalPages } = Astro.props;
+
+const title = currentPage > 1 ? `博客日志 · 第 ${currentPage} 页` : "博客日志";
+const description = "记录博客每次更新的版本号、变更明细和时间线，V1.0 起算";
+
+/**
+ * SEO：分页页不放进 sitemap（改 astro.config.mjs 会增加合并上游的冲突面），
+ * 改为在页面里声明 canonical 指向第 1 页，并给中间页加 noindex,follow，
+ * 这样搜索引擎不会把 /blog-changelog/2/ 当成重复内容，但仍会顺着链接爬。
+ * 排序上仍希望第 1 页作为入口，所以 rel=prev/next 之外的页码链接保持普通链接。
+ */
+const canonicalUrl = new URL("/blog-changelog/", Astro.site).href;
+const shouldNoindex = currentPage > 1;
+---
+
+<MainGridLayout title={title} description={description}>
+    <Fragment slot="head">
+        <link rel="canonical" href={canonicalUrl} />
+        {shouldNoindex && <meta name="robots" content="noindex, follow" />}
+    </Fragment>
+    <ChangelogTimeline
+        entries={entries}
+        allEntries={blogChangelogConfig}
+        pageSize={PAGE_SIZE}
+        currentPage={currentPage}
+        totalPages={totalPages}
+    />
+</MainGridLayout>
