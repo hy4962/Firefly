@@ -317,7 +317,10 @@ const isExternal = (url: string) => url.startsWith("http");
 
         const getDecor = () => document.querySelector(".home-wallpaper-decor");
 
-        // 入场动画：等贴纸图片就绪后加 is-ready；is-motion-settled 在动画结束后固化终态
+        // 入场动画：等卡片自身的图片就绪后加 is-ready；is-motion-settled 在动画结束后固化终态
+        // 注意：等待集合只包含 .home-wallpaper-card 内的图片，不含漂浮贴纸。
+        // 漂浮贴纸体积大、且它们的入场动画自带 0.52s 延迟，天然够时间加载；
+        // 若把贴纸纳入等待集合，卡片标题（LCP 元素）会被贴纸下载拖住数秒。
         const revealDecor = (decor, replay = false) => {
             if (!(decor instanceof HTMLElement)) return;
             if (replay) {
@@ -342,7 +345,7 @@ const isExternal = (url: string) => url.startsWith("http");
                 });
             }
 
-            const images = [...decor.querySelectorAll("img")];
+            const images = [...decor.querySelectorAll(".home-wallpaper-card img")];
             const waitForImage = (image) => {
                 if (image.complete) return Promise.resolve();
                 return new Promise((resolve) => {
@@ -354,7 +357,8 @@ const isExternal = (url: string) => url.startsWith("http");
                     };
                     image.addEventListener("load", finish, { once: true });
                     image.addEventListener("error", finish, { once: true });
-                    window.setTimeout(finish, 1400);
+                    // 兜底：图片迟迟不来也要放行动画，避免 LCP 被无限期拖延
+                    window.setTimeout(finish, 400);
                 });
             };
 

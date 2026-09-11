@@ -30,6 +30,45 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.4",
+		title: "首屏提速",
+		date: "2026-09-11",
+		summary: "首屏少传 283KB，标题不再等贴纸图",
+		description:
+			"跑了一次 Lighthouse 体检：桌面端已经满分，移动端 72 分，而且瓶颈压在一个反直觉的地方——不是 JS 慢、也不是图太大，而是首页标题被 9 张贴纸图的加载堵住了，最大元素的渲染延迟高达 2190ms。这次把贴纸图、装饰层入场逻辑和 favicon 一起收拾了一遍",
+		items: [
+			{
+				category: "性能",
+				text: "贴纸图压缩到实际显示尺寸：8 张从 331KB 降到 127KB（省 62%）。源图是 360×480，但 CSS 里 max-height: 104px 把它们夹到约 78×104，按 192 宽重新导出并降低 alpha 压缩质量",
+			},
+			{
+				category: "性能",
+				text: "修掉首页 LCP 被贴纸图阻塞：装饰层入场动画原本要等 9 张图全部加载完才开始（还带 1400ms 兜底超时），现在只等卡片自身的图、兜底收到 400ms，标题的渲染延迟从那 2190ms 降下来",
+			},
+			{
+				category: "性能",
+				text: "favicon 从 88KB 换成 8.9KB：原来那个 .ico 其实是一张 221×183 的 PNG 改名的，重新生成了 16/32/48 的真多尺寸 ICO",
+			},
+			{
+				category: "修复",
+				text: "新增 favicon-192.png，OG 图生成和 apple-touch-icon 改用 png 格式图标——只有 .ico 的话会落到 sharp 兜底，而它读不了 ICO，站点图标会静默降级成透明图",
+			},
+			{
+				category: "视觉",
+				text: "关闭桌面端与移动端的水波纹动画效果，减少持续占用主线程的 canvas 绘制",
+			},
+			{
+				category: "视觉",
+				text: "开启多张壁纸自动轮播，每 5 秒切换一张",
+			},
+			{
+				category: "维护",
+				text: "体检数据与优化清单整理进 docs/pagespeed-optimization.md，按合并上游的风险分档，附可复现的判定命令",
+			},
+		],
+		tags: ["性能", "LCP", "贴纸", "favicon", "首页"],
+	},
+	{
 		version: "V1.3",
 		title: "壁纸瘦身",
 		date: "2026-09-10",

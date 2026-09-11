@@ -97,6 +97,11 @@ export const siteConfig: SiteConfig = {
 			// 可选，图标大小
 			// sizes: "32x32",
 		},
+		{
+			// OpenGraph 图片与 apple-touch-icon 需要 png 格式的图标
+			src: "/favicon/favicon-192.png",
+			sizes: "192x192",
+		},
 	],
 
 	// 导航栏配置
