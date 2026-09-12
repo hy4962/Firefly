@@ -4,9 +4,14 @@ import { getEnabledFriends, siteConfig } from "@/config";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 import { loadFriendsFeed } from "@/utils/friends-feed";
+import { buildMomentsTimeline } from "@/utils/moments-timeline";
 
 const friends = getEnabledFriends();
 const feed = await loadFriendsFeed(friends);
+// 按 momentsConfig 的配比（本站 / Blog / 博客社区）挑片并排序，
+// 默认 layout: balanced —— 按配比交错，任意一屏看到的来源比例都接近配置值
+const timeline = buildMomentsTimeline(feed.items, friends, siteConfig.site_url);
+const momentsItems = timeline.items;
 const title = "朋友圈";
 const description = "把友链博客最近写下的文章，收进一条轻盈的时间线。";
 
@@ -30,7 +35,7 @@ const unsubscribedFriends = friends.filter(
 	(friend) => !subscribedFriendUrls.has(normalizeFriendUrl(friend.siteurl)),
 );
 const randomArticleItems = JSON.stringify(
-	feed.items.map((item) => {
+	momentsItems.map((item) => {
 		const isOwnSite = normalizeFriendUrl(item.friendUrl) === ownSiteUrl;
 		const isRecommended =
 			!isOwnSite &&
@@ -64,7 +69,7 @@ const randomArticleItems = JSON.stringify(
 				</div>
 			</div>
 			<div class="moments-stats" aria-label="朋友圈更新统计">
-				<strong>{feed.items.length}</strong>
+				<strong>{momentsItems.length}</strong>
 				<span>篇更新</span>
 			</div>
 			<div class="moments-note">
@@ -159,10 +164,10 @@ const randomArticleItems = JSON.stringify(
 			</article>
 		</header>
 
-		{feed.items.length > 0 ? (
+		{momentsItems.length > 0 ? (
 			<>
 				<div class="moments-grid my-4" aria-label="友链文章更新">
-					{feed.items.map((item) => {
+					{momentsItems.map((item) => {
 						const isOwnSite = normalizeFriendUrl(item.friendUrl) === ownSiteUrl;
 						const isRecommended =
 							!isOwnSite &&
@@ -470,12 +475,11 @@ const randomArticleItems = JSON.stringify(
 							return;
 						}
 
-						const ownArticles = candidates.filter((item) => item.role === "own");
-						const otherArticles = candidates.filter((item) => item.role !== "own");
-						const preferredPool = Math.random() < 0.2 ? ownArticles : otherArticles;
-						const categoryPool = preferredPool.length > 0 ? preferredPool : candidates;
-						const available = categoryPool.filter((item) => item.link !== lastArticleLink);
-						const pool = available.length > 0 ? available : categoryPool;
+						// 各来源的配比已经在构建期按标签分好组（momentsConfig.mix），
+						// 这里对整个池子等概率抽取即可；之前那套「20% 概率优先抽本站」的逻辑
+						// 会把本站实际占比压低到 20%，跟配置里的 3 成对不上，已移除。
+						const available = candidates.filter((item) => item.link !== lastArticleLink);
+						const pool = available.length > 0 ? available : candidates;
 						const picked = pool[Math.floor(Math.random() * pool.length)];
 						lastArticleLink = picked.link;
 						articleLink.href = picked.link;

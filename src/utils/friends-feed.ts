@@ -1,13 +1,16 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import sanitizeHtml from "sanitize-html";
+import { momentsFeedConfig } from "@/config/momentsConfig";
 import type { FriendLink } from "@/types/friendsConfig";
 
 const FETCH_TIMEOUT_MS = 8000;
 const FETCH_RETRY_ATTEMPTS = 3;
 const FETCH_RETRY_DELAY_MS = 350;
 const MAX_FEED_LENGTH = 1_500_000;
-const MAX_ITEMS_PER_FRIEND = 6;
+// 每个友链最多取几篇，由 momentsConfig 控制：本站只有一个源，
+// 这个值太小会让「本站主理人」凑不出配置里要求的配比
+const MAX_ITEMS_PER_FRIEND = momentsFeedConfig.maxItemsPerFriend;
 const FRIENDS_FEED_SNAPSHOT_FILE = join(
 	process.cwd(),
 	"src/data/friends-feed-snapshot.json",

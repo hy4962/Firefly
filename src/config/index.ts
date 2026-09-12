@@ -55,6 +55,10 @@ export type {
 	FontDefinition,
 	FontSelectionConfig,
 } from "../types/fontConfig"; // 字体类型定义
+export type {
+	MomentsFeedConfig,
+	MomentsMixRule,
+} from "../types/momentsConfig"; // 朋友圈时间线配比类型
 export { analyticsConfig } from "./analyticsConfig"; // 统计分析配置
 export { announcementConfig } from "./announcementConfig"; // 公告配置
 // 样式配置
@@ -73,6 +77,7 @@ export { galleryConfig } from "./galleryConfig"; // 相册配置
 export { licenseConfig } from "./licenseConfig"; // 许可证配置
 // 组件配置
 export { mermaidConfig } from "./mermaidConfig"; // Mermaid 图表配置
+export { momentsFeedConfig } from "./momentsConfig"; // 朋友圈时间线配比配置
 export { musicPlayerConfig } from "./musicConfig"; // 音乐播放器配置
 export { navBarConfig, navBarSearchConfig } from "./navBarConfig"; // 导航栏配置与搜索配置
 export { live2dWidgetConfig, spineModelConfig } from "./pioConfig"; // 看板娘配置
