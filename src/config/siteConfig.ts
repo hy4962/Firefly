@@ -342,7 +342,11 @@ export const siteConfig: SiteConfig = {
 		// - "both": 同时输出 AVIF 和 WebP（浏览器自动选择最佳格式）
 		formats: "webp",
 		// 图片压缩质量 (1-100)，值越低体积越小但质量越差，推荐 70-85
-		quality: 85,
+		// 85 → 78：按 docs/pagespeed-optimization.md 第五节 P1-1，
+		// 所有经 Astro 处理的图（封面 / 壁纸 / 头像）普遍再降 20–30%，观感差异很小。
+		// 实测（§12.9）：首页引用的 33 张图 1479.7 KB → 1192.5 KB（−19.4%）；
+		// 首页单次实际加载的图片 396 KB → 328–352 KB（约 −11%~−17%）。
+		quality: 78,
 		// 为特定域名的图片添加 referrerpolicy="no-referrer" 属性
 		// 支持通配符 *，例如：["i0.hdslb.com", "*.bilibili.com"]
 		// 可解决指定域名图片加载时的 403 问题（如防盗链图片）
