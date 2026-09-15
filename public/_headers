@@ -1,0 +1,40 @@
+# Cloudflare Workers / Pages 静态资源响应头
+#
+# 生效范围：仅当站点部署到 Cloudflare（wrangler.jsonc 的 assets.directory）时。
+# Vercel 会忽略这个文件——线上的缓存策略仍在 vercel.json 里，两者互不影响。
+# 文档：https://developers.cloudflare.com/workers/static-assets/headers/
+#
+# 说明：Cloudflare 对静态资源的默认响应头是
+#   Cache-Control: public, max-age=0, must-revalidate
+# 即使是带内容哈希的 /_astro/* 也走这个默认值，所以下面必须显式覆盖。
+#
+# 限制：最多 100 条规则；每条规则行上限 2000 字符；不支持正则，只有 * 通配和 :placeholder。
+# 因此 vercel.json 里的 "/(pagefind|pio)/(.*)" 要拆成两条。
+
+# ── 全站安全头（对应 vercel.json 的 catch-all 规则）──
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# ── Astro 构建产物：文件名带内容哈希，可长期强缓存 ──
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# ── 不带哈希的静态资源：30 天 + 后台重新验证 ──
+# 注意：这批文件改名才能让缓存失效，改图时记得换文件名。
+/images/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=604800
+/favicon/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=604800
+/assets/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=604800
+/pagefind/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=604800
+/pio/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=604800
+
+# ── 站内 API：短缓存 ──
+/api/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400

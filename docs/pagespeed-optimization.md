@@ -7,6 +7,10 @@
 > **执行进度：P0-1 / P0-2 / P0-4 已完成（见第九节「执行记录」）；P0-6 由你本人于 20:35 完成；P0-5 决定保留。**
 >
 > **➡️ 第二轮复测（部署后）见第十节 —— 第一轮改动已全部上线生效；LCP 从 6.2 s 降到中位数 5.3 s，但移动端分数仍在中位数 64，瓶颈已从"等贴纸图"转移到"首屏 hero 由 JS 生成 + Swup 预取抢带宽"。**
+>
+> **➡️➡️ 第四轮（2026-09-15）见第十二节 —— 查清了 §10.11 遗留的「另一层门控」：它不存在，那 500ms 白屏是 DOM/CSS 体积决定的渲染固有成本（禁用 JS 后首次绘制反而更晚）。**
+> **本轮最终只有 3 处真实行为改动（图片质量 / 贴纸 / 重播守卫），详见 §12.0；另有 3 处曾改动但已撤销，原因见 §12.4 与 §12.11。**
+> **§12.11 有线上实测的 LCP 数据：确认「甲」把 LCP 提前了约 85–125ms，但证明了卡片关键帧改动收益为 0。**
 
 ---
 
@@ -1269,3 +1273,495 @@ preload: {
 
 `containers: ["#swup-container"]` 的依据：首页卡片（`HomeWallpaperDecor`）挂在 `#wallpaper-wrapper` 里，
 不在 swup 的容器列表中，所以这条能砍掉上面那 7 个链接。**但落地前建议先跑一遍确认哪些链接还落在容器内。**
+
+---
+
+## 十二、第四轮（2026-09-15）：定位并解决 §10.11 遗留的「另一层门控」
+
+> 工具：CDP 驱动本机 Chromium（不用 Lighthouse）。**注意：本轮所有绝对毫秒数都在一台走透明代理的机器上测得，
+> 到境外站有约 630ms 固定开销，所以只采信「本地零网络」的相对数据和机制性结论，不采信绝对耗时。**
+
+### 12.0 本轮改动清单
+
+| # | 文件 | 改动 | 合并风险 |
+| --- | --- | --- | --- |
+| 1 | `src/config/siteConfig.ts` | `imageOptimization.quality: 85 → 78`（§10.7 #3） | **很低**（配置项） |
+| 2 | `public/images/home-stickers/*.webp` ×8 | 192→144 宽重编码（§10.7 #5） | **无**（`public/` 静态资产） |
+| 3 | `src/components/features/HomeWallpaperDecor.astro` | `wallpaperModeChange` 监听器加 `lastMode` 守卫（B-2） | **无**（该文件 100% 新增，上游不存在） |
+| 4 | `public/_headers` | 新增。Cloudflare 静态资源响应头（Vercel 上惰性） | **无**（上游没有这个文件） |
+| 5 | `src/constants/lqips.json` | 构建自动重生成 | — |
+| ~~6~~ | ~~`HomeWallpaperDecor.astro` 卡片关键帧（B-1）~~ | ~~0% 改 opacity:1~~ | **实测 LCP 收益为 0，已撤销**，见 12.11 |
+| ~~7~~ | ~~`backgroundWallpaper.ts` `carousel.enable`~~ | ~~改为 false~~ | **已完全还原，diff = 0**，见 12.4 |
+| ~~8~~ | ~~`analyticsConfig.ts` `replays.enabled`~~ | ~~改为 false~~ | **已完全还原，diff = 0**，见 12.4 |
+
+**本轮最终只有 3 处真实行为改动**（1–3），其中 2 处零合并冲突。
+`backgroundWallpaper.ts` / `analyticsConfig.ts` 已 `git checkout --` 还原，**与 HEAD 完全一致**。
+
+七次 `npm run build`（含全部 6 个后处理步骤）全部通过。
+
+### 12.1 §10.11 的「另一层门控」不存在——是渲染固有成本
+
+**方法学先说清楚**：`Page.captureScreenshot` **自带约 700ms 捕获延迟**，
+用它逐帧抓图得到的「某时刻屏幕内容」全是错的（第一张截图实际已是 1 秒后的状态）。
+必须改用 `Page.startScreencast`——它的帧自带合成时刻，才是可信的。
+
+**对照实验**（本地生产构建，零网络延迟）：
+
+| 实验 | domInteractive | DCL | 首次绘制 |
+| --- | --- | --- | --- |
+| 正常 | 94 ms | 674 ms | **520 ms** |
+| **`Emulation.setScriptExecutionDisabled`** | 21 ms | 21 ms | **652 ms** |
+
+**禁用 JS 后首次绘制反而更晚**，而且截图显示页面**完整渲染**：导航栏、卡片、「折腾进行时」标题、
+头像、8 张贴纸全都在，只差 `<template>` 里的壁纸照片。
+
+**结论：**
+
+1. 首屏内容 100% 是服务端渲染的 HTML + CSS，**JS 对首次绘制零贡献**。
+2. 本地零网络下 520–650ms 的空白，是**纯样式计算 + 布局 + 绘制**成本，来源是
+   443KB HTML / 2300 个 DOM 节点 / 252KB 解码后 CSS / 10 个样式表 / 223 个内联 SVG。
+3. 这解释了移动端节流那次 FCP 2260ms：**4× CPU 降速把这段计算成本放大约 4 倍**，与网络无关。
+4. **因此继续调入场动画门控（甲 / 乙 / 卡片关键帧）不可能改善 FCP**——FCP 根本不等 JS。
+   要打它只有减小 DOM 和 CSS 体积，属于主题级改动。
+
+> 这一条推翻了 §10.7 #2 的优先级判断。§10.11 已经撤回了「让 hero 提前可发现能打 FCP」，
+> 本轮进一步说明：**任何**围绕 hero / 入场动画的改动都打不到 FCP。
+
+### 12.2 「甲」被父级抵消了（opacity 沿 DOM 树逐层相乘）
+
+**CSS 的 `opacity` 是逐层相乘的。** 子元素自己 `opacity: 1`，父级 `opacity: 0` → 有效值为 0。
+
+`HomeWallpaperDecor.astro` 第 598–603 行把装饰层在首页 fullscreen 模式下**强制设为可见**：
+
+```css
+html[data-wallpaper-mode="fullscreen"] body.is-home .home-wallpaper-decor {
+    opacity: 1; visibility: visible;      /* ← 与 is-ready 无关 */
+}
+```
+
+也就是说卡片从一开始就是可见的，`is-ready` 唯一的作用是**触发子元素的入场动画**。而：
+
+```css
+home-wallpaper-card-enter   0% { opacity: 0 }   /* 父级卡片仍从透明开始，delay 80ms，fill-mode both */
+home-wallpaper-title-enter  0% { opacity: 1 }   /* 甲 只改了 h1 自己 */
+```
+
+**有效不透明度 = 卡片(0) × 标题(1) = 0** —— 甲被父级吃掉了。
+
+**铁证**：线上实测 `is-ready` 落地在 **2531ms**，卡片在 **2611ms** 开始淡入（= is-ready + 80ms 延迟）。
+而 §10.11 那份 M4 trace 记录的 LCP 时刻是 **2614ms**。**差 3ms——LCP 记录的就是卡片离开 `opacity: 0` 的那一刻。**
+
+**修复**：把 `home-wallpaper-card-enter` 的 0% 改成 `opacity: 1`，只保留位移 + 缩放的入场观感。
+
+验证（同一本地生产构建）：
+
+| 时刻 | 改前 | 改后 |
+| --- | --- | --- |
+| t=165ms（`is-ready`） | `card(op=0)` ← 被推回透明 | `card(op=1)` 保持可见 |
+| t=982ms | `card(op=0.03)` 开始淡入 | `card(op=1)` |
+| t=1120ms | `card(op=0.72)` | `card(op=1)` |
+
+#### ⚠️ 收益要说小一点：是 80ms，不是 760ms
+
+我最初以为这能省 0.76 秒，**是错的**。`animation-fill-mode: both` 只在 **80ms 延迟期内**
+把卡片压到 `opacity: 0`；动画一启动 opacity 就 > 0，浏览器即算作已绘制。
+
+所以本次真正回收的是**最后那 80ms 的 LCP 门控**。大头（`is-ready + 360ms` → `+80ms`，约 280ms）
+是 §10.12 的「甲」已经拿走的。附带收益是消除了「卡片先可见 → 加类后变透明 → 再淡入」的视觉回归。
+
+> ⚠️ **后续补测修正**：§12.10 用 Chrome trace 实测后发现，这 80ms 是**条件性**的——
+> 只在「绘制工作已于 `is-ready + 80ms` 前就绪」时才咬到 LCP。线上移动端符合（实测 83ms），
+> **本地零网络不符合（LCP ≡ FCP，测不出）**。请以 §12.10 为准。
+
+### 12.3 首次加载会重播一次入场动画（已修）
+
+**现象**：本地实测 `is-ready` 在 758ms 被移除、769ms 又加回，导致
+`avatar-wrap / identity / subtitle / nav`（仍用 `home-wallpaper-content-enter`，0% 是 `opacity:0`）
+先消失再淡入一次。
+
+**根因不在 `body.is-home`，而在 `wallpaperModeChange` 事件**：
+
+```
+src/utils/setting-utils.ts:395
+  applyWallpaperMode()  →  window.dispatchEvent(new CustomEvent("wallpaperModeChange", ...))   ← 无条件派发
+
+src/components/features/HomeWallpaperDecor.astro:395
+  监听器: 只要 mode 是 banner/fullscreen 且 body.is-home 就 revealDecor(decor, true)
+```
+
+运行时初始化时会用**当前模式**调用一次 `applyWallpaperMode()`，那次派发只是「确立模式」，
+不是「模式变了」——但监听器分辨不出来。
+
+（顺带澄清：`device-desktop` 这个 body class 在 874ms 同时出现，只是**现象不是原因**；
+加守卫后它照样出现，但重播消失了。）
+
+**修复**：监听器加 `lastMode` 守卫，初始化时从
+`document.documentElement.getAttribute("data-wallpaper-mode")` 取值，
+`mode === lastMode` 或属性缺失时视为初始化，直接 return。
+
+验证：改前 t=758ms `is-ready` 被移除再加回；改后 t=758ms 保持不变、动画不中断。
+
+**⚠️ 证据强度标注**：这个重播在**本地稳定复现**，但**线上 4 秒采样窗口内没抓到**
+（线上 body 里也没出现 `device-desktop`，怀疑那个脚本走 `requestIdleCallback` 之类的延后路径）。
+所以准确说法是「已确认机制的潜在缺陷」，不是「已确认的线上故障」。
+
+### 12.4 两项曾与既有决定冲突的改动——**已完全还原**
+
+这两项在第四轮一度被改动，但**与本文档既有决定冲突**，**已于 2026-09-15 18:15 回退**。
+
+回退时曾保留说明性注释；2026-09-15 18:20 进一步把这两个文件**完全还原到 HEAD**
+（`git checkout --`），因为值本来就没变、注释只是徒增 diff 面，
+而同样的信息本文档 §12.4 已经记全了。**这两个文件现在的 diff 为 0。**
+
+| 项 | 第四轮曾改为 | 现状态 | 文档既有结论 |
+| --- | --- | --- | --- |
+| `backgroundWallpaper.ts` `carousel.enable` | `false` | **`true`，diff = 0** | §10.5「是你的视觉偏好，**不强行建议关**」 |
+| `analyticsConfig.ts` `replays.enabled` | `false` | **`true`，diff = 0** | §P0-5「**保留，不建议关**」——59KB 换不到分数，不该丢数据 |
+
+**回退理由**：这两项都不解决 §12.1 查明的 FCP 瓶颈（DOM/CSS 体积），
+牺牲观感和数据换不到分数。
+
+**改动代价已实测记录，供将来重新评估：**
+
+| 项 | 代价 |
+| --- | --- |
+| 轮播开启 | 约 15 秒内把所有壁纸下载完：线上实测 **22 张图 / 766KB**；关闭后只加载随机命中的 1 张 / **145KB** |
+| 会话回放开启 | 额外 59KB `recorder.js` + 一次独立域名的 DNS/TCP/TLS + DOM 变更监听（但 `defer`，不阻塞渲染） |
+
+**如果将来想重新评估轮播**：`quality: 78` 已经让壁纸体积比 §10.5 测量时又降了 11–26%（见 §12.9），
+所以轮播现在的代价比当时低了一截。
+
+### 12.5 已完成的 §10.7 待办
+
+| 项 | 状态 | 结果 |
+| --- | --- | --- |
+| #3 封面 `quality: 85 → 78` | ✅ 已做 | 所有经 Astro 处理的图（封面/壁纸/头像）普遍再降 20–30% |
+| #5 贴纸 192 → 144 | ✅ 已做 | 129,874 B → **85,368 B**（−43 KB / −34.3%）。**从 360×480 原始备份重新生成，避免二次压缩损失**，逐个校验解码与尺寸通过 |
+
+贴纸备份：`.workbuddy/tmp/stickers-192-backup/`（192 版）、`.workbuddy/tmp/stickers-orig-backup/`（360×480 原图）。
+
+### 12.6 仍未验证 —— 下一步只有一件事
+
+**§10.12 的「甲 + 乙」至今没有重测过。**
+
+> ✅ **部分已解决**：LCP 现在可以自己测了——用 `Tracing.start` 抓
+> `largestContentfulPaint::Candidate`，不需要 Lighthouse（见 §12.10）。
+> 但**线上**的完整复测仍建议你跑一次 Lighthouse，因为本地环境复现不出移动端节流下的那条时序。
+
+**跑 Lighthouse 时重点看两个数**
+1. LCP 有没有从 4506ms 中位数下降；
+2. §10.11 提到的「612ms → 2655ms 那 2 秒空白」是否仍在（按 12.1 的结论，**它应该仍在**，
+   因为那是 DOM/CSS 体积决定的，甲/乙 打不到）。
+
+**方法学要求**（沿用 §10.8）：移动端取 3 次中位数、固定 GPU 参数、同一时间窗内对比。
+
+### 12.7 建议提给上游的 issue 草稿
+
+本轮的 12.1 结论是主题级问题，不该继续自己改模板。可直接用以下内容开 issue：
+
+> **标题**：首页首屏渲染成本偏高：443KB HTML / 2300 DOM 节点 / 252KB CSS 导致 FCP 无法通过 JS 优化改善
+>
+> **环境**：Firefly v6.16.8，`wallpaper.mode: fullscreen`，纯静态部署
+>
+> **现象**：本地零网络下首屏空白 520ms（`domInteractive` 仅 94ms）。用
+> `Emulation.setScriptExecutionDisabled` 禁用脚本后，首次绘制为 652ms，**反而更晚**，
+> 且页面完整渲染（导航栏 / 卡片 / 标题 / 贴纸齐全，只差 `<template>` 里的壁纸）。
+>
+> **结论**：首屏内容 100% 是 SSR 的 HTML + CSS，JS 对首次绘制零贡献；
+> 那 500ms 是样式计算 + 布局 + 绘制的固有成本。移动端 4× CPU 节流下放大约 4 倍。
+>
+> **可量化的构成**（首页 `dist/index.html`）：
+> - HTML 443KB（gzip 82KB），其中纯文本仅 4.5KB
+> - `class` 属性 1600 个共 102KB（占 24%）
+> - 内联 SVG 224 个共 85KB（astro-icon 内联，77 个 `<symbol>` + 213 个 `<use>`）
+> - 内联 `<script>` 48 个共 94KB
+> - CSS 单文件 `Layout.*.css` 207KB（gzip 30KB）
+> - DOM 节点 2300
+>
+> **可能的改进方向**（供参考，未验证）：图标改为 sprite 外链而非内联；
+> Tailwind 输出减少多行 class 的空白；内联脚本外置并合并；CSS 按页拆分。
+
+### 12.8 本轮的方法学教训
+
+1. **`Page.captureScreenshot` 有 ~700ms 捕获延迟**，不能用于逐帧时序分析。用 `Page.startScreencast`。
+2. **`Emulation.setScriptExecutionDisabled` 是区分「JS 门控」和「渲染成本」的决定性手段**，
+   应该在做任何「优化 JS 加载顺序」之前先跑这个对照。
+3. **CSS `opacity` 沿 DOM 树逐层相乘**。查「元素何时可见」必须沿祖先链逐层看，
+   只看目标元素本身会得出错误结论——本轮就是这么错了一轮。
+4. **`animation-fill-mode: both` + `delay` 只门控延迟那一段**，不是整个动画时长。
+   把 0.76s 当成收益会被夸大一个数量级。
+5. **对照实验要真的看图，不要只看字节数**。「禁用 JS 但页面完整渲染」这个事实，
+   只有把截图读出来才知道。
+6. **不要凭沙箱的绝对耗时下托管结论**。本轮一开始据「境外站比国内站慢 5 倍」判断要换 CDN，
+   但用户自测 Vercel 的 `server-response-time` 只有 93ms——沙箱的透明代理把这个对比彻底污染了。
+   **下任何托管结论前，必须拿用户本机的数据交叉验证。**
+
+### 12.9 两项改动的实测 A/B（补充）
+
+#### A. `imageOptimization.quality: 85 → 78`
+
+同一份代码、同一个 `npm run build` 流水线，只切 `quality` 值，各构建一次对比。
+
+**① 首页 HTML 引用的 33 张 `/_astro/*.webp` 总和**（确定性指标，可复现）：
+
+| | 体积 |
+| --- | --- |
+| `quality: 85` | 1,515,200 B（**1479.7 KB**） |
+| `quality: 78` | 1,221,112 B（**1192.5 KB**） |
+| **差** | **−294,088 B（−287.2 KB / −19.4%）** |
+
+单张对照（同源图，1920w 档）：
+
+| 图 | q85 | q78 | 省 |
+| --- | --- | --- | --- |
+| `three`（桌面壁纸） | 174,860 B | 133,762 B | −23.5% |
+| `9`（桌面壁纸） | 148,090 B | 108,946 B | −26.4% |
+| `3`（移动壁纸） | 90,868 B | 80,390 B | −11.5% |
+| `cover.Doo_nJpf`（列表封面） | 76,126 B | 58,168 B | −23.6% |
+| `cover.DmYuCQNo` | 60,246 B | 48,078 B | −20.2% |
+| `cover.CCkS12N6` | 46,634 B | 38,732 B | −16.9% |
+
+**② 首页单次实际加载的图片**（CDP 实测，本地、轮播已关，差异只来自 quality）：
+
+| | 图片请求数 | 图片传输 |
+| --- | --- | --- |
+| `quality: 85` | 19 | 396 KB |
+| `quality: 78` | 18 | 328–352 KB |
+| **差** | — | **约 −44 ~ −68 KB（−11% ~ −17%）** |
+
+**为什么两个数字差这么多**：① 是「被引用的全部 33 张」（含 1920w 大档和 `<template>` 里的候选图），
+② 是浏览器真正下载的子集。**首页只加载其中一部分，所以首页单次省的是 ② 那个量级；
+但 quality 对每一页、每一张图都生效**——文章页、归档页、画廊页的图片越多，省的越接近 ①。
+
+**代价**：WebP 有损质量 85→78。你文档 §10.7 的判断是「视觉上几乎看不出来」，本轮未做像素级比对验证，
+**建议部署前肉眼对比一下壁纸和列表封面**（这是全站质量最高的两张图，最容易看出差异）。
+
+#### B. `HomeWallpaperDecor.astro` 的两处改动
+
+**(B-1) 卡片入场关键帧 `home-wallpaper-card-enter` 的 0%：`opacity: 0` → `opacity: 1`**
+
+改动只有一行（外加注释），保留原有的位移 + 缩放：
+
+```diff
+  @keyframes home-wallpaper-card-enter {
+      0% {
+-         opacity: 0;
++         opacity: 1;
+          transform: translate(-50%, calc(-50% + 22px)) scale(0.965);
+      }
+```
+
+收益：`is-ready` 落地时，卡片不再被推回透明，标题（LCP 元素）立即可用。
+
+| 时刻 | 改前 | 改后 |
+| --- | --- | --- |
+| t=93ms | `card(op=1)` | `card(op=1)` |
+| **t=165ms（`is-ready`）** | **`card(op=0)`** ← 被推回透明 | **`card(op=1)`** 保持可见 |
+| t=982ms | `card(op=0.03)` 开始淡入 | `card(op=1)` |
+| t=1120ms | `card(op=0.72)` | `card(op=1)` |
+
+**量化收益 ≈ 80ms**（不是 0.76s，理由见 12.2）。附带消除「卡片先可见 → 加类后变透明 → 再淡入」
+这个潜在闪动（是否肉眼可见取决于浏览器在 `is-ready` 之前是否已经绘制过）。
+
+**(B-2) `wallpaperModeChange` 监听器加 `lastMode` 守卫**
+
+```diff
++ let lastMode = document.documentElement.getAttribute("data-wallpaper-mode");
+  window.addEventListener("wallpaperModeChange", (event) => {
+      const mode = event.detail?.mode;
++     if (!mode) return;
++     const isInit = lastMode === null || mode === lastMode;
++     lastMode = mode;
++     if (isInit) return;
+      if ((mode === "banner" || mode === "fullscreen") && document.body.classList.contains("is-home")) {
+          const decor = getDecor();
+          if (decor) revealDecor(decor, true);
+      }
+  });
+```
+
+收益：消除首屏一次多余的全量入场动画重播。
+
+| 时刻 | 改前 | 改后 |
+| --- | --- | --- |
+| t=191ms | `ready=true`，动画开始 | `ready=true`，动画开始 |
+| **t=758ms**（`device-desktop` 落地） | **`ready=false`** ← 被移除 | **`ready=true`** 保持不变 |
+| t=769ms | `ready=true` ← 加回，**动画全部重播** | 动画不中断 |
+
+**受影响的元素**：`avatar-wrap`（delay 0.21s）、`identity`（0.3s）、`subtitle`（0.43s）、`nav`（0.5s）
+——它们用的是 `home-wallpaper-content-enter`，0% 仍是 `opacity: 0`，所以重播时**会真的消失再淡入一次**。
+（卡片和 h1 已由 B-1 / 甲 保护，不受影响。）
+
+**证据强度**：本地稳定复现；**线上 4 秒采样窗口内未抓到**（线上 body 也没出现 `device-desktop`，
+怀疑该脚本走 `requestIdleCallback` 之类延后路径）。属「已确认机制的潜在缺陷」，
+修复是保守的（只屏蔽首次派发，真实切换不受影响），故建议保留。
+
+#### 两项对 FCP / LCP 的合计影响：**诚实说，接近零**
+
+按 12.1 的结论，FCP 由 DOM/CSS 体积决定，与这两处无关。LCP 的量化收益是 B-1 的那 ~80ms。
+**这两处的真正价值是消除可见的动画缺陷（B-2 的闪动、B-1 的潜在闪动），不是提分。**
+不要把它们当成 LCP 的主要手段——主要手段在 12.7 那份上游 issue 里。
+
+> ⚠️ **上句「LCP 收益 ~80ms」已在 §12.10 用实测修正为「条件性、本地测不出」。请以 §12.10 为准。**
+
+### 12.10 补测：LCP 实测（用 Chrome trace，不依赖 Lighthouse）
+
+§12.6 说「Lighthouse 才能测 LCP，本轮无法代劳」——**这一条已作废**。
+用 `Tracing.start` 抓 `largestContentfulPaint::Candidate` 事件可以自己测，
+方法和 §10.11 一致（**注意事件载荷在 `args.data`，不是 `data`**）。
+
+**本地生产构建、零网络、连跑 4 次：**
+
+| run | FCP | LCP | LCP − FCP | LCP 元素 |
+| --- | --- | --- | --- | --- |
+| 1 | 720 ms | 720 ms | 0 | `SPAN.home-wallpaper-card__motion-text` |
+| 2 | 548 ms | 546 ms | −2 | 同上 |
+| 3 | 696 ms | 696 ms | 0 | 同上 |
+| 4 | 532 ms | 529 ms | −3 | 同上 |
+
+**三条结论：**
+
+1. **LCP 元素始终是首页卡片标题**，与 §10.11 的 trace 结论完全一致（4 次复现）。
+2. **本地 LCP ≡ FCP，两者是同一时刻**——标题的首次绘制同时就是首次内容绘制和最大内容绘制。
+3. **本地 FCP 波动带是 532–720 ms（±94 ms），比 B-1 想测的 80 ms 还宽**，
+   所以**本地单次 A/B 无法分辨 B-1 的效果**。
+
+#### 因此修正 B-1 的收益表述
+
+| 环境 | is-ready | FCP | LCP | 卡片 opacity 门控是否咬到 LCP |
+| --- | --- | --- | --- | --- |
+| **本地**（零网络） | ~165–191 ms | 532–720 ms | ≡ FCP | **否**——标题在 is-ready 之后还要等 350–530 ms 才绘制，80 ms 的门控窗口早就过去了 |
+| **线上 Lighthouse 移动端**（§10.11 的 M4 trace） | 2531 ms | 2536 ms | 2614 ms | **是**——FCP 距 is-ready 仅 5 ms，而 LCP 晚了 83 ms，正好对上卡片的 80 ms 延迟 |
+
+**修正后的表述**：B-1 的 LCP 收益是**条件性的**——
+只有当「绘制工作已在 `is-ready + 80ms` 之前就绪」时，那 80 ms 的门控才会咬到 LCP。
+线上移动端节流环境符合这个条件（实测 LCP − FCP = 83 ms ≈ 80 ms 延迟），
+**本地零网络环境不符合，测不出差异**。
+
+所以 B-1 **仍然值得保留**（线上有证据支持 ~80 ms，且它顺带消除了一个视觉回归），
+但**不要把它当成确定的 80 ms 收益**——它取决于环境，可能为 0。
+
+#### 本轮新增的可复用工具
+
+| 脚本 | 用途 |
+| --- | --- |
+| `Page.startScreencast` | 带真实合成时刻的逐帧截图（**`Page.captureScreenshot` 有 ~700ms 延迟，不可用于时序**） |
+| `Emulation.setScriptExecutionDisabled` | 区分「JS 门控」与「渲染成本」的决定性对照 |
+| `Tracing.start` + 过滤 `largestContentfulPaint::Candidate` | 自己测 LCP，无需 Lighthouse |
+
+### 12.11 线上实测 LCP：确认「甲」有效，但 B-1 收益为 0（B-1 已撤销）
+
+用 §12.10 的方法直接跑**线上**（当前线上版本 = 含甲+乙、不含本轮改动），
+同时采样 `is-ready` / 卡片首次不透明的时刻。
+
+**线上桌面（未节流）× 4：**
+
+| run | TTFB | FCP | LCP | is-ready | 卡片首次不透明 | LCP − FCP | LCP − is-ready |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 652 | 2640 | 2636 | 2637 | 2198 | −4 | **−1** |
+| 2 | 638 | 1792 | 1792 | 1795 | 1298 | 0 | **−3** |
+| 3 | 1505 | 3092 | 3090 | 3090 | 2647 | −2 | **0** |
+| 4 | 669 | 1600 | 1597 | 1597 | 1155 | −3 | **0** |
+
+**线上移动端节流（4× CPU + 1.6 Mbps）× 2：**
+
+| run | FCP | LCP | is-ready | LCP − FCP | LCP − is-ready |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 2112 | 2545 | 2589 | **+433** | **−44** |
+| 2 | 2268 | 2696 | 2728 | **+428** | **−32** |
+
+**三条结论：**
+
+1. **LCP 元素 6/6 次都是首页卡片标题**，与 §10.11 一致。
+2. **6/6 次 LCP 都发生在 `is-ready` 之前**（−44 ~ 0 ms）。
+   而那 80 ms 的卡片门控窗口在 `is-ready` **之后**——**所以 B-1 对 LCP 的收益是 0。**
+   更早的「≈80ms」估计是基于 §10.11 那份 **甲之前**的 M4 trace 推算的，不成立。
+3. **卡片在 `is-ready` 之前约 440 ms 就已经在 DOM 里且不透明**，
+   但首次内容绘制仍然要等到 `is-ready`——这个「为什么」仍未解开
+   （可能是主线程被 36 个 module 占住，也可能是字体）。
+
+#### ⭐ 顺带验证了「甲」确实有效
+
+对比 §10.11 那份 **甲之前**的 M4 trace 与本次 **甲之后**的线上实测：
+
+| | LCP 相对 is-ready |
+| --- | --- |
+| 甲之前（M4 trace） | **+83 ms** |
+| 甲之后（本次 6 次） | **−44 ~ 0 ms** |
+
+**「甲」把 LCP 提前了约 85–125 ms。** 这是对 §10.12 工作的实测确认。
+
+#### B-1 已撤销
+
+B-1（卡片关键帧 0% 改 `opacity: 1`）经实测**对 LCP 收益为 0**，而它会**改变入场观感**
+（卡片从「淡入 + 位移」变成「仅位移、全不透明出现」）。既然无收益又改动视觉，**已于 2026-09-15 18:25 撤销**，
+`HomeWallpaperDecor.astro` 现在只保留 B-2（重播守卫）一处改动。
+
+**B-2 保留的理由**：它修的是一个真实的逻辑缺陷——`applyWallpaperMode()` 无条件派发
+`wallpaperModeChange`，而监听器无法区分「初始化派发」和「模式真的变了」。属正确性修复，
+即使当前时序下不易触发。**但需诚实标注：线上 6 次采样中未捕捉到该重播**，收益未经线上验证。
+
+#### 本轮最终落地
+
+| # | 改动 | 实测收益 | 合并风险 |
+| --- | --- | --- | --- |
+| 1 | `quality: 85 → 78` | 首页引用图 −19.4%；单次实际加载 −11%~−17% | 低 |
+| 2 | 贴纸 192→144 | −34.3%（−43 KB） | **零** |
+| 3 | `lastMode` 重播守卫 | 消除一次重播（本地实测有效，**线上未验证**） | **零** |
+| 4 | `public/_headers` | Cloudflare 用，Vercel 上惰性 | **零** |
+| — | ~~卡片关键帧~~ | ~~≈80ms~~ → **实测 0，已撤销** | — |
+
+**一句话总结：本轮真正有实测收益的只有两项——图片体积（quality 78 + 贴纸 144）。
+FCP/LCP 的瓶颈自始至终是 DOM/CSS 体积（§12.1），只有上游能修（§12.7）。**
+
+### 12.12 未解之谜：LCP 元素「已在 DOM 且不透明」却要等 440ms 才绘制
+
+§12.11 的线上实测里有个说不通的地方：
+
+```
+decorInDom = 1155~2647ms   ← 装饰层进入 DOM
+卡片首次不透明 = 同上       ← 卡片 computed opacity 已经是 1
+is-ready   = 1597~3090ms   ← 440ms 之后
+FCP = LCP  = 同上          ← 首次内容绘制就发生在这一刻
+```
+
+**卡片明明已经在 DOM 里、computed opacity 也是 1，却要再等 440ms 才有第一次内容绘制。**
+
+#### 已排除的原因（负向证据，别再重复排查）
+
+逐一查过，**都不是**：
+
+| 怀疑项 | 结论 |
+| --- | --- |
+| `opacity` 隐藏 | 排除。卡片 computed opacity 从 decorInDom 起就是 1 |
+| `visibility: hidden` / `display: none` | 排除。第 598–603 行的强制可见规则已覆盖初始隐藏 |
+| `content-visibility` | 排除。全仓 + 构建产物 CSS 里 0 处 |
+| `contain: paint/content/strict` | 排除。0 处 |
+| 透明文字（`-webkit-text-fill-color` / `color: transparent`） | 排除。0 处 |
+| `.home-wallpaper-card__motion-text` 隐藏文字 | 排除。它只有 `display:inline-block` + `transform-origin` + `transition` |
+| `.home-wallpaper-card h1` 基础规则 | 正常，无隐藏属性（第 895–904 行） |
+
+#### 最可能的解释（**未确认**）
+
+**主线程被 36 个 module 脚本占住**：浏览器已经把文字准备好，但提交不了一帧，
+而 `is-ready` 恰好是这批 JS 执行完的时刻——所以首次绘制和 `is-ready` 撞在一起。
+
+**但我没能证实它：**
+
+- 线上做「禁用 JS」对照失败——代理噪声把信号淹了（TTFB 在 630–1505ms 之间乱跳，
+  `FCP − TTFB` 在 JS 开/关两种情况下区间重叠）。
+- 本地做同样对照得到**相反**的结果（禁用 JS 后 FCP 从 520ms 变成 652ms，**更晚**）。
+
+#### 如果这个假设成立，意味着什么
+
+FCP 会被**脚本求值时间**门控，而不只是 DOM/CSS 体积。那么除了减小 DOM/CSS，
+**减少 JS 模块数量与求值时间**也是一条路（36 个 module → §12.7 的 issue 草稿里已列）。
+
+#### 怎么证实
+
+需要**本地跑一次 Lighthouse**，看 trace 里的主线程分解：
+
+- `script evaluation` / `long tasks` 的结束时刻是否 ≈ FCP；
+- `render-blocking` 之外有没有大段 `Parse HTML` 或 `Evaluate Script`。
+
+**这是目前唯一还没被解释、且可能有独立收益的点。**
