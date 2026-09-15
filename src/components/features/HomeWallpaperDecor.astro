@@ -392,8 +392,23 @@ const isExternal = (url: string) => url.startsWith("http");
             });
             observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
 
+            // 运行时初始化时会用「当前模式」调用一次 applyWallpaperMode()，
+            // 而它内部是无条件派发 wallpaperModeChange 的（setting-utils.ts），
+            // 所以那次派发并不代表「模式变了」。用 lastMode 记住已生效的模式，
+            // 只有真正切换时才重播——否则首屏会白白多播一次入场动画，
+            // 表现是头像 / 副标题 / 导航先消失再淡入一次。
+            let lastMode = document.documentElement.getAttribute(
+                "data-wallpaper-mode",
+            );
+
             window.addEventListener("wallpaperModeChange", (event) => {
                 const mode = event.detail?.mode;
+                if (!mode) return;
+                // 首次派发（或与已生效模式相同）视为初始化，不重播
+                const isInit = lastMode === null || mode === lastMode;
+                lastMode = mode;
+                if (isInit) return;
+
                 if (
                     (mode === "banner" || mode === "fullscreen") &&
                     document.body.classList.contains("is-home")
