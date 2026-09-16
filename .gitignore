@@ -23,6 +23,9 @@ pnpm-debug.log*
 
 .vercel
 
+# Cloudflare Workers 本地状态（wrangler dev 生成）
+.wrangler/
+
 package-lock.json
 bun.lockb
 yarn.lock
