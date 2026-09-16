@@ -35,6 +35,8 @@
 /pio/*
   Cache-Control: public, max-age=2592000, stale-while-revalidate=604800
 
-# ── 站内 API：短缓存 ──
+# ── 站内 API：只在边缘缓存 1 小时，浏览器不缓存（每次重新校验）──
+# 与 vercel.json 的 /api/(.*) 保持一致：构建产物是静态 JSON，但每次部署内容会变，
+# 若让浏览器缓存 1 小时，日历等组件会读到过期数据。
 /api/*
-  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+  Cache-Control: public, s-maxage=3600, max-age=0, must-revalidate

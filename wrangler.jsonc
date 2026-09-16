@@ -3,6 +3,11 @@
 	"compatibility_date": "2025-01-01",
 	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
-		"directory": "./dist"
+		"directory": "./dist",
+		// 未命中静态资源时返回最近的 404.html。
+		// 不设置这一项的话，Cloudflare 会返回 Content-Length: 0 的空 404 响应，
+		// 站点自定义的 404 页面（dist/404.html）不会生效——这是从 Vercel 迁移过来
+		// 最容易漏掉的一处行为差异。
+		"not_found_handling": "404-page"
 	}
 }
