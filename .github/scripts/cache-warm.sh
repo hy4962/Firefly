@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Vercel 缓存预热脚本（适配 9ll.uk 博客）
+# Cloudflare 缓存预热脚本（适配 9ll.uk 博客）
 #
 # 流程：
 #   1. 从 https://www.9ll.uk/sitemap-index.xml 读取分片清单，
 #      逐个抓取 sitemap-N.xml 收集全站 URL
 #   2. 多轮并发 curl 请求每个页面
-#   3. 每轮统计 x-vercel-cache HIT 数 / 命中率，达到目标或轮数上限后结束
+#   3. 每轮统计 cf-cache-status HIT 数 / 命中率，达到目标或轮数上限后结束
 #
 # 注意：
 #   - 不要加 Cache-Control: no-cache 请求头，否则会强制 CDN 重新验证，全测成 MISS
 #   - curl 本身没有客户端缓存，天然忽略浏览器缓存
-#   - Vercel 边缘缓存按区域分片，GitHub Actions 的出口在美国，
-#     预热的是美区边缘节点；国内访客命中与否取决于其就近节点的缓存状态，
+#   - Cloudflare 边缘缓存按 PoP 分片，GitHub Actions 的出口在美国，
+#     预热的是美区节点；国内访客命中与否取决于其就近节点（如 SIN/HKG）的缓存状态，
 #     所以 HIT 目标不设 100%
+#   - Cloudflare 对 Workers 静态资源不回 Age 头，Age 统计会显示 N/A，属正常
 
 set -u -o pipefail
 
@@ -72,7 +73,7 @@ warm_url() {
     -w '%{http_code}\t%{time_total}\t%{remote_ip}' "$url" 2>/dev/null || true)"
   IFS=$'\t' read -r http_code response_time remote_ip <<< "$metric"
   cache_status="$(awk '
-    tolower($0) ~ /^x-vercel-cache:/ {
+    tolower($0) ~ /^cf-cache-status:/ {
       value = $0
       sub(/^[^:]*:[[:space:]]*/, "", value)
       sub(/\r$/, "", value)

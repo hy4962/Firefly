@@ -1,6 +1,6 @@
 name: Cache Warm
 
-# 部署后预热 Vercel 边缘缓存：从 sitemap 提取全站 URL 逐个请求，
+# 部署后预热 Cloudflare 边缘缓存：从 sitemap 提取全站 URL 逐个请求，
 # 让新部署的 CDN 缓存提前填满，避免每个页面的第一个访客吃 MISS。
 # 仅在 push 到部署分支（HY）时触发；预热脚本自身产生的任何提交都不会再次触发本工作流。
 
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 等待 Vercel 完成新部署
+      - name: 等待 Cloudflare 完成新部署
         if: github.event_name == 'push'
         run: sleep 120
 
