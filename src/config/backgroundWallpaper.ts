@@ -51,7 +51,6 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			"assets/images/MobileWallpaper/1.webp",
 			"assets/images/MobileWallpaper/2.webp",
 			"assets/images/MobileWallpaper/3.webp",
-			"assets/images/DesktopWallpaper/cover.webp",
 		],
 		// 背景视频播放地址
 		// 支持单个视频路径（字符串）或多个视频循环（数组，参考上面壁纸配置）
