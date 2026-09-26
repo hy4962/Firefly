@@ -43,6 +43,9 @@ export const homeCardConfig = {
 	// 是否启用首页装饰卡片（卡片 + 贴纸）
 	enable: true,
 
+	// 手机端（≤767px）随机显示多少张场景贴纸（贴纸再多也不会挤满手机屏，刷新会换一批；0 或留空=全显示）
+	mobileStickerLimit: 8,
+
 	// 卡片内容（留空则回退：identity → profileConfig.name，title → siteConfig.title，subtitle → profileConfig.bio）
 	identity: "HY",
 	title: "折腾进行时",
