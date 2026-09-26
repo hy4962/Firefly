@@ -101,35 +101,19 @@ export const homeCardConfig = {
 
 	// 场景贴纸：按百分比定位，top（距顶）或 bottom（距底）二选一 + left
 	// （贴纸列表顺序即拖拽层级，后者在上）
-	// 桌面分三层：
-	//   上方一排   top: 20   —— 左右两个角
-	//   底部前排   bottom: 5  —— 8 张等距（1.2 / 13.7 / 26.2 / 38.7 / 51.2 / 63.7 / 76.2 / 88.7）
-	//   底部后排   bottom: 16 —— 6 张等距错位（7.4 / 21.6 / 35.8 / 50 / 64.2 / 78.4）
+	// 桌面分两层（都在卡片下方）：
+	//   底部前排   bottom: 5  —— 6 张等距（1.2 / 18.7 / 36.2 / 53.7 / 71.2 / 88.7）
+	//   底部后排   bottom: 16 —— 6 张错位等距（7.4 / 21.6 / 35.8 / 50 / 64.2 / 78.4）
 	// `bottom >= 12` 视为后排：窗口高度不足 940px 时由 CSS 整排隐藏（否则会顶到卡片）
+	// 需要用到卡片上方时给 `top: 20` 即可，移动端脚本会按之自动分带
 	// 移动端由脚本按卡片位置重新排布，不依赖上面的 left 顺序
 	// 素材在 public/images/home-stickers/，可自行增删
 	stickers: [
 		{
-			src: "/images/home-stickers/blonde-idol.webp",
-			name: "金发偶像",
-			top: 20,
-			left: 1.2,
-			width: 112,
-			rotate: 4,
-		},
-		{
-			src: "/images/home-stickers/roxy.webp",
-			name: "洛琪希",
-			bottom: 5,
-			left: 1.2,
-			width: 98,
-			rotate: -5,
-		},
-		{
 			src: "/images/home-stickers/kirino-cheer.webp",
 			name: "高坂桐乃·欢呼",
 			bottom: 5,
-			left: 13.7,
+			left: 1.2,
 			width: 96,
 			rotate: 5,
 		},
@@ -137,7 +121,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/misaka.webp",
 			name: "御坂美琴",
 			bottom: 5,
-			left: 26.2,
+			left: 18.7,
 			width: 100,
 			rotate: -4,
 		},
@@ -145,7 +129,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/sagiri.webp",
 			name: "和泉纱雾",
 			bottom: 5,
-			left: 38.7,
+			left: 36.2,
 			width: 96,
 			rotate: 4,
 		},
@@ -153,7 +137,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kirino-lying.webp",
 			name: "高坂桐乃·躺平",
 			bottom: 5,
-			left: 51.2,
+			left: 53.7,
 			width: 110,
 			rotate: -6,
 		},
@@ -161,7 +145,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/madoka.webp",
 			name: "鹿目圆",
 			bottom: 5,
-			left: 63.7,
+			left: 71.2,
 			width: 92,
 			rotate: -4,
 		},
@@ -169,24 +153,8 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kirino-pout.webp",
 			name: "高坂桐乃·抱臂",
 			bottom: 5,
-			left: 76.2,
-			width: 92,
-			rotate: 4,
-		},
-		{
-			src: "/images/home-stickers/miku.webp",
-			name: "初音未来",
-			bottom: 5,
 			left: 88.7,
-			width: 96,
-			rotate: 5,
-		},
-		{
-			src: "/images/home-stickers/nezuko.webp",
-			name: "祢豆子",
-			top: 20,
-			left: 94,
-			width: 88,
+			width: 92,
 			rotate: 4,
 		},
 		{
