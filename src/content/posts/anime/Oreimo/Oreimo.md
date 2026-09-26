@@ -146,3 +146,5 @@ draft: false
 但它确实留下了很深的印象。
 
 顺便，之前写的[《零之使魔》观后感](/posts/anime/zero-no-tsukaima/zero-no-tsukaima/)也是傲娇女主的异世界恋爱番，连“节奏太赶”这个毛病都如出一辙，感兴趣的可以一起看看。
+
+![《俺妹》观后感题图](./images/image-002.webp)
