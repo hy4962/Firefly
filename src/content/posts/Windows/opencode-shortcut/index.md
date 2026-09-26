@@ -1,6 +1,7 @@
 ---
 title: "一个字母的事：让 opencode 像 mimo 一样在资源管理器地址栏启动"
 published: 2026-07-24
+updated: 2026-08-26
 description: "想在文件资源管理器地址栏输入 oc 就启动 opencode？复制 .cmd 不行，得复制 .exe"
 image: ./cover.png
 tags: [opencode, 命令行, 快捷启动, Windows]

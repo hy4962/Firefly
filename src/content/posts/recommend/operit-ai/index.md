@@ -1,6 +1,7 @@
 ---
 title: 手机上的 AI Agent：用 Operit 帮我看住了挂机的虚拟机
 published: 2026-09-10
+updated: 2026-09-10
 description: Operit 是一个安卓上的开源 AI Agent 平台，能直接操作手机。我拿它排查了虚拟机挂机几小时就卡死的问题，最后它给我写了个看门狗程序，检测到卡死就自动重启虚拟机和里面的两个实例。
 image: ./images/cover.webp
 tags: [Operit, AI Agent, 安卓, 虚拟机, 自动化, Root]

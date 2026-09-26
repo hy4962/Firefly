@@ -1,6 +1,7 @@
 ---
 title: "用简幻欢开泰拉瑞亚模组服，顺便记几个终端不显示的坑"
 published: 2026-09-12
+updated: 2026-09-12
 description: "在简幻欢上用 TModLoader 开一个带模组的泰拉瑞亚服务器：从 Steam 提取服务端、上传模组整合包到改启动脚本的完整流程，附创建世界时终端漏显示字段的对照表。"
 image: ./images/cover.webp
 tags: [泰拉瑞亚, TModLoader, 简幻欢, 游戏服务器, 部署]

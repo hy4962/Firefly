@@ -1,6 +1,7 @@
 ---
 title: "B站批量隐藏投稿：一键把全部稿件设为仅自己可见"
 published: 2026-08-23
+updated: 2026-08-26
 description: "一个Tampermonkey脚本，在B站稿件管理页面一键把公开视频批量设置为仅自己可见，支持自动翻页、自定义起止页，127个视频实测通过。"
 image: ./images/cover.png
 tags: [Tampermonkey, 用户脚本, B站, 批量操作]

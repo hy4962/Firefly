@@ -1,6 +1,7 @@
 ---
 title: "DSH 迁移 Docker 翻车四连：AI 全程远程替我修好了"
 published: 2026-08-29
+updated: 2026-08-29
 description: "把 Windows 上的 DSH（DeepSeek Harness）连同插件配置迁移到 NAS 的 Docker 容器，启动即崩、连炸四个坑。最后全靠 AI 通过 SSH 远程诊断、打补丁、重装依赖，全程自动修好。"
 image: ./cover.png
 tags: [DSH, DeepSeek Harness, Docker, 迁移, SSH, AI 运维]

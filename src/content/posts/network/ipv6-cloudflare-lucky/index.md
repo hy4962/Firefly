@@ -1,7 +1,7 @@
 ---
 title: "只有 IPv6 也能实现公网 IPV4 访问：Cloudflare + Lucky 白嫖双栈 HTTPS"
 published: 2026-08-28
-updated: 2026-09-10
+updated: 2026-09-11
 description: "家里设备只有 IPv6 出口：Lucky 做 DDNS 把 IPv6 同步到 Cloudflare，再靠 Cloudflare 代理免费实现双栈访问、去掉端口号和全链路 HTTPS。"
 image: ./cover.png
 tags: [内网穿透, Lucky, Cloudflare, IPv6, 双栈, HTTPS]

@@ -1,6 +1,7 @@
 ---
 title: 站长实习经历
 published: 2026-07-24
+updated: 2026-08-26
 description: 释怀的似了
 image: ./fengmian.png
 tags: [实习, 生活记录, 工作]

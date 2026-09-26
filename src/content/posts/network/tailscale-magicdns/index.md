@@ -1,6 +1,7 @@
 ---
 title: "不用域名不用反代，Tailscale 让 NAS 地址变成「设备名:端口」"
 published: 2026-09-24
+updated: 2026-09-24
 description: "家里几台主机跑着一堆 Docker 服务，IP 和端口根本记不住。用 Tailscale 默认开启的 MagicDNS，浏览器直接输「设备名:端口」就能访问，零配置零成本，顺便对比了一下 ZeroTier。"
 image: ./images/cover.webp
 tags: [Tailscale, MagicDNS, NAS, 内网穿透, ZeroTier]

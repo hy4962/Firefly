@@ -1,7 +1,7 @@
 ---
 title: Cloudflare Workers优选IP
 published: 2026-07-12
-updated: 2026-07-15
+updated: 2026-08-07
 description: CloudFlare优选IP
 image: ./fengmian.png
 tags: [Cloudflare, Workers, 优选IP, DNS, CDN]

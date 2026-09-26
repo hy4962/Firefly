@@ -1,6 +1,7 @@
 ---
 title: Workers 部署一个免费图床
 published: 2026-07-18
+updated: 2026-08-26
 description: 从 Fork 项目到 D1 建表再到 GitHub Actions 自动部署，一步步搭建跑在 Cloudflare Workers 上的免费图床
 image: ./fengmian.png
 tags: [Cloudflare, Workers, D1, 图床]
