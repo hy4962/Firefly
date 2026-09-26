@@ -64,8 +64,10 @@ const lqipProps = isLocal
 		? getLqipProps(src, basePath, true)
 		: getLqipProps(src);
 
-// 列表卡片和文章详情共享同一组封面产物
-const widths = [828];
+// 列表卡片：显示尺寸小、同屏数量多，只出 828 一份，省流量。
+// 文章详情页：封面是大图，必须再给一个 1672 候选 —— 否则 2x 高分屏
+// （手机 / MacBook）需要 1656 物理像素却只拿到 828，等于半分辨率，看起来发糊。
+const widths = preview ? [828] : [828, 1672];
 const sizes = preview
 	? "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
 	: "(max-width: 768px) 100vw, 828px";
