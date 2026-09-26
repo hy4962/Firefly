@@ -57,6 +57,16 @@ export const galleryConfig: GalleryConfig = {
 			date: "2026-09-09",
 			tags: ["设计", "Logo"],
 		},
+		{
+			id: "stickers",
+			name: "首页贴纸原图",
+			description:
+				"首页场景贴纸的原始画稿存档：全分辨率真原图，未经任何压缩与处理（保留画师签名与白底）。前三张素材年代较早，只有 192px 的版本。",
+			location: "Firefly 博客",
+			date: "2026-09-26",
+			tags: ["贴纸", "原图", "存档"],
+			cover: "/gallery/stickers/kirino-cheer.png",
+		},
 		// {
 		// 	id: "firefly-2026",
 		// 	name: "可爱流萤",
