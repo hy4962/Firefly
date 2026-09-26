@@ -100,9 +100,14 @@ export const homeCardConfig = {
 	},
 
 	// 场景贴纸：按百分比定位，top（距顶）或 bottom（距底）二选一 + left
-	// （贴纸列表顺序即拖拽层级，后者在上；一排贴纸用 bottom 锚定可对齐地面线）
-	// 桌面与移动端使用同一套布局，移动端由脚本按卡片位置自适应换算
-	// 素材来自 rainzt.cn 演示，可自行替换为 public/images/home-stickers/ 下的其他图片
+	// （贴纸列表顺序即拖拽层级，后者在上）
+	// 桌面分三层：
+	//   上方一排   top: 20   —— 左右两个角
+	//   底部前排   bottom: 5  —— 8 张等距（1.2 / 13.7 / 26.2 / 38.7 / 51.2 / 63.7 / 76.2 / 88.7）
+	//   底部后排   bottom: 16 —— 6 张等距错位（7.4 / 21.6 / 35.8 / 50 / 64.2 / 78.4）
+	// `bottom >= 12` 视为后排：窗口高度不足 940px 时由 CSS 整排隐藏（否则会顶到卡片）
+	// 移动端由脚本按卡片位置重新排布，不依赖上面的 left 顺序
+	// 素材在 public/images/home-stickers/，可自行增删
 	stickers: [
 		{
 			src: "/images/home-stickers/blonde-idol.webp",
@@ -121,12 +126,60 @@ export const homeCardConfig = {
 			rotate: -5,
 		},
 		{
+			src: "/images/home-stickers/kirino-cheer.webp",
+			name: "高坂桐乃·欢呼",
+			bottom: 5,
+			left: 13.7,
+			width: 96,
+			rotate: 5,
+		},
+		{
+			src: "/images/home-stickers/misaka.webp",
+			name: "御坂美琴",
+			bottom: 5,
+			left: 26.2,
+			width: 100,
+			rotate: -4,
+		},
+		{
 			src: "/images/home-stickers/sagiri.webp",
 			name: "和泉纱雾",
 			bottom: 5,
-			left: 48,
+			left: 38.7,
 			width: 96,
 			rotate: 4,
+		},
+		{
+			src: "/images/home-stickers/kirino-lying.webp",
+			name: "高坂桐乃·躺平",
+			bottom: 5,
+			left: 51.2,
+			width: 110,
+			rotate: -6,
+		},
+		{
+			src: "/images/home-stickers/madoka.webp",
+			name: "鹿目圆",
+			bottom: 5,
+			left: 63.7,
+			width: 92,
+			rotate: -4,
+		},
+		{
+			src: "/images/home-stickers/kirino-pout.webp",
+			name: "高坂桐乃·抱臂",
+			bottom: 5,
+			left: 76.2,
+			width: 92,
+			rotate: 4,
+		},
+		{
+			src: "/images/home-stickers/miku.webp",
+			name: "初音未来",
+			bottom: 5,
+			left: 88.7,
+			width: 96,
+			rotate: 5,
 		},
 		{
 			src: "/images/home-stickers/nezuko.webp",
@@ -137,28 +190,52 @@ export const homeCardConfig = {
 			rotate: 4,
 		},
 		{
-			src: "/images/home-stickers/miku.webp",
-			name: "初音未来",
-			bottom: 5,
-			left: 94,
-			width: 96,
-			rotate: 5,
-		},
-		{
-			src: "/images/home-stickers/madoka.webp",
-			name: "鹿目圆",
-			bottom: 5,
-			left: 61.5,
-			width: 92,
-			rotate: -4,
-		},
-		{
-			src: "/images/home-stickers/misaka.webp",
-			name: "御坂美琴",
-			bottom: 5,
-			left: 34.5,
+			src: "/images/home-stickers/shana-melon.webp",
+			name: "夏娜·蜜瓜包",
+			bottom: 16,
+			left: 7.4,
 			width: 100,
 			rotate: -4,
+		},
+		{
+			src: "/images/home-stickers/louise-maid.webp",
+			name: "露易丝·女仆",
+			bottom: 16,
+			left: 21.6,
+			width: 104,
+			rotate: 4,
+		},
+		{
+			src: "/images/home-stickers/shana-jump.webp",
+			name: "夏娜·跃斩",
+			bottom: 16,
+			left: 35.8,
+			width: 100,
+			rotate: -6,
+		},
+		{
+			src: "/images/home-stickers/shana-sword-black.webp",
+			name: "夏娜·持剑（黑发）",
+			bottom: 16,
+			left: 50,
+			width: 116,
+			rotate: 3,
+		},
+		{
+			src: "/images/home-stickers/pink-neko.webp",
+			name: "粉发猫耳",
+			bottom: 16,
+			left: 64.2,
+			width: 124,
+			rotate: -4,
+		},
+		{
+			src: "/images/home-stickers/shana-sword-red.webp",
+			name: "夏娜·持剑（红发）",
+			bottom: 16,
+			left: 78.4,
+			width: 112,
+			rotate: 5,
 		},
 	] satisfies HomeCardSticker[],
 };

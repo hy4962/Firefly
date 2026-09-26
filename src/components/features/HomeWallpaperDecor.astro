@@ -53,7 +53,9 @@ const isExternal = (url: string) => url.startsWith("http");
         <div class="home-wallpaper-decor__stickers" aria-hidden="true">
             {config.stickers.map((sticker) => (
                 <div
-                    class="home-wallpaper-sticker"
+                    class={`home-wallpaper-sticker${
+                        (sticker.bottom ?? 0) >= 12 ? " home-wallpaper-sticker--rear" : ""
+                    }`}
                     data-home-wallpaper-sticker
                     style={stickerStyle(sticker)}
                     data-home-wallpaper-initial-style={stickerStyle(sticker)}
@@ -187,14 +189,7 @@ const isExternal = (url: string) => url.startsWith("http");
             const cardTopPct =
                 ((cardRect.top - wallpaperRect.top) / wallpaperRect.height) * 100;
 
-            // 贴纸宽度与 CSS clamp(55px, 17.5vw, 80px) 保持一致，直接按公式算，
-            // 数字 = 桌面基准 44/64 乘以 1.25（与服务端 STICKER_SCALE 同步）
-            const clampWidthPx = Math.min(80, Math.max(55, wallpaperRect.width * 0.175));
-            const clampWidthPct = (clampWidthPx / wallpaperRect.width) * 100;
-            // 贴纸图片统一 4:3 比例（1086x1448 webp）
-            const clampHeightPct = ((clampWidthPx * 4) / 3 / wallpaperRect.height) * 100;
-
-            // 解析桌面端初始定位，识别列归属（左列 <20%，右列 >80%，其余为底部中间排）。
+            // 解析桌面端初始定位，识别竖向归属（有 top → 卡片上方一行；有 bottom → 卡片下方）。
             // inset 简写交给浏览器解析（临时元素），比正则可靠
             const parseInset = (initial) => {
                 const probeEl = document.createElement("div");
@@ -211,22 +206,19 @@ const isExternal = (url: string) => url.startsWith("http");
             const items = stickers.map((sticker) => {
                 const initial =
                     sticker.getAttribute("data-home-wallpaper-initial-style") || "";
-                const parsed = parseInset(initial);
                 return {
                     sticker,
-                    top: parsed.top,
-                    bottom: parsed.bottom,
-                    left: parsed.left,
-                    widthPct: clampWidthPct,
+                    ...parseInset(initial),
                 };
             });
 
             const sideMargin = 1.2;
-            const gap = 2;
-            const leftColumn = items.filter((item) => item.left < 20);
-            const rightColumn = items.filter((item) => item.left > 80);
-            const middleRow = items
-                .filter((item) => item.left >= 20 && item.left <= 80)
+            const usableWidthPct = 100 - sideMargin * 2;
+            const topRow = items
+                .filter((item) => item.top !== undefined)
+                .sort((a, b) => a.left - b.left);
+            const bottomRow = items
+                .filter((item) => item.bottom !== undefined)
                 .sort((a, b) => a.left - b.left);
 
             const place = (item, horizontal, vertical) => {
@@ -248,38 +240,120 @@ const isExternal = (url: string) => url.startsWith("http");
                 }
             };
 
-            // 顶部两列：贴在卡片上方，底边距卡片顶 3%
-            const topYPct = Math.max(
+            // ——— 底部：先按估算挑尺寸，排完再用实测高度校正行数 ———
+            // 贴纸可以无限往上加，手机高度却是固定的，所以这里从大往小试尺寸，
+            // 放不下就缩尺寸 / 减行数 / 均匀抽样显示（不留半边空白，也不顶到卡片）。
+            const GAP_PX = 8;
+            const RATIO = 1.36; // 3:4 素材的 高/宽，仅用于估算，行距随后用渲染高度校准
+            const BOTTOM_MARGIN_PCT = 5;
+            const bottomMarginPx = (BOTTOM_MARGIN_PCT / 100) * wallpaperRect.height;
+            // 贴纸堆叠区上沿不得越过的线：卡片底边往下 40px（社交标签会溢出卡片盒模型，
+            // 加上贴纸自身的投影，10px 这种小安全距离实测会被压到），再扣掉地面留白
+            const shelfLimitPx = wallpaperRect.bottom - cardRect.bottom - 40 - bottomMarginPx;
+
+            const perRowFor = (sizePx) =>
+                Math.max(3, Math.floor(usableWidthPct / ((sizePx / wallpaperRect.width) * 100 + 1.6)));
+
+            const sampleEvenly = (list, total) => {
+                const picked = [];
+                for (let i = 0; i < total; i += 1) {
+                    const index = total === 1 ? 0 : Math.round((i * (list.length - 1)) / (total - 1));
+                    if (!picked.includes(list[index])) picked.push(list[index]);
+                }
+                return picked;
+            };
+
+            let plan = null;
+            for (const size of [68, 62, 56, 50, 46, 42]) {
+                const perRow = perRowFor(size);
+                const rows = Math.ceil(bottomRow.length / perRow);
+                if (rows * size * RATIO + (rows - 1) * GAP_PX <= shelfLimitPx) {
+                    plan = { size, perRow, rows, shown: [...bottomRow] };
+                    break;
+                }
+            }
+            if (!plan) {
+                // 最小尺寸（42px）都放不下：先用 46px 全上，靠下面的实测校正裁掉多余的行
+                const size = 46;
+                const perRow = perRowFor(size);
+                plan = {
+                    size,
+                    perRow,
+                    rows: Math.ceil(bottomRow.length / perRow),
+                    shown: [...bottomRow],
+                };
+            }
+
+            const applyVisible = (shown) => {
+                const visible = new Set([...shown, ...topRow]);
+                items.forEach((item) => {
+                    const isVisible = visible.has(item);
+                    item.sticker.style.display = isVisible ? "" : "none";
+                    // 手机端统一尺寸（内联优先级高于媒体查询里的 clamp）
+                    if (isVisible) item.sticker.style.width = `${plan.size}px`;
+                });
+            };
+            applyVisible(plan.shown);
+
+            const sizePct = (plan.size / wallpaperRect.width) * 100;
+            const estHeightPct = ((plan.size * RATIO) / wallpaperRect.height) * 100;
+
+            const placeBottomRows = (ordered, rowCount, rowHeightPx) => {
+                const buckets = Array.from({ length: rowCount }, () => []);
+                ordered.forEach((item, index) => buckets[index % rowCount].push(item));
+                const stepPct = ((rowHeightPx + GAP_PX) / wallpaperRect.height) * 100;
+                buckets.forEach((row, rowIndex) => {
+                    const bottomPct = BOTTOM_MARGIN_PCT + stepPct * rowIndex;
+                    const slot = usableWidthPct / row.length;
+                    row.forEach((item, index) => {
+                        place(
+                            item,
+                            { mode: "left", value: sideMargin + slot * index + (slot - sizePct) / 2 },
+                            { mode: "bottom", value: bottomPct },
+                        );
+                    });
+                });
+                return buckets;
+            };
+
+            const measureRow = (row) => {
+                const heights = row
+                    .map((item) => item.sticker.getBoundingClientRect().height)
+                    .filter((height) => height > 0);
+                return heights.length > 0 ? Math.max(...heights) : plan.size * RATIO;
+            };
+
+            // 先按估算高度排一次，量出真实高度，再按"最多能放几行"修正
+            let buckets = placeBottomRows(plan.shown, plan.rows, plan.size * RATIO);
+            const rowHeightPx = measureRow(buckets[0]);
+            const maxRows = Math.max(
                 1,
-                Math.min(20, cardTopPct - 3 - clampHeightPct),
+                Math.floor((shelfLimitPx - rowHeightPx) / (rowHeightPx + GAP_PX)) + 1,
             );
+            if (maxRows < plan.rows) {
+                const shown = sampleEvenly(plan.shown, Math.min(plan.shown.length, plan.perRow * maxRows));
+                plan = { ...plan, rows: maxRows, shown };
+                applyVisible(shown);
+                buckets = placeBottomRows(shown, maxRows, rowHeightPx);
+            }
 
-            // 底部中间排：在左右两列之间等分空档，每个贴纸居中于自己的槽位
-            const leftColWidth = Math.max(0, ...leftColumn.map(() => clampWidthPct));
-            const rightColWidth = clampWidthPct;
-            const rowStart = sideMargin + leftColWidth + gap;
-            const rowEnd = 100 - sideMargin - rightColWidth - gap;
-
-            leftColumn.forEach((item) => {
-                const isTop = item.top !== undefined;
-                place(
-                    item,
-                    { mode: "left", value: sideMargin },
-                    isTop ? { mode: "top", value: topYPct } : { mode: "bottom", value: item.bottom ?? 5 },
+            // 顶部一行：贴在卡片上方，底边距卡片顶 3%
+            const topYPct = Math.max(1, Math.min(20, cardTopPct - 3 - estHeightPct));
+            const spread = (count) => {
+                if (count <= 0) return [];
+                if (count === 1) return [(100 - sizePct) / 2];
+                const usable = 100 - sideMargin * 2 - sizePct;
+                return Array.from(
+                    { length: count },
+                    (_, i) => sideMargin + (usable * i) / (count - 1),
                 );
-            });
-            rightColumn.forEach((item) => {
-                const isTop = item.top !== undefined;
+            };
+            spread(topRow.length).forEach((leftPct, index) => {
                 place(
-                    item,
-                    { mode: "right", value: sideMargin },
-                    isTop ? { mode: "top", value: topYPct } : { mode: "bottom", value: item.bottom ?? 5 },
+                    topRow[index],
+                    { mode: "left", value: leftPct },
+                    { mode: "top", value: topYPct },
                 );
-            });
-            middleRow.forEach((item, index) => {
-                const slot = (rowEnd - rowStart) / middleRow.length;
-                const leftPct = rowStart + slot * index + (slot - item.widthPct) / 2;
-                place(item, { mode: "left", value: leftPct }, { mode: "bottom", value: item.bottom ?? 5 });
             });
         };
 
@@ -1194,6 +1268,13 @@ const isExternal = (url: string) => url.startsWith("http");
         object-fit: contain;
         pointer-events: none;
         filter: drop-shadow(0 7px 10px rgba(28, 22, 28, 0.27));
+    }
+    /* 底部后排贴纸（homeCardConfig 里 bottom >= 12 的那些）：窗口高度不够时整排隐藏，
+       否则会顶到卡片底部的导航/社交按钮。手机端不适用（≤767px 由脚本重新排布）。 */
+    @media (min-width: 768px) and (max-height: 940px) {
+        .home-wallpaper-sticker--rear {
+            display: none;
+        }
     }
     .home-wallpaper-sticker--note {
         top: 79%;
