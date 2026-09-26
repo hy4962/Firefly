@@ -6,7 +6,7 @@ description: "家里几台主机跑着一堆 Docker 服务，IP 和端口根本�
 image: ./images/cover.webp
 tags: [Tailscale, MagicDNS, NAS, 内网穿透, ZeroTier]
 category: 网络
-draft: true
+draft: false
 ---
 
 如果你家里有两三台小主机，每台上面跑着五六个 Docker 服务，你大概率遇到过这个场景：想打开某个服务的时候，得先回忆——这个服务跑在哪台机器上？那台机器的 IP 是什么来着？端口又是多少？
