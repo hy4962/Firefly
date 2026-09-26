@@ -90,16 +90,10 @@
       ],
       "items": [
         {
-          "title": "废物的我写的垃圾小作文",
-          "link": "https://upxuu.com/posts/%E5%BA%9F%E7%89%A9%E7%9A%84%E6%88%91%E5%86%99%E7%9A%84%E5%9E%83%E5%9C%BE%E5%B0%8F%E4%BD%9C%E6%96%87/",
-          "description": "别找了 没后续 就一傻福写的垃圾 脱敏了 我知道你不喜欢小作文，但不知是为何，我想把这些记下来，我想",
-          "publishedAt": "2026-09-14T14:47:45.000Z"
-        },
-        {
-          "title": "关于博客的未来",
-          "link": "https://upxuu.com/posts/%E5%85%B3%E4%BA%8E%E5%8D%9A%E5%AE%A2%E7%9A%84%E6%9C%AA%E6%9D%A5/",
-          "description": "说白了这篇文章就是我失恋发疯写的，话里有话，表面上是写博客，实际是失恋后的心绪 其实我在这学期开学时",
-          "publishedAt": "2026-09-13T13:47:45.000Z"
+          "title": "ZCode 静默上传事件技术复盘：一次仓库快照如何带走完整 Git 历史",
+          "link": "https://upxuu.com/posts/zcode-silent-git-upload-forensics/",
+          "description": "2026 年 9 月 18 日智谱 ZCode 被曝登录态下静默打包工作区并上传完整 .git 历史。本文还原上传链路、快照构成与过滤逻辑，核对官方回应与流传说法，分析可能面临的法律风险，并给出自查与阻断方案。",
+          "publishedAt": "2026-09-19T07:00:00.000Z"
         },
         {
           "title": "「说说」做，正确的事",
@@ -160,6 +154,12 @@
           "link": "https://upxuu.com/talk/%E8%A7%81%E8%BF%87%E6%9A%91%E5%81%87%E6%B2%A1%E6%9C%89%E5%85%88%E4%BF%AE%E7%82%B8%E4%BA%86%E7%9A%84%E8%A7%81%E8%BF%87%E5%85%88%E4%BF%AE%E9%94%99%E4%BA%86%E7%9A%84%E5%90%97/",
           "description": "谁懂我学了半天的二次函数 ​万唯都做完了告诉我是九下的裂开•ᴗ•💧 ​天塌了 我简直是个乐子微笑 !https://img.upxuu.lcrworld.xyz/images/2026/8/31/20260831182712401.jpg !https://img.upxuu.lcrworld.xyz/images/2026/8/31/20260831182724013",
           "publishedAt": "2026-08-31T10:26:31.000Z"
+        },
+        {
+          "title": "为什么，我们希望被看见——浅谈upxuu的建站心得",
+          "link": "https://upxuu.com/posts/why-blog/",
+          "description": "从初一手搓HTML小网站，到WordPress、Cloudflare Run，再到纯手搓Astro主题——记录upxuu博客的诞生与成长，以及一个初中生对'被看见'的执着。",
+          "publishedAt": "2026-08-29T06:15:33.000Z"
         }
       ]
     },
@@ -334,16 +334,34 @@
       ],
       "items": [
         {
-          "title": "自动上架系统：为跨境电商打造的高端批量发布中枢",
+          "title": "自动上架系统：用 Playwright 构建可控发布流程",
           "link": "https://rainzt.cn/posts/auto-listing-system/",
-          "description": "一套围绕 BigSeller、Shopee 和 TikTok Shop 打造的跨境电商自动上架系统，把表格、图库、视频、AI 标题、店铺状态和发布流程串成可监控、可复用、可扩展的自动化产品。",
+          "description": "记录一个运行在 Windows 桌面上的 BigSeller 自动化系统：从 Excel、图库和模板配置开始，经由 Shopee/TikTok Shop 独立 Worker 执行，再用身份校验、变种精确匹配、暂停恢复、SSE 日志和历史记录把一次高风险的批量发布变成可追踪流程。",
           "publishedAt": "2026-07-09T00:00:00.000Z"
+        },
+        {
+          "title": "跨境电商 Agents：从 AI 选品到自动经营",
+          "link": "https://rainzt.cn/posts/ai-ecommerce-agents/",
+          "description": "从 Ai-Jev 的决策能力出发，拆解我正在搭建的跨境电商 Agents：AI 选品、竞品研究、本地化上架、自动生图、广告投放与异常处理。",
+          "publishedAt": "2026-09-21T00:00:00.000Z"
         },
         {
           "title": "月刊",
           "link": "https://rainzt.cn/posts/monthly-2026-08/",
           "description": "记录 8 月 7 日到 26 日之间的博客更新、自动上架项目、被我停掉的功能、刚搭好的小家，以及本期想认真推荐的几位博友。",
           "publishedAt": "2026-08-28T00:00:00.000Z"
+        },
+        {
+          "title": "在奶奶的白发里，我看见了时间",
+          "link": "https://rainzt.cn/posts/in-grandmas-white-hair-i-saw-time/",
+          "description": "一次回家时看见奶奶满头白发，让我重新想起时间、家人和未来，也让我决定趁年轻为自己走一条创业的路。",
+          "publishedAt": "2026-09-14T00:00:00.000Z"
+        },
+        {
+          "title": "Codex 为什么会“降智”：292 State、状态注入与长任务的另一条解释",
+          "link": "https://rainzt.cn/posts/codex-292-state-analysis/",
+          "description": "从 HTTP 292、current_turn_state 和 x-codex-turn-state 出发，拆解 Codex 的资源路由、美国本地与中转/VPN的服务质量分层、状态注入、上下文增长、压缩与长任务稳定性。",
+          "publishedAt": "2026-09-18T00:00:00.000Z"
         },
         {
           "title": "从母系社会到父权制度：亲缘、私有制与现代性别关系的演变(浅谈男女对立)",
@@ -368,6 +386,24 @@
           "link": "https://rainzt.cn/posts/agent-ecommerce-automation/",
           "description": "从一套自动上架系统的实践出发，拆解 AI Agent、Playwright、CDP 和 ERP 如何组合成一套可观察、可回滚、可扩展的跨境电商自动化框架。",
           "publishedAt": "2026-08-09T00:00:00.000Z"
+        },
+        {
+          "title": "作品展示页动画实现原理",
+          "link": "https://rainzt.cn/posts/portfolio-showcase-animation-principles/",
+          "description": "从滚动读数、目标与渲染进度、分镜区间出发，拆解 Rainzt.cn 作品展示页当前的工程化实现：长滚动固定舞台、requestAnimationFrame 平滑、媒体解码、快门转场与内容可访问性边界。",
+          "publishedAt": "2026-07-27T00:00:00.000Z"
+        },
+        {
+          "title": "写完这一批工具后，我重新打开了自己的博客",
+          "link": "https://rainzt.cn/posts/after-the-tools-i-returned-to-my-blog/",
+          "description": "跨境电商自动化定制项目告一段落后，我重新回望电脑里堆满的工具文件夹，也重新想清楚了初代博客与第二代博客各自要承载什么。",
+          "publishedAt": "2026-07-23T00:00:00.000Z"
+        },
+        {
+          "title": "当 AI 能替我写完项目博文，我为什么还想敲下这些字",
+          "link": "https://rainzt.cn/posts/why-i-still-write-in-the-age-of-ai/",
+          "description": "当 AI 十分钟就能写完一篇结构清晰的项目介绍，亲手写作还有什么意义？聊聊效率、表达、个人经验，以及我对 AI 未来的一点期待和不安。",
+          "publishedAt": "2026-07-22T00:00:00.000Z"
         }
       ]
     },
@@ -379,76 +415,76 @@
       ],
       "items": [
         {
-          "title": "我是军爸：博物馆见闻：中国美术馆《致敬巨匠》",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fme.xu19.com%2Fmuseum-notes-national-art-museum-of-china-homage-to-the-virtuosos-from-leonardo-da-vinci-to-caravaggio%2F",
-          "description": "女儿从幼儿园开始就学习画画了，教她的是当地一所大学的美术老师，目前已经从之前的儿童画转变到了素描，为了让女儿提高点美术修养，所以这次来到北京，特意去看了画展。 本次画展在中国美术馆一楼举办，画展的官方名字是《致敬巨匠：从达·芬奇到卡拉瓦乔-意大利文艺复兴名作展》，票价是120元每人。本次展出一共有36件原作，全部都是真迹，非常难得的观赏机会。你可以凑得非常近距离进行观看，也可以用相机拍摄画的细节。展厅分为了三个篇章，作者有达·芬奇、米开朗基罗、拉斐尔、波提切利、提香、卡拉瓦乔等20余位巨匠，呈现文艺复兴艺术的发展脉络与人文精神。 第一章“人文曙光——佛罗伦萨与文艺复兴”汇集达·芬奇、米开朗琪罗的作品，以及拉约洛、波提切利等佛罗伦萨画",
-          "publishedAt": "2026-09-18T16:39:39.000Z"
+          "title": "响石潭：旅顺万忠墓，永矢不忘",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiangshitan.com%2Fpost%2F3515.html",
+          "description": "前段时间记录了发生在刘公岛的耻辱一页，博友大致提到“那你应该顺道来旅顺看看。旅顺万忠墓。甲午海战后日本人杀到旅顺，把旅顺城杀到只剩36个人。”机缘巧合，上周去了大连。特别去了万忠墓。进门抬头就是这块牌子：旅顺万忠墓纪念馆，全国爱国主义教育基地。这不是一个普通的纪念馆，它坐落在当年日军集中焚尸掩埋的原址之上，脚下这片土地，就是两万同胞遇难的地方。 1894年爆发的中日甲午战争，是中国近代史上影响最深远的事件之一。这场战争之后，中国加速向半殖民地沉沦，洋务运动三十年的成果灰飞烟灭，同时也彻底打醒了沉睡的民族，是近代中国民族觉醒的重要转折点。 这段历史从来不是我们单方面的记忆，当时全世界的记者、外交官、观察者都见证了旅顺的惨剧。这段历史不",
+          "publishedAt": "2026-09-21T23:21:20.000Z"
         },
         {
-          "title": "David的3号基地：由南医大跳楼事件和各种事件引出的一些碎碎念",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.david03.top%2Findex.php%2Farchives%2F454%2F",
-          "description": "由南医大跳楼事件和各种事件引出的一些碎碎念 写在前面 这篇文章，实际上是从3月份的一篇未完成的文章继续而来。当时正值湘雅研究生跳江事件，我写了一篇名为“幸存者”的文章，但后面因为动力不足未能完成，而现在有发生了南医大坠亡事件，几经波折终于有了初步的事实澄清，也就有机会去从本校以及近龄的“相关人士”的角度去讲述这件事。 事件的始末现在网上也已经有了很明确的定论，死者家属和导师均已在官方媒体做出了澄清和辟谣，我这里便不多做讲述。 我写完文章之后再次回到这里，补充上下面的声明： 本文的思路很杂乱无章，观点也比较主观片面，请理性看待。 从本校学生的角度，溯源一下谣言是怎么产生并传播的 师兄是在15日凌晨两点从本部的高层公寓坠亡的。我是二临的",
-          "publishedAt": "2026-09-17T16:56:00.000Z"
+          "title": "执迷者X：2026中秋：江月照人，翻回六年前的自己",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Flifetruth.top%2F2026%2F09%2F26%2Fmid-autumn-six-years-self-reflection%2F",
+          "description": "江月照人：中秋夜，我翻回六年前的自己 中秋前几日，生活的压力让我多少有些浮躁。可当这个中国第二大佳节真正到来，我做得印象最深的一件事，是翻出自己六年前写的公众号。看着那个敢闯、敢与人不同的自己，我才慢慢明白：这个节日真正安抚的，不是情绪，而是那颗总在反复自省的心。 人生代代无穷已，江月年年望相似。 —— 张若虚《春江花月夜》 一、浮躁之后，是月亮先安静下来 中秋前几天，工作和生活的事情叠在一起，人很容易浮。 计划被临时打乱，消息一条接一条，情绪像水面上的涟漪，一层推着一层，很难看清底下的自己。 是不是所有的“忙”，都只是把情绪暂时压住，而不是真的消化？ 真正让我平复下来的，是这个节日本身。 中秋是中国的第二大佳节。它不像春节那样要热",
+          "publishedAt": "2026-09-25T16:30:45.000Z"
         },
         {
-          "title": "白宦成：四年前梦想的生活与现实的生活之书房篇（2026版）",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.ixiqin.com%2F2026%2F09%2F17%2Fdream-life-and-real-life-in-the-study-2026-edition%2F",
-          "description": "写 Blog 的好处就是，你总是会有一些历史的内容，时不时的浮上来，让你回想起自己曾经的想象。 而对于房子来说，我历史上也写了不少的内容《梦想的房子（1）：书房篇》就是一篇；而，今天，我已经拥有了自己的房子，刚好可以回来 Callback 一下曾经的文章； 如今的书房 从门口看的位置 从窗帘的视角看 俯视图 梦想的生活 我曾经在《梦想的房子（1）：书房篇》中写到，我希望一个房间的尺寸有要求；比如要有足够的纵深、要有咖啡机、饮水机、制冰机；要有书架、办公桌、储物柜、单人床； 在 《我想要什么样的房子？》中写到，我希望书房有个单人床，且一定要有书房； 而到了去年年初，真的要买房之前，我又写了 《关于买房的思考》，思考书房其实是可以外移的",
-          "publishedAt": "2026-09-17T15:14:22.000Z"
+          "title": "So!azy：中秋快乐",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.solazy.me%2F20260925%2F",
+          "description": "又是一年中秋。先祝大家中秋快乐。 好像国内所有的传统节日，底色都被默认刷成了一种颜色，那就是团圆。不管是端午、中秋还是过年，语境里只要少了「阖家团圆」四个字，这个节过得就像缺了点合法性。仿佛在这个特定的时间节点上，除了聚在一起，世界上就没有别的事情值得被正视了。 但我对这种集体叙事，从小就有些钝感。 最典型的载体就是吃。中秋节吃月饼，端午节吃粽子，元宵节吃汤圆。我其实对所有这种带有强烈时令标签的碳水炸弹，都没什么兴趣。 小时候家里对中秋看得很重。我母亲每年都会专程跑去青岛当时比较高档的商场买月饼。那时候青岛有个老牌子叫「生活林」，她每次都要买五仁和百果馅。那种厚重的广式糖皮，裹着硬邦邦的坚果碎和青红丝，我从小就吃不惯。后来长大了才知",
+          "publishedAt": "2026-09-25T15:00:00.000Z"
         },
         {
-          "title": "杜郎俊赏：小菲菲森泊庆生，水乐园收尾夏日",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fdujun.io%2F379f9ee1-6d28-5407-bba7-57165bb17184.html",
-          "description": "今年菲菲过生日，我选择到新开的桐庐开元森泊，来一场不一样的庆祝。 两天一晚的行程体验下来感受很好。在我们住过的亲子酒店里，开元森泊是把亲子做得最好的。其他亲子酒店，只是有一些亲子元素，比如上下铺、儿童洗漱用品，除去这些元素，跟成人酒店没区别。但是森泊的亲子主题房，你感受到的是一体成型的儿童友好的设计。所有物品边角都是圆弧形，连阳台天花板都做了可爱设计。无论怎么看，你都很清楚这就是为孩子设计的亲子房间。 当然除去住宿之外，我们最看重的是水乐园的游玩。从乐园的设施设计再一次看到了开元的用心。成年人和不同年龄段的孩子都有适合自己玩耍的地方。我们流连最久的是造浪池——完美弥补了大海好玩，但是又脏又臭的缺点。 然后特别想提的是开元森泊的管家文",
-          "publishedAt": "2026-09-17T09:41:44.000Z"
+          "title": "记录生活，精彩一刻：中秋值班到中午溜号，还是没赶上家里那顿热饭",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.9sb.net%2Farchives%2Fi-was-on-duty-until-noon-during-the-mid-autumn-festival-and-missed-the-hot-meal-at-home.html",
+          "description": "兄弟中秋节送过来一个木盒子，打开是一饼老白茶。米白色棉纸上三个大字，配着根棕缎带，旁边搁着一把茶刀，看着挺像回事。我平时也泡两杯，但对茶是真不懂，好坏全凭舌头高兴。 说回中秋。先祝朋友们中秋快乐。我们这行假期从来跟国家规定对不上，别人放长假我们上班，别人上班我们双休。说不上多委屈，常年下来习惯了，至少周末不用倒休。 今年中秋本来要值班，昨天做好计划，晚上值班还是我来。昨天跟同事对了一上午，把今天的活儿全往前压，中午基本也都忙的差不多了，收了一下尾，就 12 点半左右了。索性跟几个同事在外过了个中秋，既然赶不上就改日。不赶这顿了，挑个周末再回去。 这饼茶我翻来覆去看了半天。背面标签印着，福鼎大白茶，350 克，2012 年 4 月生产",
+          "publishedAt": "2026-09-25T10:29:47.000Z"
         },
         {
-          "title": "织梦岁月：凌晨 5 点起床的接送日常",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fzhujianlin.com%2Farchives%2F2384.html",
-          "description": "这个学期，儿子说在学校睡不好。室友半夜睡觉会踢腿，经常把他惊醒。刚开学才一周，大半时间都是我们接他回家。后来他下定决心，申请退宿，还跟我聊起过去一年住校，为了睡眠这件事扛下的种种难处。 其实我心底原本是希望他继续住校的。毕竟到了大学，终究还是要集体住宿，总要学着适应。但我没有劝他，选择尊重他的决定。 高中宿舍条件不差，和我们当年读书时完全不是一个档次：四人间，上床下桌，配有空调，甚至比我当年大学宿舍还要好。想来大概是孩子学业压力大，睡眠本身很浅，一点点动静就容易醒。 学校离家不到 5 公里。我骑电驴接送，仪表盘一趟来回 9 公里，距离并不算远。换作是我，天晴的时候骑单车过去，也算顺便健身。现在每天早上 7:40 出门送，晚上九点五十",
-          "publishedAt": "2026-09-17T09:36:08.000Z"
+          "title": "秋記Autumn：皖北八月十五摇火把子，摸秋",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.zhyok.cn%2Farchives%2F507%2F",
+          "description": "今天是八月十五，还记得皖北农村的中秋吗？可不只是赏月吃月饼。八月十五的夜晚还有摇火把子，孩子们扎起高粱杆、麦秸火把，点燃之后在田埂上挥舞，星火流转，像一条游走的火龙。老话讲&quot;八月半摸秋不算偷&quot;，举着火把结伴走进瓜田菜园，借着月色摸秋摘瓜果。 火把驱虫祈福，摸秋期盼丰收人旺。没有绚烂灯火，月光伴着漫天火星，这是刻在我们这辈记忆里，最热闹浪漫的中秋！在此祝朋友们中秋节快乐。",
+          "publishedAt": "2026-09-25T08:56:00.000Z"
         },
         {
-          "title": "韩情脉脉：九月半的鸡毛蒜皮",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fhxy.cc%2F9yueban.html",
-          "description": "好像每年下半年都挺忙的，今年也不例外，九月份前两周基本上每天都很充实，充实到睡好觉都比较奢侈，好不容易这周稍微缓过来一点，每天睁眼醒来，工作上还是会有意想不到的“惊喜”。 上次更新八月底闪现过...",
-          "publishedAt": "2026-09-16T12:20:55.000Z"
+          "title": "风·墨：Workbuddy 第一轮考过",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fvind.ink%2FIT-digital%2FWorkbuddy-exam-1.html",
+          "description": "根据公司需求，代理腾讯云产品必须要有一定数量的腾讯云认证工程师，才能成为某个级别的经销商。我之前已经考过不止一两个腾讯云证书了，本次是 Workbuddy的一个从业资格： Workbuddy OPC 考试介绍： 本认证面向一人公司（OPC）形态运作的独立开发者、小微创业者、自由职业者及职场效率追求者。通过本认证，将具备从“会用 WorkBuddy”到“能把智能体深度融入日常工作流，独立交付可落地 AI 应用成果”的完整能力链，覆盖专家团协作、资料库、Skills、Connector 与灵感模块的全场景使用，助你借助 AI 达成团队级产出。 这次考试是在家，线上考的，相对来说，环境上会宽松一点。当然，它全面监管我的电脑，以及摄像头，一",
+          "publishedAt": "2026-09-25T07:17:00.000Z"
         },
         {
-          "title": "张福鹏博客：一场杂耍，人间生计",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fzhangfupeng.com%2F2112.html",
-          "description": "下班之后，女儿兴冲冲告诉我，公园里有杂技演出，想去看一看。年岁渐长，许多热闹早已很难牵动心绪，本打算不去。可望着她满眼期待的模样，实在不忍回绝，我们便早早吃过晚饭，一同前往。 表演者是一对夫妻。开场是男子的喷火节目，于我而言并不算新奇，女儿却看得兴致勃勃。紧接着的节目，看得人心头一紧：男子仰面，后背直接压在啤酒瓶碎渣之上，反复起落、左右滚动。起初我以为其中藏有巧术，转眼便看见他后背被玻璃划破，渗出点点血迹，他依旧咬牙坚持完成表演。一旁的女子全程紧盯他的状态，时不时抬手悄悄轻拭眼角，随看不清，我想那大概是泪水。那一瞬 […]",
-          "publishedAt": "2026-09-16T08:11:19.000Z"
+          "title": "笛声：非典记忆",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fhqidi.com%2F225.html",
+          "description": "▲ 挂了21年的横幅？ 2003年的春天，来得似乎特别早，又似乎特别冷。 那时我读初三，每天骑着一辆红色的凤凰自行车上学。学校离家不远，骑车大概十分钟。去学校是缓上坡，回家一直缓下坡，可以不用蹬一直滑到家。中午和傍晚都能回家吃饭，这是走读生才有的特权。寄宿生就出不来了，他们常爬的围墙上被浇了大便…… 所以偶尔得给他们从外面带生活用品进去。 教室里的味道，是这辈子都忘不掉的。每天中午，总会有两个穿白大褂的后勤师傅，背着一台陈好同款手摇打药机走进来。那机器“嘎达嘎达”地响，喷出白茫茫的雾气，像极了西游记里妖怪出场的特效。那段时间，总有同学的练习试卷不小心放在桌面上，然后被药水打湿，不能写了。为了散味，学校还特意换了新吊扇，师傅来安装调速",
+          "publishedAt": "2026-09-25T04:20:18.000Z"
         },
         {
-          "title": "荒野菲克：胡同尽头那盏灯",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fficor.net%2Farchives%2F62",
-          "description": "姥姥家的胡同尽头总有一盏为我亮着的灯。从石碓旁邻居的玩笑，到竹篮里藏起的点心，作者借童年记忆拼凑出姥姥模糊却温暖的身影，并由此思考记忆与遗忘的关系：记住的未必是面容，而是自行车、山楂树和那盏灯。只要还能写下来，灯就还亮着。",
-          "publishedAt": "2026-09-16T07:35:00.000Z"
+          "title": "响石潭：水天一色",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiangshitan.com%2Fpost%2F3516.html",
+          "description": "时间很快，转眼中秋。阴雨绵绵，不见月明。上周还在大连，乾坤大挪移。今天终于把工会的事情向前推了一大步，累，但总归有变化。闭目，上周，飞机上，不经意间看着窗外。呵，天可真蓝。天空中有一道白线，呃，这是天尽头么？再往下瞧，嘿，这个是啥？好像是一艘轮船。恍然，这个是大海！那道白线是水天相接处，大脑立刻冒出“水天一色”这个词。 今天看到报道，游本昌老先生离世。耳畔还回响着“帽儿破，鞋儿破，身上的袈裟破……”老爷子自带道济和尚的那种仙风道骨，一路走好。人啊，固有一死，肉身或许就是人们渡河的船。饥饿、疲惫、衰老、受伤、失去的经历从来不是为了摧毁人，而是一次次提醒人把向外抓取的手收回来，把困在皮囊里的心找回来，经历悲欢却不困于悲欢，身处红尘却始终",
+          "publishedAt": "2026-09-24T12:23:46.000Z"
         },
         {
-          "title": "辣条：关于失业，我与生活的一场和解与迷茫",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.latiao.org%2F2299.html",
-          "description": "声明：以下文章经过豆包美化。 关于失业，我与生活的一场和解与迷茫 我想好好聊一聊，我的失业生活。 我的最后一个工作日，定格在2026年3月26日。 没有突如其来的变故，没有争执与拉扯，只是最现实、最平淡的职场结局——公司经营效益不佳，不再续签我的劳动合同。 刚得知消息的那一刻，我没有难过，反而生出一丝荒唐的庆幸。我下意识地以为，告别这份工作，能拿到一笔可观的补偿金，算是生活给我的一点兜底补偿。 签字的那一刻，我的手一直在抖。说不清是紧张、忐忑，还是发自内心的不可置信。我从来没有想过，安稳上班的自己，有一天也会迎来失业，会在一纸终止合同上，画上自己职场一段旅程的句号。 离职初期，我立刻投入了求职，满心以为凭借过往的工作经历，总能找到一",
-          "publishedAt": "2026-09-16T03:34:41.000Z"
+          "title": "狡猫三窝：山阳垂水",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fslykiten.com%2Flife-note%2Ftarumi%2F",
+          "description": "单纯想分享一下绝美的夕阳和火烧云。 最近正逢日本白银周，五连休。每天都泡在商场里面，一直买到商场关门才回家。主要是买了个床。 出差的时候睡到了人生床垫，没错，就是席梦思。躺在上面明显感觉整个人的重量被分散了，好像躺在云朵上一样轻飘飘的，当时就下定决心要去买同款。在美国换了不知道多少床垫，花了很多钱也没解决床垫的事，希望这次能一劳永逸。 没有买房子不代表不能睡好床。 去了两天expocity，两天大丸，一天神户垂水outlets。这个outelts在海边，车站就叫“山阳垂水”，形象又诗意。我以前也总是来这边逛，但不买。这里的东西不是很适合我，都是大牌，穿着也还好，主要问题是有点贵。我对于衣服的态度：穿着看起来还行的话越便宜越好，如果优",
+          "publishedAt": "2026-09-24T12:01:32.000Z"
         },
         {
-          "title": "小猪的窝：逛论坛",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fezo.biz%2FDiary%2F1673.html",
-          "description": "论坛（BBS）是互联网初代产物，应该和Email（电子邮件系统）是同一时代产物。曾经风靡一时互联网社交载体，在国内备案制度落地和移动互联网蓬勃发展双重夹击下，如今已基本沦为次媒体。 打开过去常访问的一些极客类论坛，如今基本已倒闭或者转换成私域圈子。也对，移动互联网天生就不是分享经济，而是一个个小圈子。 新论坛稍微有点人气的，基本都需要邀请注册，如果没有熟人带路，连当游客浏览帖子的权限都没有。老论坛没有新血液，逐步没落，新论坛也难以凝聚人气，所以这种模式最终进入死循环。 逛了几个国外的论坛，情况也差不多。看来管制是一方面，沟通效率和信息传递速度也是论坛的致命伤。大部分人对博客的长篇大论早已不感兴趣，即使是微博这种小道消息方式传播也让人",
-          "publishedAt": "2026-09-15T14:15:00.000Z"
+          "title": "leoon：有点低估你了——稻城亚丁",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fleoon.cn%2Ftravel%2F670",
+          "description": "点击访问原文，获取更好阅读体验 临时起意 本次行程还真是临时起意，甚至不是leoon和digidaga，而是kyan姐提起的。如图 为什么是稻城亚丁？ 稻城亚丁最近风头正盛啊，刚被吕大侠打击下来，正好免门票，免大巴各种免费，而且理论上也是赏秋好时候。不过免门票是 8 月到 10 月底。9 月初是赏不到什么秋了，但是能避开人流，因为接下来就是中秋国庆，然后就免门票要结束了，这人流肯定不得了，随即选择 9 月前两周作为待定。 出行前的碎碎念 本来是搭子1 群 4 人出发，可惜 4 天行程太赶，远在粤北的大侠无法来到，所以临时换成了聪明，都是咱设计部的大将，给 kyan 姐一 call 就来了，一拍即合成立搭子 2 群。 我的原则一直都是",
+          "publishedAt": "2026-09-24T07:38:12.000Z"
         },
         {
-          "title": "徐建伟：煎熬",
-          "link": "https://www.boyouquan.com/go?from=feed&link=http%3A%2F%2Fwww.xulog.cn%2Findex.php%3Fact%3Dpl%26id%3D1219",
-          "description": "像这样的夜晚我们不知道熬了多少次，老人说孩子只要过五岁身体的抵抗能力都差不多了，不知不觉孩子也大了，每当走进医院，尤其是路过儿科病房的时候就能想起以前的经历，都是同样的感受！要不有句话讲“不养儿不知报娘恩”，它是有一定道理的！ 只要住院，随着时间的推移都想离开这地方，其实没有人喜欢在医院待着，那还不是以为让身体健康起来，所以必须承受这份煎熬！",
-          "publishedAt": "2026-09-15T12:04:47.000Z"
+          "title": "荒野菲克：节日快乐",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fficor.net%2Farchives%2F63",
+          "description": "中秋前夕走亲访友，从姥姥生日宴的热闹到探望老军人李大爷，记录节日里的人情往来与血脉牵挂，并借老山作战老兵的讲述，提醒人们珍惜当下生活。",
+          "publishedAt": "2026-09-23T08:41:00.000Z"
         },
         {
-          "title": "执迷者X：2026江西·葛仙山：春到门庭渐吉昌",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Flifetruth.top%2F2026%2F09%2F15%2Fgexian-spring-arrives%2F",
-          "description": "复盘过去5~6年的经历，大体是一种追逐中夹着混沌的状态。 “辛苦最怜天上月，一夕如环”，是我从2021年一直用到现在的微信签名，它对应了一种刚进入社会时的内心愿景，但这个愿景似乎并不朴素。 世事无常，又自在平衡，天上的月亮每天都在运转，只是在某天花好月圆。美好的事物如昙花一现、烟花易冷，让人生惋，感性的性格容易生出多愁善感。 事与愿违，此愿本是人寄托，圆不圆满只由自己定说；如果愿望本不朴素，那“一夕如环”似的圆满一定程度上来说是一种苛刻。愿望设置的太高，就容易常常事与愿违。 再者，江月年年望相似，运转亘古不变， 只是人为赋予了“阴晴圆缺”的抽象比喻。万事万物，都有其大道至简、最本质的运转规律。过度的沉醉在这种美好的意向追逐中，也是给",
-          "publishedAt": "2026-09-15T10:20:00.000Z"
+          "title": "挨踢路：公共交通的变化",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fitlu.net%2Farticles%2F2862.html",
+          "description": "有一天搭公交车，发现公交车居然贴着有车载Wi-Fi，有点不可思议，临下车时试着连一下，发现是骗人的，根本无法上网，那么这个车载Wi-Fi的意义是什么？又是一些半死不活的工程吗？ 感谢你们帮忙花了纳税人的钱，因为你们变得更美好~~~ 地铁商业化 最大的变化是多了一个地铁悠选，其实对于我来说，是比较尴尬的，我上班肯定赶着时间去，下班基本上也懒得买，买了要拎好远，所以没有适合我的场景。 除了地铁悠选，还有卖咖啡的，某个地铁站，有一个肯悦咖啡。我对咖啡本身就很一般，加上是肯德基的，肯德基的咖啡对我来说，不适合，不喜欢，更加不会买。 [...]",
+          "publishedAt": "2026-09-23T03:59:39.000Z"
         }
       ]
     },
@@ -459,6 +495,36 @@
         "https://www.80tz.cn/feed.xml"
       ],
       "items": [
+        {
+          "title": "落梦陳的小站：月圆人团圆：祝全体站长中秋快乐",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Ffcattles.com%2Farchives%2Fmid-autumn-wishes-webmasters-2026",
+          "description": "中秋月圆，祝全体站长节日快乐！从古人的祭月、唐宋的赏月节俗，到嫦娥奔月的民间传说，一起聊聊中秋的来历，也把祝福送给每一位认真经营网站的人。",
+          "publishedAt": "2026-09-25T07:37:05.000Z"
+        },
+        {
+          "title": "小朱的博客：论业务员的重要性",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F09%2F23%2Fchanpin%2F",
+          "description": "一段对话中，阐述了业务员的重要性",
+          "publishedAt": "2026-09-22T15:50:00.000Z"
+        },
+        {
+          "title": "旺东自留地：博海故人杳然",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwang618.cn%2Fbo-hai-gu-ren-yao-ran.html",
+          "description": "今日维护更新，发现昔日的许多友链已经无法访问。 挨个点开链接，域名过期注销、服务器关停，一页页都是失效的痕迹。从前时常互相串门留言、互换友链认识的博主同好，就这样静静消失于网络，不由得心生怅惘。 想来互联网大抵便是这样，网站的命运本就浮沉难料。个人博客更是如此，凭着一腔兴致搭建，又会迫于生活奔波、工作更迭渐渐搁置，最后默默归于沉寂。虚拟世界里的相遇，亦是一场没有告别的离散。",
+          "publishedAt": "2026-09-21T17:24:43.000Z"
+        },
+        {
+          "title": "小朱的博客：感概",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F09%2F21%2F405%2F",
+          "description": "青春",
+          "publishedAt": "2026-09-20T17:50:00.000Z"
+        },
+        {
+          "title": "小朱的博客：国人素质一直没变",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F09%2F19%2Ftr%2F",
+          "description": "资本不会考虑国家利益 只会考虑它的自身利益",
+          "publishedAt": "2026-09-18T15:20:00.000Z"
+        },
         {
           "title": "小朱的博客：我们今天只谈\"钱\"",
           "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F09%2F18%2F404%2F",
@@ -500,36 +566,6 @@
           "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.9ll.uk%2Fposts%2Fnetwork%2Flucky-esa-reverse-proxy%2F",
           "description": "想在外面访问家里的内网服务？之前写过一篇 Cloudflare + Lucky 的方案，能用是能用，但 CF 的节点都在境外，国内访问速度基本看运气。这次换成阿里云 ESA（边缘安全加速平台），节点在国内，走的是正经加速线路。 前提条件就一个：在国内云服务商那里有一个已经备案的域名。ESA 要接备案域名，没备案的可以直接关掉这个页面了。 买域名、开通 ESA、接入 ESA 这些就不啰嗦了。接入方式我选的是 CNAME，比 NS 接入更通用一些，DNS 控制权还在自己手里。 第一步：Lucky 配一个阿里云 DDNS# 家里宽带有 IPv6，所以先让 Lucky 把家里的 IPv6 地址同步到域名上。DDNS 服务商选阿里云，域名假设",
           "publishedAt": "2026-09-04T00:00:00.000Z"
-        },
-        {
-          "title": "宗宗酱：徒步重庆铁山坪环线完成",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fygz.ink%2Farchives%2F5711.html",
-          "description": "星期五晚上爬完缙云山后，星期六晚上和朋友约着星期天去爬重庆铁山坪森林步道。我们三人约好后，我从两步路APP上找了一条环线轨迹，从铁山坪轻轨站为起/终点。星期天我七点多就起来收拾，八点左右就到了和那个女生等了我朋友到十点多。我们十点多从女子职业中学旁边的铁山坪森林公园起点开爬。爬到铁山塔那里大概用了两个小时，那个塔在维护进不去就在外面拍照。顺便也到了饭点就在旁边点了一份168的花椒鸡，还挺好吃的。但是我刚坐下来就头晕的不行，同伴连忙给我喝了藿香正气液和葡萄糖口含块。我当时应该是低血糖导致的，心慌的很，饭也没咋吃。吃完休息了下感觉没问题了，我们从饭店一直走到了观景台看三江汇聚地·唐家沱。顺着观景台就一路下撤，全程14公里，海拔500多米",
-          "publishedAt": "2026-08-31T03:13:16.000Z"
-        },
-        {
-          "title": "朝朝听雨：从母系社会到父权制度：亲缘、私有制与现代性别关系的演变(浅谈男女对立)",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Frainzt.cn%2Fposts%2Ffrom-matriarchal-society-to-patriarchy%2F",
-          "description": "最近网络上的声音很大，男女对立也很严重，本期我们不站队任何一方，只从历史的角度去看待客观事实。 再次叠甲，“男女对立是阶级矛盾转移”的观点认为，社会中的一些性别冲突，表面上表现为男性与女性之间的利益冲突，但深层可能与经济结构、资源分配和阶层差异有关。例如，住房、就业、生育、教育等压力，本质上可能来自社会资源分配问题，却容易被转化为男女之间的相互指责。上层或既有利益结构在这种理论中被认为可能通过强化身份矛盾，让普通群体内部产生分裂，从而弱化对更深层经济问题的关注。不过，这并不意味着所有性别问题都是阶级矛盾造成的，现实中的性别不平等也有其独立存在的原因，二者往往是相互交织的。 再次声明，本站文章仅代表本站观点，若你不认可我的观点尽可离去",
-          "publishedAt": "2026-08-20T00:00:00.000Z"
-        },
-        {
-          "title": "茗辰原：收藏一时爽,清理要我命",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fmingcy.cn%2F2026%2F07%2F27%2Fbookmark-cleaner%2F",
-          "description": "闲来无事所以想着清理一下我收藏依旧的收藏夹,主要清理哪些访问不了的页面,因此做了个网页",
-          "publishedAt": "2026-07-27T00:00:00.000Z"
-        },
-        {
-          "title": "Maniformer – 漫塑人：周末去了一趟图书馆",
-          "link": "https://www.80tz.cn/go?from=feed&link=http%3A%2F%2Fmaniformer.com%2F%3FT1784727898",
-          "description": "上周末没事，想着好久没去过图书馆了，就骑车去了趟市图。进门的时候，还挺有仪式感的",
-          "publishedAt": "2026-07-22T13:44:58.000Z"
-        },
-        {
-          "title": "徐结华：骑行的快乐–大行S20",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fxu219.cn%2Fpyq%2F%3Fp%3D325",
-          "description": "骑行的快乐–大行S20",
-          "publishedAt": "2026-07-21T12:20:46.000Z"
         }
       ]
     },
@@ -541,64 +577,64 @@
       ],
       "items": [
         {
+          "title": "FGHRSH 日记簿",
+          "link": "https://www.blogsclub.org/blog/920.html",
+          "description": "FGHRSH 日记簿",
+          "publishedAt": "2026-09-26T00:00:42.000Z"
+        },
+        {
+          "title": "落梦陳的小站",
+          "link": "https://www.blogsclub.org/blog/919.html",
+          "description": "落梦陳的小站",
+          "publishedAt": "2026-09-24T09:40:16.000Z"
+        },
+        {
+          "title": "叁拾玖",
+          "link": "https://www.blogsclub.org/blog/918.html",
+          "description": "叁拾玖",
+          "publishedAt": "2026-09-24T06:01:39.000Z"
+        },
+        {
+          "title": "大大的小蜗牛",
+          "link": "https://www.blogsclub.org/blog/917.html",
+          "description": "大大的小蜗牛",
+          "publishedAt": "2026-09-23T09:32:31.000Z"
+        },
+        {
+          "title": "徐果萍博客网",
+          "link": "https://www.blogsclub.org/blog/916.html",
+          "description": "徐果萍博客网",
+          "publishedAt": "2026-09-22T03:10:05.000Z"
+        },
+        {
+          "title": "陶其的个人博客",
+          "link": "https://www.blogsclub.org/blog/915.html",
+          "description": "陶其的个人博客",
+          "publishedAt": "2026-09-22T02:42:18.000Z"
+        },
+        {
+          "title": "云从",
+          "link": "https://www.blogsclub.org/blog/914.html",
+          "description": "云从",
+          "publishedAt": "2026-09-21T02:38:43.000Z"
+        },
+        {
+          "title": "TaOS",
+          "link": "https://www.blogsclub.org/blog/913.html",
+          "description": "TaOS",
+          "publishedAt": "2026-09-20T14:56:24.000Z"
+        },
+        {
           "title": "是人 renly",
           "link": "https://www.blogsclub.org/blog/912.html",
           "description": "是人 renly",
           "publishedAt": "2026-09-18T09:25:35.000Z"
         },
         {
-          "title": "十五万八",
-          "link": "https://www.blogsclub.org/blog/911.html",
-          "description": "十五万八",
-          "publishedAt": "2026-09-17T07:33:12.000Z"
-        },
-        {
           "title": "楠香自语",
           "link": "https://www.blogsclub.org/blog/910.html",
           "description": "楠香自语",
           "publishedAt": "2026-09-17T07:07:02.000Z"
-        },
-        {
-          "title": "guchengf.me",
-          "link": "https://www.blogsclub.org/blog/908.html",
-          "description": "guchengf.me",
-          "publishedAt": "2026-09-15T07:13:49.000Z"
-        },
-        {
-          "title": "铭心の博客",
-          "link": "https://www.blogsclub.org/blog/907.html",
-          "description": "铭心の博客",
-          "publishedAt": "2026-09-14T17:43:16.000Z"
-        },
-        {
-          "title": "X-GORB Blog",
-          "link": "https://www.blogsclub.org/blog/906.html",
-          "description": "X-GORB Blog",
-          "publishedAt": "2026-09-13T22:17:04.000Z"
-        },
-        {
-          "title": "crzliang&#039;s blog",
-          "link": "https://www.blogsclub.org/blog/905.html",
-          "description": "crzliang's blog",
-          "publishedAt": "2026-09-13T16:33:55.000Z"
-        },
-        {
-          "title": "笔记星球",
-          "link": "https://www.blogsclub.org/blog/903.html",
-          "description": "笔记星球",
-          "publishedAt": "2026-09-13T08:55:11.000Z"
-        },
-        {
-          "title": "蒂诺星球",
-          "link": "https://www.blogsclub.org/blog/902.html",
-          "description": "蒂诺星球",
-          "publishedAt": "2026-09-13T06:16:19.000Z"
-        },
-        {
-          "title": "無人之境 — Lucian&#039;s Blog",
-          "link": "https://www.blogsclub.org/blog/901.html",
-          "description": "無人之境 — Lucian's Blog",
-          "publishedAt": "2026-09-12T05:02:41.000Z"
         }
       ]
     }
