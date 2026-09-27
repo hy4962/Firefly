@@ -41,6 +41,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		desktop: [
 			"assets/images/DesktopWallpaper/cover.webp",
 			"assets/images/DesktopWallpaper/three.webp",
+			"assets/images/DesktopWallpaper/7.webp",
 			"assets/images/DesktopWallpaper/9.webp",
 			"assets/images/DesktopWallpaper/shana-1.webp",
 			// "https://t.alcy.cc/ycy",
