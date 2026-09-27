@@ -398,6 +398,68 @@ const isExternal = (url: string) => url.startsWith("http");
             });
         };
 
+        // 桌面端矮窗口兜底：卡片底部以下放不下两排贴纸时，CSS（max-height: 940px）
+        // 会把后排整排隐藏——但那是把 6 张贴纸直接藏掉，太粗暴。
+        // 这里改成把整批贴纸压成一行铺在底部：一行 12 张在 ≥768px 宽度下永远放得下
+        // （每张约占 6% 宽），所以一张都不用藏。CSS 那条规则留给禁用 JS 的场景。
+        const applyShortViewportStickerLayout = (decor) => {
+            const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
+            const wallpaperRect = wallpaper.getBoundingClientRect();
+            const card = decor.querySelector(".home-wallpaper-card");
+            const stickers = [
+                ...decor.querySelectorAll(
+                    ".home-wallpaper-sticker:not(.home-wallpaper-sticker--fixed)",
+                ),
+            ];
+            if (
+                !wallpaperRect.width ||
+                !wallpaperRect.height ||
+                !(card instanceof HTMLElement) ||
+                stickers.length === 0
+            ) {
+                return;
+            }
+
+            const heights = stickers
+                .map((sticker) => sticker.getBoundingClientRect().height)
+                .filter((height) => height > 0);
+            const rowHeight = heights.length > 0 ? Math.max(...heights) : 104;
+            // 两边都要换算成「距壁纸底边」再比，否则就是拿距底的值比距顶的值（踩过）
+            const rearTopFromBottom = 0.16 * wallpaperRect.height + rowHeight;
+            const cardBottomFromBottom =
+                wallpaperRect.height - (card.getBoundingClientRect().bottom - wallpaperRect.top);
+            // 留 16px 冗余，避免字体/图片加载过程中的测量抖动导致来回切
+            if (rearTopFromBottom + 16 <= cardBottomFromBottom) {
+                // 两排实测放得下：CSS 那条 940px 阈值偏保守（按卡片固定高度估的），
+                // 这里直接把被隐藏的后排放出来，位置沿用服务端渲染的 bottom: 16%
+                stickers
+                    .filter((sticker) =>
+                        sticker.classList.contains("home-wallpaper-sticker--rear"),
+                    )
+                    .forEach((sticker) => {
+                        sticker.style.display = "grid";
+                    });
+                return;
+            }
+
+            const sideMargin = 1.2;
+            const widths = stickers.map(
+                (sticker) => (sticker.getBoundingClientRect().width / wallpaperRect.width) * 100,
+            );
+            const widthPct = Math.max(...widths);
+            const usable = 100 - sideMargin * 2 - widthPct;
+            const step = stickers.length > 1 ? usable / (stickers.length - 1) : 0;
+
+            stickers.forEach((sticker, index) => {
+                sticker.style.display = "grid"; // 覆盖 CSS 媒体查询里的整排隐藏
+                sticker.style.inset = "auto";
+                sticker.style.right = "auto";
+                sticker.style.top = "auto";
+                sticker.style.left = `${sideMargin + step * index}%`;
+                sticker.style.bottom = "5%";
+            });
+        };
+
         const bindMobileStickerLayout = (decor) => {
             const mediaQuery = window.matchMedia("(max-width: 767px)");
             const applyLayout = () => {
@@ -406,7 +468,9 @@ const isExternal = (url: string) => url.startsWith("http");
                     // rAF 在后台标签页不触发会导致布局不生效
                     applyMobileStickerLayout(decor);
                 } else {
+                    // 先还原成服务端渲染的两排布局（保证多次调用幂等），再按需压成一行
                     restoreDesktopStickerPositions(decor);
+                    applyShortViewportStickerLayout(decor);
                 }
             };
             applyLayout();
@@ -1303,7 +1367,9 @@ const isExternal = (url: string) => url.startsWith("http");
         filter: drop-shadow(0 7px 10px rgba(28, 22, 28, 0.27));
     }
     /* 底部后排贴纸（homeCardConfig 里 bottom >= 12 的那些）：窗口高度不够时整排隐藏，
-       否则会顶到卡片底部的导航/社交按钮。手机端不适用（≤767px 由脚本重新排布）。 */
+       否则会顶到卡片底部的导航/社交按钮。手机端不适用（≤767px 由脚本重新排布）。
+       ⚠️ 这条只在禁用 JS 时生效：脚本会把整批贴纸压成一行（display 内联覆盖这里），
+       免得矮窗口直接少显示 6 张。阈值要和 homeCardConfig 里后排的 bottom: 16 一起改。 */
     @media (min-width: 768px) and (max-height: 940px) {
         .home-wallpaper-sticker--rear {
             display: none;
