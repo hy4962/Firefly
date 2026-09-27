@@ -187,12 +187,14 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件专属配置（广告内容直接在此配置）
 			specificConfig: {
 				ad: {
-					image: {
-						src: "/assets/images/ad/ad1.webp",
-						alt: "广告横幅",
-						link: "https://haoka.lot-ml.com/plugreg.html?agentid=1423316",
-						external: true,
-					},
+					// 原广告图 public/assets/images/ad/ad1.webp 已删除，这里不再引用；
+					// 想恢复就重新放图并补回下面的 image 配置
+					// image: {
+					// 	src: "/assets/images/ad/ad1.webp",
+					// 	alt: "广告横幅",
+					// 	link: "https://haoka.lot-ml.com/plugreg.html?agentid=1423316",
+					// 	external: true,
+					// },
 					// 是否允许关闭广告
 					closable: false,
 					// 显示次数限制，-1为无限制

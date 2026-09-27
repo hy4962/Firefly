@@ -41,19 +41,12 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		desktop: [
 			"assets/images/DesktopWallpaper/cover.webp",
 			"assets/images/DesktopWallpaper/three.webp",
-			"assets/images/DesktopWallpaper/7.webp",
-			"assets/images/DesktopWallpaper/9.webp",
 			"assets/images/DesktopWallpaper/shana-1.webp",
 			// "https://t.alcy.cc/ycy",
 		],
 		// 移动背景图片（支持单张或多张随机）
-		// mobile: "assets/images/MobileWallpaper/m1.avif",
-		mobile: [
-			"assets/images/MobileWallpaper/1.webp",
-			"assets/images/MobileWallpaper/2.webp",
-			"assets/images/MobileWallpaper/3.webp",
-			"assets/images/MobileWallpaper/shana-1.webp",
-		],
+		// 只剩一张时直接用字符串，走单图分支，不带轮播逻辑
+		mobile: "assets/images/MobileWallpaper/shana-1.webp",
 		// 背景视频播放地址
 		// 支持单个视频路径（字符串）或多个视频循环（数组，参考上面壁纸配置）
 		// 支持远程视频URL，本地视频请放在 public/assets/videos/ 目录下
