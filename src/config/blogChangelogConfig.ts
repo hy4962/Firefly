@@ -30,6 +30,41 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.12",
+		title: "一页真的数据看板",
+		date: "2026-09-29",
+		summary: "新增 /analytics/ 站点统计页：总览、访问脉冲、推送节奏、活跃时间、设备地域、最近评论",
+		description:
+			"上一条刚给页脚塞了两行数字，转头又看上了 rainzt.cn 的 /analytics/ —— 那不是两行数字，是整整一页看板：四张彩色总览卡、带 7 / 30 / 90 天切换的访问脉冲、按 GitHub 推送时间排的热力图、24 小时活跃分布、设备与地域的环形图，还有一张中国地图和最近评论。第一版我照着截图自己设计了一套，能跑，但一看就不是那个味道：配色、留白、动效节奏全都对不上。被一句话点醒之后才去翻 Aemeath 的仓库——人家根本不是单个文件，页面将近四千行，外加两个组件，其中专门渲染总览数字的那个要是漏了，页面其余模块全部正常、只有四个数字永远停在「加载中」。整份搬过来才算真正对上，顺带把导航入口从「关于」子菜单提到了顶级",
+		items: [
+			{
+				category: "页面",
+				text: "新增 /analytics/ 站点统计页；导航入口放顶级而不是藏在「关于」子菜单里——藏起来等于没有",
+			},
+			{
+				category: "统计",
+				text: "七个模块：四色总览卡、访问脉冲（7 / 30 / 90 天切换 + 手动刷新 + 数字滚动）、推送节奏热力图（按 GitHub 提交时间，带贪吃蛇动画）、访客活跃时间、设备与浏览器环形图、地域分布（中国地图 + 流量来源占比）、Waline 最近评论",
+			},
+			{
+				category: "统计",
+				text: "数据全部走 Umami 公开分享接口，浏览器直连；取数要同时带 x-umami-share-token 与 x-umami-share-context 两个头，少一个就 401。配置集中在 analyticsConfig.umamiAnalytics 的 shareId / shareApiBase / historicalStats 三项",
+			},
+			{
+				category: "维护",
+				text: "实现整份取自同源 fork（Aemeath），含页面、侧栏组件、指标组件与全部插画、地图资源；只把署名和 localStorage 前缀从 rainzt 换成自己的，其余保持原样，便于以后跟着上游一起更新",
+			},
+			{
+				category: "修复",
+				text: "页面用到的 --text-color 与 --font-active-sans 上游主题没有，做在页面自身作用域里而不是改 src/styles/variables.styl，避免为两个变量动主题源文件",
+			},
+			{
+				category: "内容",
+				text: "同步这次的实现记录（/posts/blog/analyticsdashboard/）：从自研翻车、到怎么发现漏了一个组件，都写了",
+			},
+		],
+		tags: ["站点统计", "Umami", "数据看板", "页面"],
+	},
+	{
 		version: "V1.11",
 		title: "页脚的两行数字",
 		date: "2026-09-28",
