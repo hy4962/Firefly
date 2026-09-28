@@ -44,7 +44,12 @@ export const homeCardConfig = {
 	enable: true,
 
 	// 手机端（≤767px）随机显示多少张场景贴纸（贴纸再多也不会挤满手机屏，刷新会换一批；0 或留空=全显示）
-	mobileStickerLimit: 8,
+	// ⚠️ 这个数字直接决定手机端排几行，别随手加大：
+	//   手机端每行能放几张 = floor(97.6 / (size/屏宽 × 100 + 1.6))，尺寸从 68px 往下试，
+	//   只要"行数 × 行高"塞得进卡片下方的安全区就定案（会优先选 68px）。
+	//   实测 390px 宽时 68px 每行 5 张、360px 宽时降到 4 张 —— 所以 5 开始就会在某些机型上翻成两行。
+	//   取 4 可保证窄到 320px（iPhone SE）仍是完整一行；取 8 就是两行 2×4（旧配置）。
+	mobileStickerLimit: 4,
 
 	// 卡片内容（留空则回退：identity → profileConfig.name，title → siteConfig.title，subtitle → profileConfig.bio）
 	identity: "HY",
@@ -96,7 +101,9 @@ export const homeCardConfig = {
 	},
 
 	// 便签贴纸（固定装饰，不可拖动；top/left 为桌面端百分比定位，移动端自动居中到顶部）
+	// enable: false → 组件直接不渲染这个节点（不是 display:none，是压根不输出）
 	note: {
+		enable: false,
 		text: "欢迎访问",
 		top: 32,
 		left: 70.5,
@@ -104,19 +111,27 @@ export const homeCardConfig = {
 
 	// 场景贴纸：按百分比定位，top（距顶）或 bottom（距底）二选一 + left
 	// （贴纸列表顺序即拖拽层级，后者在上）
-	// 桌面分两层（都在卡片下方）：
-	//   底部前排   bottom: 5  —— 6 张等距（1.2 / 18.7 / 36.2 / 53.7 / 71.2 / 88.7）
-	//   底部后排   bottom: 16 —— 6 张错位等距（7.4 / 21.6 / 35.8 / 50 / 64.2 / 78.4）
-	// `bottom >= 12` 视为后排：窗口高度不足 940px 时由 CSS 整排隐藏（否则会顶到卡片）
+	// 桌面端全部铺在卡片下方同一排（bottom 一致 → 脚踩同一条地面线），
+	// left 按「视觉中心等距」算：中心从 5% 到 95% 均分，再各减去自身宽度的一半。
+	// 之所以不直接让 left 等距，是因为各张基准宽度不同、图在盒子内居中，
+	// left 等距时视觉中心会左右漂移（最多 ±11px / 1920）。
+	// 约束：中心间距 = 90/(张数-1) %，必须 > 相邻两张半宽之和。11 张 → 间距 9%。
+	// 换算成 width 的闸门：相邻两张 width 之和 ≲ 2764.8/(张数-1)（11 张 = 276.5，再按 8 折给旋转留余量）。
+	// 现在最紧的一对是 shana-sword-black 116 + pink-neko 110 = 226，1024 宽下还有 ~11px 净空隙。
+	// ⚠️ 注意 width 只管**盒子**宽度，贴纸实际大小由 img 的 max-height:104px 决定：
+	// 可见宽 = min(盒宽, 104/宽高比)，竖长的图（如 kirino-pout 宽高比 2.16）盒子再宽也只显示 48px。
+	// 所以真正会互相顶到的只有扁图（pink-neko 0.89、shana-hairflip 0.95）。
+	// 动图同理：GIF → 动画 webp 见 skill 里的 gif-to-sticker.py。
+	// 注意 bottom < 12 时不会带 --rear 类，矮窗口 CSS 那条整排隐藏对这批不生效。
 	// 需要用到卡片上方时给 `top: 20` 即可，移动端脚本会按之自动分带
-	// 移动端由脚本按卡片位置重新排布，不依赖上面的 left 顺序
+	// 移动端由脚本按卡片位置重新排布（只认有无 bottom，与具体数值无关），不依赖下面的 left
 	// 素材在 public/images/home-stickers/，可自行增删
 	stickers: [
 		{
 			src: "/images/home-stickers/kirino-cheer.webp",
 			name: "高坂桐乃·欢呼",
 			bottom: 5,
-			left: 1.2,
+			left: 1.88,
 			width: 96,
 			rotate: 5,
 		},
@@ -124,7 +139,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/misaka.webp",
 			name: "御坂美琴",
 			bottom: 5,
-			left: 18.7,
+			left: 10.74,
 			width: 100,
 			rotate: -4,
 		},
@@ -132,7 +147,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/sagiri.webp",
 			name: "和泉纱雾",
 			bottom: 5,
-			left: 36.2,
+			left: 19.88,
 			width: 96,
 			rotate: 4,
 		},
@@ -140,7 +155,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kirino-lying.webp",
 			name: "高坂桐乃·躺平",
 			bottom: 5,
-			left: 53.7,
+			left: 28.42,
 			width: 110,
 			rotate: -6,
 		},
@@ -148,7 +163,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/madoka.webp",
 			name: "鹿目圆",
 			bottom: 5,
-			left: 71.2,
+			left: 38.01,
 			width: 92,
 			rotate: -4,
 		},
@@ -156,55 +171,49 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kirino-pout.webp",
 			name: "高坂桐乃·抱臂",
 			bottom: 5,
-			left: 88.7,
+			left: 47.01,
 			width: 92,
-			rotate: 4,
-		},
-		{
-			src: "/images/home-stickers/shana-melon.webp",
-			name: "夏娜·蜜瓜包",
-			bottom: 16,
-			left: 7.4,
-			width: 100,
-			rotate: -4,
-		},
-		{
-			src: "/images/home-stickers/louise-maid.webp",
-			name: "露易丝·女仆",
-			bottom: 16,
-			left: 21.6,
-			width: 104,
 			rotate: 4,
 		},
 		{
 			src: "/images/home-stickers/shana-jump.webp",
 			name: "夏娜·跃斩",
-			bottom: 16,
-			left: 35.8,
+			bottom: 5,
+			left: 55.74,
 			width: 100,
 			rotate: -6,
 		},
 		{
+			// 动图（6 帧 / 300ms 一轮，GIF → 动画 webp 见 skill 的 gif-to-sticker.py）
+			// width 要 ≥ 104/宽高比(=0.95)→110，盒子才不会被限住、比邻居矮一截
+			src: "/images/home-stickers/shana-hairflip.webp",
+			name: "夏娜·甩发",
+			bottom: 5,
+			left: 64.74,
+			width: 100,
+			rotate: -3,
+		},
+		{
 			src: "/images/home-stickers/shana-sword-black.webp",
 			name: "夏娜·持剑（黑发）",
-			bottom: 16,
-			left: 50,
+			bottom: 5,
+			left: 73.22,
 			width: 116,
 			rotate: 3,
 		},
 		{
 			src: "/images/home-stickers/pink-neko.webp",
 			name: "粉发猫耳",
-			bottom: 16,
-			left: 64.2,
-			width: 124,
+			bottom: 5,
+			left: 82.42,
+			width: 110,
 			rotate: -4,
 		},
 		{
 			src: "/images/home-stickers/shana-sword-red.webp",
 			name: "夏娜·持剑（红发）",
-			bottom: 16,
-			left: 78.4,
+			bottom: 5,
+			left: 91.35,
 			width: 112,
 			rotate: 5,
 		},

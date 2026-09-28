@@ -64,22 +64,40 @@ const isExternal = (url: string) => url.startsWith("http");
                     style={stickerStyle(sticker)}
                     data-home-wallpaper-initial-style={stickerStyle(sticker)}
                 >
+                    {/* 只写 data-home-wallpaper-src，不写 src —— 服务端不产生任何图片请求。
+                        真正赋值交给脚本：手机端只给随机抽中的那几张，桌面端等 window.load 之后，
+                        免得十几张装饰图跟壁纸（LCP 元素）抢带宽。见 hydrateStickerImages()。 */}
                     <img
-                        src={sticker.src}
+                        data-home-wallpaper-src={sticker.src}
                         alt=""
                         draggable="false"
-                        loading="eager"
                         decoding="async"
                         referrerpolicy="no-referrer"
                     />
                 </div>
             ))}
-            <div
-                class="home-wallpaper-sticker home-wallpaper-sticker--note home-wallpaper-sticker--fixed"
-                style={`inset: ${config.note.top}% auto auto ${config.note.left}%;`}
-            >
-                <span>{config.note.text}</span>
-            </div>
+            {/* 禁用 JS 时上面那批没有 src，这里补一份真实的。
+                JS 开启时 noscript 内容是惰性文本，不会被解析成图片、不产生请求。 */}
+            <noscript>
+                {config.stickers.map((sticker) => (
+                    <div
+                        class={`home-wallpaper-sticker${
+                            (sticker.bottom ?? 0) >= 12 ? " home-wallpaper-sticker--rear" : ""
+                        }`}
+                        style={stickerStyle(sticker)}
+                    >
+                        <img src={sticker.src} alt="" draggable="false" referrerpolicy="no-referrer" />
+                    </div>
+                ))}
+            </noscript>
+            {config.note.enable && (
+                <div
+                    class="home-wallpaper-sticker home-wallpaper-sticker--note home-wallpaper-sticker--fixed"
+                    style={`inset: ${config.note.top}% auto auto ${config.note.left}%;`}
+                >
+                    <span>{config.note.text}</span>
+                </div>
+            )}
         </div>
 
         <article class="home-wallpaper-card">
@@ -165,6 +183,42 @@ const isExternal = (url: string) => url.startsWith("http");
         window.__homeWallpaperDecorBound = true;
 
         const isMobileLayout = () => window.matchMedia("(max-width: 767px)").matches;
+
+        // 贴纸图片按需加载。服务端只输出 data-home-wallpaper-src（不产生请求），这里再赋 src：
+        // - 手机端：只给当前真正显示的那批赋值 —— 抽中的 4 张才下载，其余整页一字节不拉
+        // - 桌面端：等 window.load 之后再赋值，避开壁纸（LCP 元素）的关键路径
+        // 幂等：已经有 src 的直接跳过，重复调用无副作用。
+        const hydrateStickerImages = (decor, onlyVisible = false) => {
+            const imgs = [];
+            decor
+                .querySelectorAll(".home-wallpaper-sticker:not(.home-wallpaper-sticker--fixed)")
+                .forEach((sticker) => {
+                    if (onlyVisible && sticker.style.display === "none") return;
+                    const img = sticker.querySelector("img[data-home-wallpaper-src]");
+                    if (!img || img.getAttribute("src")) return;
+                    img.setAttribute("src", img.getAttribute("data-home-wallpaper-src"));
+                    imgs.push(img);
+                });
+            if (imgs.length === 0) return Promise.resolve();
+            // 等解码完成再返回，调用方才能量到真实高度
+            return Promise.all(
+                imgs.map((img) =>
+                    typeof img.decode === "function"
+                        ? img.decode().catch(() => {})
+                        : new Promise((resolve) => {
+                                img.addEventListener("load", resolve, { once: true });
+                                img.addEventListener("error", resolve, { once: true });
+                            }),
+                ),
+            );
+        };
+
+        // 桌面端：window.load 之后再放行（load 之前加载会和壁纸抢带宽）
+        const scheduleDesktopStickerHydration = (decor) => {
+            const run = () => hydrateStickerImages(decor);
+            if (document.readyState === "complete") run();
+            else window.addEventListener("load", run, { once: true });
+        };
 
         // 手机端贴纸池：从整批场景贴纸里随机抽 limit 张（limit <= 0 表示不限制）。
         // 抽签结果在同一次页面加载内复用——布局会重算多次（load / 定时 / resize），
@@ -477,7 +531,11 @@ const isExternal = (url: string) => url.startsWith("http");
             // 字体/图片就绪后卡片尺寸才稳定，再校准一次
             window.addEventListener("load", applyLayout);
             window.setTimeout(applyLayout, 400);
-            mediaQuery.addEventListener?.("change", applyLayout);
+            mediaQuery.addEventListener?.("change", (event) => {
+                applyLayout();
+                // 手机 → 桌面：贴纸池只加载了抽中那几张，补齐剩下的
+                if (!event.matches) hydrateStickerImages(decor);
+            });
             // 兜底：部分环境（视口仿真等）媒体查询 change 事件不可靠，用 resize 防抖补一层
             let resizeTimer = 0;
             window.addEventListener("resize", () => {
@@ -597,6 +655,16 @@ const isExternal = (url: string) => url.startsWith("http");
             bindMobileStickerLayout(decor);
             revealDecor(decor);
             bindHomeReturnReplay();
+
+            // 贴纸图片按需加载（服务端没输出 src）。手机端此时 display 已经定好，
+            // 只加载抽中的那几张；解码完再重排一次 —— 那时才量得到真实行高。
+            if (isMobileLayout()) {
+                hydrateStickerImages(decor, true).then(() => {
+                    if (isMobileLayout() && decor.isConnected) applyMobileStickerLayout(decor);
+                });
+            } else {
+                scheduleDesktopStickerHydration(decor);
+            }
 
             const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
             const stickers = decor.querySelectorAll("[data-home-wallpaper-sticker]");
@@ -1365,6 +1433,13 @@ const isExternal = (url: string) => url.startsWith("http");
         object-fit: contain;
         pointer-events: none;
         filter: drop-shadow(0 7px 10px rgba(28, 22, 28, 0.27));
+        /* 图片是延迟加载的（脚本才赋 src），到货时淡入，避免直接"啪"地长出来。
+           没有 src 时高度是 0，所以这里同时是为了盖住盒子从 0 长到 104px 那一下。 */
+        opacity: 0;
+        transition: opacity 0.34s var(--home-wallpaper-motion-ease);
+    }
+    .home-wallpaper-sticker img[src] {
+        opacity: 1;
     }
     /* 底部后排贴纸（homeCardConfig 里 bottom >= 12 的那些）：窗口高度不够时整排隐藏，
        否则会顶到卡片底部的导航/社交按钮。手机端不适用（≤767px 由脚本重新排布）。
