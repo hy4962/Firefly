@@ -755,5 +755,12 @@
   "src:content/posts/blog/FooterStats/originals/image-002.png": "f5efe9f2eee8f2ebe5",
   "src:content/posts/blog/FooterStats/originals/cover.png": "f2ece7f2ece7f2ece7",
   "src:content/posts/blog/FooterStats/images/image-002.webp": "f5eee9f2eee9f2ebe5",
-  "src:content/posts/blog/FooterStats/images/cover.webp": "f2ece8f2ece8f2ece8"
+  "src:content/posts/blog/FooterStats/images/cover.webp": "f2ece8f2ece8f2ece8",
+  "public:assets/images/analytics/visitor-activity-character.png": "d5d3e4e0dce7e3ddea",
+  "public:assets/images/analytics/push-rhythm-character.png": "f2a29af2aca2f0c6c1",
+  "public:assets/images/analytics/analytics-hero.png": "f1f5fde2daece6daea",
+  "public:assets/images/analytics/summary/summary-visitors.webp": "f1f6fee8e3efe4d9e6",
+  "public:assets/images/analytics/summary/summary-today-visitors.webp": "f4f6f7f7e7dcf3d9ce",
+  "public:assets/images/analytics/summary/summary-today-pageviews.webp": "f2f3fee0d9ebd2c3da",
+  "public:assets/images/analytics/summary/summary-pageviews.webp": "eff7feeee8efe6d7e2"
 }

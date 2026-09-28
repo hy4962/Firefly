@@ -9,6 +9,15 @@ export const analyticsConfig: AnalyticsConfig = {
 	umamiAnalytics: {
 		// Umami Website ID
 		websiteId: "1dec3dbf-ff9d-4dbc-89a8-0f916797587f",
+		// Umami 公开分享 ID：分享链接 /share/XXXXXXXX 的最后一段
+		shareId: "Z4DD4Y3q9CTFpBeM",
+		// Umami 实例地址
+		shareApiBase: "https://umami.9ll.uk",
+		// 迁移前的历史累计（本站没有迁移过，保持 0）
+		historicalStats: {
+			visitors: 0,
+			pageviews: 0,
+		},
 		// Umami JS地址，支持使用自建
 		scriptUrl: "https://umami.9ll.uk/script.js",
 		// Umami 会话回放脚本地址，支持使用自建
