@@ -30,6 +30,45 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.11",
+		title: "页脚的两行数字",
+		date: "2026-09-28",
+		summary: "页脚加上建站运行时间与访问统计，静态站直连 Umami 分享接口",
+		description:
+			"又是在刷 rainzt.cn 的时候看上的——他页脚挂着两行东西：一行「本站已运行 X 天 X 小时 X 分 X 秒」在跳秒，一行是今日与全站的访客/访问四个数字。跳秒那行纯前端就能算，另一行卡了我一会儿：博客是跑在 Vercel 上的纯静态站，没有服务端替我去读 Umami。抱着试试看的心态 curl 了一下他那个分享链接，响应头里明晃晃一个 Access-Control-Allow-Origin: * —— Umami 的分享接口本来就是给外部页面调用的。真正的坑在第二步，取数据的接口要同时带 x-umami-share-token 和 x-umami-share-context 两个头，少一个就 401，我按「只带 token」试了一轮才摸对。落点还是 Firefly 原生的 FooterConfig.html 注入点，这次同样一个主题源文件都没动",
+		items: [
+			{
+				category: "页脚",
+				text: "新增建站运行时间（天/小时/分/秒），秒数逐秒跳动；切到后台标签页直接停掉定时器，切回来立刻重算，避免在看不见的地方空转 setInterval",
+			},
+			{
+				category: "页脚",
+				text: "新增今日访客、今日访问、本站访客、本站访问四个指标，数字从 0 滚到目标值（900ms 三次方缓动），系统开了「减少动态效果」就跳过动画直接落值",
+			},
+			{
+				category: "统计",
+				text: "接入方式：先 GET /api/share/<slug> 换一枚 JWT（缓存 24 小时），再 GET /api/websites/<id>/stats?startAt=&endAt= 取数。两个头缺一不可——x-umami-share-token 加 x-umami-share-context: 1，只带前者返回 401",
+			},
+			{
+				category: "统计",
+				text: "缓存分三层：分享令牌 24 小时、今日数据 60 秒、全站数据 5 分钟，都写在 localStorage；页面停留期间每 90 秒静默刷新一次，document.hidden 时一次请求都不发",
+			},
+			{
+				category: "性能",
+				text: "请求挂在 window.load 之后的 requestIdleCallback 上，不进首屏关键路径；两个接口并发，靠令牌与结果双缓存把首次之后的开销压到 0",
+			},
+			{
+				category: "修复",
+				text: "取数失败时整行保持 hidden，既不显示 0 也不显示「加载中」，不在页脚留半截残骸；控制台只留一条 warn",
+			},
+			{
+				category: "内容",
+				text: "同步这次的实现记录（/posts/blog/footerstats/）：从探接口、踩 401 的坑，到落点选择与缓存策略都写了",
+			},
+		],
+		tags: ["页脚", "统计", "Umami", "性能"],
+	},
+	{
 		version: "V1.10",
 		title: "贴纸排成一条线",
 		date: "2026-09-28",
