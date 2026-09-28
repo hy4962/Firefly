@@ -1,0 +1,1452 @@
+---
+/**
+ * 站点统计看板（/analytics/）
+ *
+ * 数据来源：
+ *   - Umami 公开分享接口（浏览器端直连，CORS 全开）
+ *   - GitHub 提交记录（构建时拉取，静态渲染成「推送节奏」热力图）
+ *   - Waline 公开评论接口（浏览器端拉最近评论）
+ *
+ * 为什么「推送节奏」放构建期而不是客户端：GitHub API 未认证时限 60 次/小时/IP，
+ * 放客户端等于每个访客都要占一次配额；放构建期只需要构建机拉一次，还能离线降级。
+ *
+ * 本文件是新增页面，不改动任何上游主题文件。
+ */
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { analyticsDashboardConfig as cfg } from "@/config/analyticsDashboardConfig";
+
+export const prerender = true;
+
+const title = cfg.title;
+const description = cfg.description;
+const canonicalUrl = new URL("/analytics/", Astro.site).href;
+
+/** 北京时间日期键，避免构建机时区影响热力图分格 */
+const BEIJING_OFFSET = 8 * 60 * 60 * 1000;
+const toDayKey = (ms: number) =>
+	new Date(ms + BEIJING_OFFSET).toISOString().slice(0, 10);
+
+type HeatCell = { date: string; count: number; future: boolean };
+
+let heatWeeks: HeatCell[][] = [];
+let commitTotal = 0;
+let commitRecent = "";
+
+if (cfg.enable && cfg.githubRepo) {
+	try {
+		const api = `https://api.github.com/repos/${cfg.githubRepo}/commits?sha=${cfg.githubBranch}&per_page=${cfg.githubCommitLimit}`;
+		const response = await fetch(api, {
+			headers: {
+				Accept: "application/vnd.github+json",
+				"User-Agent": "firefly-analytics-dashboard",
+			},
+		});
+
+		if (response.ok) {
+			const list = (await response.json()) as Array<{
+				commit?: { author?: { date?: string } };
+			}>;
+
+			if (Array.isArray(list)) {
+				commitTotal = list.length;
+
+				const counts = new Map<string, number>();
+				for (const item of list) {
+					const iso = item?.commit?.author?.date;
+					if (!iso) continue;
+					const key = toDayKey(new Date(iso).getTime());
+					counts.set(key, (counts.get(key) ?? 0) + 1);
+				}
+
+				if (list[0]?.commit?.author?.date) {
+					const lastMs = new Date(list[0].commit.author.date).getTime();
+					const hours = Math.floor((Date.now() - lastMs) / 3600000);
+					commitRecent =
+						hours < 1
+							? "刚刚"
+							: hours < 24
+								? `${hours} 小时前`
+								: `${Math.floor(hours / 24)} 天前`;
+				}
+
+				// 以北京时间的今天为终点，往前推 heatmapWeeks 周，起点对齐到周一
+				const todayMs = new Date(`${toDayKey(Date.now())}T00:00:00Z`).getTime();
+				const mondayOffset = (new Date(todayMs).getUTCDay() + 6) % 7;
+				const thisMonday = todayMs - mondayOffset * 86400000;
+				const startMonday =
+					thisMonday - (cfg.heatmapWeeks - 1) * 7 * 86400000;
+
+				for (let w = 0; w < cfg.heatmapWeeks; w += 1) {
+					const week: HeatCell[] = [];
+					for (let d = 0; d < 7; d += 1) {
+						const dayMs = startMonday + (w * 7 + d) * 86400000;
+						week.push({
+							date: toDayKey(dayMs),
+							count: counts.get(toDayKey(dayMs)) ?? 0,
+							future: dayMs > todayMs,
+						});
+					}
+					heatWeeks.push(week);
+				}
+			}
+		} else {
+			console.warn(
+				`[analytics] GitHub 提交记录拉取失败（HTTP ${response.status}），推送节奏模块将留空`,
+			);
+		}
+	} catch (error) {
+		console.warn(
+			"[analytics] GitHub 提交记录拉取异常，推送节奏模块将留空：",
+			error instanceof Error ? error.message : error,
+		);
+	}
+}
+
+const heatLevel = (count: number) => {
+	if (count <= 0) return 0;
+	if (count <= 1) return 1;
+	if (count <= 3) return 2;
+	if (count <= 6) return 3;
+	return 4;
+};
+
+const showHeatSection = cfg.enable && Boolean(cfg.githubRepo);
+const showComments = cfg.enable && Boolean(cfg.walineServerUrl);
+---
+
+<MainGridLayout title={title} description={description}>
+	<Fragment slot="head">
+		<link rel="canonical" href={canonicalUrl} />
+	</Fragment>
+
+	<div
+		class="an-dash"
+		data-an-dash
+		data-enabled={cfg.enable ? "1" : "0"}
+		data-share-id={cfg.shareId}
+		data-api-base={cfg.shareApiBase}
+		data-pulse-days={String(cfg.pulseDays)}
+		data-cache-ttl={String(cfg.cacheTtl)}
+		data-waline={cfg.walineServerUrl}
+		data-waline-count={String(cfg.walineCommentCount)}
+	>
+		{
+			!cfg.enable && (
+				<section class="an-card">
+					<p class="an-muted">站点统计看板已在配置中关闭。</p>
+				</section>
+			)
+		}
+
+		{cfg.enable && (
+			<>
+				{/* ============ 总览 ============ */}
+				<section class="an-hero card-base">
+					<div class="an-hero__kicker">
+						<span>SITE ANALYTICS</span>
+						<span class="an-dot" />
+						<span>PUBLIC SHARE API</span>
+					</div>
+					<h1 class="an-hero__title">这个站点被看了多少次</h1>
+					<p class="an-hero__lead">
+						全部数字直接来自 Umami 的公开分享接口，浏览器直连，没有任何后端参与。
+						折线、活跃时段和分布图都跟着同一个令牌走。
+					</p>
+
+					<div class="an-hero__grid">
+						<div class="an-stat">
+							<span class="an-stat__label">总访客</span>
+							<strong class="an-stat__value" data-an-stat="visitors">—</strong>
+						</div>
+						<div class="an-stat">
+							<span class="an-stat__label">总访问</span>
+							<strong class="an-stat__value" data-an-stat="pageviews">—</strong>
+						</div>
+						<div class="an-stat">
+							<span class="an-stat__label">今日访客</span>
+							<strong class="an-stat__value" data-an-stat="todayVisitors">—</strong>
+						</div>
+						<div class="an-stat">
+							<span class="an-stat__label">今日访问</span>
+							<strong class="an-stat__value" data-an-stat="todayPageviews">—</strong>
+						</div>
+					</div>
+
+					<div class="an-hero__foot">
+						<span class="an-badge" data-an-status>连接中</span>
+						<span class="an-muted" data-an-updated>正在读取分享数据…</span>
+					</div>
+				</section>
+
+				{/* ============ 访问脉冲 ============ */}
+				<section class="an-card card-base" data-an-module="pulse">
+					<header class="an-card__head">
+						<div>
+							<h2 class="an-card__title">访问脉冲</h2>
+							<p class="an-card__sub">最近 {cfg.pulseDays} 天的浏览量与会话数</p>
+						</div>
+						<div class="an-legend">
+							<span class="an-legend__item"><i class="an-swatch an-swatch--views" />浏览量</span>
+							<span class="an-legend__item"><i class="an-swatch an-swatch--sessions" />会话数</span>
+						</div>
+					</header>
+					<div class="an-chart" data-an-chart>
+						<div class="an-skeleton an-skeleton--chart" />
+					</div>
+				</section>
+
+				{/* ============ 推送节奏 ============ */}
+				{showHeatSection && (
+					<section class="an-card card-base" data-an-module="heat">
+						<header class="an-card__head">
+							<div>
+								<h2 class="an-card__title">推送节奏</h2>
+								<p class="an-card__sub">
+									按 GitHub {cfg.githubBranch} 分支的推送时间观察活动密度
+								</p>
+							</div>
+							<div class="an-heat__meta">
+								{commitTotal > 0 && <span><b>{commitTotal}</b> 次提交</span>}
+								{commitRecent && <span>最近一次 {commitRecent}</span>}
+							</div>
+						</header>
+
+						{heatWeeks.length > 0 ? (
+							<div class="an-heat">
+								<div class="an-heat__weekdays">
+									<span>一</span><span>二</span><span>三</span><span>四</span
+									><span>五</span><span>六</span><span>日</span>
+								</div>
+								<div class="an-heat__grid">
+									{
+										heatWeeks.map((week) => (
+											<div class="an-heat__col">
+												{week.map((cell) => (
+													<span
+														class:list={[
+															"an-heat__cell",
+															`an-heat__cell--l${heatLevel(cell.count)}`,
+															cell.future && "is-future",
+														]}
+														title={`${cell.date}：${cell.count} 次提交`}
+													/>
+												))}
+											</div>
+										))
+									}
+								</div>
+								<div class="an-heat__legend">
+									<span class="an-muted">少</span>
+									<i class="an-heat__cell an-heat__cell--l0" />
+									<i class="an-heat__cell an-heat__cell--l1" />
+									<i class="an-heat__cell an-heat__cell--l2" />
+									<i class="an-heat__cell an-heat__cell--l3" />
+									<i class="an-heat__cell an-heat__cell--l4" />
+									<span class="an-muted">多</span>
+								</div>
+							</div>
+						) : (
+							/*
+							 * 构建期没拉到 GitHub 数据（本机 MITM 证书、构建机断网等）时，
+							 * 降级成客户端拉取——GitHub API 的 CORS 是全开的。
+							 */
+							<div
+								class="an-heat"
+								data-an-heat
+								data-repo={cfg.githubRepo}
+								data-branch={cfg.githubBranch}
+								data-weeks={String(cfg.heatmapWeeks)}
+							>
+								<div class="an-skeleton an-skeleton--bars" />
+							</div>
+						)}
+					</section>
+				)}
+
+				{/* ============ 访客活跃时间 ============ */}
+				<section class="an-card card-base" data-an-module="hours">
+					<header class="an-card__head">
+						<div>
+							<h2 class="an-card__title">访客活跃时间</h2>
+							<p class="an-card__sub">看看大家通常在什么时候来这里（北京时间）</p>
+						</div>
+						<span class="an-badge an-badge--ghost" data-an-peak>—</span>
+					</header>
+					<div class="an-hours" data-an-hours>
+						<div class="an-skeleton an-skeleton--bars" />
+					</div>
+				</section>
+
+				{/* ============ 设备与浏览器 ============ */}
+				<section class="an-card card-base" data-an-module="devices">
+					<header class="an-card__head">
+						<div>
+							<h2 class="an-card__title">设备与浏览器</h2>
+							<p class="an-card__sub">访客用什么设备、什么浏览器来到这里</p>
+						</div>
+					</header>
+					<div class="an-split">
+						<div class="an-panel">
+							<h3 class="an-panel__title">设备类型</h3>
+							<div class="an-bars" data-an-bars="device">
+								<div class="an-skeleton an-skeleton--bars" />
+							</div>
+						</div>
+						<div class="an-panel">
+							<h3 class="an-panel__title">浏览器</h3>
+							<div class="an-bars" data-an-bars="browser">
+								<div class="an-skeleton an-skeleton--bars" />
+							</div>
+						</div>
+						<div class="an-panel">
+							<h3 class="an-panel__title">操作系统</h3>
+							<div class="an-bars" data-an-bars="os">
+								<div class="an-skeleton an-skeleton--bars" />
+							</div>
+						</div>
+					</div>
+				</section>
+
+				{/* ============ 地域分布 ============ */}
+				<section class="an-card card-base" data-an-module="geo">
+					<header class="an-card__head">
+						<div>
+							<h2 class="an-card__title">访客地域分布</h2>
+							<p class="an-card__sub">流量从哪些国家和地区来</p>
+						</div>
+					</header>
+					<div class="an-split">
+						<div class="an-panel">
+							<h3 class="an-panel__title">国家 / 地区</h3>
+							<div class="an-bars" data-an-bars="country">
+								<div class="an-skeleton an-skeleton--bars" />
+							</div>
+						</div>
+						<div class="an-panel">
+							<h3 class="an-panel__title">城市</h3>
+							<div class="an-bars" data-an-bars="city">
+								<div class="an-skeleton an-skeleton--bars" />
+							</div>
+						</div>
+					</div>
+				</section>
+
+				{/* ============ 最近评论 ============ */}
+				{showComments && (
+					<section class="an-card card-base" data-an-module="comments">
+						<header class="an-card__head">
+							<div>
+								<h2 class="an-card__title">最近评论</h2>
+								<p class="an-card__sub">有人来过，也留下了几句值得被看见的话</p>
+							</div>
+							<span class="an-badge an-badge--ghost">Waline · 最新 {cfg.walineCommentCount} 条</span>
+						</header>
+						<div class="an-comments" data-an-comments>
+							<div class="an-skeleton an-skeleton--bars" />
+						</div>
+					</section>
+				)}
+			</>
+		)}
+	</div>
+</MainGridLayout>
+
+<style is:global>
+	/* ===================== 基础 ===================== */
+	.an-dash {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.an-muted {
+		color: var(--content-meta);
+		font-size: 0.8125rem;
+	}
+
+	.an-dot {
+		width: 4px;
+		height: 4px;
+		border-radius: 9999px;
+		background: currentColor;
+		opacity: 0.45;
+	}
+
+	.an-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.15rem 0.6rem;
+		border-radius: 9999px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+		white-space: nowrap;
+	}
+
+	.an-badge--ghost {
+		color: var(--content-meta);
+		background: color-mix(in srgb, var(--line-divider) 60%, transparent);
+		border-color: var(--line-divider);
+	}
+
+	.an-badge[data-state="online"] {
+		color: oklch(0.62 0.15 150);
+		background: oklch(0.62 0.15 150 / 0.12);
+		border-color: oklch(0.62 0.15 150 / 0.24);
+	}
+
+	.an-badge[data-state="offline"] {
+		color: oklch(0.6 0.19 25);
+		background: oklch(0.6 0.19 25 / 0.12);
+		border-color: oklch(0.6 0.19 25 / 0.24);
+	}
+
+	/* ===================== 卡片 ===================== */
+	.an-card {
+		padding: 1.15rem 1.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+	}
+
+	.an-card__head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.an-card__title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--deep-text);
+	}
+
+	.an-card__sub {
+		margin: 0.2rem 0 0;
+		font-size: 0.8125rem;
+		color: var(--content-meta);
+	}
+
+	.an-split {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 1rem;
+	}
+
+	.an-panel__title {
+		margin: 0 0 0.6rem;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--content-meta);
+		letter-spacing: 0.02em;
+	}
+
+	/* ===================== 总览 ===================== */
+	.an-hero {
+		padding: 1.5rem 1.5rem 1.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.an-hero__kicker {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		color: var(--content-meta);
+		text-transform: uppercase;
+	}
+
+	.an-hero__title {
+		margin: 0;
+		font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+		font-weight: 800;
+		line-height: 1.25;
+		color: var(--deep-text);
+	}
+
+	.an-hero__lead {
+		margin: 0;
+		max-width: 56ch;
+		font-size: 0.875rem;
+		line-height: 1.75;
+		color: var(--content-meta);
+	}
+
+	.an-hero__grid {
+		margin-top: 0.4rem;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.an-stat {
+		padding: 0.85rem 1rem;
+		border-radius: 0.85rem;
+		border: 1px solid var(--line-divider);
+		background: color-mix(in srgb, var(--primary) 5%, transparent);
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.an-stat__label {
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+
+	.an-stat__value {
+		font-size: 1.45rem;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+		color: var(--primary);
+		line-height: 1.2;
+	}
+
+	.an-hero__foot {
+		margin-top: 0.35rem;
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+	}
+
+	/* ===================== 折线图 ===================== */
+	.an-chart {
+		position: relative;
+		min-height: 220px;
+	}
+
+	.an-chart svg {
+		width: 100%;
+		height: auto;
+		display: block;
+		overflow: visible;
+	}
+
+	.an-chart__grid-line {
+		stroke: var(--line-divider);
+		stroke-width: 1;
+		stroke-dasharray: 3 5;
+	}
+
+	.an-chart__axis-text {
+		fill: var(--content-meta);
+		font-size: 10px;
+	}
+
+	.an-chart__area {
+		fill: color-mix(in srgb, var(--primary) 16%, transparent);
+	}
+
+	.an-chart__line {
+		fill: none;
+		stroke-width: 2;
+		stroke-linejoin: round;
+		stroke-linecap: round;
+	}
+
+	.an-chart__line--views {
+		stroke: var(--primary);
+	}
+
+	.an-chart__line--sessions {
+		stroke: color-mix(in srgb, var(--primary) 45%, var(--content-meta));
+		stroke-dasharray: 4 4;
+	}
+
+	.an-chart__point {
+		fill: var(--card-bg);
+		stroke: var(--primary);
+		stroke-width: 1.5;
+		opacity: 0;
+		transition: opacity 120ms ease;
+	}
+
+	.an-chart__hit {
+		fill: transparent;
+		cursor: crosshair;
+	}
+
+	.an-chart__hit:hover + .an-chart__point,
+	.an-chart__point.is-active {
+		opacity: 1;
+	}
+
+	.an-legend {
+		display: flex;
+		gap: 0.9rem;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+
+	.an-legend__item {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.an-swatch {
+		width: 14px;
+		height: 3px;
+		border-radius: 9999px;
+		display: inline-block;
+	}
+
+	.an-swatch--views {
+		background: var(--primary);
+	}
+
+	.an-swatch--sessions {
+		background: color-mix(in srgb, var(--primary) 45%, var(--content-meta));
+	}
+
+	.an-tip {
+		position: absolute;
+		top: 0;
+		left: 0;
+		transform: translate(-50%, -120%);
+		padding: 0.4rem 0.6rem;
+		border-radius: 0.5rem;
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+		box-shadow: 0 6px 18px rgb(0 0 0 / 0.12);
+		font-size: 0.75rem;
+		line-height: 1.5;
+		color: var(--deep-text);
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 120ms ease;
+		white-space: nowrap;
+		z-index: 5;
+	}
+
+	.an-tip.is-on {
+		opacity: 1;
+	}
+
+	/* ===================== 热力图 ===================== */
+	.an-heat {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 0.45rem 0.6rem;
+		align-items: start;
+	}
+
+	.an-heat__meta {
+		display: flex;
+		gap: 0.9rem;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+		flex-wrap: wrap;
+	}
+
+	.an-heat__meta b {
+		color: var(--primary);
+	}
+
+	.an-heat__weekdays {
+		display: grid;
+		grid-template-rows: repeat(7, 11px);
+		gap: 3px;
+		font-size: 0.625rem;
+		color: var(--content-meta);
+	}
+
+	.an-heat__weekdays span {
+		display: flex;
+		align-items: center;
+		line-height: 1;
+	}
+
+	.an-heat__grid {
+		display: flex;
+		gap: 3px;
+		overflow-x: auto;
+		padding-bottom: 2px;
+	}
+
+	.an-heat__col {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+	}
+
+	.an-heat__cell {
+		width: 11px;
+		height: 11px;
+		border-radius: 2px;
+		background: var(--line-divider);
+		display: block;
+		flex: none;
+	}
+
+	.an-heat__cell--l0 {
+		background: color-mix(in srgb, var(--line-divider) 70%, transparent);
+	}
+
+	.an-heat__cell--l1 {
+		background: color-mix(in srgb, var(--primary) 25%, transparent);
+	}
+
+	.an-heat__cell--l2 {
+		background: color-mix(in srgb, var(--primary) 45%, transparent);
+	}
+
+	.an-heat__cell--l3 {
+		background: color-mix(in srgb, var(--primary) 70%, transparent);
+	}
+
+	.an-heat__cell--l4 {
+		background: var(--primary);
+	}
+
+	.an-heat__cell.is-future {
+		opacity: 0.25;
+	}
+
+	.an-heat__legend {
+		grid-column: 2;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.3rem;
+	}
+
+	.an-heat__legend i {
+		width: 10px;
+		height: 10px;
+	}
+
+	/* ===================== 柱状 / 条状 ===================== */
+	.an-hours {
+		display: grid;
+		grid-template-columns: repeat(24, minmax(0, 1fr));
+		gap: 3px;
+		align-items: end;
+		height: 140px;
+	}
+
+	.an-hours__col {
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		align-items: center;
+		gap: 0.3rem;
+		height: 100%;
+	}
+
+	.an-hours__bar {
+		width: 100%;
+		min-height: 3px;
+		border-radius: 3px 3px 1px 1px;
+		background: color-mix(in srgb, var(--primary) 55%, transparent);
+		transition: background 160ms ease;
+	}
+
+	.an-hours__col.is-peak .an-hours__bar {
+		background: var(--primary);
+	}
+
+	.an-hours__label {
+		font-size: 0.5625rem;
+		color: var(--content-meta);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.an-bars {
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+	}
+
+	.an-bar {
+		display: grid;
+		grid-template-columns: 5.5rem 1fr auto;
+		align-items: center;
+		gap: 0.6rem;
+		font-size: 0.8125rem;
+	}
+
+	.an-bar__name {
+		color: var(--content-meta);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.an-bar__track {
+		height: 7px;
+		border-radius: 9999px;
+		background: color-mix(in srgb, var(--line-divider) 65%, transparent);
+		overflow: hidden;
+	}
+
+	.an-bar__fill {
+		height: 100%;
+		border-radius: 9999px;
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--primary) 55%, transparent),
+			var(--primary)
+		);
+		transform-origin: left center;
+		animation: an-grow 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.an-bar__value {
+		font-variant-numeric: tabular-nums;
+		font-weight: 600;
+		color: var(--deep-text);
+	}
+
+	@keyframes an-grow {
+		from {
+			transform: scaleX(0);
+		}
+		to {
+			transform: scaleX(1);
+		}
+	}
+
+	/* ===================== 评论 ===================== */
+	.an-comments {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.an-comment {
+		display: flex;
+		gap: 0.7rem;
+		padding: 0.75rem 0.85rem;
+		border-radius: 0.8rem;
+		border: 1px solid var(--line-divider);
+		background: color-mix(in srgb, var(--line-divider) 28%, transparent);
+	}
+
+	.an-comment__avatar {
+		width: 34px;
+		height: 34px;
+		border-radius: 9999px;
+		flex: none;
+		object-fit: cover;
+		background: var(--line-divider);
+	}
+
+	.an-comment__body {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.an-comment__meta {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+		flex-wrap: wrap;
+	}
+
+	.an-comment__nick {
+		font-weight: 600;
+		color: var(--deep-text);
+	}
+
+	.an-comment__text {
+		font-size: 0.8125rem;
+		line-height: 1.65;
+		color: var(--content-meta);
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		word-break: break-word;
+	}
+
+	.an-comment__text a {
+		color: var(--primary);
+	}
+
+	.an-comment__link {
+		font-size: 0.6875rem;
+		color: var(--primary);
+		text-decoration: none;
+	}
+
+	/* ===================== 骨架 ===================== */
+	.an-skeleton {
+		border-radius: 0.6rem;
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--line-divider) 55%, transparent) 25%,
+			color-mix(in srgb, var(--line-divider) 25%, transparent) 37%,
+			color-mix(in srgb, var(--line-divider) 55%, transparent) 63%
+		);
+		background-size: 400% 100%;
+		animation: an-shimmer 1.4s ease infinite;
+	}
+
+	.an-skeleton--chart {
+		height: 220px;
+	}
+
+	.an-skeleton--bars {
+		height: 76px;
+	}
+
+	@keyframes an-shimmer {
+		from {
+			background-position: 100% 50%;
+		}
+		to {
+			background-position: 0 50%;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.an-skeleton,
+		.an-bar__fill {
+			animation: none;
+		}
+	}
+
+	@media (max-width: 639px) {
+		.an-hours {
+			grid-template-columns: repeat(12, minmax(0, 1fr));
+			height: auto;
+		}
+
+		.an-hours__col {
+			height: 74px;
+		}
+
+		.an-bar {
+			grid-template-columns: 4.5rem 1fr auto;
+		}
+	}
+</style>
+
+<script>
+	const init = () => {
+		const root = document.querySelector<HTMLElement>("[data-an-dash]");
+		if (!root || root.dataset.enabled !== "1") return;
+
+		const apiBase = (root.dataset.apiBase || "").replace(/\/+$/, "");
+		const shareId = root.dataset.shareId || "";
+		const pulseDays = Number(root.dataset.pulseDays) || 30;
+		const cacheTtl = Number(root.dataset.cacheTtl) || 120000;
+		const walineUrl = (root.dataset.waline || "").replace(/\/+$/, "");
+		const walineCount = Number(root.dataset.walineCount) || 8;
+
+		const statusEl = root.querySelector<HTMLElement>("[data-an-status]");
+		const updatedEl = root.querySelector<HTMLElement>("[data-an-updated]");
+
+		const nf = new Intl.NumberFormat("zh-CN");
+		const fmt = (value: unknown) => nf.format(Math.max(0, Math.round(Number(value) || 0)));
+
+		const readCache = (key: string, ttl: number) => {
+			try {
+				const raw = localStorage.getItem(key);
+				if (!raw) return null;
+				const cached = JSON.parse(raw);
+				if (cached && typeof cached.at === "number" && Date.now() - cached.at < ttl) {
+					return cached.value;
+				}
+			} catch {
+				/* localStorage 不可用时直接走网络 */
+			}
+			return null;
+		};
+
+		const writeCache = (key: string, value: unknown) => {
+			try {
+				localStorage.setItem(key, JSON.stringify({ at: Date.now(), value }));
+			} catch {
+				/* 写入失败不影响渲染 */
+			}
+		};
+
+		const setStatus = (state: string, text: string) => {
+			if (statusEl) {
+				statusEl.dataset.state = state;
+				statusEl.textContent = text;
+			}
+		};
+
+		const stamp = () =>
+			new Date().toLocaleTimeString("zh-CN", {
+				hour: "2-digit",
+				minute: "2-digit",
+				second: "2-digit",
+			});
+
+		/* ---------- 分享令牌 ---------- */
+		let sharePromise: Promise<{ websiteId: string; token: string }> | null = null;
+		const getShare = () => {
+			if (sharePromise) return sharePromise;
+			sharePromise = (async () => {
+				const cached = readCache(`ff:an:share:${shareId}`, 24 * 60 * 60 * 1000);
+				if (cached) return cached;
+				const response = await fetch(`${apiBase}/api/share/${encodeURIComponent(shareId)}`, {
+					cache: "no-store",
+				});
+				if (!response.ok) throw new Error(`share ${response.status}`);
+				const data = await response.json();
+				if (!data?.websiteId || !data?.token) throw new Error("invalid share payload");
+				writeCache(`ff:an:share:${shareId}`, data);
+				return data;
+			})();
+			return sharePromise;
+		};
+
+		const umami = async (path: string, params: Record<string, string | number>) => {
+			const share = await getShare();
+			const url = new URL(`${apiBase}/api/websites/${share.websiteId}/${path}`);
+			Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value)));
+			const response = await fetch(url, {
+				headers: {
+					"x-umami-share-token": share.token,
+					"x-umami-share-context": "1",
+				},
+			});
+			if (!response.ok) throw new Error(`${path} ${response.status}`);
+			return response.json();
+		};
+
+		/* ---------- 通用：带缓存的取数 ---------- */
+		const cachedFetch = async (key: string, loader: () => Promise<unknown>) => {
+			const cached = readCache(`ff:an:${key}`, cacheTtl);
+			if (cached) return cached;
+			const value = await loader();
+			writeCache(`ff:an:${key}`, value);
+			return value;
+		};
+
+		/* ---------- 折线图 ---------- */
+		const drawPulse = (payload: any) => {
+			const host = root.querySelector<HTMLElement>("[data-an-chart]");
+			if (!host) return;
+
+			const views: Array<{ x: string; y: number }> = payload?.pageviews ?? [];
+			const sessions: Array<{ x: string; y: number }> = payload?.sessions ?? [];
+			if (!views.length) {
+				host.innerHTML = '<p class="an-muted">这段时间还没有数据。</p>';
+				return;
+			}
+
+			const sessionMap = new Map(sessions.map((d) => [d.x, d.y]));
+			const points = views.map((d) => ({
+				label: `${d.x.slice(5, 10)}`,
+				views: d.y,
+				sessions: sessionMap.get(d.x) ?? 0,
+			}));
+
+			const W = 1000;
+			const H = 280;
+			const padL = 44;
+			const padR = 12;
+			const padT = 16;
+			const padB = 28;
+			const innerW = W - padL - padR;
+			const innerH = H - padT - padB;
+
+			const maxValue = Math.max(1, ...points.map((p) => Math.max(p.views, p.sessions)));
+			// y 轴上限取整到「好看」的刻度
+			const magnitude = 10 ** Math.floor(Math.log10(maxValue));
+			const step = magnitude / 2 || 1;
+			const top = Math.ceil(maxValue / step) * step;
+			const ticks = 4;
+
+			const xAt = (i: number) =>
+				points.length === 1 ? padL + innerW / 2 : padL + (i / (points.length - 1)) * innerW;
+			const yAt = (v: number) => padT + innerH - (v / top) * innerH;
+
+			const line = (key: "views" | "sessions") =>
+				points.map((p, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(p[key]).toFixed(1)}`).join(" ");
+
+			const area = `${line("views")} L${xAt(points.length - 1).toFixed(1)},${(padT + innerH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+
+			const gridLines = Array.from({ length: ticks + 1 }, (_, i) => {
+				const value = (top / ticks) * i;
+				const y = yAt(value);
+				return `<line class="an-chart__grid-line" x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" />
+					<text class="an-chart__axis-text" x="${padL - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">${Math.round(value)}</text>`;
+			}).join("");
+
+			const labelEvery = Math.max(1, Math.ceil(points.length / 6));
+			const xLabels = points
+				.map((p, i) =>
+					i % labelEvery === 0 || i === points.length - 1
+						? `<text class="an-chart__axis-text" x="${xAt(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${p.label}</text>`
+						: "",
+				)
+				.join("");
+
+			const dots = points
+				.map(
+					(p, i) =>
+						`<circle class="an-chart__point" data-an-i="${i}" r="3.5" cx="${xAt(i).toFixed(1)}" cy="${yAt(p.views).toFixed(1)}" />`,
+				)
+				.join("");
+
+			const hits = points
+				.map((p, i) => {
+					const half = innerW / Math.max(1, points.length - 1) / 2;
+					return `<rect class="an-chart__hit" data-an-hit="${i}" x="${(xAt(i) - half).toFixed(1)}" y="${padT}" width="${(half * 2).toFixed(1)}" height="${innerH}" />`;
+				})
+				.join("");
+
+			host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="最近 ${points.length} 天的浏览量与会话数折线图">
+				${gridLines}
+				<path class="an-chart__area" d="${area}" />
+				<path class="an-chart__line an-chart__line--sessions" d="${line("sessions")}" />
+				<path class="an-chart__line an-chart__line--views" d="${line("views")}" />
+				${dots}
+				${hits}
+				${xLabels}
+			</svg>
+			<div class="an-tip" data-an-tip></div>`;
+
+			const tip = host.querySelector<HTMLElement>("[data-an-tip]");
+			const svg = host.querySelector("svg");
+			const marks = [...host.querySelectorAll<SVGCircleElement>(".an-chart__point")];
+
+			const showTip = (index: number) => {
+				const p = points[index];
+				if (!p || !tip || !svg) return;
+				marks.forEach((m, mi) => m.classList.toggle("is-active", mi === index));
+				const rect = svg.getBoundingClientRect();
+				const scale = rect.width / W;
+				tip.innerHTML = `<b>${p.label}</b><br>浏览量 ${fmt(p.views)} · 会话 ${fmt(p.sessions)}`;
+				tip.style.left = `${xAt(index) * scale}px`;
+				tip.style.top = `${yAt(p.views) * scale}px`;
+				tip.classList.add("is-on");
+			};
+
+			host.querySelectorAll<SVGRectElement>("[data-an-hit]").forEach((hit) => {
+				const index = Number(hit.dataset.anHit);
+				hit.addEventListener("mouseenter", () => showTip(index));
+				hit.addEventListener("touchstart", () => showTip(index), { passive: true });
+			});
+			host.addEventListener("mouseleave", () => {
+				tip?.classList.remove("is-on");
+				marks.forEach((m) => m.classList.remove("is-active"));
+			});
+		};
+
+		/* ---------- 活跃时段 ---------- */
+		const drawHours = (payload: any) => {
+			const host = root.querySelector<HTMLElement>("[data-an-hours]");
+			const peakEl = root.querySelector<HTMLElement>("[data-an-peak]");
+			if (!host) return;
+
+			const rows: Array<{ x: string; y: number }> = payload?.pageviews ?? [];
+			const buckets = new Array(24).fill(0);
+			rows.forEach((row) => {
+				const hour = new Date(row.x).getUTCHours(); // 已按 Asia/Shanghai 对齐，UTC 小时即北京小时
+				buckets[hour] += Number(row.y) || 0;
+			});
+
+			const max = Math.max(1, ...buckets);
+			const peakHour = buckets.indexOf(max);
+
+			host.innerHTML = buckets
+				.map((value, hour) => {
+					const pct = Math.max(3, Math.round((value / max) * 100));
+					return `<div class="an-hours__col${hour === peakHour ? " is-peak" : ""}" title="${hour}:00 — ${fmt(value)} 次浏览">
+						<span class="an-hours__bar" style="height:${pct}%" data-an-h="${fmt(value)}"></span>
+						<span class="an-hours__label">${hour % 3 === 0 ? hour : ""}</span>
+					</div>`;
+				})
+				.join("");
+
+			if (peakEl) peakEl.textContent = `高峰 ${peakHour}:00`;
+		};
+
+		/* ---------- 分组条形 ---------- */
+		const drawBars = (type: string, rows: Array<{ x: string; y: number; country?: string }>) => {
+			const host = root.querySelector<HTMLElement>(`[data-an-bars="${type}"]`);
+			if (!host) return;
+			if (!Array.isArray(rows) || !rows.length) {
+				host.innerHTML = '<p class="an-muted">暂无数据</p>';
+				return;
+			}
+
+			const total = rows.reduce((sum, row) => sum + (Number(row.y) || 0), 0) || 1;
+			const label = (row: { x: string; country?: string }) => {
+				if (type === "country") {
+					const name = COUNTRY_NAMES[row.x] || row.x;
+					return row.x === "CN" ? `🇨🇳 ${name}` : name;
+				}
+				if (type === "city") return row.country ? `${row.x} · ${row.country}` : row.x;
+				return row.x;
+			};
+
+			host.innerHTML = rows
+				.slice(0, 8)
+				.map((row) => {
+					const pct = Math.max(2, Math.round((row.y / total) * 100));
+					return `<div class="an-bar">
+						<span class="an-bar__name" title="${label(row)}">${label(row)}</span>
+						<span class="an-bar__track"><span class="an-bar__fill" style="width:${pct}%"></span></span>
+						<span class="an-bar__value">${fmt(row.y)}</span>
+					</div>`;
+				})
+				.join("");
+		};
+
+		const COUNTRY_NAMES: Record<string, string> = {
+			CN: "中国", US: "美国", JP: "日本", HK: "中国香港", TW: "中国台湾",
+			MO: "中国澳门", SG: "新加坡", KR: "韩国", GB: "英国", DE: "德国",
+			FR: "法国", CA: "加拿大", AU: "澳大利亚", RU: "俄罗斯", IN: "印度",
+			MY: "马来西亚", TH: "泰国", VN: "越南", PH: "菲律宾", ID: "印度尼西亚",
+			NL: "荷兰", IT: "意大利", ES: "西班牙", SE: "瑞典", CH: "瑞士",
+			BR: "巴西", MX: "墨西哥", TR: "土耳其", AE: "阿联酋", SA: "沙特阿拉伯",
+		};
+
+		/* ---------- 推送节奏：构建期没拿到数据时的客户端兜底 ---------- */
+		const drawHeatmap = async () => {
+			const host = root.querySelector<HTMLElement>("[data-an-heat]");
+			if (!host) return;
+
+			const repo = host.dataset.repo || "";
+			const branch = host.dataset.branch || "";
+			const weeks = Number(host.dataset.weeks) || 20;
+			if (!repo) return;
+
+			const toDayKey = (ms: number) =>
+				new Date(ms + 8 * 3600 * 1000).toISOString().slice(0, 10);
+			const level = (n: number) => (n <= 0 ? 0 : n <= 1 ? 1 : n <= 3 ? 2 : n <= 6 ? 3 : 4);
+
+			let counts = new Map<string, number>();
+			try {
+				const cached = readCache("ff:an:heat", 30 * 60 * 1000);
+				if (cached) {
+					counts = new Map(cached as Array<[string, number]>);
+				} else {
+					const response = await fetch(
+						`https://api.github.com/repos/${repo}/commits?sha=${encodeURIComponent(branch)}&per_page=100`,
+						{ headers: { Accept: "application/vnd.github+json" } },
+					);
+					if (!response.ok) throw new Error(`github ${response.status}`);
+					const list = await response.json();
+					(Array.isArray(list) ? list : []).forEach((item: any) => {
+						const iso = item?.commit?.author?.date;
+						if (!iso) return;
+						const key = toDayKey(new Date(iso).getTime());
+						counts.set(key, (counts.get(key) ?? 0) + 1);
+					});
+					writeCache("ff:an:heat", [...counts.entries()]);
+				}
+			} catch {
+				host.innerHTML =
+					'<p class="an-muted">GitHub 接口暂时没有响应，稍后再刷新试试。</p>';
+				return;
+			}
+
+			const todayMs = new Date(`${toDayKey(Date.now())}T00:00:00Z`).getTime();
+			const mondayOffset = (new Date(todayMs).getUTCDay() + 6) % 7;
+			const startMonday =
+				todayMs - mondayOffset * 86400000 - (weeks - 1) * 7 * 86400000;
+
+			const cols: string[] = [];
+			for (let w = 0; w < weeks; w += 1) {
+				const cells: string[] = [];
+				for (let d = 0; d < 7; d += 1) {
+					const dayMs = startMonday + (w * 7 + d) * 86400000;
+					const key = toDayKey(dayMs);
+					const count = counts.get(key) ?? 0;
+					cells.push(
+						`<span class="an-heat__cell an-heat__cell--l${level(count)}${dayMs > todayMs ? " is-future" : ""}" title="${key}：${count} 次提交"></span>`,
+					);
+				}
+				cols.push(`<div class="an-heat__col">${cells.join("")}</div>`);
+			}
+
+			host.innerHTML = `
+				<div class="an-heat__weekdays">${["一", "二", "三", "四", "五", "六", "日"].map((d) => `<span>${d}</span>`).join("")}</div>
+				<div class="an-heat__grid">${cols.join("")}</div>
+				<div class="an-heat__legend">
+					<span class="an-muted">少</span>
+					<i class="an-heat__cell an-heat__cell--l0"></i>
+					<i class="an-heat__cell an-heat__cell--l1"></i>
+					<i class="an-heat__cell an-heat__cell--l2"></i>
+					<i class="an-heat__cell an-heat__cell--l3"></i>
+					<i class="an-heat__cell an-heat__cell--l4"></i>
+					<span class="an-muted">多</span>
+				</div>`;
+		};
+
+		/* ---------- 最近评论 ---------- */
+		const drawComments = async () => {
+			const host = root.querySelector<HTMLElement>("[data-an-comments]");
+			if (!host || !walineUrl) return;
+
+			let rows: any[] = [];
+			try {
+				const cached = readCache("ff:an:comments", cacheTtl);
+				if (cached) {
+					rows = cached;
+				} else {
+					const response = await fetch(
+						`${walineUrl}/api/comment?type=recent&count=${walineCount}`,
+						{ headers: { Accept: "application/json" } },
+					);
+					if (!response.ok) throw new Error(`waline ${response.status}`);
+					const data = await response.json();
+					rows = Array.isArray(data?.data) ? data.data : [];
+					writeCache("ff:an:comments", rows);
+				}
+			} catch {
+				host.innerHTML = '<p class="an-muted">Waline 公共接口暂时没有响应，稍后再刷新试试。</p>';
+				return;
+			}
+
+			if (!rows.length) {
+				host.innerHTML = '<p class="an-muted">还没有公开的留言。</p>';
+				return;
+			}
+
+			const relTime = (ms: number) => {
+				const elapsed = Date.now() - ms;
+				if (elapsed < 60000) return "刚刚";
+				if (elapsed < 3600000) return `${Math.floor(elapsed / 60000)} 分钟前`;
+				if (elapsed < 86400000) return `${Math.floor(elapsed / 3600000)} 小时前`;
+				if (elapsed < 7 * 86400000) return `${Math.floor(elapsed / 86400000)} 天前`;
+				return new Date(ms).toLocaleDateString("zh-CN");
+			};
+
+			const escape = (text: string) =>
+				text.replace(/[&<>"']/g, (c) =>
+					({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string,
+				);
+
+			host.innerHTML = rows
+				.slice(0, walineCount)
+				.map((row) => {
+					const text = String(row.orig ?? row.comment ?? "").slice(0, 160);
+					const path = String(row.url ?? "");
+					return `<article class="an-comment">
+						<img class="an-comment__avatar" src="${escape(String(row.avatar ?? ""))}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+						<div class="an-comment__body">
+							<div class="an-comment__meta">
+								<span class="an-comment__nick">${escape(String(row.nick ?? "匿名"))}</span>
+								${row.addr ? `<span>${escape(String(row.addr))}</span>` : ""}
+								<span>${relTime(Number(row.time) || 0)}</span>
+							</div>
+							<p class="an-comment__text">${escape(text)}</p>
+							${path ? `<a class="an-comment__link" href="${escape(path)}">${escape(path)}</a>` : ""}
+						</div>
+					</article>`;
+				})
+				.join("");
+		};
+
+		/* ---------- 主流程 ---------- */
+		const run = async () => {
+			if (!apiBase || !shareId) {
+				setStatus("offline", "未配置");
+				return;
+			}
+
+			const now = Date.now();
+			const dayStart = new Date();
+			dayStart.setHours(0, 0, 0, 0);
+			const todayStart = dayStart.getTime();
+			const pulseStart = now - pulseDays * 86400000;
+
+			setStatus("", "连接中");
+
+			const tasks = await Promise.allSettled([
+				cachedFetch("stats:all", () => umami("stats", { startAt: 0, endAt: now })),
+				cachedFetch(`stats:today:${todayStart}`, () => umami("stats", { startAt: todayStart, endAt: now })),
+				cachedFetch(`pulse:${pulseDays}`, () =>
+					umami("pageviews", {
+						startAt: pulseStart,
+						endAt: now,
+						unit: "day",
+						timezone: "Asia/Shanghai",
+					}),
+				),
+				cachedFetch("hours", () =>
+					umami("pageviews", {
+						startAt: pulseStart,
+						endAt: now,
+						unit: "hour",
+						timezone: "Asia/Shanghai",
+					}),
+				),
+				cachedFetch("bars:device", () => umami("metrics", { startAt: 0, endAt: now, type: "device", limit: 8 })),
+				cachedFetch("bars:browser", () => umami("metrics", { startAt: 0, endAt: now, type: "browser", limit: 8 })),
+				cachedFetch("bars:os", () => umami("metrics", { startAt: 0, endAt: now, type: "os", limit: 8 })),
+				cachedFetch("bars:country", () => umami("metrics", { startAt: 0, endAt: now, type: "country", limit: 8 })),
+				cachedFetch("bars:city", () => umami("metrics", { startAt: 0, endAt: now, type: "city", limit: 8 })),
+			]);
+
+			const [allStats, todayStats, pulse, hours, device, browser, os, country, city] = tasks;
+
+			const pick = <T,>(result: PromiseSettledResult<T>): T | null =>
+				result.status === "fulfilled" ? result.value : null;
+
+			const total = pick(allStats) as any;
+			const today = pick(todayStats) as any;
+
+			const setStat = (name: string, value: unknown) => {
+				const el = root.querySelector<HTMLElement>(`[data-an-stat="${name}"]`);
+				if (el && value != null) el.textContent = fmt(value);
+			};
+
+			if (total) {
+				setStat("visitors", total.visitors);
+				setStat("pageviews", total.pageviews);
+			} else {
+				setStatus("offline", "暂不可用");
+			}
+			if (today) {
+				setStat("todayVisitors", today.visitors);
+				setStat("todayPageviews", today.pageviews);
+			}
+
+			const pulseData = pick(pulse);
+			if (pulseData) drawPulse(pulseData);
+
+			const hourData = pick(hours);
+			if (hourData) drawHours(hourData);
+
+			const barPairs: Array<[string, unknown]> = [
+				["device", pick(device)],
+				["browser", pick(browser)],
+				["os", pick(os)],
+				["country", pick(country)],
+				["city", pick(city)],
+			];
+			barPairs.forEach(([type, rows]) => {
+				if (rows) drawBars(type, rows as any[]);
+			});
+
+			const okCount = tasks.filter((t) => t.status === "fulfilled").length;
+			if (okCount > 0) setStatus("online", "数据在线");
+			if (updatedEl) updatedEl.textContent = `最后更新 ${stamp()} · 缓存 ${Math.round(cacheTtl / 1000)} 秒`;
+
+			await Promise.allSettled([drawHeatmap(), drawComments()]);
+		};
+
+		run();
+	};
+
+	init();
+	document.addEventListener("swup:page:view", init);
+</script>

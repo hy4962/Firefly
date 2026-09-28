@@ -97,6 +97,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "material-symbols:history",
 			},
 
+			// 站点统计
+			{
+				name: "站点统计",
+				url: "/analytics/",
+				icon: "material-symbols:analytics",
+			},
+
 			// 关于页面
 			LinkPresets.About,
 
