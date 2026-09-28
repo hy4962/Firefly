@@ -122,6 +122,16 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
+	{
+		title: "出门去野钓",
+		imgurl: "https://chumendiao.com/wp-content/uploads/2026/09/favicon-512.png",
+		desc: "野钓常见问题、新手钓鱼、应季钓鱼和装备选择。一个问题，一篇说清。",
+		siteurl: "https://chumendiao.com/",
+		// 对方站为 AI 批量垂类内容站，不填 rss，避免其文章进入本站朋友圈时间线
+		tags: ["Blog"],
+		weight: 4,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
