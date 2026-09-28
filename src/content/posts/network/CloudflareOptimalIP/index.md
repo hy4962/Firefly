@@ -1,7 +1,7 @@
 ---
 title: Cloudflare Workers优选IP
 published: 2026-07-12
-updated: 2026-08-07
+updated: 2026-09-28
 description: CloudFlare优选IP
 image: ./fengmian.png
 tags: [Cloudflare, Workers, 优选IP, DNS, CDN]
@@ -73,10 +73,13 @@ Cloudflare 用的是 anycast 技术——同一个 IP 地址在全球很多地�
 
 ### 第二步：选一个优选域名
 
-推荐两个网站：
+推荐三个网站：
 
 - [微测网 CF 优选 CNAME](https://www.wetest.vip/page/cloudflare/cname.html) — 更新比较勤，域名多
 - [CF优选域名汇总](https://cf.090227.xyz/) — 界面简单直接
+- [VPS789 CF优选IP监控](https://vps789.com/cfip/?remarks=domain) — 收录最多，三网延迟/丢包/下载速度全给，还带综合评分
+
+**VPS789 这个表最值得看的地方是它把三网数据分开列。** 同一个域名电信 51ms、移动 87ms、联通 189ms 是常有的事，光看总分挑不出适合自己的，得盯自己运营商那一列。它的评分是按延迟 30%、丢包 50%、下载速度 20% 加权算的，数据每 30 分钟刷新一次——比你自己 ping 那一下靠谱得多，毕竟一次 ping 的延迟高低说明不了稳定性。
 
 上面列出来的域名都是别人维护的优选 CNAME，比如 `vip.090227.xyz`、`cf.011011.xyz` 之类的。
 
