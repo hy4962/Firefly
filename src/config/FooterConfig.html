@@ -4,3 +4,329 @@
 		萌ICP备20269118号
 	</a>
 </div>
+
+<style>
+	/* 页脚运行时间：与 siteConfig.siteStartDate 保持一致 */
+	.ff-uptime {
+		margin: 0 0 6px;
+		font-size: 13px;
+		line-height: 1.7;
+		text-align: center;
+		color: var(--primary);
+	}
+	.ff-uptime b {
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	/* 页脚 Umami 统计：只用公开分享接口读取，无后端依赖 */
+	.ff-us[hidden] {
+		display: none;
+	}
+	.ff-us {
+		margin: 8px 0 2px;
+		font-size: 12px;
+		line-height: 1.7;
+		text-align: center;
+	}
+	.ff-us-i {
+		white-space: nowrap;
+	}
+	.ff-us-i + .ff-us-i::before {
+		content: "|";
+		margin: 0 8px;
+		opacity: 0.3;
+	}
+	.ff-us b {
+		position: relative;
+		display: inline-block;
+		padding-bottom: 2px;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		color: var(--primary);
+	}
+	.ff-us b::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 1px;
+		background: currentColor;
+		opacity: 0.3;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ff-us b {
+			transition: none;
+		}
+	}
+</style>
+
+<div id="ff-uptime" class="ff-uptime">本站已运行 <b data-ff-up="d">0</b> 天 <b data-ff-up="h">0</b> 小时 <b data-ff-up="m">0</b> 分 <b data-ff-up="s">0</b> 秒</div>
+
+<div id="ff-us" class="ff-us" hidden>
+	<span class="ff-us-i">今日访客：<b data-ff-us="todayVisitors">0</b></span>
+	<span class="ff-us-i">今日访问：<b data-ff-us="todayPageviews">0</b></span>
+	<span class="ff-us-i">本站访客：<b data-ff-us="visitors">0</b></span>
+	<span class="ff-us-i">本站访问：<b data-ff-us="pageviews">0</b></span>
+</div>
+
+<script>
+	(function () {
+		// ===== 运行时间 =====
+		// 建站日期与 siteConfig.siteStartDate 保持一致，时区写死 +08:00
+		// 是为了让访客身处任何时区算出来的天数都相同。
+		var START_AT = new Date("2026-03-24T00:00:00+08:00").getTime();
+		var uptimeRoot = document.getElementById("ff-uptime");
+
+		if (uptimeRoot) {
+			var uptimeTimer = null;
+			var uptimeParts = {
+				d: uptimeRoot.querySelector('[data-ff-up="d"]'),
+				h: uptimeRoot.querySelector('[data-ff-up="h"]'),
+				m: uptimeRoot.querySelector('[data-ff-up="m"]'),
+				s: uptimeRoot.querySelector('[data-ff-up="s"]'),
+			};
+
+			var renderUptime = function () {
+				var total = Math.max(0, Math.floor((Date.now() - START_AT) / 1000));
+				var values = {
+					d: Math.floor(total / 86400),
+					h: Math.floor((total % 86400) / 3600),
+					m: Math.floor((total % 3600) / 60),
+					s: total % 60,
+				};
+				Object.keys(values).forEach(function (key) {
+					if (uptimeParts[key]) uptimeParts[key].textContent = String(values[key]);
+				});
+			};
+
+			var startUptime = function () {
+				if (uptimeTimer) return;
+				renderUptime();
+				uptimeTimer = window.setInterval(renderUptime, 1000);
+			};
+
+			var stopUptime = function () {
+				if (!uptimeTimer) return;
+				window.clearInterval(uptimeTimer);
+				uptimeTimer = null;
+			};
+
+			// 切到后台就停表，省电也省调度。
+			document.addEventListener("visibilitychange", function () {
+				if (document.hidden) stopUptime();
+				else startUptime();
+			});
+
+			startUptime();
+		}
+
+		// ===== 访问统计 =====
+		// 换 Umami 站点或分享链接时，只改下面两行即可。
+		// SHARE_ID 取分享链接 https://umami.9ll.uk/share/XXXXXXXX 的最后一段。
+		var API_BASE = "https://umami.9ll.uk";
+		var SHARE_ID = "Z4DD4Y3q9CTFpBeM";
+
+		var KEY_SHARE = "ff:umami:share";
+		var KEY_STATS = "ff:umami:stats";
+		var TTL_SHARE = 86400000; // 分享令牌缓存 24 小时
+		var TTL_TODAY = 60000; // 今日数据缓存 60 秒
+		var TTL_ALL = 300000; // 全站数据缓存 5 分钟
+		var ANIM_MS = 900;
+		var POLL_MS = 90000; // 停留期间每 90 秒静默刷新一次
+		var MIN_GAP = 60000; // 两次刷新之间至少间隔 60 秒
+
+		var root = document.getElementById("ff-us");
+		if (!root) return;
+
+		function readCache(key, tag, ttl) {
+			try {
+				var raw = localStorage.getItem(key);
+				if (!raw) return null;
+				var cached = JSON.parse(raw);
+				if (
+					cached &&
+					cached.tag === tag &&
+					typeof cached.timestamp === "number" &&
+					Date.now() - cached.timestamp < ttl
+				) {
+					return cached.value;
+				}
+			} catch (error) {
+				// localStorage 不可用（无痕模式等）时直接走网络请求。
+			}
+			return null;
+		}
+
+		function writeCache(key, tag, value) {
+			try {
+				localStorage.setItem(
+					key,
+					JSON.stringify({ tag: tag, timestamp: Date.now(), value: value }),
+				);
+			} catch (error) {
+				// 写入失败不影响本次渲染。
+			}
+		}
+
+		function formatNumber(value) {
+			return new Intl.NumberFormat("zh-CN").format(Number(value) || 0);
+		}
+
+		function animateNumber(element, target) {
+			var previous = Number(element.dataset.ffUsValue || 0);
+			element.dataset.ffUsValue = String(target);
+			var reduceMotion =
+				window.matchMedia &&
+				window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+			if (reduceMotion || previous === target) {
+				element.textContent = formatNumber(target);
+				return;
+			}
+			var startedAt = null;
+			function tick(timestamp) {
+				if (startedAt === null) startedAt = timestamp;
+				var progress = Math.min(1, (timestamp - startedAt) / ANIM_MS);
+				var eased = 1 - Math.pow(1 - progress, 3);
+				element.textContent = formatNumber(
+					Math.round(previous + (target - previous) * eased),
+				);
+				if (progress < 1) {
+					requestAnimationFrame(tick);
+				} else {
+					element.textContent = formatNumber(target);
+				}
+			}
+			requestAnimationFrame(tick);
+		}
+
+		function render(values) {
+			Object.keys(values).forEach(function (name) {
+				var target = Math.max(0, Math.round(Number(values[name]) || 0));
+				var elements = root.querySelectorAll('[data-ff-us="' + name + '"]');
+				for (var i = 0; i < elements.length; i += 1) {
+					animateNumber(elements[i], target);
+				}
+			});
+			root.hidden = false;
+		}
+
+		function fetchShare() {
+			var cached = readCache(KEY_SHARE, SHARE_ID, TTL_SHARE);
+			if (cached) return Promise.resolve(cached);
+			return fetch(API_BASE + "/api/share/" + encodeURIComponent(SHARE_ID), {
+				cache: "no-store",
+			})
+				.then(function (response) {
+					if (!response.ok) throw new Error("share " + response.status);
+					return response.json();
+				})
+				.then(function (data) {
+					if (!data || !data.websiteId || !data.token) {
+						throw new Error("invalid share payload");
+					}
+					writeCache(KEY_SHARE, SHARE_ID, data);
+					return data;
+				});
+		}
+
+		function fetchStats(share, startAt, scope, ttl, force) {
+			var key = KEY_STATS + ":" + scope;
+			var cached = force ? null : readCache(key, share.websiteId, ttl);
+			if (cached) return Promise.resolve(cached);
+
+			var url =
+				API_BASE +
+				"/api/websites/" +
+				share.websiteId +
+				"/stats?startAt=" +
+				startAt +
+				"&endAt=" +
+				Date.now();
+
+			return fetch(url, {
+				headers: {
+					"x-umami-share-token": share.token,
+					"x-umami-share-context": "1",
+				},
+			})
+				.then(function (response) {
+					if (!response.ok) throw new Error("stats " + response.status);
+					return response.json();
+				})
+				.then(function (data) {
+					writeCache(key, share.websiteId, data);
+					return data;
+				});
+		}
+
+		var running = false;
+		var lastRefreshAt = 0;
+
+		function refresh(force) {
+			if (running) return;
+			if (force && Date.now() - lastRefreshAt < MIN_GAP) return;
+			running = true;
+			lastRefreshAt = Date.now();
+
+			var dayStart = new Date();
+			dayStart.setHours(0, 0, 0, 0);
+			var todayStart = dayStart.getTime();
+
+			fetchShare()
+				.then(function (share) {
+					return Promise.all([
+						fetchStats(share, todayStart, "today:" + todayStart, TTL_TODAY, force),
+						fetchStats(share, 0, "all", TTL_ALL, force),
+					]);
+				})
+				.then(function (results) {
+					var today = results[0] || {};
+					var all = results[1] || {};
+					render({
+						todayVisitors: today.visitors,
+						todayPageviews: today.pageviews,
+						visitors: all.visitors,
+						pageviews: all.pageviews,
+					});
+				})
+				.catch(function (error) {
+					// 拉取失败就保持整行隐藏，不在页脚留残骸。
+					if (window.console && console.warn) {
+						console.warn("[ff-umami] 页脚统计加载失败：", error);
+					}
+				})
+				.then(function () {
+					running = false;
+				});
+		}
+
+		function boot() {
+			if ("requestIdleCallback" in window) {
+				requestIdleCallback(function () {
+					refresh(false);
+				}, { timeout: 3000 });
+			} else {
+				setTimeout(function () {
+					refresh(false);
+				}, 600);
+			}
+
+			// 页面长时间停留时静默刷新，切后台不请求。
+			setInterval(function () {
+				if (document.hidden) return;
+				refresh(true);
+			}, POLL_MS);
+
+			document.addEventListener("visibilitychange", function () {
+				if (!document.hidden) refresh(true);
+			});
+		}
+
+		if (document.readyState === "complete") {
+			boot();
+		} else {
+			window.addEventListener("load", boot, { once: true });
+		}
+	})();
+</script>
