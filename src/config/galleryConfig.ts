@@ -67,6 +67,15 @@ export const galleryConfig: GalleryConfig = {
 			tags: ["贴纸", "原图", "存档"],
 			cover: "/gallery/stickers/kirino-cheer.png",
 		},
+		{
+			id: "shana-emotes",
+			name: "夏娜表情",
+			description:
+				"灼眼的夏娜表情包合集：发怒、叹气、大哭、慌乱、懵圈、挥手、星星眼、脸红、蜜瓜包。原图画稿存档，未压缩。",
+			location: "灼眼的夏娜",
+			date: "2026-09-28",
+			tags: ["灼眼的夏娜", "表情包", "存档"],
+		},
 		// {
 		// 	id: "firefly-2026",
 		// 	name: "可爱流萤",
