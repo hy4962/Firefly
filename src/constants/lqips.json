@@ -762,5 +762,11 @@
   "public:assets/images/analytics/summary/summary-visitors.webp": "f1f6fee8e3efe4d9e6",
   "public:assets/images/analytics/summary/summary-today-visitors.webp": "f4f6f7f7e7dcf3d9ce",
   "public:assets/images/analytics/summary/summary-today-pageviews.webp": "f2f3fee0d9ebd2c3da",
-  "public:assets/images/analytics/summary/summary-pageviews.webp": "eff7feeee8efe6d7e2"
+  "public:assets/images/analytics/summary/summary-pageviews.webp": "eff7feeee8efe6d7e2",
+  "src:content/posts/blog/AnalyticsDashboard/originals/image-002.png": "f3efecf3efebf3ece7",
+  "src:content/posts/blog/AnalyticsDashboard/originals/image-001.png": "f6f3edf5f3eef3f0ec",
+  "src:content/posts/blog/AnalyticsDashboard/originals/cover.png": "e8e2d6f1edeef4f1ed",
+  "src:content/posts/blog/AnalyticsDashboard/images/image-002.webp": "f3f0ecf4f0ecf3ede8",
+  "src:content/posts/blog/AnalyticsDashboard/images/image-001.webp": "f6f2ecf7f3edf4f2ec",
+  "src:content/posts/blog/AnalyticsDashboard/images/cover.webp": "e8e2d6f1edeff5f2ee"
 }
