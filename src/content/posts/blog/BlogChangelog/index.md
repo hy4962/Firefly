@@ -15,7 +15,7 @@ draft: false
 
 说干就干，最后做出来的成品长这样：
 
-![做好的博客日志页，hero 统计卡加时间线](./images/cover.webp)
+![做好的博客日志页，hero 统计卡加时间线](./images/changelog-page.webp)
 
 ## 第一版翻车：光看概述就动手
 
