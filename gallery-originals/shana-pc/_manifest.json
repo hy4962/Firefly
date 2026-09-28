@@ -1,0 +1,288 @@
+{
+  "albumId": "shana-pc",
+  "edge": 2560,
+  "quality": 90,
+  "count": 31,
+  "dropped": [],
+  "items": [
+    {
+      "albumFile": "01.webp",
+      "sourceFile": "0.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1248572,
+      "md5": "0.jpg",
+      "outBytes": 359608,
+      "outSize": "2560x1852"
+    },
+    {
+      "albumFile": "02.webp",
+      "sourceFile": "1.jpg",
+      "sourceFormat": "png",
+      "sourceBytes": 14481411,
+      "md5": "1.jpg",
+      "outBytes": 489732,
+      "outSize": "2560x1842"
+    },
+    {
+      "albumFile": "03.webp",
+      "sourceFile": "2.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 4413621,
+      "md5": "2.jpg",
+      "outBytes": 366678,
+      "outSize": "2560x1740"
+    },
+    {
+      "albumFile": "04.webp",
+      "sourceFile": "3.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 4736574,
+      "md5": "3.jpg",
+      "outBytes": 393874,
+      "outSize": "2560x1868"
+    },
+    {
+      "albumFile": "05.webp",
+      "sourceFile": "4.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 6319460,
+      "md5": "4.jpg",
+      "outBytes": 403554,
+      "outSize": "2560x1706"
+    },
+    {
+      "albumFile": "06.webp",
+      "sourceFile": "5.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 2477556,
+      "md5": "5.jpg",
+      "outBytes": 405406,
+      "outSize": "2560x1706"
+    },
+    {
+      "albumFile": "07.webp",
+      "sourceFile": "6.png",
+      "sourceFormat": "png",
+      "sourceBytes": 4311393,
+      "md5": "6.png",
+      "outBytes": 438028,
+      "outSize": "2484x1687"
+    },
+    {
+      "albumFile": "08.webp",
+      "sourceFile": "7.png",
+      "sourceFormat": "png",
+      "sourceBytes": 12866791,
+      "md5": "7.png",
+      "outBytes": 255300,
+      "outSize": "2560x1766"
+    },
+    {
+      "albumFile": "09.webp",
+      "sourceFile": "8.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1994752,
+      "md5": "8.jpg",
+      "outBytes": 371170,
+      "outSize": "2560x1530"
+    },
+    {
+      "albumFile": "10.webp",
+      "sourceFile": "9.png",
+      "sourceFormat": "png",
+      "sourceBytes": 8889727,
+      "md5": "9.png",
+      "outBytes": 136806,
+      "outSize": "2560x1440"
+    },
+    {
+      "albumFile": "11.webp",
+      "sourceFile": "10.jpg",
+      "sourceFormat": "png",
+      "sourceBytes": 5550070,
+      "md5": "10.jpg",
+      "outBytes": 520772,
+      "outSize": "2508x1672"
+    },
+    {
+      "albumFile": "12.webp",
+      "sourceFile": "11.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 4586552,
+      "md5": "11.jpg",
+      "outBytes": 492734,
+      "outSize": "2560x1733"
+    },
+    {
+      "albumFile": "13.webp",
+      "sourceFile": "12.jpg",
+      "sourceFormat": "png",
+      "sourceBytes": 10961471,
+      "md5": "12.jpg",
+      "outBytes": 465776,
+      "outSize": "2560x1438"
+    },
+    {
+      "albumFile": "14.webp",
+      "sourceFile": "13.jpg",
+      "sourceFormat": "png",
+      "sourceBytes": 14051091,
+      "md5": "13.jpg",
+      "outBytes": 557840,
+      "outSize": "2560x1918"
+    },
+    {
+      "albumFile": "15.webp",
+      "sourceFile": "14.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1783297,
+      "md5": "14.jpg",
+      "outBytes": 319114,
+      "outSize": "2560x1599"
+    },
+    {
+      "albumFile": "16.webp",
+      "sourceFile": "15.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1703475,
+      "md5": "15.jpg",
+      "outBytes": 695906,
+      "outSize": "2560x2164"
+    },
+    {
+      "albumFile": "17.webp",
+      "sourceFile": "16.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 2007736,
+      "md5": "16.jpg",
+      "outBytes": 195556,
+      "outSize": "2560x1440"
+    },
+    {
+      "albumFile": "18.webp",
+      "sourceFile": "17.png",
+      "sourceFormat": "png",
+      "sourceBytes": 10727801,
+      "md5": "17.png",
+      "outBytes": 318834,
+      "outSize": "2560x1750"
+    },
+    {
+      "albumFile": "19.webp",
+      "sourceFile": "18.jpg",
+      "sourceFormat": "png",
+      "sourceBytes": 12638003,
+      "md5": "18.jpg",
+      "outBytes": 421790,
+      "outSize": "2560x1726"
+    },
+    {
+      "albumFile": "20.webp",
+      "sourceFile": "19.png",
+      "sourceFormat": "png",
+      "sourceBytes": 8625849,
+      "md5": "19.png",
+      "outBytes": 264542,
+      "outSize": "2560x1726"
+    },
+    {
+      "albumFile": "21.webp",
+      "sourceFile": "20.png",
+      "sourceFormat": "png",
+      "sourceBytes": 11754903,
+      "md5": "20.png",
+      "outBytes": 338828,
+      "outSize": "2560x2040"
+    },
+    {
+      "albumFile": "22.webp",
+      "sourceFile": "21.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1935042,
+      "md5": "21.jpg",
+      "outBytes": 285044,
+      "outSize": "2560x1858"
+    },
+    {
+      "albumFile": "23.webp",
+      "sourceFile": "22.png",
+      "sourceFormat": "png",
+      "sourceBytes": 11696756,
+      "md5": "22.png",
+      "outBytes": 414388,
+      "outSize": "2560x1918"
+    },
+    {
+      "albumFile": "24.webp",
+      "sourceFile": "23.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 3108653,
+      "md5": "23.jpg",
+      "outBytes": 414218,
+      "outSize": "2560x1440"
+    },
+    {
+      "albumFile": "25.webp",
+      "sourceFile": "24.png",
+      "sourceFormat": "png",
+      "sourceBytes": 6447549,
+      "md5": "24.png",
+      "outBytes": 342510,
+      "outSize": "2560x1437"
+    },
+    {
+      "albumFile": "26.webp",
+      "sourceFile": "26.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1569073,
+      "md5": "26.jpg",
+      "outBytes": 586362,
+      "outSize": "2560x1938"
+    },
+    {
+      "albumFile": "27.webp",
+      "sourceFile": "26.5.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1782368,
+      "md5": "26.5.jpg",
+      "outBytes": 696238,
+      "outSize": "2560x1934"
+    },
+    {
+      "albumFile": "28.webp",
+      "sourceFile": "27.png",
+      "sourceFormat": "png",
+      "sourceBytes": 5198145,
+      "md5": "27.png",
+      "outBytes": 213356,
+      "outSize": "2560x1436"
+    },
+    {
+      "albumFile": "29.webp",
+      "sourceFile": "28.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1264558,
+      "md5": "28.jpg",
+      "outBytes": 363084,
+      "outSize": "2560x1765"
+    },
+    {
+      "albumFile": "30.webp",
+      "sourceFile": "29.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1301119,
+      "md5": "29.jpg",
+      "outBytes": 403956,
+      "outSize": "2560x1760"
+    },
+    {
+      "albumFile": "31.webp",
+      "sourceFile": "30.jpg",
+      "sourceFormat": "jpeg",
+      "sourceBytes": 1668500,
+      "md5": "30.jpg",
+      "outBytes": 551878,
+      "outSize": "2560x1706"
+    }
+  ]
+}

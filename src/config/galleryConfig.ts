@@ -76,6 +76,26 @@ export const galleryConfig: GalleryConfig = {
 			date: "2026-09-28",
 			tags: ["灼眼的夏娜", "表情包", "存档"],
 		},
+		{
+			id: "shana-pc",
+			name: "夏娜壁纸·电脑",
+			description:
+				"《灼眼的夏娜》桌面壁纸合集：31 张，4K–8K 原图压制的 2560 长边 webp，横竖混排。原图归档在仓库 gallery-originals/shana-pc/。",
+			location: "灼眼的夏娜",
+			date: "2026-09-28",
+			tags: ["灼眼的夏娜", "壁纸", "桌面"],
+			cover: "/gallery/shana-pc/09.webp",
+		},
+		{
+			id: "shana-phone",
+			name: "夏娜壁纸·手机",
+			description:
+				"《灼眼的夏娜》手机壁纸合集：29 张，以竖构图为主，2560 长边 webp。原图归档在仓库 gallery-originals/shana-phone/。",
+			location: "灼眼的夏娜",
+			date: "2026-09-28",
+			tags: ["灼眼的夏娜", "壁纸", "手机"],
+			cover: "/gallery/shana-phone/04.webp",
+		},
 		// {
 		// 	id: "firefly-2026",
 		// 	name: "可爱流萤",
