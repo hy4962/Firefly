@@ -4,5 +4,11 @@
 		"language": "Astro",
 		"avatarUrl": "https://avatars.githubusercontent.com/u/153078906?v=4",
 		"license": "MIT"
+	},
+	"mg-chao/snow-apps": {
+		"description": "Snow Apps repository, providing source code for Snow Shot and Snow Image Viewer.",
+		"language": "C++",
+		"avatarUrl": "https://avatars.githubusercontent.com/u/87016106?v=4",
+		"license": "NOASSERTION"
 	}
 }
