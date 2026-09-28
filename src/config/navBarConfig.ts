@@ -97,13 +97,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "material-symbols:history",
 			},
 
-			// 站点统计
-			{
-				name: "站点统计",
-				url: "/analytics/",
-				icon: "material-symbols:analytics",
-			},
-
 			// 关于页面
 			LinkPresets.About,
 
@@ -155,6 +148,13 @@ url: "https://kuma.9ll.uk/status/9ll",
 				icon: "material-symbols:analytics",
 			},
 		],
+	});
+
+	// 站点统计：独立顶级入口，放在最后，不打断「内容 → 互动 → 我的」的分组
+	links.push({
+		name: "站点统计",
+		url: "/analytics/",
+		icon: "material-symbols:analytics",
 	});
 
 	// 自定义导航栏链接示例（已合并到"关于"菜单，保留作为参考）
