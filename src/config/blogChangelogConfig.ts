@@ -30,6 +30,25 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.16",
+		title: "追番页开张，B站收藏搬上来",
+		date: "2026-09-29",
+		summary: "打开 /bilibili/ 页面：构建期拉取 UID 161964502 的追番与追剧清单，共 221 条，均分 8.7",
+		description:
+			"页面文件和导航菜单项一直都在，只是 siteConfig 里的页面开关是 false，访问会被直接重定向到 /404/，导航里那一项又因为绑了 pageKey 被自动隐藏，等于整页处于「装好了但没通电」的状态。把开关打开后，构建时会请求 B 站 space/bangumi/follow/list 接口，追番（type=1）与追剧（type=2）一起抓，带评分、简介和最新一集的更新进度。封面走的是 hdslb 域名，站点早就配了 noReferrerDomains，不会被防盗链挡回来",
+		items: [
+			{
+				category: "页面",
+				text: "siteConfig.pages.bilibili 由 false 改为 true，导航栏「关于 → 哔哩哔哩追番」入口恢复显示（菜单项绑 pageKey，开关关闭时自动隐藏）",
+			},
+			{
+				category: "内容",
+				text: "首次拉取到 221 条条目（追番 + 追剧），均分 8.7；数据为构建期抓取，静态渲染，不随 B 站实时变动",
+			},
+		],
+		tags: ["追番", "哔哩哔哩", "页面"],
+	},
+	{
 		version: "V1.15",
 		title: "统计页的画，搬进相册了",
 		date: "2026-09-29",
