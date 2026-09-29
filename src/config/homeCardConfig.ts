@@ -58,6 +58,13 @@ export interface HomeCardAutoCollapse {
 	tabText: string;
 }
 
+export interface HomeCardDesktopStickerRow {
+	/** 桌面端这一排放几张（从 stickers 里随机抽，刷新换一批）。0 或 ≥ 列表长度 = 全部铺满、不抽签 */
+	count: number;
+	/** 正中央留出的空档宽度（占壁纸宽度的百分比），下滑箭头要落在这块空地里 */
+	centerGap: number;
+}
+
 export interface HomeCardStickerToggle {
 	/** 是否在壁纸右下角显示「隐藏贴纸」开关 */
 	enable: boolean;
@@ -78,6 +85,22 @@ export const homeCardConfig = {
 	//   实测 390px 宽时 68px 每行 5 张、360px 宽时降到 4 张 —— 所以 5 开始就会在某些机型上翻成两行。
 	//   取 4 可保证窄到 320px（iPhone SE）仍是完整一行；取 8 就是两行 2×4（旧配置）。
 	mobileStickerLimit: 4,
+
+	// 桌面端底部这一排怎么铺（正中央给下滑箭头留一块空地，所以左右分列而不是一条直线铺满）
+	// 之所以要留空档：贴纸层 z-index(25) 压在下滑箭头(10) 上面，居中那张正好把箭头盖死。
+	// 抽签是**每次刷新换一批**，抽中的按视觉中心等距分列：左半 N/2 张、右半 N/2 张，
+	// 两端留 5% 边距，中间空出 centerGap 那一段。
+	// 约束：左右两侧各自的中心间距 = (45 - centerGap/2) / (每侧张数 - 1)，
+	//       相邻两张 width 之和 ≲ 30.72 × 该间距（沿用全宽等距时的同一条闸门）。
+	//       10 张 / 空档 20% → 间距 8.75% → 上限 268.8，当前最宽的一对 116+112=228，安全。
+	desktopStickerRow: {
+		// 一排放几张（11 张素材里随机抽 10 张）。改 0 就是全部铺满、不留空档（箭头会被盖住）
+		count: 10,
+
+		// 中央空档宽度（%）。箭头 80px 宽，1280 宽下 20% ≈ 256px，两侧各余 ~88px 净空；
+		// 想让贴纸更挤就调小（最小别低于 16，否则 1024 宽下贴纸会蹭到箭头）
+		centerGap: 20,
+	} satisfies HomeCardDesktopStickerRow,
 
 	// 卡片内容（留空则回退：identity → profileConfig.name，title → siteConfig.title，subtitle → profileConfig.bio）
 	identity: "HY",

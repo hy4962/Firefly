@@ -69,6 +69,8 @@ const stickerToggle = config.stickerToggle;
         class="home-wallpaper-decor"
         data-home-wallpaper-decor
         data-home-wallpaper-sticker-limit={config.mobileStickerLimit ?? 0}
+        data-home-wallpaper-desktop-count={config.desktopStickerRow?.count ?? 0}
+        data-home-wallpaper-desktop-gap={config.desktopStickerRow?.centerGap ?? 0}
         data-home-wallpaper-collapse-hold={autoCollapse.enable ? collapseHold : ""}
         data-home-wallpaper-collapse-mobile={collapseOnMobile ? "1" : "0"}
         data-home-wallpaper-card-slide={autoCollapse.slideTo}
@@ -265,6 +267,38 @@ const stickerToggle = config.stickerToggle;
 
         const isMobileLayout = () => window.matchMedia("(max-width: 767px)").matches;
 
+        // 解析贴纸的初始定位，识别竖向归属（有 top → 卡片上方一行；有 bottom → 卡片下方）。
+        // inset 简写交给浏览器解析（临时元素），比正则可靠。桌面端分列与手机端排布共用。
+        const parseInset = (initial) => {
+            const probeEl = document.createElement("div");
+            probeEl.style.cssText = initial;
+            const top = Number.parseFloat(probeEl.style.top);
+            const bottom = Number.parseFloat(probeEl.style.bottom);
+            const left = Number.parseFloat(probeEl.style.left);
+            return {
+                top: Number.isFinite(top) ? top : undefined,
+                bottom: Number.isFinite(bottom) ? bottom : undefined,
+                left: Number.isFinite(left) ? left : 50,
+            };
+        };
+
+        // 一排贴纸的「视觉中心」百分比：左半 floor(n/2) 张、右半剩下的，正中央空出 gapPct
+        // 给下滑箭头。两端各留 edgePct，每条带内均分。gapPct <= 0 时退化为全宽等距。
+        const spreadStickerCenters = (count, gapPct, edgePct = 5) => {
+            if (!(gapPct > 0)) {
+                const step = count > 1 ? (100 - edgePct * 2) / (count - 1) : 0;
+                return Array.from({ length: count }, (_, i) => edgePct + step * i);
+            }
+            const half = gapPct / 2;
+            const leftCount = Math.floor(count / 2);
+            const rightCount = count - leftCount;
+            const band = (n, from, to) =>
+                n <= 1
+                    ? [(from + to) / 2]
+                    : Array.from({ length: n }, (_, i) => from + ((to - from) * i) / (n - 1));
+            return [...band(leftCount, edgePct, 50 - half), ...band(rightCount, 50 + half, 100 - edgePct)];
+        };
+
         // 贴纸图片按需加载。服务端只输出 data-home-wallpaper-src（不产生请求），这里再赋 src：
         // - 手机端：只给当前真正显示的那批赋值 —— 抽中的 4 张才下载，其余整页一字节不拉
         // - 桌面端：等 window.load 之后再赋值，避开壁纸（LCP 元素）的关键路径
@@ -296,7 +330,8 @@ const stickerToggle = config.stickerToggle;
 
         // 桌面端：window.load 之后再放行（load 之前加载会和壁纸抢带宽）
         const scheduleDesktopStickerHydration = (decor) => {
-            const run = () => hydrateStickerImages(decor);
+            // onlyVisible：桌面端随机抽签后没抽中的那几张是 display:none，别白下载
+            const run = () => hydrateStickerImages(decor, true);
             if (document.readyState === "complete") run();
             else window.addEventListener("load", run, { once: true });
         };
@@ -352,20 +387,6 @@ const stickerToggle = config.stickerToggle;
             const cardTopPct =
                 ((cardRect.top - wallpaperRect.top) / wallpaperRect.height) * 100;
 
-            // 解析桌面端初始定位，识别竖向归属（有 top → 卡片上方一行；有 bottom → 卡片下方）。
-            // inset 简写交给浏览器解析（临时元素），比正则可靠
-            const parseInset = (initial) => {
-                const probeEl = document.createElement("div");
-                probeEl.style.cssText = initial;
-                const top = Number.parseFloat(probeEl.style.top);
-                const bottom = Number.parseFloat(probeEl.style.bottom);
-                const left = Number.parseFloat(probeEl.style.left);
-                return {
-                    top: Number.isFinite(top) ? top : undefined,
-                    bottom: Number.isFinite(bottom) ? bottom : undefined,
-                    left: Number.isFinite(left) ? left : 50,
-                };
-            };
             const items = stickers.map((sticker) => {
                 const initial =
                     sticker.getAttribute("data-home-wallpaper-initial-style") || "";
@@ -533,6 +554,86 @@ const stickerToggle = config.stickerToggle;
             });
         };
 
+        // 写回贴纸位置：left 用「视觉中心 - 半个盒宽」，各贴纸宽度不同也不会左右漂移。
+        // ⚠️ 必须同时更新 data-home-wallpaper-initial-style：拖拽还原是整条 style 覆盖，
+        //    手机端排布也读它来分带 —— 只改 style 不改属性，拖一下 / 转手机就打回原形。
+        const writeStickerPosition = (el, leftPct, bottomPct, index) => {
+            el.style.inset = `auto auto ${bottomPct}% ${leftPct}%`;
+            el.style.setProperty("--home-wallpaper-sticker-i", String(index));
+            const rotation = el.style.getPropertyValue("--home-wallpaper-sticker-rotation") || "0deg";
+            const width = el.style.getPropertyValue("--home-wallpaper-sticker-w");
+            el.setAttribute(
+                "data-home-wallpaper-initial-style",
+                `inset: auto auto ${bottomPct}% ${leftPct}%; --home-wallpaper-sticker-rotation: ${rotation}; --home-wallpaper-sticker-w: ${width}; --home-wallpaper-sticker-i: ${index};`,
+            );
+        };
+
+        // 桌面端抽签：从整排里随机挑 count 张（刷新才换一批）。
+        // 和手机端一样缓存结果：布局会在 load / 定时 / resize 时重算好几次，不缓存会来回跳。
+        let desktopPickedStickers = null;
+        const pickDesktopStickers = (list, count) => {
+            if (!(count > 0) || count >= list.length) return [...list];
+            if (desktopPickedStickers) {
+                const kept = list.filter((el) => desktopPickedStickers.has(el));
+                if (kept.length === count) return kept;
+            }
+            const shuffled = [...list];
+            for (let i = shuffled.length - 1; i > 0; i -= 1) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            const picked = shuffled.slice(0, count);
+            desktopPickedStickers = new Set(picked);
+            return picked;
+        };
+
+        // 桌面端底部一排：随机抽 N 张 → 左右分列 → 正中央给下滑箭头留一块空地。
+        // 抽中的仍按配置里的相对顺序排（不重新洗牌），否则左右会互相跨位、看着乱。
+        const applyDesktopStickerRow = (decor) => {
+            if (isMobileLayout()) return;
+            const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
+            const wallpaperWidth = wallpaper.getBoundingClientRect().width;
+            const row = [
+                ...decor.querySelectorAll(".home-wallpaper-sticker:not(.home-wallpaper-sticker--fixed)"),
+            ]
+                .map((el) => ({
+                    el,
+                    ...parseInset(el.getAttribute("data-home-wallpaper-initial-style") || ""),
+                }))
+                .filter((item) => item.bottom !== undefined)
+                .sort((a, b) => a.left - b.left);
+            if (!wallpaperWidth || row.length === 0) return;
+
+            const countRaw = Number.parseInt(decor.dataset.homeWallpaperDesktopCount || "", 10);
+            const gapPct = Number.parseFloat(decor.dataset.homeWallpaperDesktopGap || "") || 0;
+            const count = Number.isFinite(countRaw) ? countRaw : 0;
+            // 不抽签（0 / ≥ 总数）或没留空档 → 原样铺满（配置里的等距排布），不做任何改动
+            if (!(count > 0) || count >= row.length || gapPct <= 0) return;
+
+            const picked = pickDesktopStickers(
+                row.map((item) => item.el),
+                count,
+            );
+            const shown = row.filter((item) => picked.includes(item.el));
+            row.forEach((item) => {
+                if (!picked.includes(item.el)) item.el.style.display = "none";
+            });
+
+            const centers = spreadStickerCenters(shown.length, gapPct);
+            shown.forEach((item, index) => {
+                item.el.style.display = "grid";
+                const widthPct = (item.el.getBoundingClientRect().width / wallpaperWidth) * 100;
+                const left = Math.max(0.5, Math.min(99.5 - widthPct, centers[index] - widthPct / 2));
+                writeStickerPosition(item.el, left, item.bottom, index);
+            });
+
+            // 整排收起 / 放回的错开按「看得见的张数」算，不然最后一张的延迟会多出一截
+            const countVar = String(shown.length);
+            decor.style.setProperty("--home-wallpaper-sticker-count", countVar);
+            const container = decor.querySelector(".home-wallpaper-decor__stickers");
+            if (container) container.style.setProperty("--home-wallpaper-sticker-count", countVar);
+        };
+
         // 桌面端矮窗口兜底：卡片底部以下放不下两排贴纸时，CSS（max-height: 940px）
         // 会把后排整排隐藏——但那是把 6 张贴纸直接藏掉，太粗暴。
         // 这里改成把整批贴纸压成一行铺在底部：一行 12 张在 ≥768px 宽度下永远放得下
@@ -578,19 +679,35 @@ const stickerToggle = config.stickerToggle;
             }
 
             const sideMargin = 1.2;
-            const widths = stickers.map(
+            // 抽签结果与桌面分列共用（同一批贴纸），矮窗口也只铺抽中的那几张
+            const countRaw = Number.parseInt(decor.dataset.homeWallpaperDesktopCount || "", 10);
+            const gapPct = Number.parseFloat(decor.dataset.homeWallpaperDesktopGap || "") || 0;
+            const count = Number.isFinite(countRaw) ? countRaw : 0;
+            const shown =
+                count > 0 && count < stickers.length
+                    ? pickDesktopStickers(stickers, count)
+                    : [...stickers];
+            stickers.forEach((sticker) => {
+                if (!shown.includes(sticker)) sticker.style.display = "none";
+            });
+
+            const widths = shown.map(
                 (sticker) => (sticker.getBoundingClientRect().width / wallpaperRect.width) * 100,
             );
             const widthPct = Math.max(...widths);
             const usable = 100 - sideMargin * 2 - widthPct;
-            const step = stickers.length > 1 ? usable / (stickers.length - 1) : 0;
+            const step = shown.length > 1 ? usable / (shown.length - 1) : 0;
+            const centers = spreadStickerCenters(shown.length, gapPct, sideMargin);
 
-            stickers.forEach((sticker, index) => {
+            shown.forEach((sticker, index) => {
                 sticker.style.display = "grid"; // 覆盖 CSS 媒体查询里的整排隐藏
                 sticker.style.inset = "auto";
                 sticker.style.right = "auto";
                 sticker.style.top = "auto";
-                sticker.style.left = `${sideMargin + step * index}%`;
+                // 留了空档就按视觉中心分列，否则退回原来的全宽等距
+                sticker.style.left = `${
+                    gapPct > 0 ? Math.max(0.5, centers[index] - widthPct / 2) : sideMargin + step * index
+                }%`;
                 sticker.style.bottom = "5%";
             });
         };
@@ -603,8 +720,10 @@ const stickerToggle = config.stickerToggle;
                     // rAF 在后台标签页不触发会导致布局不生效
                     applyMobileStickerLayout(decor);
                 } else {
-                    // 先还原成服务端渲染的两排布局（保证多次调用幂等），再按需压成一行
+                    // 先还原成服务端渲染的两排布局（保证多次调用幂等），
+                    // 再随机抽签 + 左右分列给箭头让出中央，最后按需压成一行
                     restoreDesktopStickerPositions(decor);
+                    applyDesktopStickerRow(decor);
                     applyShortViewportStickerLayout(decor);
                 }
             };
@@ -615,7 +734,7 @@ const stickerToggle = config.stickerToggle;
             mediaQuery.addEventListener?.("change", (event) => {
                 applyLayout();
                 // 手机 → 桌面：贴纸池只加载了抽中那几张，补齐剩下的
-                if (!event.matches) hydrateStickerImages(decor);
+                if (!event.matches) hydrateStickerImages(decor, true);
             });
             // 兜底：部分环境（视口仿真等）媒体查询 change 事件不可靠，用 resize 防抖补一层
             let resizeTimer = 0;
@@ -2175,35 +2294,10 @@ const stickerToggle = config.stickerToggle;
         outline-offset: 2px;
     }
 
-    /* ========== 下滑箭头 vs 贴纸层 ========== */
-    /* 贴纸层 z-index 25 > 箭头的 10，居中那张贴纸会把箭头整个盖住。
-       装饰卡片启用时（:has 门控，关掉卡片时箭头维持上游原样）把箭头抬到 30，
-       并给它一块和右下角开关同款的毛玻璃圆底——压在贴纸上也清楚是一颗按钮。
-       图标随之从 5rem 收到 3rem，否则 80px 的箭头会撑破 72px 的圆。 */
-    html[data-wallpaper-mode="fullscreen"] body.is-home #wallpaper-wrapper:has(.home-wallpaper-decor) .scroll-down-indicator,
-    #wallpaper-wrapper.wallpaper-fullscreen:has(.home-wallpaper-decor) .scroll-down-indicator {
-        z-index: 30;
-        width: 4.5rem;
-        height: 4.5rem;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid rgba(255, 249, 239, 0.28);
-        border-radius: 999px;
-        background: rgba(28, 20, 24, 0.46);
-        box-shadow: 0 6px 16px #110f132e;
-        -webkit-backdrop-filter: blur(9px) saturate(1.05);
-        backdrop-filter: blur(9px) saturate(1.05);
-    }
-    html[data-wallpaper-mode="fullscreen"] body.is-home #wallpaper-wrapper:has(.home-wallpaper-decor) .scroll-down-indicator .scroll-down-icon,
-    #wallpaper-wrapper.wallpaper-fullscreen:has(.home-wallpaper-decor) .scroll-down-indicator .scroll-down-icon {
-        font-size: 3rem;
-    }
-    /* hover 高亮跟右下角开关同一套：描边提亮 + 底色偏暖 */
-    html[data-wallpaper-mode="fullscreen"] body.is-home #wallpaper-wrapper:has(.home-wallpaper-decor) .scroll-down-indicator:hover,
-    #wallpaper-wrapper.wallpaper-fullscreen:has(.home-wallpaper-decor) .scroll-down-indicator:hover {
-        border-color: rgba(255, 249, 239, 0.55);
-        background: rgba(70, 44, 52, 0.62);
-    }
+    /* 下滑箭头（#scroll-down-indicator，z-index 10）本来会被贴纸层（25）压住，
+       2026-09-29 起改成**让贴纸给它让路**：桌面端底部那排随机抽 10 张、左右各 5 张分列，
+       正中央空出 homeCardConfig.desktopStickerRow.centerGap 那一段给箭头。
+       箭头样式保持上游原样（不再盖毛玻璃圆底），改排布前先去那里调空档宽度。 */
 
     /* 减弱动态效果 */
     @media (prefers-reduced-motion: reduce) {
