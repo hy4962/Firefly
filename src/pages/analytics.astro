@@ -3187,7 +3187,8 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 		   这里就地补上，避免为了一个变量去动红线文件。 */
 		--text-color: oklch(0.28 0.02 var(--hue));
 		--font-active-sans: inherit;
-		--analytics-blue: #2d7cff;
+		/* 主色跟随站点主题色（--primary 自带明暗两套取值），不写死参考站的蓝色 */
+		--analytics-blue: var(--primary);
 		--analytics-mint: #1fae9a;
 		--analytics-gold: #e5a83c;
 		--analytics-violet: #866de8;
@@ -3203,7 +3204,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 
 	:root.dark .analytics-page {
 		--text-color: oklch(0.92 0.015 var(--hue));
-		--analytics-blue: #6ea7ff;
+		/* --analytics-blue 不用在这覆盖：它引用 --primary，而 --primary 自带暗色取值 */
 		--analytics-mint: #55d4bf;
 		--analytics-gold: #f3c46c;
 		--analytics-violet: #b0a0ff;
@@ -3848,12 +3849,14 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 	.analytics-activity__days { display: grid; grid-row: 2; grid-template-rows: repeat(7, minmax(0, 1fr)); align-items: center; gap: 0.24rem; color: var(--analytics-text-faint); font-size: 0.56rem; white-space: nowrap; }
 	.analytics-activity__days span { line-height: 1; }
 	.analytics-activity__grid { display: grid; grid-column: 2; grid-row: 2; grid-template-columns: repeat(24, minmax(0, 1fr)); grid-template-rows: repeat(7, minmax(0, 1fr)); gap: clamp(0.18rem, 0.45vw, 0.28rem); min-width: 0; }
-	.analytics-activity__cell { --activity-idle-bg: #eef3fb; width: 100%; min-width: 0; aspect-ratio: 1; padding: 0; border: 0; border-radius: 0.26rem; background: var(--activity-idle-bg); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.5); cursor: pointer; opacity: var(--activity-reveal, 1); transform: scale(var(--activity-scale, 1)); transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease; }
-	.analytics-activity__cell[data-level="1"] { background: #dce9fd; }
-	.analytics-activity__cell[data-level="2"] { background: #bcd4fb; }
-	.analytics-activity__cell[data-level="3"] { background: #8fb7f6; }
-	.analytics-activity__cell[data-level="4"] { background: #5e93ee; }
-	.analytics-activity__cell[data-level="5"] { background: #2d7cff; }
+	.analytics-activity__cell { --activity-idle-bg: color-mix(in oklab, var(--analytics-blue) 7%, var(--card-bg)); width: 100%; min-width: 0; aspect-ratio: 1; padding: 0; border: 0; border-radius: 0.26rem; background: var(--activity-idle-bg); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.5); cursor: pointer; opacity: var(--activity-reveal, 1); transform: scale(var(--activity-scale, 1)); transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease; }
+	/* 色阶全部从 --analytics-blue 派生：主色换成主题色之后这里会跟着走，
+	   暗色也不用另外写一组（--card-bg 自己会变深） */
+	.analytics-activity__cell[data-level="1"] { background: color-mix(in oklab, var(--analytics-blue) 20%, var(--card-bg)); }
+	.analytics-activity__cell[data-level="2"] { background: color-mix(in oklab, var(--analytics-blue) 38%, var(--card-bg)); }
+	.analytics-activity__cell[data-level="3"] { background: color-mix(in oklab, var(--analytics-blue) 58%, var(--card-bg)); }
+	.analytics-activity__cell[data-level="4"] { background: color-mix(in oklab, var(--analytics-blue) 78%, var(--card-bg)); }
+	.analytics-activity__cell[data-level="5"] { background: var(--analytics-blue); }
 	.analytics-activity__grid[data-activity-animation-phase="generating"] .analytics-activity__cell[data-activity-active="true"],
 	.analytics-activity__grid[data-activity-animation-phase="rhythm"] .analytics-activity__cell[data-activity-state="pending"] { background: var(--activity-idle-bg); box-shadow: none; filter: none; }
 	.analytics-activity__cell.is-activity-rhythm-active { transform: scale(calc(var(--activity-scale, 1) * (1 + var(--activity-rhythm-pulse, 0) * 0.1))); box-shadow: 0 0 0 2px var(--card-bg), 0 0 0.62rem color-mix(in oklab, var(--analytics-blue) 38%, transparent); filter: saturate(1.18); }
@@ -3883,25 +3886,15 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 
 	.analytics-activity__footer { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0.68rem 1.35rem 0; padding: 0.58rem 0 0.78rem; border-top: 1px solid var(--analytics-border); color: var(--analytics-text-faint); font-size: 0.58rem; }
 	.analytics-activity__legend { display: inline-flex; align-items: center; gap: 0.22rem; color: var(--analytics-text-faint); white-space: nowrap; }
-	.analytics-activity__legend i { display: block; width: 0.55rem; height: 0.55rem; border-radius: 0.15rem; background: #eef3fb; }
-	.analytics-activity__legend i[data-level="1"] { background: #dce9fd; }
-	.analytics-activity__legend i[data-level="2"] { background: #bcd4fb; }
-	.analytics-activity__legend i[data-level="3"] { background: #8fb7f6; }
-	.analytics-activity__legend i[data-level="4"] { background: #5e93ee; }
-	.analytics-activity__legend i[data-level="5"] { background: #2d7cff; }
+	.analytics-activity__legend i { display: block; width: 0.55rem; height: 0.55rem; border-radius: 0.15rem; background: color-mix(in oklab, var(--analytics-blue) 7%, var(--card-bg)); }
+	.analytics-activity__legend i[data-level="1"] { background: color-mix(in oklab, var(--analytics-blue) 20%, var(--card-bg)); }
+	.analytics-activity__legend i[data-level="2"] { background: color-mix(in oklab, var(--analytics-blue) 38%, var(--card-bg)); }
+	.analytics-activity__legend i[data-level="3"] { background: color-mix(in oklab, var(--analytics-blue) 58%, var(--card-bg)); }
+	.analytics-activity__legend i[data-level="4"] { background: color-mix(in oklab, var(--analytics-blue) 78%, var(--card-bg)); }
+	.analytics-activity__legend i[data-level="5"] { background: var(--analytics-blue); }
 
-	:root.dark .analytics-activity__cell { --activity-idle-bg: #24354d; background: #24354d; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04); }
-	:root.dark .analytics-activity__cell[data-level="1"] { background: #304b70; }
-	:root.dark .analytics-activity__cell[data-level="2"] { background: #3d6598; }
-	:root.dark .analytics-activity__cell[data-level="3"] { background: #4d80bf; }
-	:root.dark .analytics-activity__cell[data-level="4"] { background: #649ce5; }
-	:root.dark .analytics-activity__cell[data-level="5"] { background: #78b1ff; }
-	:root.dark .analytics-activity__legend i { background: #24354d; }
-	:root.dark .analytics-activity__legend i[data-level="1"] { background: #304b70; }
-	:root.dark .analytics-activity__legend i[data-level="2"] { background: #3d6598; }
-	:root.dark .analytics-activity__legend i[data-level="3"] { background: #4d80bf; }
-	:root.dark .analytics-activity__legend i[data-level="4"] { background: #649ce5; }
-	:root.dark .analytics-activity__legend i[data-level="5"] { background: #78b1ff; }
+	/* 色阶已用 color-mix 跟随 --card-bg 自动适配暗色，这里只留内阴影的微调 */
+	:root.dark .analytics-activity__cell { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04); }
 
 	@keyframes analytics-pulse { 0%, 100% { opacity: 0.45; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.1); } }
 	@keyframes analytics-spin { to { transform: rotate(360deg); } }
