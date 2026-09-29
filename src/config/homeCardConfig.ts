@@ -39,6 +39,34 @@ export interface HomeCardSocialLink {
 	copy?: string;
 }
 
+export interface HomeCardAutoCollapse {
+	/** 是否启用「入场停留一会儿 → 自动把卡片让开，露出纯壁纸」 */
+	enable: boolean;
+	/** 入场动画落定后，卡片完整亮着停留多久才收起（ms） */
+	hold: number;
+	/** 手机端（≤767px）是否也收起 */
+	enableOnMobile: boolean;
+	/** 收起动画时长（ms） */
+	duration: number;
+	/** 卡片右上角是否挂一个半透明小 ×（点它立刻收起，不必等自动到点） */
+	closeButton: boolean;
+	/** 卡片往哪一侧滑出屏幕 */
+	slideTo: "left" | "right";
+	/** 收起后挂出的小竖条停在哪一侧 */
+	tabSide: "left" | "right";
+	/** 小竖条上的文字（竖排显示，2-4 个字最好看） */
+	tabText: string;
+}
+
+export interface HomeCardStickerToggle {
+	/** 是否在壁纸右下角显示「隐藏贴纸」开关 */
+	enable: boolean;
+	/** 每张之间错开多久（ms）。0 = 整排一起动 */
+	stagger: number;
+	/** 单张淡出 / 淡入时长（ms） */
+	duration: number;
+}
+
 export const homeCardConfig = {
 	// 是否启用首页装饰卡片（卡片 + 贴纸）
 	enable: true,
@@ -93,6 +121,42 @@ export const homeCardConfig = {
 			url: "/sponsor/",
 		},
 	] satisfies HomeCardSocialLink[],
+
+	// 入场后自动收起：卡片停一会儿就把位置让给壁纸，只在边缘留一根小竖条，点一下能把卡片滑回来。
+	// 只在「首次进入 / 刷新」时播一次 —— 同一个标签页里从文章返回首页不会再重播，卡片保持收起状态。
+	// 想彻底关掉这项（卡片一直在）就把 enable 改成 false。
+	autoCollapse: {
+		enable: true,
+
+		// 入场动画落定之后，卡片完整亮着停留多久才收起（ms）。想调「展示多久」只动这一个数。
+		//
+		// 这里**不需要**填「从入场开始算」的总时长：组件会在入场动画真跑完（监听 animationend）
+		// 之后再开始计时，所以以后改 HomeWallpaperDecor 里入场动画的节奏，这个数不用跟着动。
+		// 系统开了「减少动态效果」时动画不跑、也就没有 animationend，此时按「卡片一亮就开始算」处理，
+		// 语义仍然对得上（没有入场动画 = 立刻就位）。
+		hold: 2000,
+
+		// 手机端是否也收起。手机屏小、卡片几乎是首屏唯一内容，收起后只剩壁纸 + 小竖条；
+		// 觉得太空就把这里改成 false，只让桌面端播这个开场。
+		enableOnMobile: true,
+
+		// 收起 / 展开动画时长（ms）
+		duration: 950,
+
+		// 卡片右上角要不要挂一个半透明小 −。点它立刻收起，不用等自动到点；
+		// 收起后还能从边缘小竖条把卡片叫回来，所以用减号而不是叉（不是"永久关掉"）。
+		closeButton: true,
+
+		// 卡片往哪一侧滑出屏幕："right" | "left"
+		slideTo: "right",
+
+		// 收起后小竖条停在哪一侧："left" | "right"
+		// 跟 slideTo 放同侧（都 right）才连贯：卡片从右边走，签子也从右边挂出来。
+		tabSide: "right",
+
+		// 小竖条上的文字（竖排）
+		tabText: "关于我",
+	} satisfies HomeCardAutoCollapse,
 
 	// 头像右上角的小贴纸（可拖动，width 为基准宽度 px）
 	avatarSticker: {
@@ -218,6 +282,20 @@ export const homeCardConfig = {
 			rotate: 5,
 		},
 	] satisfies HomeCardSticker[],
+
+	// 右下角的「隐藏贴纸」开关：点一下把这排小人收走，再点一下放回来。
+	// 状态存 localStorage（homeWallpaperStickersHidden），刷新、切页、从文章返回都记得住。
+	// 只影响下面 stickers 这一排；卡片头像上那张小贴纸属于卡片，不跟着走。
+	stickerToggle: {
+		enable: true,
+
+		// 逐张错开的间隔（ms）：收的时候从左往右一张张走，放回来从右往左接上。
+		// 想整排一起动就填 0。
+		stagger: 40,
+
+		// 单张淡出 / 淡入时长（ms）
+		duration: 340,
+	} satisfies HomeCardStickerToggle,
 };
 
 export type HomeCardConfig = typeof homeCardConfig;

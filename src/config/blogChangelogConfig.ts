@@ -91,6 +91,10 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "修复",
+				text: "下滑箭头不再被贴纸挡住：贴纸层 z-index(25) 压过了箭头(10)，居中那张小人正好盖住它。装饰卡片启用时把箭头抬到 30 并给它一块与右下角开关同款的毛玻璃圆底，压在贴纸上也是一颗清楚的按钮；用 :has 门控，关掉装饰卡片后箭头维持原样",
+			},
+			{
+				category: "修复",
 				text: "卡片入场动画的 fill: both 终态会压住后续的 transform / opacity，transition 完全推不动。收起前先给容器加 is-entrance-done 摘掉卡片自身的动画并强制一次样式计算，位移才真正走得动",
 			},
 			{

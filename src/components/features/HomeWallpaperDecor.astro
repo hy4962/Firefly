@@ -31,21 +31,37 @@ const avatarStickerWidth = (width: number) =>
 	`min(${width}px, ${(width / 4.3333).toFixed(4)}vw)`;
 
 // 贴纸定位：top（距顶）或 bottom（距底，一排贴纸脚踩同一地面线）二选一
-const stickerStyle = (sticker: {
-	top?: number;
-	bottom?: number;
-	left: number;
-	rotate: number;
-	width: number;
-}) => {
+// index 会写成 --home-wallpaper-sticker-i，供「整排收起/放回」按序号错开用。
+// ⚠️ 必须同时出现在 style 与 data-home-wallpaper-initial-style：拖拽还原是
+//    整条 style 覆盖（restoreDesktopStickerPositions），少了就丢。
+const stickerStyle = (
+	sticker: {
+		top?: number;
+		bottom?: number;
+		left: number;
+		rotate: number;
+		width: number;
+	},
+	index: number,
+) => {
 	const vertical =
 		sticker.bottom !== undefined
 			? `auto auto ${sticker.bottom}%`
 			: `${sticker.top ?? 0}% auto auto`;
-	return `inset: ${vertical} ${sticker.left}%; --home-wallpaper-sticker-rotation: ${sticker.rotate}deg; --home-wallpaper-sticker-w: ${stickerWidth(sticker.width)};`;
+	return `inset: ${vertical} ${sticker.left}%; --home-wallpaper-sticker-rotation: ${sticker.rotate}deg; --home-wallpaper-sticker-w: ${stickerWidth(sticker.width)}; --home-wallpaper-sticker-i: ${index};`;
 };
 
 const isExternal = (url: string) => url.startsWith("http");
+
+// 入场后自动收起（配置见 homeCardConfig.autoCollapse）
+// 收起逻辑整体在客户端，这里只把参数交给 data-* / CSS 变量，服务端不产生额外节点开销。
+// 只传「停留多久」一个数：入场动画什么时候跑完由脚本监听 animationend 现算，不在这里写死总时长。
+const autoCollapse = config.autoCollapse;
+const collapseHold = autoCollapse.enable ? Math.max(0, Math.round(autoCollapse.hold)) : 0;
+const collapseOnMobile = autoCollapse.enable && autoCollapse.enableOnMobile;
+
+// 右下角「隐藏贴纸」开关（配置见 homeCardConfig.stickerToggle）
+const stickerToggle = config.stickerToggle;
 ---
 
 {config.enable && (
@@ -53,16 +69,25 @@ const isExternal = (url: string) => url.startsWith("http");
         class="home-wallpaper-decor"
         data-home-wallpaper-decor
         data-home-wallpaper-sticker-limit={config.mobileStickerLimit ?? 0}
+        data-home-wallpaper-collapse-hold={autoCollapse.enable ? collapseHold : ""}
+        data-home-wallpaper-collapse-mobile={collapseOnMobile ? "1" : "0"}
+        data-home-wallpaper-card-slide={autoCollapse.slideTo}
+        data-home-wallpaper-tab-side={autoCollapse.tabSide}
+        style={`--home-wallpaper-collapse-duration: ${autoCollapse.duration}ms; --home-wallpaper-sticker-count: ${config.stickers.length}; --home-wallpaper-sticker-toggle-stagger: ${stickerToggle.stagger}ms; --home-wallpaper-sticker-toggle-duration: ${stickerToggle.duration}ms;`}
     >
-        <div class="home-wallpaper-decor__stickers" aria-hidden="true">
-            {config.stickers.map((sticker) => (
+        <div
+            class="home-wallpaper-decor__stickers"
+            aria-hidden="true"
+            style={`--home-wallpaper-sticker-count: ${config.stickers.length};`}
+        >
+            {config.stickers.map((sticker, index) => (
                 <div
                     class={`home-wallpaper-sticker${
                         (sticker.bottom ?? 0) >= 12 ? " home-wallpaper-sticker--rear" : ""
                     }`}
                     data-home-wallpaper-sticker
-                    style={stickerStyle(sticker)}
-                    data-home-wallpaper-initial-style={stickerStyle(sticker)}
+                    style={stickerStyle(sticker, index)}
+                    data-home-wallpaper-initial-style={stickerStyle(sticker, index)}
                 >
                     {/* 只写 data-home-wallpaper-src，不写 src —— 服务端不产生任何图片请求。
                         真正赋值交给脚本：手机端只给随机抽中的那几张，桌面端等 window.load 之后，
@@ -79,12 +104,12 @@ const isExternal = (url: string) => url.startsWith("http");
             {/* 禁用 JS 时上面那批没有 src，这里补一份真实的。
                 JS 开启时 noscript 内容是惰性文本，不会被解析成图片、不产生请求。 */}
             <noscript>
-                {config.stickers.map((sticker) => (
+                {config.stickers.map((sticker, index) => (
                     <div
                         class={`home-wallpaper-sticker${
                             (sticker.bottom ?? 0) >= 12 ? " home-wallpaper-sticker--rear" : ""
                         }`}
-                        style={stickerStyle(sticker)}
+                        style={stickerStyle(sticker, index)}
                     >
                         <img src={sticker.src} alt="" draggable="false" referrerpolicy="no-referrer" />
                     </div>
@@ -100,7 +125,20 @@ const isExternal = (url: string) => url.startsWith("http");
             )}
         </div>
 
-        <article class="home-wallpaper-card">
+        <article id="home-wallpaper-card" class="home-wallpaper-card">
+            {/* 右上角手动收起（−）：样式与边缘小竖条同一套毛玻璃。
+                用减号不用叉：这按钮是"先把卡片收起来"，不是"永久关掉"，点了还能从边缘小竖条叫回来。 */}
+            {autoCollapse.enable && autoCollapse.closeButton && (
+                <button
+                    type="button"
+                    class="home-wallpaper-card__close"
+                    data-home-wallpaper-card-close
+                    aria-controls="home-wallpaper-card"
+                    aria-label="收起卡片"
+                >
+                    <span class="home-wallpaper-card__close-bar" aria-hidden="true"></span>
+                </button>
+            )}
             <div class="home-wallpaper-card__content">
                 <div class="home-wallpaper-card__avatar-wrap">
                     <div class="home-wallpaper-card__avatar overflow-hidden relative">
@@ -174,6 +212,49 @@ const isExternal = (url: string) => url.startsWith("http");
                 <div class="home-wallpaper-copy-toast" data-home-wallpaper-copy-toast role="status" aria-live="polite" aria-atomic="true"></div>
             </div>
         </article>
+
+        {/* 收起后挂在边缘的小竖条：点一下 / 键盘 Enter 把卡片滑回来。
+            卡片没收起时它是隐藏的（visibility: hidden，不参与键盘 Tab）。 */}
+        {autoCollapse.enable && (
+            <button
+                type="button"
+                class="home-wallpaper-card-tab"
+                data-home-wallpaper-card-tab
+                aria-controls="home-wallpaper-card"
+                aria-expanded="false"
+                aria-label="展开首页个人卡片"
+            >
+                <span class="home-wallpaper-card-tab__text">{autoCollapse.tabText}</span>
+                <span class="home-wallpaper-card-tab__mark" aria-hidden="true"></span>
+            </button>
+        )}
+        {/* 右下角的贴纸开关：图标画的是"贴纸现在的状态"（眼睛 = 显示中），
+            aria-label / title 写的是"点下去会发生什么"，配合 aria-pressed。
+            收起 / 放回只切一个类，真正的错开节奏全在 CSS 里（见 is-stickers-hidden）。
+            初始状态由脚本读 localStorage 在入场前就补上，所以刷新不会先闪一下贴纸。 */}
+        {stickerToggle.enable && (
+            <button
+                type="button"
+                class="home-wallpaper-sticker-toggle"
+                data-home-wallpaper-sticker-toggle
+                aria-pressed="false"
+                aria-label="隐藏贴纸"
+                title="隐藏贴纸"
+            >
+                <span
+                    class="home-wallpaper-sticker-toggle__icon home-wallpaper-sticker-toggle__icon--on"
+                    aria-hidden="true"
+                >
+                    <Icon name="fa7-solid:eye" />
+                </span>
+                <span
+                    class="home-wallpaper-sticker-toggle__icon home-wallpaper-sticker-toggle__icon--off"
+                    aria-hidden="true"
+                >
+                    <Icon name="fa7-solid:eye-slash" />
+                </span>
+            </button>
+        )}
     </div>
     )}
 
@@ -546,6 +627,112 @@ const isExternal = (url: string) => url.startsWith("http");
 
         const getDecor = () => document.querySelector(".home-wallpaper-decor");
 
+        // ========== 入场后自动收起 ==========
+        // 卡片停一会儿就把位置让给壁纸，只在边缘留一根小竖条；点竖条能把卡片再滑回来。
+        //
+        // 「只播一次」用内存变量实现，不是 sessionStorage：这个脚本带 data-swup-ignore-script，
+        // 只在整页加载时执行一次，而壁纸区在 Swup 容器外不会重渲染 —— 于是
+        // 刷新 / 首次进入 → hasAutoCollapsed 为 false，会播；
+        // 从文章返回首页 → 脚本没重跑，变量还在，不重播。
+        // （用 sessionStorage 反而会把「刷新」也算进同一次会话，和预期相反。）
+        let collapseTimer = 0;
+        let hasAutoCollapsed = false;
+
+        // 「入场落定」= 这一批入场动画里最后一段结束。只认这几个，别把悬停用的
+        // card-text-hover 也算进来 —— 那会让用户鼠标一划就把计时往后顺延。
+        const ENTRANCE_ANIMATIONS = [
+            "home-wallpaper-card-enter",
+            "home-wallpaper-content-enter",
+            "home-wallpaper-tag-enter",
+            "home-wallpaper-sticker-enter",
+            "home-wallpaper-note-enter",
+            "home-wallpaper-note-enter-mobile",
+        ];
+
+        const getCardTab = (decor) => decor.querySelector("[data-home-wallpaper-card-tab]");
+        const getCardClose = (decor) => decor.querySelector("[data-home-wallpaper-card-close]");
+
+        const isAutoCollapseEnabled = (decor) => {
+            // 属性存在但为空串 = 配置里 enable 为 false（属性只在这个开关打开时才带值）
+            const raw = decor.dataset.homeWallpaperCollapseHold;
+            if (raw === undefined || raw === "") return false;
+            const hold = Number.parseInt(raw, 10);
+            if (!Number.isFinite(hold) || hold < 0) return false;
+            // 手机端是否收起由配置决定（data 里是 "1" / "0"）
+            if (isMobileLayout() && decor.dataset.homeWallpaperCollapseMobile !== "1") return false;
+            return true;
+        };
+
+        const collapseHomeCard = (decor) => {
+            if (!(decor instanceof HTMLElement) || decor.classList.contains("is-collapsed")) return;
+            // 先摘掉卡片自身入场动画的 fill: both 终态 —— 动画的终态优先级高于普通声明，
+            // 不摘掉的话下面 transition 改 transform / opacity 根本推不动。
+            // 这里强制一次样式计算，好让下一帧的 class 变化能拿到"起始值"并真的走 transition。
+            decor.classList.add("is-entrance-done");
+            void decor.offsetWidth;
+            decor.classList.add("is-collapsed");
+            hasAutoCollapsed = true;
+            const tab = getCardTab(decor);
+            if (tab instanceof HTMLElement) tab.setAttribute("aria-expanded", "false");
+        };
+
+        const expandHomeCard = (decor) => {
+            if (!(decor instanceof HTMLElement) || !decor.classList.contains("is-collapsed")) return;
+            window.clearTimeout(collapseTimer);
+            decor.classList.remove("is-collapsed");
+            const tab = getCardTab(decor);
+            if (tab instanceof HTMLElement) tab.setAttribute("aria-expanded", "true");
+        };
+
+        const getCollapseHold = (decor) => {
+            const hold = Number.parseInt(decor.dataset.homeWallpaperCollapseHold || "", 10);
+            return Number.isFinite(hold) ? hold : 0;
+        };
+
+        const scheduleCollapse = (decor, hold) => {
+            window.clearTimeout(collapseTimer);
+            collapseTimer = window.setTimeout(() => {
+                if (decor.isConnected) collapseHomeCard(decor);
+            }, hold);
+        };
+
+        const bindHomeCardCollapse = (decor) => {
+            if (!(decor instanceof HTMLElement)) return;
+
+            const tab = getCardTab(decor);
+            if (tab instanceof HTMLElement && tab.dataset.tabBound !== "true") {
+                tab.dataset.tabBound = "true";
+                tab.addEventListener("click", () => expandHomeCard(decor));
+            }
+
+            // 右上角那个 − ：手动提前收起，顺手把还没到点的自动收起定时器掐掉
+            const closeButton = getCardClose(decor);
+            if (closeButton instanceof HTMLElement && closeButton.dataset.closeBound !== "true") {
+                closeButton.dataset.closeBound = "true";
+                closeButton.addEventListener("click", () => {
+                    window.clearTimeout(collapseTimer);
+                    collapseHomeCard(decor);
+                });
+            }
+
+            if (!isAutoCollapseEnabled(decor)) return;
+            // 本次加载已经收过一次（swup 返回首页）：保持收起状态，不重新计时
+            if (hasAutoCollapsed) return;
+            if (decor.dataset.collapseScheduled === "true") return;
+            decor.dataset.collapseScheduled = "true";
+
+            // 先按「卡片此刻已经亮着」起算。只要入场动画在跑，下面每次 animationend 都会往后
+            // 顺延一次，最终落点 = 最后一个入场动画结束 + hold —— 所以配置里只写「停留多久」，
+            // 不用写「从入场开始算」的总时长，改入场动画节奏也不必回来改这个数。
+            scheduleCollapse(decor, getCollapseHold(decor));
+            decor.addEventListener("animationend", (event) => {
+                if (!(event.target instanceof HTMLElement)) return;
+                if (!ENTRANCE_ANIMATIONS.includes(event.animationName)) return;
+                if (hasAutoCollapsed) return;
+                scheduleCollapse(decor, getCollapseHold(decor));
+            });
+        };
+
         // 入场动画：立刻加 is-ready 放行文字动画；卡片图片单独走 is-media-ready 淡入。
         // 早期实现会先等 .home-wallpaper-card 内的图片加载完再加 is-ready，
         // 但那会把卡片标题（LCP 元素）的入场一并拖到图片下载完成之后（实测可达数百毫秒甚至数秒）。
@@ -615,7 +802,8 @@ const isExternal = (url: string) => url.startsWith("http");
                 const isHome = document.body.classList.contains("is-home");
                 if (isHome && !wasHome) {
                     const decor = getDecor();
-                    if (decor) revealDecor(decor, true);
+                    // 卡片已自动收起时不重播入场：让它保持收起，只留边缘小竖条
+                    if (decor && !decor.classList.contains("is-collapsed")) revealDecor(decor, true);
                 }
                 wasHome = isHome;
             });
@@ -643,7 +831,8 @@ const isExternal = (url: string) => url.startsWith("http");
                     document.body.classList.contains("is-home")
                 ) {
                     const decor = getDecor();
-                    if (decor) revealDecor(decor, true);
+                    // 同上：已收起就不重播，免得卡片又闪回来
+                    if (decor && !decor.classList.contains("is-collapsed")) revealDecor(decor, true);
                 }
             });
         };
@@ -821,9 +1010,60 @@ const isExternal = (url: string) => url.startsWith("http");
             });
         };
 
+        // ========== 右下角：贴纸开关 ==========
+        // JS 只切 is-stickers-hidden 一个类，错开节奏全在 CSS（按 --home-wallpaper-sticker-i）。
+        // 状态存 localStorage，刷新 / 切页 / 从文章返回都记得住。
+        const STICKERS_HIDDEN_KEY = "homeWallpaperStickersHidden";
+
+        const readStickersHidden = () => {
+            try {
+                return window.localStorage.getItem(STICKERS_HIDDEN_KEY) === "1";
+            } catch {
+                // 隐私模式读不了就当没隐藏
+                return false;
+            }
+        };
+
+        const applyStickersHidden = (decor, hidden) => {
+            decor.classList.toggle("is-stickers-hidden", hidden);
+            const toggle = decor.querySelector("[data-home-wallpaper-sticker-toggle]");
+            if (toggle instanceof HTMLElement) {
+                const label = hidden ? "显示贴纸" : "隐藏贴纸";
+                toggle.setAttribute("aria-pressed", hidden ? "true" : "false");
+                toggle.setAttribute("aria-label", label);
+                toggle.title = label;
+            }
+        };
+
+        const bindStickerToggle = (decor) => {
+            if (!(decor instanceof HTMLElement)) return;
+            const toggle = decor.querySelector("[data-home-wallpaper-sticker-toggle]");
+            if (!(toggle instanceof HTMLElement)) return;
+
+            if (toggle.dataset.toggleBound !== "true") {
+                toggle.dataset.toggleBound = "true";
+                toggle.addEventListener("click", () => {
+                    const hidden = !decor.classList.contains("is-stickers-hidden");
+                    applyStickersHidden(decor, hidden);
+                    try {
+                        window.localStorage.setItem(STICKERS_HIDDEN_KEY, hidden ? "1" : "0");
+                    } catch {
+                        // 写不进去就不记状态，当次开关照常生效
+                    }
+                });
+            }
+
+            // 每次 bind 都回写：一来切页后状态能对上，二来 bindAll 在放行 is-ready 的 rAF
+            // 之前就执行，所以刷新时"已隐藏"会在入场动画开跑前贴上，不会先闪一下贴纸。
+            applyStickersHidden(decor, readStickersHidden());
+        };
+
         const bindAll = () => {
             bindHomeWallpaperStickers();
             bindHomeWallpaperCopyLinks();
+            const decor = getDecor();
+            bindHomeCardCollapse(decor);
+            bindStickerToggle(decor);
         };
         bindAll();
         // 壁纸区在 Swup 容器外理论上只渲染一次，这里防御性重绑（内部均有去重标记）
@@ -1389,6 +1629,201 @@ const isExternal = (url: string) => url.startsWith("http");
         background: #6a3029c7;
     }
 
+    /* ========== 入场后自动收起 ========== */
+    /* 卡片滑出方向（配置 autoCollapse.slideTo）：104vw 保证卡片连同阴影整个越过容器边缘。
+       容器有 overflow: hidden，越过即被裁掉，所以不用担心它跑到页面外面撑出横向滚动条。 */
+    .home-wallpaper-decor[data-home-wallpaper-card-slide="right"] {
+        --home-wallpaper-card-exit-x: 104vw;
+    }
+    .home-wallpaper-decor[data-home-wallpaper-card-slide="left"] {
+        --home-wallpaper-card-exit-x: -104vw;
+    }
+
+    /* 收起前先把卡片自身的入场动画摘掉：animation 的 fill: both 会把终态一直保留，
+       优先级高于普通声明，不摘掉的话 transition 改 transform / opacity 推不动。
+       只摘卡片这一层 —— 头像/标题/导航/社交标签的子动画照旧，收起时不会连带抖动。 */
+    .home-wallpaper-decor.is-entrance-done .home-wallpaper-card,
+    .home-wallpaper-decor.is-entrance-done .home-wallpaper-card.is-motion-settled {
+        animation: none !important;
+        transition:
+            transform var(--home-wallpaper-collapse-duration, 950ms) cubic-bezier(0.33, 1, 0.68, 1),
+            opacity calc(var(--home-wallpaper-collapse-duration, 950ms) * 0.45) ease;
+    }
+
+    /* 收起态：整体右移出屏 + 淡出。
+       只做水平位移是刻意的 —— 卡片的垂直位置没变，手机端那套「按卡片位置算贴纸落点」的
+       布局（applyMobileStickerLayout）读到的 rect.top / rect.bottom 不变，贴纸不会跟着乱跳。
+       走动那一下也顺手把点击交出去，免得透明卡片还挡着壁纸上的东西。
+
+       ⚠️ 特意带上 .is-entrance-done.is-collapsed 这一组（4 个类，特异性 0-4-0）：
+       光靠 .is-collapsed .is-motion-settled 不够稳 —— 系统开了「减少动态效果」时入场动画是
+       none、压根不会有 animationend，卡片就拿不到 is-motion-settled，于是只剩 0-3-0，
+       会被同特异性但更靠后的 .is-ready ... { opacity: 1 !important } 反压回去（表现为
+       卡片明明移出了屏幕，computed opacity 却还是 1）。
+       collapseHomeCard() 必定先加 is-entrance-done 再加 is-collapsed，所以这一组永远命中。 */
+    .home-wallpaper-decor.is-collapsed .home-wallpaper-card,
+    .home-wallpaper-decor.is-entrance-done.is-collapsed .home-wallpaper-card,
+    .home-wallpaper-decor.is-collapsed .home-wallpaper-card.is-motion-settled {
+        opacity: 0 !important;
+        transform: translate(calc(-50% + var(--home-wallpaper-card-exit-x, 104vw)), -50%) !important;
+        pointer-events: none !important;
+        transition:
+            transform var(--home-wallpaper-collapse-duration, 950ms) cubic-bezier(0.33, 1, 0.68, 1),
+            opacity
+            calc(var(--home-wallpaper-collapse-duration, 950ms) * 0.5) ease
+            calc(var(--home-wallpaper-collapse-duration, 950ms) * 0.32);
+    }
+
+    /* 收起后挂在边缘的小竖条（点一下 / 键盘 Enter 把卡片滑回来） */
+    .home-wallpaper-card-tab {
+        position: absolute;
+        top: 50%;
+        z-index: 4;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1.15rem 0.46rem;
+        border: 1px solid rgba(255, 249, 239, 0.28);
+        color: #fffaf3f5;
+        font-family: inherit;
+        font-size: 0.74rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.16em;
+        background: rgba(28, 20, 24, 0.55);
+        box-shadow: 0 8px 22px #110f133d;
+        -webkit-backdrop-filter: blur(9px) saturate(1.05);
+        backdrop-filter: blur(9px) saturate(1.05);
+        cursor: pointer;
+        pointer-events: auto;
+        opacity: 0;
+        visibility: hidden;
+        transform: translate(var(--home-wallpaper-tab-hide-x, -100%), -50%);
+        transition:
+            opacity 0.3s ease,
+            visibility 0s linear 0.3s,
+            transform 0.42s var(--home-wallpaper-motion-ease),
+            background-color 0.2s ease,
+            border-color 0.2s ease;
+    }
+    .home-wallpaper-decor[data-home-wallpaper-tab-side="left"] .home-wallpaper-card-tab {
+        left: 0;
+        border-left: 0;
+        border-radius: 0 999px 999px 0;
+        --home-wallpaper-tab-hide-x: calc(-100% - 0.25rem);
+    }
+    .home-wallpaper-decor[data-home-wallpaper-tab-side="right"] .home-wallpaper-card-tab {
+        right: 0;
+        border-right: 0;
+        border-radius: 999px 0 0 999px;
+        --home-wallpaper-tab-hide-x: calc(100% + 0.25rem);
+    }
+    .home-wallpaper-card-tab__text {
+        display: block;
+        writing-mode: vertical-rl;
+        text-shadow: 0 1px 7px rgba(18, 17, 22, 0.4);
+    }
+    /* 指尖那个小方块：和卡片身份行的小方块同色，暗示"点这里展开" */
+    .home-wallpaper-card-tab__mark {
+        width: 6px;
+        height: 6px;
+        background: #f2b3bf;
+        box-shadow: 0 0 0 2px #ffffff1a;
+        transform: rotate(45deg);
+        transition: transform 0.3s var(--home-wallpaper-motion-ease);
+    }
+    /* 等卡片滑出去大半再挂出来（延迟 = 0.55 × 收起时长），两段动作接力而不是同时挤在一起 */
+    .home-wallpaper-decor.is-collapsed .home-wallpaper-card-tab {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(var(--home-wallpaper-tab-shift, 0px), -50%);
+        transition-delay:
+            calc(var(--home-wallpaper-collapse-duration, 950ms) * 0.55),
+            calc(var(--home-wallpaper-collapse-duration, 950ms) * 0.55),
+            calc(var(--home-wallpaper-collapse-duration, 950ms) * 0.55),
+            0s,
+            0s;
+    }
+    .home-wallpaper-decor.is-collapsed .home-wallpaper-card-tab:hover,
+    .home-wallpaper-decor.is-collapsed .home-wallpaper-card-tab:focus-visible {
+        --home-wallpaper-tab-shift: 0.22rem;
+        border-color: rgba(255, 249, 239, 0.48);
+        background: rgba(48, 32, 38, 0.62);
+    }
+    .home-wallpaper-decor.is-collapsed .home-wallpaper-card-tab:hover .home-wallpaper-card-tab__mark,
+    .home-wallpaper-decor.is-collapsed
+        .home-wallpaper-card-tab:focus-visible
+        .home-wallpaper-card-tab__mark {
+        transform: rotate(45deg) scale(1.35);
+    }
+    .home-wallpaper-decor.is-collapsed .home-wallpaper-card-tab:focus-visible {
+        outline: 2px solid rgba(255, 236, 170, 0.95);
+        outline-offset: 3px;
+    }
+
+    /* 卡片右上角的手动收起（×）：跟边缘小竖条同一套毛玻璃，只是缩成一颗圆钮。
+       卡片本体 pointer-events: none，所以这里要自己把点击拿回来。 */
+    .home-wallpaper-card__close {
+        position: absolute;
+        top: 0.72rem;
+        right: 0.72rem;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        padding: 0;
+        border: 1px solid rgba(255, 249, 239, 0.26);
+        border-radius: 999px;
+        background: rgba(28, 20, 24, 0.42);
+        box-shadow: 0 6px 16px #110f132e;
+        -webkit-backdrop-filter: blur(8px) saturate(1.05);
+        backdrop-filter: blur(8px) saturate(1.05);
+        cursor: pointer;
+        pointer-events: auto;
+        opacity: 0;
+        transition:
+            opacity 0.32s ease,
+            background-color 0.2s ease,
+            border-color 0.2s ease,
+            transform 0.3s var(--home-wallpaper-motion-ease);
+    }
+    /* 等卡片入场落定（1.41s）再淡入，免得跟头像标题一起抢戏 */
+    .home-wallpaper-decor.is-ready .home-wallpaper-card__close {
+        opacity: 1;
+        transition-delay: 1.5s, 0s, 0s, 0s;
+    }
+    /* 收过一次之后再展开时，× 要立刻回来，别再等 1.5s（选择器多一层，压过上面那条） */
+    .home-wallpaper-decor.is-entrance-done .home-wallpaper-card .home-wallpaper-card__close {
+        opacity: 1;
+        transition-delay: 0s;
+    }
+    .home-wallpaper-card__close-bar {
+        width: 0.72rem;
+        height: 1.6px;
+        border-radius: 2px;
+        background: #fffaf3d9;
+    }
+    .home-wallpaper-card__close:hover,
+    .home-wallpaper-card__close:focus-visible {
+        border-color: rgba(255, 249, 239, 0.5);
+        background: rgba(70, 44, 52, 0.62);
+        transform: scale(1.08);
+    }
+    .home-wallpaper-card__close:focus-visible {
+        outline: 2px solid rgba(255, 236, 170, 0.95);
+        outline-offset: 2px;
+    }
+    /* 收起态顺手把这个钮也关掉：卡片本体虽有 pointer-events: none，
+       但子元素 pointer-events: auto 会把它重新打开，别留一颗看不见还能点的按钮 */
+    .home-wallpaper-decor.is-collapsed .home-wallpaper-card__close {
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     /* ========== 贴纸 ========== */
     .home-wallpaper-decor__stickers {
         position: absolute;
@@ -1412,6 +1847,16 @@ const isExternal = (url: string) => url.startsWith("http");
         touch-action: none;
         user-select: none;
         -webkit-touch-callout: none;
+        /* 放回（显示）时的淡入走这里：延迟按序号倒着算，最右边那张先回。
+           收起方向的延迟写在 .is-stickers-hidden 那条里 —— CSS 的 transition 取的是
+           「变化之后」那条声明，所以两个方向各写各的才不打架。 */
+        transition:
+            opacity var(--home-wallpaper-sticker-toggle-duration, 340ms) ease
+                calc(
+                    (var(--home-wallpaper-sticker-count, 11) - 1 - var(--home-wallpaper-sticker-i, 0)) *
+                        var(--home-wallpaper-sticker-toggle-stagger, 40ms)
+                ),
+            visibility 0s linear;
     }
     .home-wallpaper-sticker:active,
     .home-wallpaper-sticker.is-dragging {
@@ -1568,6 +2013,20 @@ const isExternal = (url: string) => url.startsWith("http");
         .home-wallpaper-decor.is-ready .home-wallpaper-sticker--note {
             animation-name: home-wallpaper-note-enter-mobile;
         }
+        .home-wallpaper-card-tab {
+            gap: 0.4rem;
+            padding: 0.9rem 0.38rem;
+            font-size: 0.68rem;
+            letter-spacing: 0.12em;
+        }
+        /* 手机端点按目标放大一点（选择器多挂一层，才压得过后面那条基础样式） */
+        .home-wallpaper-decor .home-wallpaper-sticker-toggle {
+            right: 0.75rem;
+            bottom: 0.75rem;
+            width: 2.2rem;
+            height: 2.2rem;
+            font-size: 0.92rem;
+        }
     }
 
     /* fullscreen 模式豁免：主题对壁纸容器内所有 img 施加了
@@ -1613,6 +2072,139 @@ const isExternal = (url: string) => url.startsWith("http");
         transform: none !important;
     }
 
+    /* ========== 右下角：隐藏贴纸开关 ========== */
+    /* 错开节奏全在 CSS 里，JS 只切 is-stickers-hidden 这一个类。
+       选择器刻意多挂一层 .home-wallpaper-decor__stickers（合计 4 个类）：
+       入场动画那条是 (0,4,0)，同特异性就得靠源码顺序，这里放得很靠后所以一定赢；
+       也顺带压过 is-motion-settled 与 reduced-motion 里那两条 opacity: 1 !important（都是 (0,3,0)）。
+       （!important 的声明优先级高于动画，所以透明度压得住入场动画，不需要再 animation: none。）
+       只作用于这一排小人 —— 卡片头像上那张小贴纸在卡片里，不归这里管。
+
+       ⚠️ 这里**故意不写 animation: none**：写了的话，页面加载时就已隐藏的贴纸会被掐掉入场动画，
+       于是永远不触发 animationend、拿不到 is-motion-settled；等用户点"放回"时入场动画重新生效
+       （0.52s 延迟 + 0.76s），会把右侧先回的级联整个盖掉 —— 表现为"刷新过之后放回没有逐张效果"。
+       让它照常跑（看不见而已，11 段很便宜）就能保证两条路径状态一致。 */
+    .home-wallpaper-decor.is-stickers-hidden .home-wallpaper-decor__stickers > .home-wallpaper-sticker {
+        opacity: 0 !important;
+        visibility: hidden;
+        pointer-events: none !important;
+        transition:
+            opacity var(--home-wallpaper-sticker-toggle-duration, 340ms) ease
+                calc(var(--home-wallpaper-sticker-i, 0) * var(--home-wallpaper-sticker-toggle-stagger, 40ms)),
+            visibility 0s linear
+                calc(
+                    var(--home-wallpaper-sticker-i, 0) * var(--home-wallpaper-sticker-toggle-stagger, 40ms) +
+                        var(--home-wallpaper-sticker-toggle-duration, 340ms)
+                );
+    }
+
+    /* 开关本体：和卡片右上角那个 − 同一套毛玻璃，尺寸略大一点好点。
+       右下角位置是算过的：贴纸那排 bottom: 5%，按钮压在 0.9rem 以内基本只蹭到最右
+       那张贴纸盒子底部几像素的透明边，视觉上看不出来。 */
+    .home-wallpaper-sticker-toggle {
+        position: absolute;
+        right: 0.9rem;
+        bottom: 0.9rem;
+        z-index: 5;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 1px solid rgba(255, 249, 239, 0.28);
+        border-radius: 999px;
+        color: #fffaf3e0;
+        font-size: 0.86rem;
+        line-height: 1;
+        background: rgba(28, 20, 24, 0.46);
+        box-shadow: 0 6px 16px #110f132e;
+        -webkit-backdrop-filter: blur(9px) saturate(1.05);
+        backdrop-filter: blur(9px) saturate(1.05);
+        cursor: pointer;
+        pointer-events: auto;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+            opacity 0.32s ease,
+            visibility 0s linear 0.32s,
+            background-color 0.2s ease,
+            border-color 0.2s ease,
+            transform 0.3s var(--home-wallpaper-motion-ease);
+    }
+    /* 等贴纸（0.52s + 0.76s = 1.28s）和卡片都落定再露脸，别参与入场抢戏。
+       配合 visibility 一起切，未露脸时不会被键盘 Tab 到。 */
+    .home-wallpaper-decor.is-ready .home-wallpaper-sticker-toggle {
+        opacity: 1;
+        visibility: visible;
+        transition-delay: 1.6s, 1.6s, 0s, 0s, 0s;
+    }
+    .home-wallpaper-sticker-toggle__icon {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+            opacity 0.2s ease,
+            transform 0.2s ease;
+    }
+    .home-wallpaper-sticker-toggle__icon--off {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+    .home-wallpaper-decor.is-stickers-hidden .home-wallpaper-sticker-toggle__icon--on {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+    .home-wallpaper-decor.is-stickers-hidden .home-wallpaper-sticker-toggle__icon--off {
+        opacity: 1;
+        transform: scale(1);
+    }
+    /* 隐藏状态下按钮压暗一点，暗示"有个东西被关掉了" */
+    .home-wallpaper-decor.is-stickers-hidden .home-wallpaper-sticker-toggle {
+        border-color: rgba(255, 249, 239, 0.18);
+        background: rgba(28, 20, 24, 0.34);
+    }
+    /* hover 规则写在压暗那条之后：同特异性靠顺序取胜，不然隐藏态下点不到高亮 */
+    .home-wallpaper-decor .home-wallpaper-sticker-toggle:hover,
+    .home-wallpaper-decor .home-wallpaper-sticker-toggle:focus-visible {
+        border-color: rgba(255, 249, 239, 0.55);
+        background: rgba(70, 44, 52, 0.62);
+        transform: scale(1.08);
+    }
+    .home-wallpaper-decor .home-wallpaper-sticker-toggle:focus-visible {
+        outline: 2px solid rgba(255, 236, 170, 0.95);
+        outline-offset: 2px;
+    }
+
+    /* ========== 下滑箭头 vs 贴纸层 ========== */
+    /* 贴纸层 z-index 25 > 箭头的 10，居中那张贴纸会把箭头整个盖住。
+       装饰卡片启用时（:has 门控，关掉卡片时箭头维持上游原样）把箭头抬到 30，
+       并给它一块和右下角开关同款的毛玻璃圆底——压在贴纸上也清楚是一颗按钮。
+       图标随之从 5rem 收到 3rem，否则 80px 的箭头会撑破 72px 的圆。 */
+    html[data-wallpaper-mode="fullscreen"] body.is-home #wallpaper-wrapper:has(.home-wallpaper-decor) .scroll-down-indicator,
+    #wallpaper-wrapper.wallpaper-fullscreen:has(.home-wallpaper-decor) .scroll-down-indicator {
+        z-index: 30;
+        width: 4.5rem;
+        height: 4.5rem;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 249, 239, 0.28);
+        border-radius: 999px;
+        background: rgba(28, 20, 24, 0.46);
+        box-shadow: 0 6px 16px #110f132e;
+        -webkit-backdrop-filter: blur(9px) saturate(1.05);
+        backdrop-filter: blur(9px) saturate(1.05);
+    }
+    html[data-wallpaper-mode="fullscreen"] body.is-home #wallpaper-wrapper:has(.home-wallpaper-decor) .scroll-down-indicator .scroll-down-icon,
+    #wallpaper-wrapper.wallpaper-fullscreen:has(.home-wallpaper-decor) .scroll-down-indicator .scroll-down-icon {
+        font-size: 3rem;
+    }
+    /* hover 高亮跟右下角开关同一套：描边提亮 + 底色偏暖 */
+    html[data-wallpaper-mode="fullscreen"] body.is-home #wallpaper-wrapper:has(.home-wallpaper-decor) .scroll-down-indicator:hover,
+    #wallpaper-wrapper.wallpaper-fullscreen:has(.home-wallpaper-decor) .scroll-down-indicator:hover {
+        border-color: rgba(255, 249, 239, 0.55);
+        background: rgba(70, 44, 52, 0.62);
+    }
+
     /* 减弱动态效果 */
     @media (prefers-reduced-motion: reduce) {
         .home-wallpaper-decor {
@@ -1646,6 +2238,22 @@ const isExternal = (url: string) => url.startsWith("http");
         .home-wallpaper-card__subtitle::after,
         .home-wallpaper-card__nav a::after {
             transition: none;
+        }
+        /* 减弱动态效果：收起照样发生（那是内容显隐，不是动画），但不要位移过程，直接到终态 */
+        .home-wallpaper-card,
+        .home-wallpaper-card-tab,
+        .home-wallpaper-card__close,
+        .home-wallpaper-sticker-toggle,
+        .home-wallpaper-sticker {
+            transition: none !important;
+        }
+        .home-wallpaper-decor[data-home-wallpaper-tab-side="left"] .home-wallpaper-card-tab {
+            left: 0;
+            transform: translate(0, -50%) !important;
+        }
+        .home-wallpaper-decor[data-home-wallpaper-tab-side="right"] .home-wallpaper-card-tab {
+            right: 0;
+            transform: translate(0, -50%) !important;
         }
     }
 </style>
