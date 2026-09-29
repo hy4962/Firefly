@@ -241,7 +241,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 					<div class="analytics-deployment__heading">
 						<p class="analytics-section-kicker">OPERATIONS / RELEASES</p>
 						<h2 id="analytics-push-title">推送节奏</h2>
-						<p class="analytics-panel__description">按 GitHub main 分支推送时间观察活动密度</p>
+						<p class="analytics-panel__description">按 GitHub 提交时间观察活动密度</p>
 					</div>
 					<div class="analytics-deployment__art" aria-hidden="true">
 						<p>持续热爱，<br />一直在更新！</p>
@@ -320,7 +320,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 							</div>
 						</div>
 						<div class="analytics-deployment__heatmap-foot">
-							<span class="analytics-deployment__source"><Icon is:inline name="simple-icons:github" aria-hidden="true" /><span data-push-note>按 GitHub main 分支推送时间统计 · 已扣除每日 2 次固定 Actions</span></span>
+							<span class="analytics-deployment__source"><Icon is:inline name="simple-icons:github" aria-hidden="true" /><span data-push-note>按 GitHub 提交时间统计</span></span>
 							<span class="analytics-deployment__heatmap-legend" aria-label="推送次数图例">
 								<span>少</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>多</span>
 							</span>
@@ -537,7 +537,9 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 			bound: false,
 		};
 		const timeZone = "Asia/Shanghai";
-		const defaultActionRunsPerDay = 2;
+		// 参考实现每天有 2 次定时 Actions 自动提交，需要从计数里扣掉。
+		// 本站没有这类机器人，保持 0 即纯提交计数。
+		const defaultActionRunsPerDay = 0;
 		const numberFormatter = new Intl.NumberFormat("zh-CN");
 		const animationClockKey = "__9llAnalyticsAnimationClock";
 		const datePartsFormatter = new Intl.DateTimeFormat("zh-CN", {
@@ -2664,7 +2666,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 						setText(streak, "—");
 						setText(streakNote, "等待第一次推送");
 						setText(count, "—");
-						setText(note, "等待 GitHub main 分支的下一次推送");
+						setText(note, "等待下一次推送");
 						return;
 					}
 
@@ -2679,7 +2681,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 					if (pushTimestamps.length < 2) {
 						setText(interval, "首次推送");
 						setText(average, "等待下一次");
-						setText(note, "按 GitHub main 分支推送时间统计 · 已扣除每日 2 次固定 Actions");
+						setText(note, "按 GitHub 提交时间统计");
 						return;
 					}
 
@@ -2688,7 +2690,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 					const averageInterval = intervals.reduce((sum, value) => sum + value, 0) / intervals.length / 1000;
 					setText(interval, formatDeploymentDuration(latestInterval));
 					setText(average, formatDeploymentDuration(averageInterval));
-					setText(note, "按 GitHub main 分支推送时间统计 · 已扣除每日 2 次固定 Actions");
+					setText(note, "按 GitHub 提交时间统计");
 				} catch (error) {
 					if (error?.name === "AbortError") return;
 					setText(status, "暂不可用");
