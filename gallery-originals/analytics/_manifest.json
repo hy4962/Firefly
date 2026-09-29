@@ -1,0 +1,59 @@
+{
+  "album": "analytics",
+  "date": "2026-09-29",
+  "items": [
+    {
+      "source": "analytics-hero.png",
+      "album": "01-hero.webp",
+      "width": 2172,
+      "height": 724,
+      "sourceFormat": "png"
+    },
+    {
+      "source": "push-rhythm-character.png",
+      "album": "02-push-rhythm.webp",
+      "width": 1312,
+      "height": 1199,
+      "sourceFormat": "png"
+    },
+    {
+      "source": "visitor-activity-character.png",
+      "album": "03-visitor-activity.webp",
+      "width": 1312,
+      "height": 1199,
+      "sourceFormat": "png"
+    },
+    {
+      "source": "summary/summary-visitors.webp",
+      "album": "04-summary-visitors.webp",
+      "width": 960,
+      "height": 600,
+      "sourceFormat": "webp",
+      "note": "原样拷贝"
+    },
+    {
+      "source": "summary/summary-pageviews.webp",
+      "album": "05-summary-pageviews.webp",
+      "width": 960,
+      "height": 600,
+      "sourceFormat": "webp",
+      "note": "原样拷贝"
+    },
+    {
+      "source": "summary/summary-today-visitors.webp",
+      "album": "06-summary-today-visitors.webp",
+      "width": 960,
+      "height": 600,
+      "sourceFormat": "webp",
+      "note": "原样拷贝"
+    },
+    {
+      "source": "summary/summary-today-pageviews.webp",
+      "album": "07-summary-today-pageviews.webp",
+      "width": 960,
+      "height": 600,
+      "sourceFormat": "webp",
+      "note": "原样拷贝"
+    }
+  ]
+}

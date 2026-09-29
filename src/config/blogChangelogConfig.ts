@@ -30,6 +30,25 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.15",
+		title: "统计页的画，搬进相册了",
+		date: "2026-09-29",
+		summary: "把 /analytics/ 页面里的 7 张插画归档成新相册「统计页插画」：页首横幅、两张角色立绘、四张概览卡片插画",
+		description:
+			"统计页里那些画——页首樱花横幅、推送节奏和访客活跃两张角色立绘、概览区四张卡片插画——散在页面各处，没法单独看。这回把它们归进相册：三张 PNG 立绘与横幅转成 90 质量的 webp，四张概览插画本来就是压缩好的 webp，字节原样拷过去不做二次压缩；原始 PNG 归档在仓库 gallery-originals/analytics/，配套 _manifest.json 记录来源与尺寸",
+		items: [
+			{
+				category: "相册",
+				text: "新增「统计页插画」相册（/gallery/analytics/），收录 /analytics/ 页面的 7 张插画：01 页首横幅、02-03 两张角色立绘（保留透明通道）、04-07 四张概览卡片插画，封面用推送节奏立绘",
+			},
+			{
+				category: "素材",
+				text: "三张 PNG 转 webp（质量 90，不放大，保留透明通道）；四张概览 webp 字节原样拷贝，避免二次有损压缩。原始 PNG 归档至 gallery-originals/analytics/ 并附 _manifest.json",
+			},
+		],
+		tags: ["统计页", "相册", "素材"],
+	},
+	{
 		version: "V1.14",
 		title: "搬来的看板，得改成自己的",
 		date: "2026-09-29",

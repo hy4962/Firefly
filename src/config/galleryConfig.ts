@@ -96,6 +96,16 @@ export const galleryConfig: GalleryConfig = {
 			tags: ["灼眼的夏娜", "壁纸", "手机"],
 			cover: "/gallery/shana-phone/04.webp",
 		},
+		{
+			id: "analytics",
+			name: "统计页插画",
+			description:
+				"/analytics/ 页面的插画素材合集：页首横幅、两张角色立绘与四张概览卡片插画。原图归档在仓库 gallery-originals/analytics/。",
+			location: "Firefly 博客",
+			date: "2026-09-29",
+			tags: ["统计页", "插画", "存档"],
+			cover: "/gallery/analytics/02-push-rhythm.webp",
+		},
 		// {
 		// 	id: "firefly-2026",
 		// 	name: "可爱流萤",
