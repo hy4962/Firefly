@@ -12,6 +12,8 @@ const historicalVisitors = umamiAnalytics?.historicalStats?.visitors ?? 0;
 const historicalPageviews = umamiAnalytics?.historicalStats?.pageviews ?? 0;
 const hasPublicStats = Boolean(umamiAnalytics?.websiteId && shareId && shareApiBase);
 const sourceLabel = shareApiBase.includes("cloud.umami.is") ? "Umami Cloud" : "Umami";
+// Umami 的公开分享页（不是实例首页，首页会跳登录）。由 shareApiBase + shareId 拼出，配置改了自动跟着变。
+const publicShareUrl = hasPublicStats ? `${shareApiBase}/share/${shareId}` : "";
 const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.serverURL ?? "" : "";
 ---
 
@@ -52,10 +54,10 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 							<span>DATA SOURCE</span>
 							<a
 								class="analytics-hero__source-link"
-								href={shareApiBase || "#"}
+								href={publicShareUrl || shareApiBase || "#"}
 								target="_blank"
 								rel="noopener noreferrer"
-								title="打开 Umami 后台"
+								title="打开 Umami 公开看板"
 							>
 								<strong>{sourceLabel}</strong>
 								<Icon is:inline name="material-symbols:open-in-new-rounded" aria-hidden="true" />
