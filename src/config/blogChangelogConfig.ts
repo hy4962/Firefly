@@ -58,6 +58,10 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 				text: "页面用到的 --text-color 与 --font-active-sans 上游主题没有，做在页面自身作用域里而不是改 src/styles/variables.styl，避免为两个变量动主题源文件",
 			},
 			{
+				category: "修复",
+				text: "补上「推送节奏」依赖的 GitHub 提交数据接口（构建期生成静态 JSON：全量 clone 读 git 历史，shallow clone 回退到 GitHub API 分页），并去掉参考实现里「每日扣除 2 次定时 Actions」的算法——那是人家自己的定时机器人，照抄会把提交数算少",
+			},
+			{
 				category: "内容",
 				text: "同步这次的实现记录（/posts/blog/analyticsdashboard/）：从自研翻车、到怎么发现漏了一个组件，都写了",
 			},
