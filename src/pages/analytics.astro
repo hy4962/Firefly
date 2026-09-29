@@ -41,17 +41,27 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 						<span><Icon is:inline name="material-symbols:lock-open-rounded" aria-hidden="true" />公开只读</span>
 						<span><Icon is:inline name="material-symbols:calendar-today-rounded" aria-hidden="true" />按北京时间汇总</span>
 					</div>
-				</div>
 
-				<div class="analytics-hero__meta">
-					<div class="analytics-status" data-analytics-status data-state="loading" role="status" aria-live="polite">
-						<span class="analytics-status__dot" aria-hidden="true"></span>
-						<span data-analytics-status-text>连接中</span>
-					</div>
-					<div class="analytics-hero__stamp">
-						<span>DATA SOURCE</span>
-						<strong>{sourceLabel}</strong>
-						<small data-analytics-last-update>公开分享数据 · 自动刷新</small>
+					{/* 状态与数据来源跟着文案排，别飘到右上角去压角色插画 */}
+					<div class="analytics-hero__meta">
+						<div class="analytics-status" data-analytics-status data-state="loading" role="status" aria-live="polite">
+							<span class="analytics-status__dot" aria-hidden="true"></span>
+							<span data-analytics-status-text>连接中</span>
+						</div>
+						<div class="analytics-hero__stamp">
+							<span>DATA SOURCE</span>
+							<a
+								class="analytics-hero__source-link"
+								href={shareApiBase || "#"}
+								target="_blank"
+								rel="noopener noreferrer"
+								title="打开 Umami 后台"
+							>
+								<strong>{sourceLabel}</strong>
+								<Icon is:inline name="material-symbols:open-in-new-rounded" aria-hidden="true" />
+							</a>
+							<small data-analytics-last-update>公开分享数据 · 自动刷新</small>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -3263,9 +3273,10 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 		opacity: 0.6;
 	}
 
+	/* 状态与数据来源已挪进文案块，右侧那一列不再需要 */
 	.analytics-hero__grid {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: minmax(0, 1fr);
 		gap: 1.25rem;
 		align-items: end;
 	}
@@ -3336,9 +3347,9 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 
 	.analytics-hero__meta {
 		display: grid;
-		justify-items: end;
+		justify-items: start;
 		gap: 0.7rem;
-		min-width: 9rem;
+		margin-top: 1.15rem;
 	}
 
 	.analytics-status {
@@ -3359,7 +3370,12 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 	.analytics-status[data-state="local"] { color: var(--analytics-ok); border-color: color-mix(in oklab, var(--analytics-ok) 28%, transparent); background: color-mix(in oklab, var(--analytics-ok) 10%, transparent); }
 	.analytics-status[data-state="loading"] .analytics-status__dot { animation: analytics-pulse 1.2s ease-in-out infinite; }
 
-	.analytics-hero__stamp { text-align: right; }
+	.analytics-hero__stamp { text-align: left; }
+	.analytics-hero__source-link { display: inline-flex; align-items: center; gap: 0.32rem; color: inherit; text-decoration: none; }
+	.analytics-hero__source-link svg { color: var(--analytics-blue); font-size: 0.84rem; opacity: 0.7; transition: opacity 180ms ease, transform 180ms ease; }
+	.analytics-hero__source-link:hover strong { color: var(--analytics-blue); }
+	.analytics-hero__source-link:hover svg { opacity: 1; transform: translate(1px, -1px); }
+	.analytics-hero__source-link:focus-visible { outline: 2px solid color-mix(in oklab, var(--analytics-blue) 72%, transparent); outline-offset: 3px; border-radius: 0.3rem; }
 	.analytics-hero__stamp span,
 	.analytics-hero__stamp small { display: block; color: var(--analytics-text-faint); font-size: 0.68rem; }
 	.analytics-hero__stamp span { font-family: var(--font-active-sans); letter-spacing: 0.12em; }
@@ -3929,8 +3945,6 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 	@media (max-width: 680px) {
 		.analytics-hero { background-position: 72% center !important; }
 		.analytics-hero__grid { grid-template-columns: 1fr; gap: 1.35rem; }
-		.analytics-hero__meta { justify-items: start; grid-template-columns: auto 1fr; align-items: end; min-width: 0; }
-		.analytics-hero__stamp { text-align: left; }
 		.analytics-hero__rail { margin-top: 1.7rem; }
 		.analytics-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.analytics-summary-card { min-height: 8.9rem; }
