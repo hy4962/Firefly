@@ -18,6 +18,12 @@ export const prerender = true;
 
 const repository = "hy4962/Firefly";
 const branch = "HY";
+/**
+ * 只统计本人的提交。
+ * 这个仓库是 fork，不加过滤会把上游 CuteLeaf/Firefly 的历史一起算进来
+ * （实测：全部 1695 条，本人的只有 253 条）。
+ */
+const author = "hy4962";
 const weeksBack = 53;
 /** git log 拿到的条数少于这个值，就认为 clone 不完整，改走 API */
 const gitLogTrustThreshold = 100;
@@ -34,7 +40,7 @@ const readFromGit = (): string[] => {
 	try {
 		return execFileSync(
 			"git",
-			["log", "HEAD", `--since=${weeksBack} weeks ago`, "--format=%cI"],
+			["log", "HEAD", `--since=${weeksBack} weeks ago`, `--author=${author}`, "--format=%cI"],
 			{ cwd: process.cwd(), encoding: "utf8" },
 		)
 			.split(/\r?\n/)
@@ -52,21 +58,41 @@ const readFromGitHub = async (): Promise<string[]> => {
 			const url =
 				`https://api.github.com/repos/${repository}/commits` +
 				`?sha=${encodeURIComponent(branch)}&per_page=100&page=${page}` +
+				`&author=${encodeURIComponent(author)}` +
 				`&since=${sinceDate.toISOString()}`;
 
-			const response = await fetch(url, {
-				headers: {
-					Accept: "application/vnd.github+json",
-					"User-Agent": "firefly-analytics",
-					...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}),
-				},
-			});
-			if (!response.ok) break;
-
-			const list = (await response.json()) as Array<{
-				commit?: { committer?: { date?: string } };
-			}>;
-			if (!Array.isArray(list) || list.length === 0) break;
+			// 网络抖动会让某页失败，进而把这次构建的热力图搞空 —— 每页重试一次再放弃
+			let list: Array<{ commit?: { committer?: { date?: string } } }> | null = null;
+			for (let attempt = 0; attempt < 2; attempt += 1) {
+				try {
+					const response = await fetch(url, {
+						headers: {
+							Accept: "application/vnd.github+json",
+							"User-Agent": "firefly-analytics",
+							...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}),
+						},
+					});
+					if (!response.ok) {
+						console.warn(
+							`[github-pushes] GitHub API 第 ${page} 页返回 HTTP ${response.status}`,
+						);
+						break;
+					}
+					const payload = await response.json();
+					if (Array.isArray(payload)) {
+						list = payload;
+						break;
+					}
+				} catch (error) {
+					if (attempt === 1) {
+						console.warn(
+							`[github-pushes] 第 ${page} 页重试后仍失败：`,
+							error instanceof Error ? error.message : error,
+						);
+					}
+				}
+			}
+			if (!list || list.length === 0) break;
 
 			for (const item of list) {
 				const date = item?.commit?.committer?.date;
@@ -74,8 +100,12 @@ const readFromGitHub = async (): Promise<string[]> => {
 			}
 			if (list.length < 100) break;
 		}
-	} catch {
+	} catch (error) {
 		// 构建环境没有外网时留空，页面会显示「接口暂时没有响应」，不影响构建。
+		console.warn(
+			"[github-pushes] GitHub API 拉取异常：",
+			error instanceof Error ? error.message : error,
+		);
 	}
 	return dates;
 };
@@ -84,12 +114,16 @@ export const GET: APIRoute = async () => {
 	let commits = readFromGit();
 	let source = "git-log";
 
+	// 全量 clone 时 git log 一步到位；沙箱 / 浅克隆（Vercel 默认）下它只有 0～十几条，才回退到 API
 	if (commits.length < gitLogTrustThreshold) {
 		const fromApi = await readFromGitHub();
 		if (fromApi.length > commits.length) {
 			commits = fromApi;
 			source = "github-api";
 		}
+	}
+	if (commits.length === 0) {
+		console.warn("[github-pushes] 一条提交都没拿到，热力图会显示为空");
 	}
 
 	return new Response(
