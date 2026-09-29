@@ -22,6 +22,12 @@ const weeksBack = 53;
 /** git log 拿到的条数少于这个值，就认为 clone 不完整，改走 API */
 const gitLogTrustThreshold = 100;
 
+/**
+ * 可选：构建环境里配一个 GITHUB_TOKEN（Vercel → Settings → Environment Variables），
+ * 未认证的 60 次/小时/IP 会提到 5000 次/小时。不配也能跑，只是频繁推送时可能被限流。
+ */
+const githubToken = process.env.GITHUB_TOKEN || "";
+
 const sinceDate = new Date(Date.now() - weeksBack * 7 * 86400000);
 
 const readFromGit = (): string[] => {
@@ -52,6 +58,7 @@ const readFromGitHub = async (): Promise<string[]> => {
 				headers: {
 					Accept: "application/vnd.github+json",
 					"User-Agent": "firefly-analytics",
+					...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}),
 				},
 			});
 			if (!response.ok) break;
