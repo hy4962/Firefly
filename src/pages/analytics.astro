@@ -556,6 +556,16 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 			hour: "2-digit",
 			minute: "2-digit",
 		});
+		/* 「最近一次推送」卡片在三栏布局下只有约 140px 宽，
+		   完整时间（2026/09/29 10:24:38）放不下，会被父级 overflow: hidden 直接裁掉。
+		   这里去掉年份、只显示到分钟，完整时间挂到 title 上。 */
+		const dateTimeCompactFormatter = new Intl.DateTimeFormat("zh-CN", {
+			timeZone,
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
 
 		const clearRuntime = () => {
 			if (typeof runtime.cleanup === "function") runtime.cleanup();
@@ -2671,7 +2681,9 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 					}
 
 					setText(status, "已记录");
-					setText(latest, dateTimeFormatter.format(new Date(pushTimestamps[0])));
+					const latestDate = new Date(pushTimestamps[0]);
+					setText(latest, dateTimeCompactFormatter.format(latestDate));
+					if (latest) latest.title = dateTimeFormatter.format(latestDate);
 					const latestAgeSeconds = Math.max(0, (Date.now() - pushTimestamps[0]) / 1000);
 					setText(latestBadge, latestAgeSeconds < 60 ? "刚刚" : `${formatDeploymentDuration(latestAgeSeconds)}前`);
 					const streakDays = getPushDayStreak(pushTimestamps);
@@ -3665,7 +3677,10 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 	.analytics-deployment__art > span { position: absolute; z-index: 2; top: 0.22rem; right: 2.2rem; color: #f58baa; font-size: 1.15rem; transform: rotate(12deg); }
 	.analytics-deployment__art img { position: absolute; z-index: 1; right: -0.25rem; bottom: -1.2rem; width: min(100%, 14rem); max-height: 12.2rem; object-fit: contain; object-position: bottom center; filter: drop-shadow(0 0.75rem 0.9rem rgb(45 124 255 / 0.12)); transition: transform 500ms var(--ease-decelerate), filter 500ms ease; }
 	.analytics-deployment:hover .analytics-deployment__art img { transform: translateY(-0.22rem) rotate(1deg); filter: drop-shadow(0 0.9rem 1.1rem rgb(45 124 255 / 0.2)); }
-	.analytics-deployment__metrics { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.65rem; margin: 0 1.35rem; }
+	/* 三栏布局下这个模块只有约 380px 宽，四等分每张只剩 95px：
+	    带日期时间和绿色徽章的那张放不下，挤别人又会把「保持活跃」这类长文案截断。
+	    改成 2×2，每张约 185px，四张都宽松。 */
+	.analytics-deployment__metrics { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; margin: 0 1.35rem; }
 	.analytics-deployment__metric { position: relative; display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; align-items: center; gap: 0.46rem; min-width: 0; min-height: 4.8rem; overflow: hidden; padding: 0.72rem 0.7rem; border-radius: 0.78rem; background: color-mix(in oklab, var(--push-accent) 7%, var(--card-bg)); }
 	.analytics-deployment__metric::before { display: none; }
 	.analytics-deployment__metric-icon { display: grid; width: 2.12rem; height: 2.12rem; place-items: center; color: var(--push-accent); background: transparent; }
@@ -3948,6 +3963,8 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 		.analytics-deployment__art > span { right: 1.25rem; }
 		.analytics-deployment__art img { bottom: -0.9rem; max-height: 10.8rem; }
 		.analytics-deployment__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		/* 窄屏两列时，带完整日期时间的这张独占一行，否则必被裁掉尾巴 */
+		.analytics-deployment__metric--latest { grid-column: 1 / -1; }
 		.analytics-deployment__metric { min-height: 4.45rem; }
 		.analytics-deployment__heatmap-head { grid-template-columns: minmax(0, 1fr) auto; row-gap: 0.7rem; }
 		.analytics-deployment__snake-controls { grid-column: 1 / -1; grid-row: 2; width: 100%; }
