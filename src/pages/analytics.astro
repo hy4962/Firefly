@@ -242,13 +242,14 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 						<p class="analytics-section-kicker">OPERATIONS / RELEASES</p>
 						<h2 id="analytics-push-title">推送节奏</h2>
 						<p class="analytics-panel__description">按 GitHub 提交时间观察活动密度</p>
+						{/* 放文案块里跟着标题走，不要飘到右上角压住角色插画 */}
+						<span class="analytics-panel__badge analytics-deployment__status" data-push-status>读取中</span>
 					</div>
 					<div class="analytics-deployment__art" aria-hidden="true">
 						<p>持续热爱，<br />一直在更新！</p>
 						<span>♥</span>
 						<img src="/assets/images/analytics/push-rhythm-character.png" alt="" loading="lazy" decoding="async" />
 					</div>
-					<span class="analytics-panel__badge analytics-deployment__status" data-push-status>读取中</span>
 				</header>
 				<div class="analytics-deployment__metrics">
 					<div class="analytics-deployment__metric analytics-deployment__metric--latest analytics-deployment__metric--blue">
@@ -3674,7 +3675,8 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 	.analytics-deployment__heading { position: relative; z-index: 1; max-width: 66%; }
 	.analytics-deployment .analytics-section-kicker { margin-bottom: 0.48rem; }
 	.analytics-deployment .analytics-panel__header h2 { font-size: clamp(1.45rem, 3.2vw, 2.05rem); letter-spacing: -0.045em; }
-	.analytics-deployment__status { position: relative; z-index: 3; align-self: flex-start; margin-top: 0.1rem; color: var(--analytics-ok); background: color-mix(in oklab, var(--analytics-ok) 12%, transparent); }
+	/* 跟着标题文案排，不再是 header 的 flex 项 —— 否则会被顶到右上角压住角色插画 */
+	.analytics-deployment__status { position: relative; z-index: 3; display: inline-flex; margin-top: 0.6rem; color: var(--analytics-ok); background: color-mix(in oklab, var(--analytics-ok) 12%, transparent); }
 	.analytics-deployment__status[data-state="pending"] { color: var(--analytics-text-muted); background: color-mix(in oklab, var(--muted) 26%, transparent); }
 	.analytics-deployment__status[data-state="error"] { color: #d46a55; background: color-mix(in oklab, #d46a55 12%, transparent); }
 	.analytics-deployment__header::before { position: absolute; top: -5.6rem; right: 5.2rem; width: 14rem; height: 9rem; border: 1px solid color-mix(in oklab, var(--analytics-blue) 16%, transparent); border-radius: 50%; content: ""; opacity: 0.7; pointer-events: none; transform: rotate(-13deg); }
