@@ -25,10 +25,10 @@ const pages = resolvePageToggles({
 	gallery: true,
 	// 书签导航页面开关
 	booknav: true,
-	// 哔哩哔哩追番页面开关
-	bilibili: true,
+	// 哔哩哔哩追番页面开关（已关闭：追番数据改用 bgm.tv 展示，见 bangumi）
+	bilibili: false,
 	// 番组计划页面开关
-	bangumi: false,
+	bangumi: true,
 	// VNDB页面开关
 	vndb: false,
 	// MyAnimeList页面开关
@@ -279,9 +279,11 @@ export const siteConfig: SiteConfig = {
 		// dynamic 模式在浏览器中实时请求 API，始终显示最新数据
 		mode: "dynamic",
 		// Bangumi API 地址
-		apiUrl: "https://api.bangumi.pro",
-		// 详情页地址
-		subjectBaseUrl: "https://api.bangumi.pro/subject/",
+		// 用官方域名。第三方镜像（api.bangumi.pro / api.bangumi.one 等）已实测失效，
+		// 且官方 api.bgm.tv 放开了 CORS，dynamic 模式下浏览器可以直连。
+		apiUrl: "https://api.bgm.tv",
+		// 详情页地址（点卡片跳转到 bgm.tv 上的条目页）
+		subjectBaseUrl: "https://bgm.tv/subject/",
 		// 条目类型排序，数组中的类型将按顺序优先展示
 		// 可选值: "anime" | "book" | "music" | "game" | "real" (暂不支持"real"类型)
 		// 未列出的类型将按默认顺序排在后面
@@ -356,6 +358,8 @@ export const siteConfig: SiteConfig = {
 		noReferrerDomains: [
 			"*.hdslb.com",
 			"*.bilibili.com",
+			// bgm 的封面图床，同样有防盗链
+			"*.bgm.tv",
 			"*.myanimelist.net",
 			"*.vndb.org",
 		],

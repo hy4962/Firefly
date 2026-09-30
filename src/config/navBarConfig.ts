@@ -67,10 +67,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 书签导航
 			LinkPresets.Booknav,
 
-			// 哔哩哔哩追番
-			LinkPresets.Bilibili,
-
-			// 番组计划
+			// 番组计划（原「哔哩哔哩追番」已下线，追番展示改用这个）
 			LinkPresets.Bangumi,
 
 			// VNDB
@@ -266,12 +263,7 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		icon: "material-symbols:bookmarks",
 		pageKey: "booknav",
 	},
-	Bilibili: {
-		name: "哔哩哔哩",
-		url: "/bilibili/",
-		icon: "fa7-brands:bilibili",
-		pageKey: "bilibili",
-	},
+	// Bilibili 那项已移除：追番展示改用 bgm.tv（见下面的 Bangumi）
 	Bangumi: {
 		name: "番组计划",
 		url: "/bangumi/",

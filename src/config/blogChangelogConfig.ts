@@ -30,6 +30,33 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.17",
+		title: "追番页从 B站 换成番组计划",
+		date: "2026-09-30",
+		summary: "关掉 /bilibili/ 改由 /bangumi/ 接手：浏览器实时拉 bgm.tv 收藏，动画 308 部、其中看过 277 部",
+		description:
+			"昨天开的 /bilibili/ 页只解决「收藏了什么」，而真正想让人看到的是「看过什么」—— 那部分记录都在 bgm 上，把 B站 的「看过」清单批量补录过去之后，B站 这页就没什么存在必要了。主题其实自带一对平级的追番页，bangumi 那页一直是关着的，而且默认指向第三方镜像 api.bangumi.pro，实测这个域名连 TCP 都建不起来，是条死链。换回官方 api.bgm.tv 之后就能直接用：官方放开了跨域，浏览器可以直连，于是开 dynamic 模式，访客打开页面时现拉数据，收藏有变动不必重新部署",
+		items: [
+			{
+				category: "页面",
+				text: "siteConfig 里 pages.bilibili 关回 false、pages.bangumi 打开：/bilibili/ 重新重定向到 /404/，「我的」菜单里那一项换成「番组计划」（两者都绑了 pageKey，开关一关自动隐藏）",
+			},
+			{
+				category: "维护",
+				text: "bangumi.apiUrl 由已失效的第三方 api.bangumi.pro 换回官方 api.bgm.tv；详情页地址同步从 api.bangumi.pro/subject/ 改为 bgm.tv/subject/，卡片点进去落在 bgm.tv 而不是代理域名",
+			},
+			{
+				category: "性能",
+				text: "数据用 dynamic 模式：构建期不请求任何外部接口，访客打开时由浏览器拉取（官方接口带 Access-Control-Allow-Origin，实测直连正常）。代价是首屏靠 JS 渲染，好处是收藏更新不用重新部署",
+			},
+			{
+				category: "素材",
+				text: "noReferrerDomains 增加 *.bgm.tv —— bgm 的封面图床同样有防盗链，不加会整页裂图",
+			},
+		],
+		tags: ["追番", "bgm", "页面"],
+	},
+	{
 		version: "V1.16",
 		title: "追番页开张，B站收藏搬上来",
 		date: "2026-09-29",
