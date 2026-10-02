@@ -51,7 +51,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "素材",
-				text: "删掉两张贴纸：「夏娜·持剑（红发）」（shana-sword-red）与重复的「黑猫·草帽」（kuroneko-hat，与单张版 kuroneko-dress 同款，留下更清晰的单张版），原始画稿仍留在「贴纸」相册",
+				text: "删掉两张贴纸：「夏娜·持剑（红发）」（shana-sword-red）与重复的「黑猫·草帽」（kuroneko-hat，与单张版 kuroneko-dress 同款，留下更清晰的单张版）；贴纸池最终从 11 张扩到 19 张，被删的两张原始画稿仍留在「贴纸」相册",
 			},
 			{
 				category: "相册",
