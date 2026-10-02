@@ -51,7 +51,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "素材",
-				text: "删掉「夏娜·持剑（红发）」贴纸（shana-sword-red），原始画稿仍留在「贴纸」相册，想恢复随时可以重转",
+				text: "删掉两张贴纸：「夏娜·持剑（红发）」（shana-sword-red）与重复的「黑猫·草帽」（kuroneko-hat，与单张版 kuroneko-dress 同款，留下更清晰的单张版），原始画稿仍留在「贴纸」相册",
 			},
 			{
 				category: "相册",
