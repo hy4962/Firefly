@@ -137,6 +137,12 @@ export const booknavConfig: BooknavGroup[] = [
 				desc: "阿里巴巴矢量图标库",
 				weight: 9,
 			},
+			{
+				title: "DeviantArt",
+				url: "https://www.deviantart.com/",
+				desc: "全球最大的插画与数字艺术社区",
+				weight: 8,
+			},
 		],
 	},
 	{
