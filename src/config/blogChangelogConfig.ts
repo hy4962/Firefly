@@ -30,6 +30,33 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.18",
+		title: "首页贴纸 +11，壁纸池进新图",
+		date: "2026-10-02",
+		summary: "黑猫拍立得挂件九宫格切开做成 10 张新贴纸，壁纸池新增黑猫夏装横图（桌面）与粉底立绘（手机）",
+		description:
+			"这批素材是一套黑猫拍立得挂件：九宫格整版切开抠底，出 9 张 Q 版贴纸，加上单张草帽立绘共 10 张进首页贴纸池（桌面端随机抽 10 张的机制不用动坐标，手机端自动装箱）。横版夏装图直接进桌面壁纸轮播；竖版立绘原来是刺眼的品红纯色底，按同色匹配整体抠掉，重新铺了一层柔和的粉渐变加中央柔光再进手机壁纸池 —— 手机端从单图升级成两张轮播。原图照例全部归档：贴纸画稿进「贴纸」相册，两张壁纸原图分别进桌面 / 移动壁纸相册",
+		items: [
+			{
+				category: "素材",
+				text: "首页贴纸 +10：九宫格切出 kirino-sit / kirino-glasses / kirino-maid / kuroneko-hat / kuroneko-swim / kuroneko-maid / ayase-swim / kanako-swim / maid-glasses，外加单张 kuroneko-dress，全部透明底、高 192px、均 8–12KB",
+			},
+			{
+				category: "壁纸",
+				text: "桌面壁纸池新增 kuroneko-summer（1920×1080，q90 约 157KB），追加进轮播数组末尾",
+			},
+			{
+				category: "壁纸",
+				text: "手机壁纸池新增 kuroneko-shh：品红纯色底整体抠掉后换成柔和粉渐变 + 中央柔光（1080 宽 q90 约 134KB）；mobile 配置从单图字符串升级为两张数组，手机端开始走轮播",
+			},
+			{
+				category: "相册",
+				text: "原图全部归档：10 张贴纸画稿进「贴纸」相册，两张壁纸原图分别进「桌面壁纸」「移动壁纸」相册（移动那张保留的是抠底前的品红底原版）",
+			},
+		],
+		tags: ["贴纸", "壁纸", "素材"],
+	},
+	{
 		version: "V1.17",
 		title: "追番页从 B站 换成番组计划",
 		date: "2026-09-30",

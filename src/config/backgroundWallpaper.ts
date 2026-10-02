@@ -43,11 +43,15 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			"assets/images/DesktopWallpaper/three.webp",
 			"assets/images/DesktopWallpaper/shana-1.webp",
 			"assets/images/DesktopWallpaper/sunset-1.webp",
+			"assets/images/DesktopWallpaper/kuroneko-summer.webp",
 			// "https://t.alcy.cc/ycy",
 		],
 		// 移动背景图片（支持单张或多张随机）
-		// 只剩一张时直接用字符串，走单图分支，不带轮播逻辑
-		mobile: "assets/images/MobileWallpaper/shana-1.webp",
+		// 多张时走数组（轮播/随机逻辑自动生效）
+		mobile: [
+			"assets/images/MobileWallpaper/shana-1.webp",
+			"assets/images/MobileWallpaper/kuroneko-shh.webp",
+		],
 		// 背景视频播放地址
 		// 支持单个视频路径（字符串）或多个视频循环（数组，参考上面壁纸配置）
 		// 支持远程视频URL，本地视频请放在 public/assets/videos/ 目录下
