@@ -30,6 +30,25 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.19",
+		title: "相册清理两张重复/带底素材",
+		date: "2026-10-03",
+		summary: "「移动壁纸」相册去掉品红底那张原图，「贴纸」相册删掉与单张版重复的模糊画稿",
+		description:
+			"昨天归档时把「原图」照单全收进相册，事后翻相册发现两张碍眼的：一是手机壁纸那张品红纯色底的原始版（壁纸池里用的已是抠成透明通道的版本，相册里再留一个刺眼的红底没意义），二是「贴纸」相册里那张从九宫格切出来的草帽 Q 版——它和单张高清版是同款，九宫格那格是 JPEG 压缩过的格子源，放大后帽子和描边都是噪点，留着只是重复占位。两张都从相册目录删掉，LQIP 占位色同步清干净",
+		items: [
+			{
+				category: "相册",
+				text: "「移动壁纸」相册删掉 kuroneko-shh.png（品红底原始版），现在只剩 1 / 2 / 3 / shana-1 四张",
+			},
+			{
+				category: "相册",
+				text: "「贴纸」相册删掉 kuroneko-hat.png（九宫格 JPEG 源，与更清晰的单张版 kuroneko-dress 同款），相册 22 张",
+			},
+		],
+		tags: ["相册", "素材", "清理"],
+	},
+	{
 		version: "V1.18",
 		title: "首页贴纸扩充，壁纸池进两张新图",
 		date: "2026-10-02",
