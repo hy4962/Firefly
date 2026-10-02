@@ -132,6 +132,16 @@ export const friendsConfig: FriendLink[] = [
 		weight: 4,
 		enabled: true,
 	},
+	{
+		title: "博客故事",
+		imgurl: "https://bk.gs.cn/assets/img/logo.png",
+		desc: "收录有故事的独立博客！",
+		siteurl: "https://bk.gs.cn/",
+		// 博客收录站，全站外链为 nofollow，不填 rss
+		tags: ["博客社区"],
+		weight: 3,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
