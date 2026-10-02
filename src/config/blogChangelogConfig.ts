@@ -50,6 +50,10 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 				text: "手机壁纸池新增 kuroneko-shh：品红纯色底整体抠掉后换成柔和粉渐变 + 中央柔光（1080 宽 q90 约 134KB）；mobile 配置从单图字符串升级为两张数组，手机端开始走轮播",
 			},
 			{
+				category: "素材",
+				text: "删掉「夏娜·持剑（红发）」贴纸（shana-sword-red），原始画稿仍留在「贴纸」相册，想恢复随时可以重转",
+			},
+			{
 				category: "相册",
 				text: "原图全部归档：10 张贴纸画稿进「贴纸」相册，两张壁纸原图分别进「桌面壁纸」「移动壁纸」相册（移动那张保留的是抠底前的品红底原版）",
 			},

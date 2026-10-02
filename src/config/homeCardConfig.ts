@@ -92,9 +92,9 @@ export const homeCardConfig = {
 	// 两端留 5% 边距，中间空出 centerGap 那一段。
 	// 约束：左右两侧各自的中心间距 = (45 - centerGap/2) / (每侧张数 - 1)，
 	//       相邻两张 width 之和 ≲ 30.72 × 该间距（沿用全宽等距时的同一条闸门）。
-	//       10 张 / 空档 20% → 间距 8.75% → 上限 268.8，当前最宽的一对 116+112=228，安全。
+	//       10 张 / 空档 20% → 间距 8.75% → 上限 268.8，当前最宽的一对 116+110=226，安全。
 	desktopStickerRow: {
-		// 一排放几张（11 张素材里随机抽 10 张）。改 0 就是全部铺满、不留空档（箭头会被盖住）
+		// 一排放几张（20 张素材里随机抽 10 张）。改 0 就是全部铺满、不留空档（箭头会被盖住）
 		count: 10,
 
 		// 中央空档宽度（%）。箭头 80px 宽，1280 宽下 20% ≈ 256px，两侧各余 ~88px 净空；
@@ -198,21 +198,15 @@ export const homeCardConfig = {
 
 	// 场景贴纸：按百分比定位，top（距顶）或 bottom（距底）二选一 + left
 	// （贴纸列表顺序即拖拽层级，后者在上）
-	// 桌面端全部铺在卡片下方同一排（bottom 一致 → 脚踩同一条地面线），
-	// left 按「视觉中心等距」算：中心从 5% 到 95% 均分，再各减去自身宽度的一半。
-	// 之所以不直接让 left 等距，是因为各张基准宽度不同、图在盒子内居中，
-	// left 等距时视觉中心会左右漂移（最多 ±11px / 1920）。
-	// 约束：中心间距 = 90/(张数-1) %，必须 > 相邻两张半宽之和。11 张 → 间距 9%。
-	// 换算成 width 的闸门：相邻两张 width 之和 ≲ 2764.8/(张数-1)（11 张 = 276.5，再按 8 折给旋转留余量）。
-	// 现在最紧的一对是 shana-sword-black 116 + pink-neko 110 = 226，1024 宽下还有 ~11px 净空隙。
+	// 桌面端由 desktopStickerRow 运行时随机抽 10 张重排（中央留给下滑箭头），
+	// 手机端由脚本随机抽 mobileStickerLimit 张自动装箱 —— 两端都不依赖下面的 left 数值，
+	// left 只用作「数组内排序 + 关闭抽签时的兜底铺排」，按视觉中心等距公式算：
+	// C_i = 5 + i×90/(n-1)，left_i = C_i - width_i×0.0325521（n = 当前张数）
 	// ⚠️ 注意 width 只管**盒子**宽度，贴纸实际大小由 img 的 max-height:104px 决定：
-	// 可见宽 = min(盒宽, 104/宽高比)，竖长的图（如 kirino-pout 宽高比 2.16）盒子再宽也只显示 48px。
-	// 所以真正会互相顶到的只有扁图（pink-neko 0.89、shana-hairflip 0.95）。
-	// 动图同理：GIF → 动画 webp 见 skill 里的 gif-to-sticker.py。
+	// 可见宽 = min(盒宽, 104/宽高比)。动图同理：GIF → 动画 webp 见 skill 里的 gif-to-sticker.py。
 	// 注意 bottom < 12 时不会带 --rear 类，矮窗口 CSS 那条整排隐藏对这批不生效。
 	// 需要用到卡片上方时给 `top: 20` 即可，移动端脚本会按之自动分带
-	// 移动端由脚本按卡片位置重新排布（只认有无 bottom，与具体数值无关），不依赖下面的 left
-	// 素材在 public/images/home-stickers/，可自行增删
+	// 素材在 public/images/home-stickers/，可自行增删；删掉的张目画稿仍留在 public/gallery/stickers/
 	stickers: [
 		{
 			src: "/images/home-stickers/kirino-cheer.webp",
@@ -226,7 +220,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/misaka.webp",
 			name: "御坂美琴",
 			bottom: 5,
-			left: 10.74,
+			left: 6.48,
 			width: 100,
 			rotate: -4,
 		},
@@ -234,7 +228,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/sagiri.webp",
 			name: "和泉纱雾",
 			bottom: 5,
-			left: 19.88,
+			left: 11.35,
 			width: 96,
 			rotate: 4,
 		},
@@ -242,7 +236,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kirino-lying.webp",
 			name: "高坂桐乃·躺平",
 			bottom: 5,
-			left: 28.42,
+			left: 15.63,
 			width: 110,
 			rotate: -6,
 		},
@@ -250,7 +244,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/madoka.webp",
 			name: "鹿目圆",
 			bottom: 5,
-			left: 38.01,
+			left: 20.95,
 			width: 92,
 			rotate: -4,
 		},
@@ -258,7 +252,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kirino-pout.webp",
 			name: "高坂桐乃·抱臂",
 			bottom: 5,
-			left: 47.01,
+			left: 25.69,
 			width: 92,
 			rotate: 4,
 		},
@@ -266,7 +260,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/shana-jump.webp",
 			name: "夏娜·跃斩",
 			bottom: 5,
-			left: 55.74,
+			left: 30.17,
 			width: 100,
 			rotate: -6,
 		},
@@ -276,7 +270,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/shana-hairflip.webp",
 			name: "夏娜·甩发",
 			bottom: 5,
-			left: 64.74,
+			left: 34.9,
 			width: 100,
 			rotate: -3,
 		},
@@ -284,7 +278,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/shana-sword-black.webp",
 			name: "夏娜·持剑（黑发）",
 			bottom: 5,
-			left: 73.22,
+			left: 39.12,
 			width: 116,
 			rotate: 3,
 		},
@@ -292,24 +286,15 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/pink-neko.webp",
 			name: "粉发猫耳",
 			bottom: 5,
-			left: 82.42,
+			left: 44.05,
 			width: 110,
 			rotate: -4,
 		},
 		{
-			src: "/images/home-stickers/shana-sword-red.webp",
-			name: "夏娜·持剑（红发）",
-			bottom: 5,
-			left: 91.35,
-			width: 112,
-			rotate: 5,
-		},
-		// ---- 2026-10-02 新增：黑猫拍立得挂件九宫格 + 单张帽娃（桌面端运行时随机抽 10 张重排，left 仅作排序用） ----
-		{
 			src: "/images/home-stickers/kirino-sit.webp",
 			name: "高坂桐乃·坐姿",
 			bottom: 5,
-			left: 3,
+			left: 49.11,
 			width: 100,
 			rotate: -4,
 		},
@@ -317,7 +302,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kirino-glasses.webp",
 			name: "高坂桐乃·墨镜",
 			bottom: 5,
-			left: 12,
+			left: 53.72,
 			width: 104,
 			rotate: 4,
 		},
@@ -325,7 +310,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kirino-maid.webp",
 			name: "高坂桐乃·女仆",
 			bottom: 5,
-			left: 21,
+			left: 58.52,
 			width: 102,
 			rotate: -3,
 		},
@@ -333,7 +318,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kuroneko-hat.webp",
 			name: "黑猫·草帽",
 			bottom: 5,
-			left: 31,
+			left: 63.06,
 			width: 108,
 			rotate: 5,
 		},
@@ -341,7 +326,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kuroneko-swim.webp",
 			name: "黑猫·泳装",
 			bottom: 5,
-			left: 41,
+			left: 68.13,
 			width: 98,
 			rotate: -5,
 		},
@@ -349,7 +334,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kuroneko-maid.webp",
 			name: "黑猫·女仆",
 			bottom: 5,
-			left: 51,
+			left: 72.7,
 			width: 103,
 			rotate: 3,
 		},
@@ -357,7 +342,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/ayase-swim.webp",
 			name: "新垣绫濑·泳装",
 			bottom: 5,
-			left: 61,
+			left: 77.53,
 			width: 100,
 			rotate: -4,
 		},
@@ -365,7 +350,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kanako-swim.webp",
 			name: "来栖加奈子·泳装",
 			bottom: 5,
-			left: 71,
+			left: 82.08,
 			width: 106,
 			rotate: 5,
 		},
@@ -373,7 +358,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/maid-glasses.webp",
 			name: "螺旋眼镜·女仆",
 			bottom: 5,
-			left: 81,
+			left: 86.94,
 			width: 102,
 			rotate: -3,
 		},
@@ -381,7 +366,7 @@ export const homeCardConfig = {
 			src: "/images/home-stickers/kuroneko-dress.webp",
 			name: "黑猫·白裙草帽",
 			bottom: 5,
-			left: 90,
+			left: 91.48,
 			width: 108,
 			rotate: 4,
 		},
