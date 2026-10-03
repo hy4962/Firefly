@@ -397,7 +397,13 @@ export const booknavConfig: BooknavGroup[] = [
 				title: "鲲 Galgame 论坛",
 				url: "https://www.kungal.com/",
 				desc: "大佬一个人手搓的开源 Galgame 论坛，无广告不收费",
-				weight: 10,
+				weight: 12,
+			},
+			{
+				title: "摸摸鱼ACG",
+				url: "https://www.mmyacg.com/",
+				desc: "Galgame 资源社区，每天大量更新",
+				weight: 11,
 			},
 			{
 				title: "鲲 Galgame 补丁",
@@ -427,12 +433,6 @@ export const booknavConfig: BooknavGroup[] = [
 				title: "量子 ACG",
 				url: "https://lzacg.cc/",
 				desc: "ACG 游戏资源站",
-				weight: 8,
-			},
-			{
-				title: "摸摸鱼ACG",
-				url: "https://www.mmyacg.com/",
-				desc: "Galgame 资源社区，每天大量更新",
 				weight: 8,
 			},
 			{
