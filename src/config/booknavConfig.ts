@@ -430,6 +430,12 @@ export const booknavConfig: BooknavGroup[] = [
 				weight: 8,
 			},
 			{
+				title: "摸摸鱼ACG",
+				url: "https://www.mmyacg.com/",
+				desc: "Galgame 资源社区，每天大量更新",
+				weight: 8,
+			},
+			{
 				title: "绮梦 ACG",
 				url: "https://game.acgs.one/",
 				desc: "Galgame 资源下载",
