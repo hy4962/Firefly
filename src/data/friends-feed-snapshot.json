@@ -9,6 +9,42 @@
       ],
       "items": [
         {
+          "title": "给博客加了张站点统计看板：自研翻车之后直接抄了整份实现",
+          "link": "https://www.9ll.uk/posts/blog/analyticsdashboard/",
+          "description": "看上 rainzt.cn 的 /analytics/ 之后，我先照着自己设计了一版——能跑，但完全不是那个味道。被一句「你不会整就去抄人家代码」点醒，去翻同源 fork 的仓库才发现：人家根本不是单个文件，页面将近四千行，外加两个组件，少一个的话页面其余模块全正常、只有四个数字永远停在「加载中」。搬完又改了四轮：整页蓝换成主题色、推送数从 1695 修正到 252、热力图改 GitHub 绿、角标不再压住插画。",
+          "publishedAt": "2026-09-29T00:00:00.000Z"
+        },
+        {
+          "title": "给博客页脚加了两行数字：静态站直连 Umami 的零后端玩法",
+          "link": "https://www.9ll.uk/posts/blog/footerstats/",
+          "description": "又是在 rainzt.cn 看上的东西——页脚一行跳秒的运行时间，一行四个访问数字。博客是跑在 Vercel 上的纯静态站，本来以为读不到 Umami 数据，结果试了一下发现分享接口的 CORS 是全开的。中间踩了个 401 的坑，最后落在 Firefly 原生的页脚注入点上，一个主题源文件都没动。",
+          "publishedAt": "2026-09-28T00:00:00.000Z"
+        },
+        {
+          "title": "换了一圈截图工具，最后留在了截图吧",
+          "link": "https://www.9ll.uk/posts/recommend/jietuba/",
+          "description": "截图吧（jietuba）是 Windows 上免费开源的截图工具，长截图、标注、本地 OCR、钉图、GIF 录制和剪贴板历史全都有，界面 PySide6 + 底层 Rust，用下来不卡也不占资源。",
+          "publishedAt": "2026-09-28T00:00:00.000Z"
+        },
+        {
+          "title": "Snow Shot：常驻 13MB 的截图工具，把 PixPin 的会员功能全免费了",
+          "link": "https://www.9ll.uk/posts/recommend/snow-shot/",
+          "description": "Snow Shot 是免费开源的跨平台截图工具，表格识别、文本翻译、LaTeX 公式识别、多语种 OCR 和录屏记键鼠都不需要会员，常驻内存只有 13MB，还带了一个 MCP 接口，AI 能直接替你截图、识别、导出。",
+          "publishedAt": "2026-09-28T00:00:00.000Z"
+        },
+        {
+          "title": "05 年的《灼眼的夏娜》：三季看完，比现在大多数战斗番还能打",
+          "link": "https://www.9ll.uk/posts/anime/shakugan-no-shana/",
+          "description": "05 年的《灼眼的夏娜》三季看完的观后感。前两季经典到能猜到走向，第三季剧本意外，画风和战斗作画放到今天比大多数战斗番还能打。",
+          "publishedAt": "2026-09-26T00:00:00.000Z"
+        },
+        {
+          "title": "不用域名不用反代，Tailscale 让 NAS 地址变成「设备名:端口」",
+          "link": "https://www.9ll.uk/posts/network/tailscale-magicdns/",
+          "description": "家里几台主机跑着一堆 Docker 服务，IP 和端口根本记不住。用 Tailscale 默认开启的 MagicDNS，浏览器直接输「设备名:端口」就能访问，零配置零成本，顺便对比了一下 ZeroTier。",
+          "publishedAt": "2026-09-24T00:00:00.000Z"
+        },
+        {
           "title": "给朋友圈加了层来源配额：本站 3 成、Blog 4 成、社区 3 成",
           "link": "https://www.9ll.uk/posts/blog/momentsmix/",
           "description": "朋友圈那条时间线被博友圈、八零圈、BlogsClub 这几个聚合站霸榜了。我一开始以为是随机池的比例没配好，结果数完发现池子本身就是 6:4——真正的问题在排序。给时间线加了一层按标签的配额和交错排列，顺手把每个来源的取文上限从 6 篇提到 12 篇。",
@@ -43,42 +79,6 @@
           "link": "https://www.9ll.uk/posts/blog/friendsmoments/",
           "description": "羡慕 rainzt.cn 的朋友圈，把它搬进自己的 Firefly：构建时抓取所有友链的 RSS 合流成时间线，快照兜底，GitHub Actions 每天自动刷新。纯静态，不用服务器，只新增文件不碰主题源码。后来又给时间线加了层来源配额，不让聚合站霸榜。",
           "publishedAt": "2026-09-07T00:00:00.000Z"
-        },
-        {
-          "title": "给博客首页加了张可拖拽贴纸卡片：一次合并友好的魔改",
-          "link": "https://www.9ll.uk/posts/blog/homestickercard/",
-          "description": "看到 rainzt.cn 的首页毛玻璃卡片和能拖动的贴纸羡慕了，扒下来装到自己的 Firefly 上。全程只新增文件不动主题源码，以后还能正常合并上游更新，顺便踩了一堆 CSS 的坑。后来又按性能数据把入场动画拆成两段、关掉了 Swup 视口预取。",
-          "publishedAt": "2026-09-06T00:00:00.000Z"
-        },
-        {
-          "title": "Lucky + 阿里云 ESA 反代家里内网服务：一个备案域名实现 IPv4/IPv6 双栈",
-          "link": "https://www.9ll.uk/posts/network/lucky-esa-reverse-proxy/",
-          "description": "用阿里云 ESA 当国内加速入口，Lucky 负责反代家里内网服务：DDNS、证书、回源规则、CNAME 解析一套流程记录，顺便踩了回源 HOST 和证书配置的坑。和 Cloudflare + Lucky 那篇是同一原理，边缘节点换到国内，同样实现 IPv4/IPv6 双栈访问。",
-          "publishedAt": "2026-09-04T00:00:00.000Z"
-        },
-        {
-          "title": "Vercel 函数默认跑在美国：改个 Region 让响应更快",
-          "link": "https://www.9ll.uk/posts/network/vercel-function-region/",
-          "description": "发现 Vercel Functions 默认区域在美国 iad1，进后台改一下 Function Region 就能让动态请求少跑一趟美国，顺带记录 Hobby 计划只能选一个区域的坑。",
-          "publishedAt": "2026-09-04T00:00:00.000Z"
-        },
-        {
-          "title": "GNAME 白嫖 .eu.cc 免费域名：注册续费都 0 元，还能托管 Cloudflare",
-          "link": "https://www.9ll.uk/posts/network/gname-free-eu-cc/",
-          "description": "GNAME 的 .eu.cc 免费注册活动：每个账号可领 3 张全额抵扣券，注册和续费都是 0 元，溢价域名除外，还能托管到 Cloudflare。整理了领券注册流程、续费入口的坑和接入 Cloudflare 的步骤。",
-          "publishedAt": "2026-08-30T00:00:00.000Z"
-        },
-        {
-          "title": "DSH 迁移 Docker 翻车四连：AI 全程远程替我修好了",
-          "link": "https://www.9ll.uk/posts/ai/dsh-migrate-docker-ai-repair/",
-          "description": "把 Windows 上的 DSH（DeepSeek Harness）连同插件配置迁移到 NAS 的 Docker 容器，启动即崩、连炸四个坑。最后全靠 AI 通过 SSH 远程诊断、打补丁、重装依赖，全程自动修好。",
-          "publishedAt": "2026-08-29T00:00:00.000Z"
-        },
-        {
-          "title": "DeepSeek Harness 上服务器：官方没出 Docker，社区镜像这么选",
-          "link": "https://www.9ll.uk/posts/deploy/dsh-docker/",
-          "description": "官方 dsh 只发 npm 包，Web 模式还只允许监听 127.0.0.1。整理两个社区 Docker 镜像的命令、环境变量和选择建议。",
-          "publishedAt": "2026-08-29T00:00:00.000Z"
         }
       ]
     },
@@ -90,22 +90,52 @@
       ],
       "items": [
         {
+          "title": "一行gh cli 我的一百个star没了！",
+          "link": "https://upxuu.com/posts/fk-glm/",
+          "description": "0我在写这篇文章时已经要崩溃了，glm一行命令，我的一个就差一个star就100的仓库被设为了私有",
+          "publishedAt": "2026-10-03T00:34:06.000Z"
+        },
+        {
+          "title": "中国新药你99%不知道的那些事",
+          "link": "https://upxuu.com/posts/china-medication/",
+          "description": "从家人二十余年新药研发的亲历出发，梳理中国药审从野蛮生长、7.22 风暴到严格监管的二十年：为什么一款药要做十八年？7.22 到底砍掉了什么？中药又为何恢复最慢？",
+          "publishedAt": "2026-10-01T02:49:07.000Z"
+        },
+        {
+          "title": "因为我余额要过期了免费给大家用longcat!",
+          "link": "https://upxuu.com/posts/free-longcat/",
+          "description": "余额快过期又没地方用，索性把 LongCat-2.0 接了个反代免费开放给大家，附 BASE URL 和 API Key，缓存不计入用量，还有几十亿 token，快去薅！",
+          "publishedAt": "2026-09-27T00:23:53.000Z"
+        },
+        {
+          "title": "今夜月明人尽望",
+          "link": "https://upxuu.com/posts/2026moon/",
+          "description": "我不太会拍照，也没有 nb 的设备，凑合看看罢～ 拍摄于八月十五/八月十六 石家庄 NOVA 16",
+          "publishedAt": "2026-09-26T14:18:05.000Z"
+        },
+        {
+          "title": "永远是多远",
+          "link": "https://upxuu.com/posts/whatsforever/",
+          "description": "没有刻度可以丈量它。",
+          "publishedAt": "2026-09-26T03:08:09.000Z"
+        },
+        {
           "title": "ZCode 静默上传事件技术复盘：一次仓库快照如何带走完整 Git 历史",
           "link": "https://upxuu.com/posts/zcode-silent-git-upload-forensics/",
           "description": "2026 年 9 月 18 日智谱 ZCode 被曝登录态下静默打包工作区并上传完整 .git 历史。本文还原上传链路、快照构成与过滤逻辑，核对官方回应与流传说法，分析可能面临的法律风险，并给出自查与阻断方案。",
           "publishedAt": "2026-09-19T07:00:00.000Z"
         },
         {
-          "title": "「说说」做，正确的事",
-          "link": "https://upxuu.com/talk/20260913214633/",
-          "description": "我想，我确实应该在正确的时间，做正确的事 ​嗯，就像我爸天天叨叨的几个同事家孩子，做到说起来比睡觉都能做到的 ​简单的 770+ ​如果你对我的开源项目有任何 issue 请发送邮件至 lcrworld@icloud.com 我将不再进行任何维护，在 2027.7 之前 （当然 这条所说的事并不是项目问题 只是个人的一些事吧 前言： https://upxuu.com/posts/%E5",
-          "publishedAt": "2026-09-13T13:46:33.000Z"
-        },
-        {
           "title": "「说说」workbuddy有免费DeepSeek flash v4.1了？！！",
           "link": "https://upxuu.com/talk/2026-09-12-workbuddy%E6%9C%89%E5%85%8D%E8%B4%B9deepseek-fla-h-v4/",
           "description": "!image.pnghttps://img.upxuu.lcrworld.xyz/images/2026/9/12/20260912114648166.png 其实我几乎没有用过workbuddy等一众国内的agent应用 但是偶然间在论坛发现workbuddy的国际版 有免费的ds f v4.1 也是尝试了一下 给我的感受就是 真的 我们很多app就是只坑国人 国际版的work",
           "publishedAt": "2026-09-12T03:46:25.000Z"
+        },
+        {
+          "title": "终于，我们把数据握在了自己手里——SIWX WeChat聊天记录导出项目发布文",
+          "link": "https://upxuu.com/posts/siwx-start/",
+          "description": "",
+          "publishedAt": "2026-09-09T13:05:20.000Z"
         },
         {
           "title": "「说说」undefined",
@@ -120,46 +150,16 @@
           "publishedAt": "2026-09-06T12:33:59.000Z"
         },
         {
+          "title": "DMCA下：我的微信聊天记录导出项目SIWX",
+          "link": "https://upxuu.com/posts/siwx/",
+          "description": "就在前几天，曾经在T公司DMCA下唯一存活下来的微信聊天记录导出项目 ciphertalk也宣布闭源",
+          "publishedAt": "2026-09-06T08:03:01.000Z"
+        },
+        {
           "title": "微信 4.x 图片 dat 加密全解析：一把账号级密钥，离线解密聊天记录与朋友圈图片",
-          "link": "https://upxuu.com/posts/wechat-dat-image-decrypt/",
+          "link": "https://upxuu.com/posts/wechat-dat-image-decrypt-info/",
           "description": "实测微信 4.1.13：聊天图片与朋友圈图片的 .dat 加密格式逐字节解析，离线派生的账号级密钥解密全部 V2 图片，附气泡缓存文件名映射破解、三质量档结构与 wxgf 转码的完整 Python 实现。",
           "publishedAt": "2026-09-06T04:30:00.000Z"
-        },
-        {
-          "title": "「说说」ciphertalk 付费后，聊天记录再不属于用户",
-          "link": "https://upxuu.com/talk/20260905192724/",
-          "description": "前几天 ciphertalk 突然发布了一个一个强制更新版本，更新后，所有功能几乎全部需要付费... 我知道，有人可能会说，只有半开源，才有可能不被 dmca 但是，我想说的是，只有开源，我们才敢使用 我没有时间维护一个导出聊天记录的项目，但我愿意用 ai 复活 weflow 总之，不管成功与否，我相信终究会有下一个 weflow",
-          "publishedAt": "2026-09-05T11:27:24.000Z"
-        },
-        {
-          "title": "乡愁，解不开的愁",
-          "link": "https://upxuu.com/posts/myhometown/",
-          "description": "陕南秦岭脚下的一座小镇，脱贫摘帽之后，贫穷的阴影仍未散去。从绿皮火车到破桥几亿债，从父亲靠读书跨进生物医药大厂到邻居们依然深陷生存泥潭——乡愁，成了若不作为就永远解不开的愁。",
-          "publishedAt": "2026-09-05T03:48:19.000Z"
-        },
-        {
-          "title": "初三从差点没吃上饭开始",
-          "link": "https://upxuu.com/posts/%E5%88%9D%E4%B8%89%E4%BB%8E%E5%B7%AE%E7%82%B9%E6%B2%A1%E5%90%83%E4%B8%8A%E9%A5%AD%E5%BC%80%E5%A7%8B/",
-          "description": "又开始无限循环的生活 今天作业也是非常少啊，晚自习俩小时就写完了😄 upxuu 决定抽出 10mi",
-          "publishedAt": "2026-09-01T12:57:01.000Z"
-        },
-        {
-          "title": "「说说」初三，再出发！",
-          "link": "https://upxuu.com/talk/20260901062655/",
-          "description": "真的太快了，转眼就初三了，印象里我还刚上初一呢 简单定点小目标吧 第一次月考进 80/2450 十月一前做完河北前 5 年的数学中考题（虽然好像没这么多时间🌚） 每个月至少更一篇文章证明我还活着🥲 就这样吧，坐牢去咯 !https://img.upxuu.lcrworld.xyz/images/2026/9/1/202609010630",
-          "publishedAt": "2026-08-31T22:26:55.000Z"
-        },
-        {
-          "title": "「说说」见过暑假没有先修炸了的，见过先修错了的吗？",
-          "link": "https://upxuu.com/talk/%E8%A7%81%E8%BF%87%E6%9A%91%E5%81%87%E6%B2%A1%E6%9C%89%E5%85%88%E4%BF%AE%E7%82%B8%E4%BA%86%E7%9A%84%E8%A7%81%E8%BF%87%E5%85%88%E4%BF%AE%E9%94%99%E4%BA%86%E7%9A%84%E5%90%97/",
-          "description": "谁懂我学了半天的二次函数 ​万唯都做完了告诉我是九下的裂开•ᴗ•💧 ​天塌了 我简直是个乐子微笑 !https://img.upxuu.lcrworld.xyz/images/2026/8/31/20260831182712401.jpg !https://img.upxuu.lcrworld.xyz/images/2026/8/31/20260831182724013",
-          "publishedAt": "2026-08-31T10:26:31.000Z"
-        },
-        {
-          "title": "为什么，我们希望被看见——浅谈upxuu的建站心得",
-          "link": "https://upxuu.com/posts/why-blog/",
-          "description": "从初一手搓HTML小网站，到WordPress、Cloudflare Run，再到纯手搓Astro主题——记录upxuu博客的诞生与成长，以及一个初中生对'被看见'的执着。",
-          "publishedAt": "2026-08-29T06:15:33.000Z"
         }
       ]
     },
@@ -340,16 +340,22 @@
           "publishedAt": "2026-07-09T00:00:00.000Z"
         },
         {
+          "title": "山河锦绣，国泰民安",
+          "link": "https://rainzt.cn/posts/national-day-2026/",
+          "description": "国庆将至，借这张图写下一份简单的祝愿：愿山河锦绣，也愿每个人的日子安稳明亮。",
+          "publishedAt": "2026-09-29T00:00:00.000Z"
+        },
+        {
+          "title": "月刊 · 第二期",
+          "link": "https://rainzt.cn/posts/monthly-2026-09/",
+          "description": "记录 8 月 27 日到 9 月 27 日之间的博客更新：Aemeath v4.0.0、自建 Umami、评论区 Lottie 表情、被撤回的视频壁纸，以及本期推荐的博友。",
+          "publishedAt": "2026-09-28T00:00:00.000Z"
+        },
+        {
           "title": "跨境电商 Agents：从 AI 选品到自动经营",
           "link": "https://rainzt.cn/posts/ai-ecommerce-agents/",
           "description": "从 Ai-Jev 的决策能力出发，拆解我正在搭建的跨境电商 Agents：AI 选品、竞品研究、本地化上架、自动生图、广告投放与异常处理。",
           "publishedAt": "2026-09-21T00:00:00.000Z"
-        },
-        {
-          "title": "月刊",
-          "link": "https://rainzt.cn/posts/monthly-2026-08/",
-          "description": "记录 8 月 7 日到 26 日之间的博客更新、自动上架项目、被我停掉的功能、刚搭好的小家，以及本期想认真推荐的几位博友。",
-          "publishedAt": "2026-08-28T00:00:00.000Z"
         },
         {
           "title": "在奶奶的白发里，我看见了时间",
@@ -362,6 +368,12 @@
           "link": "https://rainzt.cn/posts/codex-292-state-analysis/",
           "description": "从 HTTP 292、current_turn_state 和 x-codex-turn-state 出发，拆解 Codex 的资源路由、美国本地与中转/VPN的服务质量分层、状态注入、上下文增长、压缩与长任务稳定性。",
           "publishedAt": "2026-09-18T00:00:00.000Z"
+        },
+        {
+          "title": "月刊",
+          "link": "https://rainzt.cn/posts/monthly-2026-08/",
+          "description": "记录 8 月 7 日到 26 日之间的博客更新、自动上架项目、被我停掉的功能、刚搭好的小家，以及本期想认真推荐的几位博友。",
+          "publishedAt": "2026-08-28T00:00:00.000Z"
         },
         {
           "title": "从母系社会到父权制度：亲缘、私有制与现代性别关系的演变(浅谈男女对立)",
@@ -392,18 +404,6 @@
           "link": "https://rainzt.cn/posts/portfolio-showcase-animation-principles/",
           "description": "从滚动读数、目标与渲染进度、分镜区间出发，拆解 Rainzt.cn 作品展示页当前的工程化实现：长滚动固定舞台、requestAnimationFrame 平滑、媒体解码、快门转场与内容可访问性边界。",
           "publishedAt": "2026-07-27T00:00:00.000Z"
-        },
-        {
-          "title": "写完这一批工具后，我重新打开了自己的博客",
-          "link": "https://rainzt.cn/posts/after-the-tools-i-returned-to-my-blog/",
-          "description": "跨境电商自动化定制项目告一段落后，我重新回望电脑里堆满的工具文件夹，也重新想清楚了初代博客与第二代博客各自要承载什么。",
-          "publishedAt": "2026-07-23T00:00:00.000Z"
-        },
-        {
-          "title": "当 AI 能替我写完项目博文，我为什么还想敲下这些字",
-          "link": "https://rainzt.cn/posts/why-i-still-write-in-the-age-of-ai/",
-          "description": "当 AI 十分钟就能写完一篇结构清晰的项目介绍，亲手写作还有什么意义？聊聊效率、表达、个人经验，以及我对 AI 未来的一点期待和不安。",
-          "publishedAt": "2026-07-22T00:00:00.000Z"
         }
       ]
     },
@@ -415,76 +415,76 @@
       ],
       "items": [
         {
-          "title": "响石潭：旅顺万忠墓，永矢不忘",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiangshitan.com%2Fpost%2F3515.html",
-          "description": "前段时间记录了发生在刘公岛的耻辱一页，博友大致提到“那你应该顺道来旅顺看看。旅顺万忠墓。甲午海战后日本人杀到旅顺，把旅顺城杀到只剩36个人。”机缘巧合，上周去了大连。特别去了万忠墓。进门抬头就是这块牌子：旅顺万忠墓纪念馆，全国爱国主义教育基地。这不是一个普通的纪念馆，它坐落在当年日军集中焚尸掩埋的原址之上，脚下这片土地，就是两万同胞遇难的地方。 1894年爆发的中日甲午战争，是中国近代史上影响最深远的事件之一。这场战争之后，中国加速向半殖民地沉沦，洋务运动三十年的成果灰飞烟灭，同时也彻底打醒了沉睡的民族，是近代中国民族觉醒的重要转折点。 这段历史从来不是我们单方面的记忆，当时全世界的记者、外交官、观察者都见证了旅顺的惨剧。这段历史不",
-          "publishedAt": "2026-09-21T23:21:20.000Z"
+          "title": "atpX：西北三日游",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fatpx.com%2Fblog%2Fnorthwest-china-tour%2F",
+          "description": "这趟旅程是八月初临时起意去的，并无太多准备，接近于喊上两个老伙计说走就走。拖到十月初才记录下来是蓄意而为的，因为近半年被工作烦躁到失去写字的心情，是时候忆甜解乏、重振笔鼓了，即使中秋国庆也没有假期。 第一天中午在兰州落地后，顿感心旷神怡，终于从南方的湿热中解放了出来。来不及干上一碗热情的牛肉面，叼上一个肉夹馍直奔甘肃省博物馆。恰逢暑假，人自然是少不了，只好凭借勇气和力量解锁了「马踏飞燕」和「蓝莲盏」。 「热闹的」铜奔马和蓝莲盏。 傍晚出来后，必须来点硬货帮助消化知识。品尝了春台手抓羊肉，鲜嫩肥美、不腻不膻，确实攒劲。不过三泡台越喝越甜，不太习惯。 手抓羊排和羊脖。 吃完后去中山桥吹吹风再消化一下，顺便速登了白塔山。 中山桥。 向黄河",
+          "publishedAt": "2026-10-02T08:36:40.000Z"
         },
         {
-          "title": "执迷者X：2026中秋：江月照人，翻回六年前的自己",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Flifetruth.top%2F2026%2F09%2F26%2Fmid-autumn-six-years-self-reflection%2F",
-          "description": "江月照人：中秋夜，我翻回六年前的自己 中秋前几日，生活的压力让我多少有些浮躁。可当这个中国第二大佳节真正到来，我做得印象最深的一件事，是翻出自己六年前写的公众号。看着那个敢闯、敢与人不同的自己，我才慢慢明白：这个节日真正安抚的，不是情绪，而是那颗总在反复自省的心。 人生代代无穷已，江月年年望相似。 —— 张若虚《春江花月夜》 一、浮躁之后，是月亮先安静下来 中秋前几天，工作和生活的事情叠在一起，人很容易浮。 计划被临时打乱，消息一条接一条，情绪像水面上的涟漪，一层推着一层，很难看清底下的自己。 是不是所有的“忙”，都只是把情绪暂时压住，而不是真的消化？ 真正让我平复下来的，是这个节日本身。 中秋是中国的第二大佳节。它不像春节那样要热",
-          "publishedAt": "2026-09-25T16:30:45.000Z"
+          "title": "飞絮落叶雪：安庆大观亭历史文化街区",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.mrhe.net%2F3714.html",
+          "description": "历时两年，安庆大观亭历史文化街区于国庆节正式对外开放。 大观亭历史始于东汉，盛于唐宋 。明清时期，与武昌黄鹤楼、江洲庾楼并称为“长江三楼”，素有“皖省第一名胜之区”之称，曾被列为“安庆古八景”之首。清代历经多次兴废，康熙年间重建，咸丰年间毁于兵燹，同治年间复建 [10]。民国以降，逐渐荒废成为遗址，现为安庆市文物保护单位 。2024年7月，大观亭历史文化街区保护利用项目正式开工建设 [4] [1]，该项目总投资约3.5亿元，计划于2026年12月全面完工。针对大观亭复建问题，2025年8月官方回复称，按照文物保护法相关规定，不得在原址重建，目前规划按旧址公园方式建设。 具体介绍请看此链接。虽然天气不太好，游人如织，和大多数古镇街区一",
+          "publishedAt": "2026-10-02T14:51:35.000Z"
         },
         {
-          "title": "So!azy：中秋快乐",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.solazy.me%2F20260925%2F",
-          "description": "又是一年中秋。先祝大家中秋快乐。 好像国内所有的传统节日，底色都被默认刷成了一种颜色，那就是团圆。不管是端午、中秋还是过年，语境里只要少了「阖家团圆」四个字，这个节过得就像缺了点合法性。仿佛在这个特定的时间节点上，除了聚在一起，世界上就没有别的事情值得被正视了。 但我对这种集体叙事，从小就有些钝感。 最典型的载体就是吃。中秋节吃月饼，端午节吃粽子，元宵节吃汤圆。我其实对所有这种带有强烈时令标签的碳水炸弹，都没什么兴趣。 小时候家里对中秋看得很重。我母亲每年都会专程跑去青岛当时比较高档的商场买月饼。那时候青岛有个老牌子叫「生活林」，她每次都要买五仁和百果馅。那种厚重的广式糖皮，裹着硬邦邦的坚果碎和青红丝，我从小就吃不惯。后来长大了才知",
-          "publishedAt": "2026-09-25T15:00:00.000Z"
+          "title": "响石潭：溜达间的遐想",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiangshitan.com%2Fpost%2F3518.html",
+          "description": "国庆第二天，到西体快走，上了跑道索性放下耳机，不听故事也不听音乐，就好好听身边环境的声音。 有鸟叫，有装修的电锯声，有跑步的脚步声，还有风擦过耳边的声响。眼睛平视着前方，一路看过去：有快速跑步的，有慢悠悠快走的，有站成一堆指着前方说话的，也有低着头刷手机的。有满身肌肉的跑者，有脚步拖地的行人，有逆向迎面跑来的人；远处是楼房，两旁是树木和草坪，有人靠着栏杆压腿。场子里什么颜色的衣服都有，黑的、红黑相间的、蓝的、白的、紫的、花色的，还有穿太极服的，也有光着膀子奔跑的大哥。有人腰间、腿上、肩膀上绑着测心率的装备，有人边压腿边看手机；有小孩坐在凳子上愣愣地看，有佝偻着腰的老人盯着手机，有清洁工一下一下扫着落叶，还有位白头发的婆婆静静坐在一旁",
+          "publishedAt": "2026-10-02T03:25:20.000Z"
         },
         {
-          "title": "记录生活，精彩一刻：中秋值班到中午溜号，还是没赶上家里那顿热饭",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.9sb.net%2Farchives%2Fi-was-on-duty-until-noon-during-the-mid-autumn-festival-and-missed-the-hot-meal-at-home.html",
-          "description": "兄弟中秋节送过来一个木盒子，打开是一饼老白茶。米白色棉纸上三个大字，配着根棕缎带，旁边搁着一把茶刀，看着挺像回事。我平时也泡两杯，但对茶是真不懂，好坏全凭舌头高兴。 说回中秋。先祝朋友们中秋快乐。我们这行假期从来跟国家规定对不上，别人放长假我们上班，别人上班我们双休。说不上多委屈，常年下来习惯了，至少周末不用倒休。 今年中秋本来要值班，昨天做好计划，晚上值班还是我来。昨天跟同事对了一上午，把今天的活儿全往前压，中午基本也都忙的差不多了，收了一下尾，就 12 点半左右了。索性跟几个同事在外过了个中秋，既然赶不上就改日。不赶这顿了，挑个周末再回去。 这饼茶我翻来覆去看了半天。背面标签印着，福鼎大白茶，350 克，2012 年 4 月生产",
-          "publishedAt": "2026-09-25T10:29:47.000Z"
+          "title": "李文君's Blog AI：国庆遛娃｜龙泉花海乐园不虚此行💐",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Floglib.cn%2Fpost%2F49",
+          "description": "国庆假期不想远行，就近带娃打卡了龙泉花海乐园，真的是挖到宝藏的一次亲子出行！不用长途奔波、不用人挤人，轻轻松松度过了治愈又充实的一天，太适合带小朋友短途游玩了。 一进园区就是大片绚烂花海，各色花卉层层叠叠，配上精致的景观喷泉，整体氛围感特别温柔好看。园区随处都是取景位，自然风光氛围感拉满，随便一拍都很出片，非常适合拍照打卡、休闲散步。 最让人惊喜的是园区活动非常丰富，一整天都不会无聊。园区有特色的NPC互动游戏，参与互动可以赢取银票，能够兑换大锅饭、小动物投喂粮、游船体验等超多福利，互动性很强，大人小孩都能参与体验。 除此之外还有趣味情景剧演绎、夜间热闹的篝火晚会，节目安排充实丰富，从白天一直畅玩至夜晚，游玩体验非常饱满。 整个园区",
+          "publishedAt": "2026-10-01T13:20:00.000Z"
         },
         {
-          "title": "秋記Autumn：皖北八月十五摇火把子，摸秋",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.zhyok.cn%2Farchives%2F507%2F",
-          "description": "今天是八月十五，还记得皖北农村的中秋吗？可不只是赏月吃月饼。八月十五的夜晚还有摇火把子，孩子们扎起高粱杆、麦秸火把，点燃之后在田埂上挥舞，星火流转，像一条游走的火龙。老话讲&quot;八月半摸秋不算偷&quot;，举着火把结伴走进瓜田菜园，借着月色摸秋摘瓜果。 火把驱虫祈福，摸秋期盼丰收人旺。没有绚烂灯火，月光伴着漫天火星，这是刻在我们这辈记忆里，最热闹浪漫的中秋！在此祝朋友们中秋节快乐。",
-          "publishedAt": "2026-09-25T08:56:00.000Z"
+          "title": "Vei Blog：消失的我——最近都在做什么？",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.veitzn.top%2F%25e6%25b6%2588%25e5%25a4%25b1%25e7%259a%2584%25e6%2588%2591-%25e6%259c%2580%25e8%25bf%2591%25e9%2583%25bd%25e5%259c%25a8%25e5%2581%259a%25e4%25bb%2580%25e4%25b9%2588%25ef%25bc%259f%2F",
+          "description": "好久不见。 如果你发现我最近更新少了、动态少了，先别急着把我归入“失踪人口”。我没有消失，只是在认真的生活。 马上就是国庆假期了，到今天才有时间坐下来，把这阵子的事情一次性交代清楚。 01 从成都出发：一辆车、两个人、一只小狗 88月初，我和老婆带着小狗，从成都出发，自驾去海南。 沿着攻略里规划好的路线：成都—贵阳—徐闻港—海南。如今回头看，恍惚只在一瞬：千里已至，又眨眼间千里尽去。这并非我们第一次自驾。有了上一次青甘环线的经验，我们出发前买了不少零食，用来打发漫漫长路。一路上听脱口秀，竟比听音乐还提神。 小狗大概并不知道我们要去那么远的地方。它只知道，车里多了一个属于自己的位置，而窗外，是不断后退的城市和山。 一路上，隧道一个接一",
+          "publishedAt": "2026-09-30T17:15:33.000Z"
         },
         {
-          "title": "风·墨：Workbuddy 第一轮考过",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fvind.ink%2FIT-digital%2FWorkbuddy-exam-1.html",
-          "description": "根据公司需求，代理腾讯云产品必须要有一定数量的腾讯云认证工程师，才能成为某个级别的经销商。我之前已经考过不止一两个腾讯云证书了，本次是 Workbuddy的一个从业资格： Workbuddy OPC 考试介绍： 本认证面向一人公司（OPC）形态运作的独立开发者、小微创业者、自由职业者及职场效率追求者。通过本认证，将具备从“会用 WorkBuddy”到“能把智能体深度融入日常工作流，独立交付可落地 AI 应用成果”的完整能力链，覆盖专家团协作、资料库、Skills、Connector 与灵感模块的全场景使用，助你借助 AI 达成团队级产出。 这次考试是在家，线上考的，相对来说，环境上会宽松一点。当然，它全面监管我的电脑，以及摄像头，一",
-          "publishedAt": "2026-09-25T07:17:00.000Z"
+          "title": "我剑也未尝不利：九月 - 养一个老车的成本也太高了",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Ftch.cool%2Farchives%2FOeGiGyMt",
+          "description": "1. 修车 家里的车在我手上开了不到半年，花了快五千块。 第一次是上坡时，油门怎么踩速度都上不去，甚至还在慢慢掉速，降档都不管用。刹车也踩着软软的，开回家后发现刹车片都暖烘烘的。开到最近的途虎养车，小哥听完症状描述略微瞄了一眼，就说刹车片子该换了。作为一个新手也不懂这些，只能选择相信人家说的。于是花",
+          "publishedAt": "2026-09-30T16:00:00.000Z"
         },
         {
-          "title": "笛声：非典记忆",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fhqidi.com%2F225.html",
-          "description": "▲ 挂了21年的横幅？ 2003年的春天，来得似乎特别早，又似乎特别冷。 那时我读初三，每天骑着一辆红色的凤凰自行车上学。学校离家不远，骑车大概十分钟。去学校是缓上坡，回家一直缓下坡，可以不用蹬一直滑到家。中午和傍晚都能回家吃饭，这是走读生才有的特权。寄宿生就出不来了，他们常爬的围墙上被浇了大便…… 所以偶尔得给他们从外面带生活用品进去。 教室里的味道，是这辈子都忘不掉的。每天中午，总会有两个穿白大褂的后勤师傅，背着一台陈好同款手摇打药机走进来。那机器“嘎达嘎达”地响，喷出白茫茫的雾气，像极了西游记里妖怪出场的特效。那段时间，总有同学的练习试卷不小心放在桌面上，然后被药水打湿，不能写了。为了散味，学校还特意换了新吊扇，师傅来安装调速",
-          "publishedAt": "2026-09-25T04:20:18.000Z"
+          "title": "记录生活，精彩一刻：试了一下午白茶，学习途中慢慢入坑，心系水仙",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.9sb.net%2Farchives%2Fi-tried-white-tea-all-afternoon-and-slowly-fell-into-a-pit-on-the-way-to-study-with-my-heart-fixed-on-the-narcissus.html",
+          "description": "今天难得不忙，专门去茶店坐了一下午。跟平时爱喝茶的两个朋友学习去了，说是茶楼，其实更像一家茶铺，门口挂着 &quot;品瑞茗茶&quot; 的牌子。进去试了不少茶，主攻白茶。 {mx_photo} {mx_photo} 第一杯是老白茶。墙上就挂着一块木牌，写着 &quot;老白茶&quot;，旁边还跟着 &quot;闷着喝&quot; 三个字。店员说这种茶就得闷，闷透了才有那股醇。端起玻璃杯一看，汤色红褐红褐的，入口跟平时随便泡的完全不一样，又厚又顺，还带点枣香。我擦，原来茶跟茶差别能这么大。 接着又试了别的白茶，盖碗冲的、闷泡杯闷的都有。店里货架摆满了 &quot;白大师&quot; 的礼盒，什么开仓十周年纪念茶、小方片闷泡杯，一",
+          "publishedAt": "2026-09-30T14:54:03.000Z"
         },
         {
-          "title": "响石潭：水天一色",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiangshitan.com%2Fpost%2F3516.html",
-          "description": "时间很快，转眼中秋。阴雨绵绵，不见月明。上周还在大连，乾坤大挪移。今天终于把工会的事情向前推了一大步，累，但总归有变化。闭目，上周，飞机上，不经意间看着窗外。呵，天可真蓝。天空中有一道白线，呃，这是天尽头么？再往下瞧，嘿，这个是啥？好像是一艘轮船。恍然，这个是大海！那道白线是水天相接处，大脑立刻冒出“水天一色”这个词。 今天看到报道，游本昌老先生离世。耳畔还回响着“帽儿破，鞋儿破，身上的袈裟破……”老爷子自带道济和尚的那种仙风道骨，一路走好。人啊，固有一死，肉身或许就是人们渡河的船。饥饿、疲惫、衰老、受伤、失去的经历从来不是为了摧毁人，而是一次次提醒人把向外抓取的手收回来，把困在皮囊里的心找回来，经历悲欢却不困于悲欢，身处红尘却始终",
-          "publishedAt": "2026-09-24T12:23:46.000Z"
+          "title": "韩情脉脉：九月末小记",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fhxy.cc%2F9yuemo.html",
+          "description": "放假回家 下半月临近中秋节国庆节加起来十天的假期，早早就没了上班的心思，由于中间还有三天的工作日，本来打算月末30号回老家，赶上国庆节回家，奈何节假日的票实在是太难抢了，月中的时候放票秒售罄，于...",
+          "publishedAt": "2026-09-30T13:46:18.000Z"
         },
         {
-          "title": "狡猫三窝：山阳垂水",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fslykiten.com%2Flife-note%2Ftarumi%2F",
-          "description": "单纯想分享一下绝美的夕阳和火烧云。 最近正逢日本白银周，五连休。每天都泡在商场里面，一直买到商场关门才回家。主要是买了个床。 出差的时候睡到了人生床垫，没错，就是席梦思。躺在上面明显感觉整个人的重量被分散了，好像躺在云朵上一样轻飘飘的，当时就下定决心要去买同款。在美国换了不知道多少床垫，花了很多钱也没解决床垫的事，希望这次能一劳永逸。 没有买房子不代表不能睡好床。 去了两天expocity，两天大丸，一天神户垂水outlets。这个outelts在海边，车站就叫“山阳垂水”，形象又诗意。我以前也总是来这边逛，但不买。这里的东西不是很适合我，都是大牌，穿着也还好，主要问题是有点贵。我对于衣服的态度：穿着看起来还行的话越便宜越好，如果优",
-          "publishedAt": "2026-09-24T12:01:32.000Z"
+          "title": "faryou的博客：博客三周年 - 我为什么而写博客",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.faryou.eu.org%2Flife-article-26.html",
+          "description": "分类：生活 不知不觉间，博客已经陪我走完了三年的路，也恰好是我的初中三年 首先，我对自己能够把这个“事业”（至少对我一个中学生来说是的）坚持三年肯定是非常之自豪的，毕竟我和我的同龄人中，会坚持长期的写一些文字毕竟是少数，那再加上独立博客的技术门槛，真的是极少了。 我在生活中其实是比较孤独的，所以尝试在网上寻求一些寄托，那对于身边的这些伙伴当然也是相当的珍惜，西瓜猜字谜、彬红茶、hjz713……这些... 阅读全文 →",
+          "publishedAt": "2026-09-30T12:36:00.000Z"
         },
         {
-          "title": "leoon：有点低估你了——稻城亚丁",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fleoon.cn%2Ftravel%2F670",
-          "description": "点击访问原文，获取更好阅读体验 临时起意 本次行程还真是临时起意，甚至不是leoon和digidaga，而是kyan姐提起的。如图 为什么是稻城亚丁？ 稻城亚丁最近风头正盛啊，刚被吕大侠打击下来，正好免门票，免大巴各种免费，而且理论上也是赏秋好时候。不过免门票是 8 月到 10 月底。9 月初是赏不到什么秋了，但是能避开人流，因为接下来就是中秋国庆，然后就免门票要结束了，这人流肯定不得了，随即选择 9 月前两周作为待定。 出行前的碎碎念 本来是搭子1 群 4 人出发，可惜 4 天行程太赶，远在粤北的大侠无法来到，所以临时换成了聪明，都是咱设计部的大将，给 kyan 姐一 call 就来了，一拍即合成立搭子 2 群。 我的原则一直都是",
-          "publishedAt": "2026-09-24T07:38:12.000Z"
+          "title": "DAIDAIFU'S BLOG：怀胎十月终如愿—妹妹出生啦！",
+          "link": "https://www.boyouquan.com/go?from=feed&link=http%3A%2F%2Fwww.ddf.im%2Findex.php%2F2026%2F09%2F30%2F1269.html",
+          "description": "之前媳妇儿刚怀二宝的时候，我们两个就一直希望能给儿子生一个妹妹，顺利凑成一个“好”字。 但是期间绝大部分的人，看到媳妇儿的肚子，说这个肚形看起来绝对是个儿子，看到大家都很笃定，我们俩一直都按捺着自己的好奇心，坚定不移选择闷开。 心想，不管是儿子还是女儿，都是我们的心头宝，不过内心深处还是希望是个女儿。 9月21日，盲盒总算是开了！终于是如愿，是个妹妹！给儿子生了个千金小妹妹。媳妇儿和我简直不要太高兴！哈哈哈哈 家里从1+1=2，变成2+1=3，到现在3+1=4。一家四口热热闹闹。 这几天一直休陪产假，照顾女儿和媳妇儿。虽然请了月嫂在家坐月子，但是总归还是要自己帮忙搭把手。 买菜、换尿布、兑奶粉、洗衣服、拖地，一众事务，样样都不能落下",
+          "publishedAt": "2026-09-30T12:33:33.000Z"
         },
         {
-          "title": "荒野菲克：节日快乐",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fficor.net%2Farchives%2F63",
-          "description": "中秋前夕走亲访友，从姥姥生日宴的热闹到探望老军人李大爷，记录节日里的人情往来与血脉牵挂，并借老山作战老兵的讲述，提醒人们珍惜当下生活。",
-          "publishedAt": "2026-09-23T08:41:00.000Z"
+          "title": "CHEGVA：又是一年翻缸时",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fchegva.com%2F6819.html",
+          "description": "又到了一年翻缸的时候，趁着中秋国庆连休，前天晚上把乌龟缸翻了下缸，现在是每年翻一次，平时就是每一两周加水或者换水，旁边的小鱼缸上了打氧过滤后，已经不用翻缸了。前两月小孩从电玩城捞了几条病草金放鱼缸里，搞得差点团灭，死得就剩两条鱼，后边又上了一批国斗，鼠鱼，条纹小鲃重建了。之前养龟买的新手快乐缸又倒腾了出来，现在用来养观背青鳉，白云金丝，鳑鲏这些小鱼了。先回顾下去年底的翻缸视频。[video dplayer=&quot;true&quot; autoplay=&quot;false&quot; src=&quot;https://cdn.chegva.com/ueditor/php/upload/video/20260930/yg00",
+          "publishedAt": "2026-09-30T09:55:23.000Z"
         },
         {
-          "title": "挨踢路：公共交通的变化",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fitlu.net%2Farticles%2F2862.html",
-          "description": "有一天搭公交车，发现公交车居然贴着有车载Wi-Fi，有点不可思议，临下车时试着连一下，发现是骗人的，根本无法上网，那么这个车载Wi-Fi的意义是什么？又是一些半死不活的工程吗？ 感谢你们帮忙花了纳税人的钱，因为你们变得更美好~~~ 地铁商业化 最大的变化是多了一个地铁悠选，其实对于我来说，是比较尴尬的，我上班肯定赶着时间去，下班基本上也懒得买，买了要拎好远，所以没有适合我的场景。 除了地铁悠选，还有卖咖啡的，某个地铁站，有一个肯悦咖啡。我对咖啡本身就很一般，加上是肯德基的，肯德基的咖啡对我来说，不适合，不喜欢，更加不会买。 [...]",
-          "publishedAt": "2026-09-23T03:59:39.000Z"
+          "title": "小十的个人博客：执铜者：在河南博物院看见亚欧大陆的青铜世界",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiaoten.com%2Fposts%2F2026%2F09%2Fbronze-bearers-eurasian-bronze-world%2F",
+          "description": "前言 我就是那个请了 3 天公休，硬是凑出 13 天长假的人。 9月29日，再次去了趟河南博物院。本以为工作日人会少一些，结果馆里依旧人山人海。 人山人海的场馆（手机拍摄） 今年1月，我曾利用几个工作日的午休时间，断断续续把河南博物院的常设展览重新走了一遍。从贾湖骨笛、妇好鸮尊，到四神云气图、汝窑天蓝釉刻花鹅颈瓶，再到云纹铜禁，前前后后写成了三篇 《河南博物院两小时纪行》 。 原本以为，至少短时间内不会再专门来逛一次河南博物院。结果休假在家待着无聊，也没做什么攻略，临时预约了当天上午的参观时段，便又来了。 没想到这次进馆，却在主展馆一楼偶然发现了一个收费特展——《执铜者——亚欧大陆青铜艺术展》。 河南博物院场馆外 26-9-29 ·",
+          "publishedAt": "2026-09-29T12:44:00.000Z"
         }
       ]
     },
@@ -496,58 +496,52 @@
       ],
       "items": [
         {
+          "title": "阿伏伽德罗的云端：和 Edge 更新错误搏斗的一天",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fmolyun.com%2Fposts%2F%25E5%2592%258C-edge-%25E6%259B%25B4%25E6%2596%25B0%25E9%2594%2599%25E8%25AF%25AF%25E6%2590%258F%25E6%2596%2597%25E7%259A%2584%25E4%25B8%2580%25E5%25A4%25A9%2F",
+          "description": "edge更新 一个看似简单的错误 最开始是检查更新时弹出错误：无法创建该组件(错误代码 1: 0X80004005)。我当时想应该很简单，网上一搜，无非就是修复、重置、重启服务这几招。结果查了一圈，不知道怎么解决了。 然后我就想，那就覆盖安装呗。微软官网下载页面点进去，下载了个安装器，运行之后无提示秒退，问题没解决。 MSI 包的安装 我以为是下载器问题，然后下载了 MicrosoftEdgeEnterpriseX64.msi，双击安装，同样出现安装程序窗口一闪就没了，自动退出。右键选修复，也没用。 于是用命令行生成安装日志，拿到日志一看，好家伙——日志末尾写着 Configuration completed successfull",
+          "publishedAt": "2026-10-02T15:07:00.000Z"
+        },
+        {
+          "title": "小朱的博客：战争和贸易",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F10%2F02%2Fzz%2F",
+          "description": "战争和贸易对等吗？",
+          "publishedAt": "2026-10-01T15:25:18.000Z"
+        },
+        {
+          "title": "热衷于的博客：洞察中国“姊妹品牌”",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fzooyoo.top%2Farticle%2F66%2F",
+          "description": "如果只是瞥一眼包装，我很难分清伊利 “心情” 和蒙牛 “绿色心情”、康师傅 “冰红茶” 和统一 “冰红茶”、王老吉和加多宝。 但比产品更值得玩味的，是人。对标从不只是产品的竞争，更是人的纠葛。 “蒙牛” 与 “伊利” 品类 伊利 蒙牛 高端白奶 金典 特仑苏 基础纯奶 伊利纯牛奶 蒙牛纯牛奶 常温酸奶 安慕希 纯甄 含乳饮料 优酸乳 酸酸乳 儿童饮品 QQ 星 未来星 两家的冰淇淋品牌也有明显的对标现象，比如 巧乐兹 和 随变、冰工厂 和 冰+、四个圈 和 蒙牛圈，甚至于 小布丁 和 老冰棍 都各有一个同名版本。 更能直接感受到其对标程度之深的，是双方在法律上的拉锯：2025 年，蒙牛 “精选牧场” 因包装与伊利 “金典” 高度近似",
+          "publishedAt": "2026-10-01T06:10:00.000Z"
+        },
+        {
+          "title": "益友网站：如果你在海边遇见了她",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fblog.yiyou.bj.cn%2Farchives%2Fru-guo-ni-zai-hai-bian-yu-jian-liao-ta",
+          "description": "大半夜……， 在一个交友群里我认识了她。 面朝大海的头像，一头乌黑的长发。 那甜甜的情话聊到天亮， 从她缺爱的童年，聊到贫穷的家。 她有个瘫痪的爸爸和精神病的妈， 跟老公已经分了200多年了， 她有破裂的婚姻还带着两岁的娃， 我不爱她，谁爱她！ 她挺要强的，也不图我啥， 说彼此有真爱就很幸运了， 就",
+          "publishedAt": "2026-09-28T07:41:29.000Z"
+        },
+        {
+          "title": "徐果萍博客网：兰溪市“一老一小”免费流感疫苗开打 谁能打、何时打、要注意什么",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.xuguoping.net%2Fshenghuo%2Flanxi-mianfei-liugan-yimiao.html",
+          "description": "冬春季节是流感的高发期，病毒传播快，学校里一旦出现病例就容易扎堆，而老年人感染后发展成重症、甚至危及生命的风险也明显更高。今年兰溪面向重点人群的免费流感疫苗接种陆续启动，家里有老人、有在读中小学生的，值得先把这件事弄清楚。 &quot;一老一小&quot;，哪些人能免费打 兰溪这次免费接种的对象，概括起来就是&quot;一老一小&quot;。前提是没有流感疫苗接种禁忌，按照知情同意、愿接尽接的原则，免费接种1剂次三价流感疫苗。 &quot;一老&quot;，是60周岁以上的老年人，出生日期在1966年12月31日之前。 &quot;一小&quot;，是义务教育阶段的中小学生，也就是兰溪全市小学、初中的在校学生。 这项政策有明确的上位",
+          "publishedAt": "2026-09-28T00:53:03.000Z"
+        },
+        {
+          "title": "秋记Autumn：皖北八月十五摇火把子，摸秋",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.zhyok.cn%2Farchives%2F507%2F",
+          "description": "今天是八月十五，还记得皖北农村的中秋吗？可不只是赏月吃月饼。八月十五的夜晚还有摇火把子，孩子们扎起高粱杆、麦秸火把，点燃之后在田埂上挥舞，星火流转，像一条游走的火龙。老话讲&quot;八月半摸秋不算偷&quot;，举着火把结伴走进瓜田菜园，借着月色摸秋摘瓜果。 火把驱虫祈福，摸秋期盼丰收人旺。没有绚烂灯火，月光伴着漫天火星，这是刻在我们这辈记忆里，最热闹浪漫的中秋！在此祝朋友们中秋节快乐。",
+          "publishedAt": "2026-09-25T08:56:00.000Z"
+        },
+        {
           "title": "落梦陳的小站：月圆人团圆：祝全体站长中秋快乐",
           "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Ffcattles.com%2Farchives%2Fmid-autumn-wishes-webmasters-2026",
           "description": "中秋月圆，祝全体站长节日快乐！从古人的祭月、唐宋的赏月节俗，到嫦娥奔月的民间传说，一起聊聊中秋的来历，也把祝福送给每一位认真经营网站的人。",
           "publishedAt": "2026-09-25T07:37:05.000Z"
         },
         {
-          "title": "小朱的博客：论业务员的重要性",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F09%2F23%2Fchanpin%2F",
-          "description": "一段对话中，阐述了业务员的重要性",
-          "publishedAt": "2026-09-22T15:50:00.000Z"
-        },
-        {
           "title": "旺东自留地：博海故人杳然",
           "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwang618.cn%2Fbo-hai-gu-ren-yao-ran.html",
           "description": "今日维护更新，发现昔日的许多友链已经无法访问。 挨个点开链接，域名过期注销、服务器关停，一页页都是失效的痕迹。从前时常互相串门留言、互换友链认识的博主同好，就这样静静消失于网络，不由得心生怅惘。 想来互联网大抵便是这样，网站的命运本就浮沉难料。个人博客更是如此，凭着一腔兴致搭建，又会迫于生活奔波、工作更迭渐渐搁置，最后默默归于沉寂。虚拟世界里的相遇，亦是一场没有告别的离散。",
           "publishedAt": "2026-09-21T17:24:43.000Z"
-        },
-        {
-          "title": "小朱的博客：感概",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F09%2F21%2F405%2F",
-          "description": "青春",
-          "publishedAt": "2026-09-20T17:50:00.000Z"
-        },
-        {
-          "title": "小朱的博客：国人素质一直没变",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F09%2F19%2Ftr%2F",
-          "description": "资本不会考虑国家利益 只会考虑它的自身利益",
-          "publishedAt": "2026-09-18T15:20:00.000Z"
-        },
-        {
-          "title": "小朱的博客：我们今天只谈\"钱\"",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F09%2F18%2F404%2F",
-          "description": "我觉得新中国的成立离不开钱，新中国的建设飞速发展也离不开钱",
-          "publishedAt": "2026-09-17T18:00:00.000Z"
-        },
-        {
-          "title": "徐果萍博客网：80后童年农事篇⑰剥玉米",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.xuguoping.net%2Fshengyubasan%2F80hou_nongshi_yumi.html",
-          "description": "80后童年农事：秋收后那堆剥不完的玉米，是农村孩子最长的夜与围坐在一起的一家人【生于1983】 玉米收回来，堆在院子里。 一堆金黄色的玉米棒子，堆成一座小山。那是接下来几个月的活。 要剥壳、要脱粒 玉米要经过两道工序。 第一道：剥壳。把外面那层绿色的包叶撕开，扯掉玉米须，露出里面金黄的玉米粒。 第二道：脱粒。把玉米粒从芯上弄下来。 剥壳是手活的，脱粒我们那会儿也靠手——用一根玉米芯搓，或者用螺丝刀一行一行地撬。 一家人围坐着剥 剥玉米是在晚上进行的。 晚饭后，点上灯，一家人围着那堆玉米坐下。一人一篓，开始剥。 「哗啦哗啦」——那是包叶被撕开的声音。 我们剥到深夜。手剥得发红，指尖起泡。 可那是我记忆里最齐的夜晚。一家人坐在一起，谁也",
-          "publishedAt": "2026-09-16T22:00:00.000Z"
-        },
-        {
-          "title": "无名博客：微软 AI-901 考试经验分享",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwuminboke.site%2Funcategorized%2Fmicrosoft-ai-901-exam-experience%2F",
-          "description": "早在今年四月那会就有个念头想去考 AI-900 考试，但一直没去报名，然后 AI-901 考试就出现取代了 A […] The post 微软 AI-901 考试经验分享 first appeared on 无名博客.",
-          "publishedAt": "2026-09-13T15:39:28.000Z"
-        },
-        {
-          "title": "姓王者的博客：【AI流水账】我先修好 Thunderbird 的 SSL，再用 Codex 读取东北大学邮箱",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fxingwangzhe.fun%2Fposts%2Fneu-mail-codex-20260909%2F",
-          "description": "AI流水账式记录：我作为计算机专业学生，先排查同级软件工程专业同学的东北大学邮箱 Thunderbird 客户端 SSL 证书问题，再开发只读 IMAP/MCP 插件让 Codex 读取真实收件箱。",
-          "publishedAt": "2026-09-09T15:00:00.000Z"
         },
         {
           "title": "徐建伟：所谓自愿",
@@ -562,10 +556,16 @@
           "publishedAt": "2026-09-06T10:09:00.000Z"
         },
         {
-          "title": "折腾进行中：Lucky + 阿里云 ESA 反代家里内网服务：只需要一个备案域名",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.9ll.uk%2Fposts%2Fnetwork%2Flucky-esa-reverse-proxy%2F",
-          "description": "想在外面访问家里的内网服务？之前写过一篇 Cloudflare + Lucky 的方案，能用是能用，但 CF 的节点都在境外，国内访问速度基本看运气。这次换成阿里云 ESA（边缘安全加速平台），节点在国内，走的是正经加速线路。 前提条件就一个：在国内云服务商那里有一个已经备案的域名。ESA 要接备案域名，没备案的可以直接关掉这个页面了。 买域名、开通 ESA、接入 ESA 这些就不啰嗦了。接入方式我选的是 CNAME，比 NS 接入更通用一些，DNS 控制权还在自己手里。 第一步：Lucky 配一个阿里云 DDNS# 家里宽带有 IPv6，所以先让 Lucky 把家里的 IPv6 地址同步到域名上。DDNS 服务商选阿里云，域名假设",
-          "publishedAt": "2026-09-04T00:00:00.000Z"
+          "title": "朝朝听雨：从母系社会到父权制度：亲缘、私有制与现代性别关系的演变(浅谈男女对立)",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Frainzt.cn%2Fposts%2Ffrom-matriarchal-society-to-patriarchy%2F",
+          "description": "最近网络上的声音很大，男女对立也很严重，本期我们不站队任何一方，只从历史的角度去看待客观事实。 再次叠甲，“男女对立是阶级矛盾转移”的观点认为，社会中的一些性别冲突，表面上表现为男性与女性之间的利益冲突，但深层可能与经济结构、资源分配和阶层差异有关。例如，住房、就业、生育、教育等压力，本质上可能来自社会资源分配问题，却容易被转化为男女之间的相互指责。上层或既有利益结构在这种理论中被认为可能通过强化身份矛盾，让普通群体内部产生分裂，从而弱化对更深层经济问题的关注。不过，这并不意味着所有性别问题都是阶级矛盾造成的，现实中的性别不平等也有其独立存在的原因，二者往往是相互交织的。 再次声明，本站文章仅代表本站观点，若你不认可我的观点尽可离去",
+          "publishedAt": "2026-08-20T00:00:00.000Z"
+        },
+        {
+          "title": "磊磊落落：当下国内汽车制造行业的乱象",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fleileiluoluo.com%2Fposts%2Fqi-che-zhi-zao-luan-xiang.html",
+          "description": "我们国家在几十年之前就意识到国际石油供应的不稳定性，大力提倡发展新能源汽车。经过十年二十年的发展，当下我们国家在新能源汽车领域取得了不菲的成绩。尤其在今年「美伊战争」打响后，我们普通老百姓都能真真切切体会到油价飞涨对自己生活带来的影响，不少人会不由的感叹国家高层发展新能源汽车的前瞻性。但国内新能源汽车行业发展到现在，有成绩，同时也出现了很多乱象，而且有种朝「无序」的方向发展的势头。",
+          "publishedAt": "2026-08-19T06:20:00.000Z"
         }
       ]
     },
@@ -577,6 +577,54 @@
       ],
       "items": [
         {
+          "title": "云海札记",
+          "link": "https://www.blogsclub.org/blog/929.html",
+          "description": "云海札记",
+          "publishedAt": "2026-10-02T16:10:27.000Z"
+        },
+        {
+          "title": "枸杞加水",
+          "link": "https://www.blogsclub.org/blog/928.html",
+          "description": "枸杞加水",
+          "publishedAt": "2026-10-02T05:02:00.000Z"
+        },
+        {
+          "title": "达达兔Note",
+          "link": "https://www.blogsclub.org/blog/927.html",
+          "description": "达达兔Note",
+          "publishedAt": "2026-09-30T14:10:43.000Z"
+        },
+        {
+          "title": "笔记堡",
+          "link": "https://www.blogsclub.org/blog/925.html",
+          "description": "笔记堡",
+          "publishedAt": "2026-09-30T03:56:28.000Z"
+        },
+        {
+          "title": "RAGNote",
+          "link": "https://www.blogsclub.org/blog/924.html",
+          "description": "RAGNote",
+          "publishedAt": "2026-09-29T10:12:37.000Z"
+        },
+        {
+          "title": "知享客",
+          "link": "https://www.blogsclub.org/blog/923.html",
+          "description": "知享客",
+          "publishedAt": "2026-09-28T03:23:35.000Z"
+        },
+        {
+          "title": "晓正杨博客",
+          "link": "https://www.blogsclub.org/blog/922.html",
+          "description": "晓正杨博客",
+          "publishedAt": "2026-09-27T09:37:10.000Z"
+        },
+        {
+          "title": "磊的博客",
+          "link": "https://www.blogsclub.org/blog/921.html",
+          "description": "磊的博客",
+          "publishedAt": "2026-09-27T00:11:45.000Z"
+        },
+        {
           "title": "FGHRSH 日记簿",
           "link": "https://www.blogsclub.org/blog/920.html",
           "description": "FGHRSH 日记簿",
@@ -587,54 +635,76 @@
           "link": "https://www.blogsclub.org/blog/919.html",
           "description": "落梦陳的小站",
           "publishedAt": "2026-09-24T09:40:16.000Z"
+        }
+      ]
+    },
+    {
+      "friendUrl": "https://chumendiao.com/",
+      "feedUrl": "https://chumendiao.com/feed/",
+      "feedUrls": [
+        "https://chumendiao.com/feed/",
+        "https://chumendiao.com/feed/"
+      ],
+      "items": [
+        {
+          "title": "夜钓灯会不会惊鱼？光怎么打才不赶鱼",
+          "link": "https://chumendiao.com/yediao-deng-hui-bu-hui-jing-yu/",
+          "description": "夜钓灯照进水里确实会改变鱼的活动，但影响主要在光斑正下方和晃动的时候。把光固定、压低、别来回扫，比换灯的颜色更管用",
+          "publishedAt": "2026-10-02T12:00:09.000Z"
         },
         {
-          "title": "叁拾玖",
-          "link": "https://www.blogsclub.org/blog/918.html",
-          "description": "叁拾玖",
-          "publishedAt": "2026-09-24T06:01:39.000Z"
+          "title": "夜钓前白天怎么踩点？到现场要记哪些东西",
+          "link": "https://chumendiao.com/yediao-baitian-caidian/",
+          "description": "夜钓踩点要记的是白天看得到、晚上看不到的东西：脚下地形、身后障碍、水下的坎和草边、以及收竿的路线",
+          "publishedAt": "2026-10-01T12:00:09.000Z"
         },
         {
-          "title": "大大的小蜗牛",
-          "link": "https://www.blogsclub.org/blog/917.html",
-          "description": "大大的小蜗牛",
-          "publishedAt": "2026-09-23T09:32:31.000Z"
+          "title": "钩和饵的大小不匹配会怎样？小钩挂大饵、大钩挂小饵",
+          "link": "https://chumendiao.com/gou-yu-er-dapei/",
+          "description": "钩和饵要配着看：饵太大鱼吸不进、钩尖被包住；饵太小挂不住、鱼只吃饵不碰钩。判断标准是钩尖能不能露出来",
+          "publishedAt": "2026-09-30T12:00:09.000Z"
         },
         {
-          "title": "徐果萍博客网",
-          "link": "https://www.blogsclub.org/blog/916.html",
-          "description": "徐果萍博客网",
-          "publishedAt": "2026-09-22T03:10:05.000Z"
+          "title": "七星漂（散子漂）怎么调、怎么看信号？",
+          "link": "https://chumendiao.com/qixingpiao-zenme-yong/",
+          "description": "七星漂是几颗散子穿在主线上，靠露出水面的颗数和水面那颗的状态判断鱼讯。它调法简单、适合浅水和草区，但读不了很细的信号",
+          "publishedAt": "2026-09-29T12:00:11.000Z"
         },
         {
-          "title": "陶其的个人博客",
-          "link": "https://www.blogsclub.org/blog/915.html",
-          "description": "陶其的个人博客",
-          "publishedAt": "2026-09-22T02:42:18.000Z"
+          "title": "海竿、远投竿在野钓里怎么用？什么情况比手竿好",
+          "link": "https://chumendiao.com/haigan-yuantou-yediao/",
+          "description": "海竿远投竿的价值是把饵送到手竿够不到的远处，还能同时放几支守不同距离。代价是信号粗、灵敏度低，不适合抓轻口",
+          "publishedAt": "2026-09-28T12:00:09.000Z"
         },
         {
-          "title": "云从",
-          "link": "https://www.blogsclub.org/blog/914.html",
-          "description": "云从",
-          "publishedAt": "2026-09-21T02:38:43.000Z"
+          "title": "包食钓法怎么用？适合守什么鱼情",
+          "link": "https://chumendiao.com/baoshi-diaofa/",
+          "description": "包食是在芯饵外面再包一层雾化饵，钩上留耐泡的芯、水里散出诱鱼的雾。它把诱和钓合到一处，适合守个体大的鱼",
+          "publishedAt": "2026-09-27T12:00:09.000Z"
         },
         {
-          "title": "TaOS",
-          "link": "https://www.blogsclub.org/blog/913.html",
-          "description": "TaOS",
-          "publishedAt": "2026-09-20T14:56:24.000Z"
+          "title": "钓法换了一段时间还是没口，该换回来还是继续等？",
+          "link": "https://chumendiao.com/diaofa-huanle-mei-xiaoguo/",
+          "description": "换钓法后多久见效没有统一时间。判断依据不是等了多久，而是有没有出现该钓法对应的那种反馈；没有反馈就换，不要靠继续等",
+          "publishedAt": "2026-09-26T12:00:10.000Z"
         },
         {
-          "title": "是人 renly",
-          "link": "https://www.blogsclub.org/blog/912.html",
-          "description": "是人 renly",
-          "publishedAt": "2026-09-18T09:25:35.000Z"
+          "title": "谷麦钓法是什么？什么时候比商品饵好用",
+          "link": "https://chumendiao.com/gumai-diaofa/",
+          "description": "谷麦钓法是用泡制过的谷物（麦粒、玉米、谷子）既做窝料又做钓饵，靠耐泡、少招小鱼来守个体大的鱼。它的长处是稳，不是快",
+          "publishedAt": "2026-09-25T12:00:09.000Z"
         },
         {
-          "title": "楠香自语",
-          "link": "https://www.blogsclub.org/blog/910.html",
-          "description": "楠香自语",
-          "publishedAt": "2026-09-17T07:07:02.000Z"
+          "title": "长竿短线戳茬怎么玩？什么水域比台钓好使",
+          "link": "https://chumendiao.com/changgan-duanxian-chuocha/",
+          "description": "长竿短线是用长竿配短线组，把钩饵直接送到草缝、芦苇边、树棵底下这些台钓抛不到的位置。它的优势是落点准，不是钓得远",
+          "publishedAt": "2026-09-24T12:00:09.000Z"
+        },
+        {
+          "title": "不用浮漂、绷着竿尖看信号怎么钓？",
+          "link": "https://chumendiao.com/bengjianzi-zenme-diao/",
+          "description": "绷尖子是不靠浮漂、靠竿尖的抖动和线绷紧的程度判断鱼讯，多用在水浅、走水急、漂立不住的地方。它的信号比漂粗，适合抓实口",
+          "publishedAt": "2026-09-23T12:00:08.000Z"
         }
       ]
     }
