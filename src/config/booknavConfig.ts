@@ -406,6 +406,12 @@ export const booknavConfig: BooknavGroup[] = [
 				weight: 11,
 			},
 			{
+				title: "樱之歌 SakuGAL",
+				url: "https://sakugal.com/",
+				desc: "中文 Galgame 资源分享站，AI 机翻资源多",
+				weight: 10,
+			},
+			{
 				title: "鲲 Galgame 补丁",
 				url: "https://www.moyu.moe/",
 				desc: "开源 Galgame 补丁资源站，鲲的姊妹站",
