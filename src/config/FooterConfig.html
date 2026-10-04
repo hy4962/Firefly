@@ -330,3 +330,28 @@
 		}
 	})();
 </script>
+
+<script>
+	// ===== 友链卡片悬停预览：按需加载 =====
+	// 只在 /friends/ 才去拉 /assets/js/friends-covers.js，其他页面只背这十几行。
+	// 之所以放页脚全站引入：页脚在 #swup-container 之外，切页不会重跑，
+	// 用它挂住 swup 事件，才能保证从首页无刷新跳进友链页时预览照样生效。
+	(function () {
+		function loadFriendCovers() {
+			if (!/^\/friends\/?$/.test(window.location.pathname)) return;
+			if (document.getElementById("ff-friend-covers-js")) return;
+			var script = document.createElement("script");
+			script.id = "ff-friend-covers-js";
+			script.src = "/assets/js/friends-covers.js";
+			script.async = true;
+			document.head.appendChild(script);
+		}
+		document.addEventListener("astro:page-load", loadFriendCovers);
+		document.addEventListener("swup:page:view", loadFriendCovers);
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", loadFriendCovers, { once: true });
+		} else {
+			loadFriendCovers();
+		}
+	})();
+</script>

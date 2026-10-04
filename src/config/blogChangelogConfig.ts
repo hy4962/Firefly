@@ -30,6 +30,34 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.20",
+		title: "友链卡片悬停展开首页截图",
+		date: "2026-10-04",
+		summary:
+			"鼠标停在友链卡片上，卡片顶部展开一张对方首页的截图；截图是离线批量截好、存在本站的 webp，12 张总共 190 KB 左右，且首屏一张都不加载",
+		description:
+			"在 blog.amamo.top 的友链页看到的效果：鼠标悬上去，卡片顶部长出一条首页截图。对方是直接把卡片重写成竖版、把图塞进 friends.astro 里的，我这边不能动主题源文件，所以换了个做法 —— 卡片结构留给主题，封面用一段独立脚本在浏览器里贴上去。截图没有走第三方截图 API（首次要等 5～15 秒，还绕一圈国外），而是新增了一个脚本用本机 chrome-headless-shell 把每条友链截一遍、sharp 转成 640 宽的 webp 存进 public，所以加载时走的是本站 CDN。悬停前连请求都不发，第一次真悬停才赋值 src",
+		items: [
+			{
+				category: "友链",
+				text: "友链卡片悬停时在顶部展开首页截图（高 7rem，截取页面上半部分而不是居中裁剪，更像「首页」）",
+			},
+			{
+				category: "素材",
+				text: "新增 scripts/generate-friends-covers.ts，批量截取所有启用友链的首页，转成 640×512 比例的 webp（单张 10～21 KB），并生成 src/data/friends-covers.json 清单",
+			},
+			{
+				category: "性能",
+				text: "封面默认不加载，首次悬停 / 聚焦才发请求；脚本本体也只在 /friends/ 才按需拉取，其他页面只多十几行判断",
+			},
+			{
+				category: "维护",
+				text: "新增 src/pages/api/friends-covers.json.ts（构建期生成静态 JSON）与 public/assets/js|css/friends-covers.*，主题源文件零改动，上游合并无冲突",
+			},
+		],
+		tags: ["友链", "性能", "新增"],
+	},
+	{
 		version: "V1.19",
 		title: "相册清理两张重复/带底素材",
 		date: "2026-10-03",
