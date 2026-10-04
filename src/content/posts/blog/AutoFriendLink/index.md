@@ -162,9 +162,7 @@ const updated =
 
 还有 label 不存在时不能让整个 job 挂掉。GitHub API 对不存在的 label 直接返回 422，流程会当场炸掉，所以 `addLabels` 外面包了 try/catch，workflow 里也顺手 `gh label create ... || true` 先建一遍。
 
-## 踩坑记录
-
-### `### 网站名称` 读不出来
+## `### 网站名称` 读不出来
 
 Issue 表单提交之后，正文长这样：
 
@@ -192,62 +190,6 @@ String(label).replace(/^#+\s*/, '')   // split 后第一块的 label 会带 "###
 
 我第一版测试是自己在测试里手动拼了个对象塞进去测的，跑得干干净净——因为它压根没碰真正解析 Issue 正文的那段代码。后来把字段整理抽成 `buildForm()`，测试和主流程共用同一个函数，上面那个 bug 才浮出来。
 
-### 按钮上的字看不见
-
-申请入口那个按钮我写完看着挺好，dev 一热更新，按钮变成一个纯橙色块，字全没了，底下隐约一条虚线。
-
-不是 HTML 写错，是主题里有一条全局样式：
-
-```css
-/* src/styles/markdown.css */
-a:not(.no-styling) {
-	@apply relative bg-none font-medium text-(--primary) underline
-	       decoration-(--link-underline) decoration-1 decoration-dashed underline-offset-4;
-}
-```
-
-它会把 MDX 正文里所有的 `<a>` 染成主题色、加一条虚线底。我给按钮写的是 `text-white` 加 `no-underline`——这两个都是单类选择器，特异性 `(0,1,0)`，压不过 `a:not(.no-styling)` 的 `(0,1,1)`。于是**橙字压在橙底上**，那条虚线就是 `decoration-dashed` 的下划线。
-
-解法是主题自己留的口子，`no-styling` 类：
-
-```jsx
-<a href="..." class="... no-styling">自动友链 · 进入申请表</a>
-```
-
-主题自带的 wiki 链接、GitHub 卡片组件用的都是这个类。加上它那条规则整条不命中，不用 `!important` 硬怼，也不用碰主题源文件。
-
-## 上线之后卡了个 404
-
-代码推上去、Vercel 也构建完了，点申请链接——404。
-
-先怀疑文件名写错，去 GitHub 上看了一眼，`.github/ISSUE_TEMPLATE/friend-request.yml` 好好在那躺着。
-
-查了一下仓库 API：
-
-```json
-{
-	"full_name": "hy4962/Firefly",
-	"fork": true,
-	"has_issues": false
-}
-```
-
-**fork 出来的仓库，GitHub 默认把 Issues 关掉了。** Issues 不开，`/issues/new` 一律 404，模板文件在不在都一样。
-
-去 `Settings → General → Features` 把 Issues 勾上就好了。
-
-中途我还用 curl 探过 `/issues/new`，返回 404；探 `/issues`，返回 200，看着像功能开着。这两个状态码其实都说明不了问题——未登录访问新建页本来就 404，而列表页是公开可读的。**它们区分不出「开着但没登录」和「压根关着」**，最后是靠 API 里的 `has_issues` 定的案。
-
-## 这套东西的边界
-
-三个说实话的地方：
-
-1. **申请者得有 GitHub 账号**。这是最硬的限制，参考站也躲不掉。国内访客里没有 GitHub 的比例不低，所以「发评论区 / 发邮件」那条路我留着没删。
-2. **纯前端渲染的友链页抓不到**。我只 fetch HTML，页面内容靠 JS 出来的站会被误判。
-3. **垃圾 Issue 会留在仓库里**。校验不过的会被自动打标、自动关闭，但 Issue 本身还在列表里，得手动清。
-
-想解决第一条得再套一层自己的表单页加一个云函数去调 GitHub API，那就多一个要维护的组件和一把 Token。现阶段我觉得不值。
-
 ## 极简流程
 
 要复刻的话，需要动的就四处：
@@ -255,7 +197,7 @@ a:not(.no-styling) {
 1. `.github/ISSUE_TEMPLATE/friend-request.yml` —— 申请表，字段按自己的站点信息改
 2. `.github/scripts/auto-friend-link.cjs` —— 校验和写入，改开头 `SITE_INFO` 里的域名
 3. `.github/workflows/auto-friend-link.yml` —— 触发
-4. 友链页加一个入口按钮（记得带 `no-styling`）
+4. 友链页加一个入口按钮
 
 然后两个仓库设置：
 
@@ -263,6 +205,8 @@ a:not(.no-styling) {
 Settings → General → Features → 勾上 Issues
 Settings → Actions → General → Workflow permissions → Read and write
 ```
+
+第一条必须开——fork 出来的仓库 GitHub 默认把 Issues 关着，不开的话申请链接直接 404，模板文件在不在都一样。
 
 第二条是给机器人 push 配置用的，默认就是 Read and write，但如果之前手动收紧过，这里不放开提交会失败。
 
