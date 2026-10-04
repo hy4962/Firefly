@@ -325,6 +325,12 @@ export const booknavConfig: BooknavGroup[] = [
 		weight: 103,
 		items: [
 			{
+				title: "末日動漫資源庫",
+				url: "https://share.acgnx.net/",
+				desc: "Project AcgnX，番剧资源分流",
+				weight: 11,
+			},
+			{
 				title: "蜜柑计划",
 				url: "https://mikanime.tv/",
 				desc: "番剧 BT 聚合，追番 RSS 首选",
@@ -340,12 +346,6 @@ export const booknavConfig: BooknavGroup[] = [
 				title: "萌番组",
 				url: "https://bangumi.moe/",
 				desc: "番剧种子聚合，自带 BT 下载器",
-				weight: 9,
-			},
-			{
-				title: "末日動漫資源庫",
-				url: "https://share.acgnx.net/",
-				desc: "Project AcgnX，番剧资源分流",
 				weight: 9,
 			},
 			{
