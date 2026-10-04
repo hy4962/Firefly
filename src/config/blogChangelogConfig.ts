@@ -31,12 +31,12 @@ export interface ChangelogEntry {
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
 		version: "V1.24",
-		title: "朋友圈独立 RSS",
+		title: "朋友圈 + 站长动态独立 RSS",
 		date: "2026-10-05",
 		summary:
-			"朋友圈时间线有了自己的订阅源 /moments/rss.xml：和页面同一份数据、同一个配比排序，阅读器里看到的顺序就是网页上的顺序；页面头部加了订阅条，支持一键复制链接",
+			"朋友圈和站长动态各自有了独立订阅源（/moments/rss.xml 与 /dynamic/rss.xml），都和页面同一份数据、同一个排序；朋友圈页头部有订阅条，动态页的「N 动态」旁边多了个 RSS 小按钮",
 		description:
-			"在 blog.fufu520.cn 看到 TA 的动态页挂着独立的 /moments/rss.xml，回头看自己的朋友圈页只有网页没有 feed——想追更友链的读者只能手动来翻。于是照着做了一份：新端点和 /moments/ 页面共用 loadFriendsFeed + buildMomentsTimeline，订阅出来的条目顺序、来源占比与页面完全一致；每条 item 的 link 直指友链原文，来源站点写进 dc:creator 和分类，本站内容会额外带上「本站」分类。页面顶部加了订阅条（复制链接 / 直接打开 Feed），head 里也埋了 rel=alternate 自动发现，阅读器打开这页就能识别到 feed",
+			"在 blog.fufu520.cn 看到 TA 的动态页挂着独立的 /moments/rss.xml，回头看自己的朋友圈页和站长动态页都只有网页没有 feed——想追更的读者只能手动来翻。于是照着做了两份：朋友圈的新端点和 /moments/ 页面共用 loadFriendsFeed + buildMomentsTimeline，订阅出来的条目顺序、来源占比与页面完全一致；每条 item 的 link 直指友链原文，来源站点写进 dc:creator 和分类，本站内容会额外带上「本站」分类，页面顶部加了订阅条。站长动态的 feed 在构建期拉 Memos 接口（和页面同一份客户端数据），每条跳回 /dynamic/ 的对应锚点，接口挂了自动回退本地内容集合、再不行输出空频道，构建永远不会因此变红。两个页面的 head 都埋了 rel=alternate 自动发现，阅读器打开就能识别到 feed",
 		items: [
 			{
 				category: "朋友圈",
@@ -51,11 +51,19 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 				text: "页面顶部新增订阅条：显示 feed 地址、一键复制（复制成功 1.8 秒后还原）、新标签打开 Feed（绕开 Swup 拦截）；head 加 rel=alternate 供阅读器自动发现",
 			},
 			{
+				category: "动态",
+				text: "新增 /dynamic/rss.xml：构建期拉 Memos 接口（与页面同源，当前 12 条），每条跳回 /dynamic/ 对应锚点；接口失败自动回退本地内容集合，再不行输出空频道，绝不炸构建",
+			},
+			{
+				category: "动态",
+				text: "动态页头部「N 动态」旁注入 RSS 圆形小按钮（页脚 FooterConfig.html 注入，只在 /dynamic/ 出现），点击新标签打开 Feed；head 同步埋 rel=alternate",
+			},
+			{
 				category: "维护",
-				text: "新增 src/pages/moments/rss.xml.ts + moments.astro 订阅条一段，全为新增文件或新增块，主题源文件零改动",
+				text: "新增 src/pages/moments/rss.xml.ts、src/pages/dynamic/rss.xml.ts + moments.astro 订阅条一段，全为新增文件或新增块，主题源文件零改动",
 			},
 		],
-		tags: ["朋友圈", "RSS", "新增"],
+		tags: ["朋友圈", "动态", "RSS", "新增"],
 	},
 	{
 		version: "V1.23",

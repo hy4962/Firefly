@@ -530,3 +530,101 @@
 		}
 	})();
 </script>
+
+<style>
+	/* ===== 动态页 RSS 订阅按钮（/dynamic/ 头部） ===== */
+	.ff-dynrss-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		align-self: center;
+		flex: 0 0 auto;
+		margin-left: 0.55rem;
+		width: 2.2rem;
+		height: 2.2rem;
+		border: 1px solid var(--line-divider);
+		border-radius: 9999px;
+		background: var(--card-bg);
+		color: var(--primary);
+		text-decoration: none;
+		transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+	}
+	.ff-dynrss-btn svg {
+		width: 1.1rem;
+		height: 1.1rem;
+		fill: currentColor;
+	}
+	.ff-dynrss-btn:hover {
+		border-color: color-mix(in srgb, var(--primary) 45%, var(--line-divider));
+		background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+		transform: translateY(-1px);
+	}
+	.ff-dynrss-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 72%, white);
+		outline-offset: 2px;
+	}
+</style>
+
+<script>
+	// ===== 动态页 RSS 订阅入口：按需注入 =====
+	// /dynamic/ 整页是上游文件不能改，这里在页脚（swup 容器之外）挂事件，
+	// 只在动态页把 RSS 按钮塞进「N 动态」计数 pill 内部，并给 head 补自动发现声明。
+	// 注意：不能插成 .page-count 的兄弟节点——page-header 是两列 grid，
+	// 多一个直接子元素会把「N 动态」挤到下一行。
+	// Swup 会拦截站内 .xml 链接，所以按钮点击走原生新标签页打开。
+	(() => {
+		var RSS_PATH = "/dynamic/rss.xml";
+
+		function ensureHeadLink() {
+			if (document.getElementById("ff-dynrss-alt")) return;
+			var link = document.createElement("link");
+			link.id = "ff-dynrss-alt";
+			link.rel = "alternate";
+			link.type = "application/rss+xml";
+			link.title = "站长动态 RSS";
+			link.href = RSS_PATH;
+			document.head.appendChild(link);
+		}
+
+		function mountRssButton() {
+			if (!/^\/dynamic\/?$/.test(window.location.pathname)) return;
+			ensureHeadLink();
+			var header = document.querySelector(".page-header");
+			if (!header) return;
+			if (document.getElementById("ff-dynrss-btn")) return;
+			var count = header.querySelector(".page-count");
+			if (!count) return;
+			var button = document.createElement("a");
+			button.id = "ff-dynrss-btn";
+			button.className = "ff-dynrss-btn";
+			button.href = RSS_PATH;
+			button.target = "_blank";
+			button.rel = "noopener noreferrer";
+			button.setAttribute("aria-label", "订阅动态 RSS");
+			button.title = "订阅动态 RSS";
+			button.innerHTML =
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20C5 20 4 19 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27zm0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93z"/></svg>';
+			count.appendChild(button);
+		}
+
+		function openFeedNative(event) {
+			var target = event.target.closest("#ff-dynrss-btn");
+			if (!target) return;
+			event.preventDefault();
+			event.stopPropagation();
+			window.open(RSS_PATH, "_blank", "noopener,noreferrer");
+		}
+		document.addEventListener("click", openFeedNative, true);
+
+		function initDynamicRss() {
+			mountRssButton();
+		}
+		document.addEventListener("astro:page-load", initDynamicRss);
+		document.addEventListener("swup:page:view", initDynamicRss);
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", initDynamicRss, { once: true });
+		} else {
+			initDynamicRss();
+		}
+	})();
+</script>
