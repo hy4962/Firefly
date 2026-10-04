@@ -30,6 +30,82 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.23",
+		title: "首页动态滚动条",
+		date: "2026-10-05",
+		summary:
+			"首页横幅下方多了一条会持续横向滚动的动态条：左边「动态」胶囊、右边「更多」，中间滚动播放最近的 Memos 动态，鼠标悬停暂停，点某条跳到对应那条",
+		description:
+			"在 nanzhiy.cn 看到的效果：他首页横幅下面挂着一条一直在横滚的「瞬间」条。扒完发现他用的是 Ethereal 主题而不是 Firefly，页面里还留着服务端模板的痕迹，代码没法照抄，所以只搬机制 —— 数据直连 Memos 公开接口（和 /dynamic/ 同一个源，对方已放开 CORS），滚动靠 CSS 把轨道内容复制成完全相同的两份、在 0 到 -50% 之间平移实现无缝。最折腾的是插在哪：首页那个下滑箭头执行的是 #main-grid.scrollIntoView()，条子放在它之前会被整条甩出视口；第二轮挪进 #content-column 又变成只有文章列那么窄的一小块；最后让它当 #main-grid 的 grid item 配合 grid-column: 1/-1，才同时拿到「不被甩出去」和「横跨左右侧栏的全宽」。改动只落在两个文件，主题源文件零改动",
+		items: [
+			{
+				category: "首页",
+				text: "首页新增动态滚动条：左侧「动态」胶囊 + 中间滚动区 + 右侧「更多」，取最近 12 条 Memos 动态；悬停暂停、移动端整条不显示（避免首屏拥挤），点某条跳到 /dynamic/ 对应那条",
+			},
+			{
+				category: "首页",
+				text: "条子作为 #main-grid 的 grid item（grid-column: 1 / -1）横跨左右侧栏，同时解决「点下滑箭头看不到」——箭头滚的就是 #main-grid，条子在它内部才不会被甩出视口",
+			},
+			{
+				category: "性能",
+				text: "DOM 默认 display:none、数据在页面渲染完之后才异步拉取，拉不到就整条不显示；实测把接口掐断后 FCP 仍是 1112ms、CLS 为 0，首页 10 篇文章照常渲染，数据本身带 10 分钟本地缓存",
+			},
+			{
+				category: "维护",
+				text: "新增 public/assets/js/home-dynamic-bar.js + src/config/FooterConfig.html 追加注入段，主题源文件零改动；脚本版本号挂在 ?v= 上绕开 vercel 给 /assets 的 30 天强缓存",
+			},
+		],
+		tags: ["首页", "动态", "新增"],
+	},
+	{
+		version: "V1.22",
+		title: "留言板改成聊天窗口",
+		date: "2026-10-05",
+		summary:
+			"把留言板从 Waline 默认评论框换成群聊风格的聊天窗口：气泡、成员列表、公告栏、表情图片、回复编辑删除都在，30 秒自动同步。后端复用现成的 Waline 一个字节没动，这一页的评论脚本反而从 100 KB 降到 23 KB",
+		description:
+			"在 blog.amamo.top 的留言板看到的：不是评论区，是一整个聊天窗口。扒了仓库发现后端就是 Waline，我现成有一个。参考站为了塞进主题改了 6 类上游文件，我搬完之后把上游改动压到只动 guestbook.astro 一个——137 个新文案走自建表不进 i18n，CSS 变量就近定义，样式从全站 main.css 挪到页面内引入。顺带修了三件事：旧评论框发的回复显示不出引用块（组件的标记和 Waline 原生 pid 是两套体系）、公告栏文字和消息叠在一起（浮层底色实际只有 9% 不透明度）、标题压在首屏壁纸上（主题的上浮设计遇上透明背景）",
+		items: [
+			{
+				category: "内容",
+				text: "留言板换成群聊风格聊天窗口：气泡列表、公告栏、成员列表、表情包、图片上传、回复/编辑/删除、30 秒自动同步，移动端公告栏占位布局单独适配",
+			},
+			{
+				category: "性能",
+				text: "这一页的评论前端从 @waline/client 完整客户端（100.9 KB gzip，走 unpkg 第三方 CDN）换成自写组件（23.4 KB brotli，同域托管），净减约 82 KB",
+			},
+			{
+				category: "性能",
+				text: "50 KB 组件样式从全站 main.css 挪到页面内引入，只有 /guestbook/ 加载；原版做法是打进全站 Layout.css（guestbook-chat 类名在其中出现 200 次），每页白下",
+			},
+			{
+				category: "维护",
+				text: "137 个新文案走自建 guestbook-lang.ts 不改 src/i18n/，CSS 变量就近定义不进 variables.styl——上游改动只剩 guestbook.astro 一个文件",
+			},
+			{
+				category: "修复",
+				text: "旧评论框 / Waline 后台发的回复显示不出引用块：解析回退到 Waline 原生 pid / reply_user 字段，判据用 typeof pid === 'number'（一级评论的 pid 是 null 而不是缺失，用 in 判断会误判）",
+			},
+			{
+				category: "修复",
+				text: "公告栏文字与消息重叠：浮层底色实际只有 9% 不透明度（color-mix 的另一端 --guestbook-surface 是 transparent），改成占位式布局并换 --card-bg 取色，消息不再被切半截",
+			},
+			{
+				category: "修复",
+				text: "留言板标题压在首屏壁纸上：主题的主内容区上浮 3.5rem 是给卡片底色设计的，透明背景挡不住；桌面端下移 3.5rem，面板高度放大到 1.2 倍",
+			},
+			{
+				category: "内容",
+				text: "公告弹窗加「不再显示」，写入 localStorage 后该访客不再自动弹出，顶部公告栏保留可手动点开",
+			},
+			{
+				category: "维护",
+				text: "新增依赖 @waline/api、lucide-svelte；实现记录见《留言板改成聊天窗口》",
+			},
+		],
+		tags: ["留言板", "Waline", "Svelte", "新增"],
+	},
+	{
 		version: "V1.21",
 		title: "友链自助申请",
 		date: "2026-10-05",
