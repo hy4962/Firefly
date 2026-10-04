@@ -355,3 +355,178 @@
 		}
 	})();
 </script>
+
+<div id="ff-dyn" class="ff-dyn" data-ff-dyn-owner="HY">
+	<div class="ff-dyn-inner card-base">
+		<a class="ff-dyn-badge" href="/dynamic/" aria-label="查看全部动态">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.4 6.6 6.6 2.4-6.6 2.4L12 20.5l-2.4-6.6L3 11.5l6.6-2.4z" /></svg>
+			<span>动态</span>
+		</a>
+		<div class="ff-dyn-marquee" data-ff-dyn-marquee>
+			<div class="ff-dyn-track" data-ff-dyn-track>
+				<div class="ff-dyn-group" data-ff-dyn-group></div>
+			</div>
+		</div>
+		<a class="ff-dyn-more" href="/dynamic/">
+			<span>更多</span>
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.3 5.3a1 1 0 011.4 0l5.6 5.6a1 1 0 010 1.4l-5.6 5.6a1 1 0 11-1.4-1.4L14.2 12 9.3 7.1a1 1 0 010-1.4z" /></svg>
+		</a>
+	</div>
+</div>
+
+<style>
+	/* ===== 首页动态跑马灯 ===== */
+	/* 默认不显示。只有 home-dynamic-bar.js 把它插进 #main-grid 的首位、
+	   且拿到数据加上 .ff-dyn--ready 之后，才会在首页露出来 ——
+	   所以脚本没加载时，不会在页脚位置留一条裸的滚动条。 */
+	.ff-dyn {
+		/* 作为 #main-grid 的 grid item 横跨全部列（把左右侧栏一起吃进来）；
+		   与下方卡片之间的行间距由容器的 gap-4 负责，所以这里不留 margin */
+		grid-column: 1 / -1;
+		display: none;
+		margin: 0;
+	}
+	body.is-home .ff-dyn.ff-dyn--ready {
+		display: flex;
+	}
+	/* 移动端整条不显示，避免首屏拥挤 */
+	@media (max-width: 767.98px) {
+		body.is-home .ff-dyn.ff-dyn--ready {
+			display: none;
+		}
+	}
+	.ff-dyn-inner {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		width: 100%;
+		padding: 10px 12px;
+	}
+	.ff-dyn-badge,
+	.ff-dyn-more {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		flex-shrink: 0;
+		padding: 6px 10px;
+		border-radius: 8px;
+		background: var(--btn-regular-bg);
+		font-size: 13px;
+		font-weight: 700;
+		line-height: 1;
+		text-decoration: none;
+		transition: background-color 150ms;
+	}
+	.ff-dyn-badge {
+		color: var(--btn-content);
+	}
+	.ff-dyn-more {
+		color: var(--primary);
+	}
+	.ff-dyn-badge:hover,
+	.ff-dyn-more:hover {
+		background: var(--btn-regular-bg-hover);
+	}
+	.ff-dyn-badge svg,
+	.ff-dyn-more svg {
+		width: 15px;
+		height: 15px;
+		fill: currentColor;
+	}
+	.ff-dyn-marquee {
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		padding: 4px 0;
+		border-radius: 8px;
+		background: var(--btn-regular-bg);
+		-webkit-mask-image: linear-gradient(90deg, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+		mask-image: linear-gradient(90deg, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+	}
+	.ff-dyn-marquee:hover .ff-dyn-track--animate,
+	.ff-dyn-marquee:focus-within .ff-dyn-track--animate {
+		animation-play-state: paused;
+	}
+	.ff-dyn-track {
+		display: flex;
+		align-items: center;
+		width: max-content;
+	}
+	.ff-dyn-track--animate {
+		animation: ff-dyn-scroll var(--ff-dyn-duration, 40s) linear infinite;
+		will-change: transform;
+	}
+	@keyframes ff-dyn-scroll {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+	.ff-dyn-group {
+		display: flex;
+		align-items: center;
+	}
+	.ff-dyn-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 24px;
+		white-space: nowrap;
+		text-decoration: none;
+	}
+	.ff-dyn-owner,
+	.ff-dyn-sep {
+		font-size: 13px;
+		font-weight: 700;
+		color: var(--primary);
+	}
+	.ff-dyn-text {
+		font-size: 13px;
+		color: var(--content-meta);
+	}
+	.ff-dyn-dot {
+		flex-shrink: 0;
+		width: 4px;
+		height: 4px;
+		margin: 0 12px;
+		border-radius: 50%;
+		background: var(--primary);
+		opacity: 0.4;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ff-dyn-track--animate {
+			animation: none;
+		}
+		.ff-dyn-marquee {
+			overflow-x: auto;
+		}
+	}
+</style>
+
+<script>
+	// ===== 首页动态跑马灯：按需加载 =====
+	// 只在首页才去拉 /assets/js/home-dynamic-bar.js，其他页面只背这十几行。
+	// 放页脚全站引入的原因同友链预览：页脚在 #swup-container 之外，
+	// 用它挂住 swup 事件，才能保证从别的页面无刷新跳回首页时照样初始化。
+	// ⚠️ vercel.json 给 /assets/* 配了 30 天强缓存，改完那个 js 记得把下面的 v= 往上加，
+	//    否则老访客拿到的还是旧文件。
+	(function () {
+		function loadDynamicBar() {
+			if (!/^\/$/.test(window.location.pathname)) return;
+			if (document.getElementById("ff-dynbar-js")) return;
+			var script = document.createElement("script");
+			script.id = "ff-dynbar-js";
+			script.src = "/assets/js/home-dynamic-bar.js?v=1";
+			script.async = true;
+			document.head.appendChild(script);
+		}
+		document.addEventListener("astro:page-load", loadDynamicBar);
+		document.addEventListener("swup:page:view", loadDynamicBar);
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", loadDynamicBar, { once: true });
+		} else {
+			loadDynamicBar();
+		}
+	})();
+</script>
