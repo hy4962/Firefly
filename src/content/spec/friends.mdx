@@ -170,7 +170,7 @@ if (l) {
                 <span>自动友链 · 进入申请表</span>
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </a>
-              <p class="text-[0.65rem] text-neutral-400 dark:text-neutral-500 leading-relaxed mt-2"><span class="text-(--primary) font-medium">也可以把下面模板发到评论区，或邮件至 {site.email}，人工处理也行。</span></p>
+              <p class="text-[0.65rem] text-neutral-400 dark:text-neutral-500 leading-relaxed mt-2"><span class="text-(--primary) font-medium">也可以把下面模板发到评论区，或邮件至 </span><code class="px-1 py-0.5 rounded bg-black/5 dark:bg-white/10">{site.email}</code><span class="text-(--primary) font-medium">，人工处理也行。</span></p>
               <div class="mt-2.5 rounded-lg border border-(--line-divider) overflow-hidden">
                 <div class="bg-black/5 dark:bg-white/5 px-3.5 py-3 text-[0.7rem] leading-relaxed whitespace-pre-wrap break-words">{applyTemplate}</div>
                 <button type="button" data-copy={applyTemplate} onclick={copyJs} class="w-full flex items-center justify-center gap-1.5 py-2 text-[0.7rem] font-medium text-(--primary) bg-(--primary)/10 hover:bg-(--primary)/20 transition-colors cursor-pointer border-t border-(--line-divider)">
