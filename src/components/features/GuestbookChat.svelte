@@ -51,6 +51,8 @@ const POLL_INTERVAL = 30_000;
 const MIN_MESSAGE_LENGTH = 2;
 const MAX_MESSAGE_LENGTH = 300;
 const PROFILE_STORAGE_KEY = "guestbook-chat-profile";
+/** 弹窗「不再显示」的标记，存在 localStorage，命中后不再自动弹公告 */
+const ANNOUNCEMENT_DISMISS_KEY = "guestbook-chat-announcement-dismissed";
 const AUTH_STORAGE_KEY = "guestbook-chat-auth";
 const DRAFT_STORAGE_KEY = "guestbook-chat-draft";
 const serverURL = commentConfig.waline?.serverURL ?? "";
@@ -143,6 +145,15 @@ async function openAnnouncement(announcement: GuestbookAnnouncementItem) {
 function closeAnnouncement() {
 	if (announcementDialog?.open) announcementDialog.close();
 	document.body.style.overflow = "";
+}
+
+/**
+ * 公告弹窗里的「不再显示」：记住这次选择，以后再进站就不自动弹了。
+ * 只影响「自动弹出」，顶部公告栏照旧保留，想看的还能手动点开。
+ */
+function dismissAnnouncementForever() {
+	writeStoredString(localStorage, ANNOUNCEMENT_DISMISS_KEY, "1");
+	closeAnnouncement();
 }
 
 function closeDeleteDialog() {
@@ -1002,7 +1013,12 @@ onMount(() => {
 	isOffline = !navigator.onLine;
 	const returnedToken = new URL(window.location.href).searchParams.get("token");
 	void initializeGuestbook(returnedToken);
-	if (announcements[0]) void openAnnouncement(announcements[0]);
+	if (
+		announcements[0] &&
+		readStoredString(localStorage, ANNOUNCEMENT_DISMISS_KEY) !== "1"
+	) {
+		void openAnnouncement(announcements[0]);
+	}
 	startPolling();
 	document.addEventListener("visibilitychange", handleVisibilityChange);
 	window.addEventListener("online", handleOnline);
@@ -1381,6 +1397,13 @@ onMount(() => {
 					</ul>
 				</div>
 				<div class="privacy-footer">
+					<button
+						class="guestbook-announcement-dismiss"
+						type="button"
+						onclick={dismissAnnouncementForever}
+					>
+						{GB_LANG.gbDontShowAgain}
+					</button>
 					<button class="privacy-confirm-btn" type="button" onclick={closeAnnouncement}>
 						{GB_LANG.gotIt}
 					</button>

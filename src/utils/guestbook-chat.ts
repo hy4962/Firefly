@@ -1,4 +1,8 @@
-import type { WalineComment, WalineRootComment } from "@waline/api";
+import type {
+	WalineChildComment,
+	WalineComment,
+	WalineRootComment,
+} from "@waline/api";
 import type {
 	GuestbookChatMessage,
 	GuestbookEmojiPack,
@@ -220,6 +224,15 @@ export function normalizeGuestbookComment(
 		comment.orig || htmlToPlainText(comment.comment),
 	);
 
+	// 群聊界面的回复关系编码在正文的 <!--guestbook-reply:...--> 标记里
+	// （见 buildGuestbookMessageBody）。但用旧的原生评论框、或从 Waline 后台
+	// 回复的留言没有这个标记，关系只存在 Waline 自己的 pid / reply_user 上。
+	// root 评论的 pid 是 null，只有子评论才是数字，据此判断并回退，
+	// 这样历史回复与后台回复同样能渲染出引用块。
+	const childFields = comment as Partial<WalineChildComment>;
+	const nativePid =
+		typeof childFields.pid === "number" ? childFields.pid : null;
+
 	return {
 		id: String(comment.objectId),
 		objectId: comment.objectId,
@@ -234,8 +247,9 @@ export function normalizeGuestbookComment(
 		addr: comment.addr,
 		label: comment.label,
 		isAdmin: comment.type === "administrator",
-		replyToId: parsed.replyToId,
-		replyToNick: parsed.replyToNick,
+		replyToId:
+			parsed.replyToId ?? (nativePid === null ? undefined : String(nativePid)),
+		replyToNick: parsed.replyToNick ?? childFields.reply_user?.nick,
 		status: comment.status,
 	};
 }

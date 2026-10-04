@@ -30,6 +30,7 @@ export const GB_LANG = {
 	gbDeleteFailed: "消息删除失败，请稍后重试",
 	gbDeleteMessage: "删除消息",
 	gbDeleteWarning: "删除后无法恢复，Waline 服务端也会同步删除这条消息。",
+	gbDontShowAgain: "不再显示",
 	gbEditFailed: "消息修改失败，请稍后重试",
 	gbEditGuestProfile: "修改游客资料",
 	gbEditMessage: "编辑消息",

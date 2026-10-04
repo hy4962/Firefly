@@ -98,6 +98,27 @@
 	height: calc(100dvh - var(--guestbook-viewport-offset));
 }
 
+/* 让开首屏壁纸。
+   主题（layout-base.css）会让主内容区上浮 3.5rem 叠在首屏壁纸底部：
+   非首页桌面端的内容起始位置 = 壁纸高度 − 3.5rem（banner 与 fullscreen 两种
+   壁纸模式都是这个规则）。普通页面的卡片是不透明白底，压上去正好形成层次感；
+   而留言板是透明背景，标题与公告栏会直接压在壁纸图片上。
+   这里在同样条件下把留言板整体下移回 3.5rem，让内容从壁纸下沿开始。
+   只动位置、不动高度 —— 聊天区保持原本那份宽松高度
+   （沿用上面 .guestbook-page 的 calc(100dvh - var(--guestbook-viewport-offset))），
+   代价只是整页多出这 3.5rem 的滚动距离。
+   不要改成按壁纸高度扣减高度：小视口下会把聊天区压成几百像素，气泡与输入框会叠在一起。
+   移动端（<1024px）壁纸不显示，不处理。 */
+@media (min-width: 1024px) {
+	html[data-wallpaper-mode="banner"] body:not(.is-home) .guestbook-page,
+	html[data-wallpaper-mode="fullscreen"] body:not(.is-home) .guestbook-page {
+		margin-top: 3.5rem;
+		/* 高度放大到原来的 1.2 倍（原本是 100dvh − 4.5rem）。
+		   只在桌面端生效；移动端保持占满一屏，放大只会白白多出滚动。 */
+		height: calc((100dvh - var(--guestbook-viewport-offset)) * 1.2);
+	}
+}
+
 html:has(.guestbook-page) #category-bar-wrapper {
 	display: none;
 }
@@ -236,6 +257,30 @@ dialog.privacy-modal::backdrop {
 	background: var(--deep-text);
 	color: var(--page-bg);
 	font-weight: 700;
+}
+
+/* 公告弹窗左下角的「不再显示」：小字次要样式，往后进站就不再自动弹公告。
+   margin-right: auto 把它顶到左边，与右侧的确认按钮分开。
+   注意选择器必须带 .privacy-footer 前缀：同文件里有一条
+   `.guestbook-chat button { font-size: inherit }`（特异性 0,1,1），
+   会盖掉单类选择器（0,1,0）设的字号 —— 只写 .guestbook-announcement-dismiss 时
+   font-size 会失效（color / margin 等因对方没设而照旧生效，很容易看漏）。 */
+.privacy-footer .guestbook-announcement-dismiss {
+	margin-right: auto;
+	padding: 0 var(--space-1);
+	border: 0;
+	background: transparent;
+	color: var(--guestbook-muted);
+	/* 0.8em = 确认按钮字号（继承来的 16px）的 0.8 倍，即 12.8px */
+	font-size: 0.8em;
+	text-decoration: underline;
+	text-decoration-style: dashed;
+	text-underline-offset: 0.2em;
+	cursor: pointer;
+}
+
+.privacy-footer .guestbook-announcement-dismiss:hover {
+	color: var(--deep-text);
 }
 
 /* 公告弹窗：屏幕正中弹出，盖住留言区（留言在弹窗下方照常加载） */
@@ -462,28 +507,31 @@ dialog.guestbook-announcement-modal[open] {
 
 .guestbook-chat__conversation {
 	position: relative;
-	display: grid;
-	grid-template-rows: minmax(0, 1fr) auto;
+	/* 用 flex 而不是原来的 grid：公告栏可关闭，flex 能自动适应它存在 / 不存在时
+	   子元素个数的变化，固定行数的 grid 会错位。 */
+	display: flex;
+	flex-direction: column;
 	min-width: 0;
 	min-height: 0;
 }
 
 .guestbook-chat__announcement-bar {
-	position: absolute;
-	top: var(--space-3);
-	left: clamp(var(--space-3), 2vw, var(--space-5));
-	right: clamp(var(--space-3), 2vw, var(--space-5));
-	z-index: 2;
+	/* 改成布局内元素（原来是 absolute 浮在消息区上方、靠给消息列表垫 padding-top 让位）。
+	   浮层的问题是消息一滚动就被它切掉半截，非常难看；改成占位后消息只会在它下方滚动。 */
+	position: static;
+	flex: 0 0 auto;
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
 	min-height: 2.75rem;
+	margin: var(--space-3) clamp(var(--space-3), 2vw, var(--space-5)) var(--space-2);
 	padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
 	border: 1px solid color-mix(in srgb, var(--guestbook-danger) 68%, transparent);
 	border-radius: var(--radius-medium);
-	background: color-mix(in srgb, var(--guestbook-danger) 9%, var(--guestbook-surface));
+	/* 必须给不透明底色：原来用 color-mix(…, var(--guestbook-surface)) 而它是 transparent，
+	   等于只有 9% 不透明度，文字会和下层重叠。 */
+	background: color-mix(in srgb, var(--guestbook-danger) 9%, var(--card-bg));
 	box-shadow: 0 0.375rem 1.25rem rgb(0 0 0 / 0.08);
-	backdrop-filter: blur(0.75rem);
 }
 
 .guestbook-chat__announcement-bar-label {
@@ -694,16 +742,21 @@ dialog.guestbook-announcement-modal[open] {
 .guestbook-chat__messages,
 .guestbook-chat__loading {
 	position: relative;
+	flex: 1 1 auto;
 	min-height: 0;
 	overflow-y: auto;
 	padding: var(--space-3) clamp(var(--space-3), 3vw, 1.75rem) var(--space-6);
 	scrollbar-gutter: stable;
 }
 
-.guestbook-chat__workspace.has-announcement-bar .guestbook-chat__messages,
-.guestbook-chat__workspace.has-announcement-bar .guestbook-chat__loading {
-	padding-top: 4.75rem;
+/* 加载失败 / 重试状态同样占满内容区 */
+.guestbook-chat__conversation > .guestbook-chat__state {
+	flex: 1 1 auto;
+	min-height: 0;
 }
+
+/* 公告栏已改为布局内元素（见 .guestbook-chat__announcement-bar），
+   消息列表不再需要垫 padding-top 给它让位。 */
 
 .guestbook-chat__history {
 	display: flex;
@@ -2225,14 +2278,9 @@ dialog.guestbook-announcement-modal[open] {
 
 	.guestbook-chat__messages,
 	.guestbook-chat__loading {
-		padding-top: 3.5rem;
+		padding-top: var(--space-3);
 		padding-right: var(--space-3);
 		padding-left: var(--space-3);
-	}
-
-	.guestbook-chat__workspace.has-announcement-bar .guestbook-chat__messages,
-	.guestbook-chat__workspace.has-announcement-bar .guestbook-chat__loading {
-		padding-top: 6.5rem;
 	}
 
 	.guestbook-message {
