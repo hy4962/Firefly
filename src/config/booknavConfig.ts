@@ -183,7 +183,7 @@ export const booknavConfig: BooknavGroup[] = [
 		name: "自建服务",
 		icon: "material-symbols:dns-outline-rounded",
 		desc: "自部署的在线服务",
-		weight: 87,
+		weight: 104,
 		items: [
 			{
 				title: "评论系统",
