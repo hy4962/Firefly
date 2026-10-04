@@ -4,7 +4,7 @@ slug: ipv6-switch
 published: 2026-09-28
 order: 110
 description: "Windows 全局 IPv6 一键开关脚本。深入 TCP/IP 协议栈改写注册表 DisabledComponents，彻底解决虚拟网卡（Clash TUN / VPN）频繁自动重新勾选 IPv6 的顽疾，支持交互模式与 CLI 命令行静默调用。"
-image: "images/ipv6-switch.png"
+image: "images/ipv6-switch.webp"
 status: "published"
 tags:
   - Windows

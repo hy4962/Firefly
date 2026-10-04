@@ -4,7 +4,7 @@ slug: comfyui-prompt-studio
 published: 2026-06-15
 order: 100
 description: "ComfyUI 提示词库自定义节点插件：10 个安全分类 + 6 个 NSFW 分类，多选弹窗实时预览，一键拼接高质量 prompt tags，支持 Anima 前缀与多节点组合。"
-image: "images/comfyui-prompt-studio.png"
+image: "images/comfyui-prompt-studio.webp"
 status: "published"
 tags:
   - ComfyUI
