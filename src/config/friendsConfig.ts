@@ -142,6 +142,17 @@ export const friendsConfig: FriendLink[] = [
 		weight: 3,
 		enabled: true,
 	},
+	{
+		title: "年华",
+		imgurl: "https://q1.qlogo.cn/g?b=qq&nk=1323860289&s=640",
+		desc: "分享生活和技术。",
+		siteurl: "https://blog.amamo.top/",
+		// 2026-10-04 核查：对方友链页是 dofollow（58 条 noopener noreferrer，无 nofollow/ugc），
+		// 但我方当时尚未被挂上（全页搜 9ll 命中 0 次），等对方回链。不填 rss。
+		tags: ["Blog"],
+		weight: 2,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
