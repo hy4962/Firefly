@@ -1,0 +1,69 @@
+---
+import { GB_LANG } from "@/utils/guestbook-lang";
+
+const skeletonRows = Array.from({ length: 6 });
+const messageCountLabel = GB_LANG.gbMessageCount.replace("{count}", "--");
+---
+
+<section
+	class="guestbook-chat guestbook-chat--fallback"
+	aria-label={GB_LANG.gbTitle}
+	aria-busy="true"
+>
+	<header class="guestbook-chat__header">
+		<div class="guestbook-chat__channel">
+			<div>
+				<div class="guestbook-chat__title-row">
+					<h2>{GB_LANG.gbTitle}</h2>
+					<span>· {messageCountLabel}</span>
+					<div class="guestbook-chat__status">
+						<span></span>
+						{GB_LANG.gbConnecting}
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="guestbook-chat__fallback-action" aria-hidden="true"></div>
+	</header>
+
+	<div class="guestbook-chat__workspace">
+		<div class="guestbook-chat__conversation">
+			<div class="guestbook-chat__loading" aria-label={GB_LANG.gbLoadingAria}>
+				{skeletonRows.map((_, index) => (
+					<div class:list={["guestbook-chat__skeleton", { "is-admin": index % 3 === 2 }]}>
+						<div class="guestbook-chat__skeleton-avatar"></div>
+						<div class="guestbook-chat__skeleton-copy">
+							<div class="guestbook-chat__skeleton-name"></div>
+							<div class="guestbook-chat__skeleton-bubble"></div>
+							<div class="guestbook-chat__skeleton-meta"></div>
+						</div>
+					</div>
+				))}
+			</div>
+
+			<footer class="guestbook-chat__fallback-composer" aria-hidden="true">
+				<div class="guestbook-chat__fallback-editor">
+					<div class="guestbook-chat__fallback-resize-handle"></div>
+					<div class="guestbook-chat__fallback-textarea"></div>
+					<div class="guestbook-chat__fallback-toolbar">
+						<span class="guestbook-chat__fallback-tool"></span>
+						<div>
+							<span class="guestbook-chat__fallback-count"></span>
+							<span class="guestbook-chat__fallback-login"></span>
+							<span class="guestbook-chat__fallback-send"></span>
+						</div>
+					</div>
+				</div>
+			</footer>
+		</div>
+
+		<aside class="guestbook-chat__sidebar guestbook-chat__fallback-sidebar" aria-hidden="true">
+			<div class="guestbook-chat__fallback-panel-title"></div>
+			<div class="guestbook-chat__fallback-member-list">
+				{skeletonRows.slice(0, 5).map(() => (
+					<div><span></span><i></i></div>
+				))}
+			</div>
+		</aside>
+	</div>
+</section>
