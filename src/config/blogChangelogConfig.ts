@@ -30,6 +30,42 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.21",
+		title: "友链自助申请",
+		date: "2026-10-05",
+		summary:
+			"友链页第 2 步多了个「进入申请表」按钮，点进去是个 GitHub Issue 表单；提交后机器人自己去访问对方的友链页，确认挂了本站链接就自动写入配置并上线，不用等人审核",
+		description:
+			"在 blog.amamo.top 的友链页看到的效果：他那页顶上有个「自动友链」入口，点进去是 GitHub Issue 表单。他也是 fork 的 Firefly，实现全在 .github 下——Issue 模板 + 一个 Node 脚本 + 一个 workflow，纯静态站就能跑，完全不涉及 SSR（网上讲这套要改 SSR 的那篇文章是另一个人写的）。我按同样的思路重做了一遍，但改了三处：写入只往数组头部插一条，而不是重写整个数组（他的写法会把已有条目的 rss / homepage 字段和注释一起吃掉）；校验只用 Node 内置 fetch，不装 pnpm 和 playwright，workflow 二十来秒跑完；把「主站与友链页必须同域」这条真正补上（他博客里写了，脚本里其实只比了站名）。另外「发评论区 / 发邮件」保留成兜底，用 GitHub 毕竟是有门槛的",
+		items: [
+			{
+				category: "友链",
+				text: "友链页第 2 步改成「自动友链 · 进入申请表」按钮，链到 GitHub Issue 表单；原来的评论区 / 邮件方式压成一行小字保留",
+			},
+			{
+				category: "友链",
+				text: "自动校验三项：主站可达、友链页可达且与主站同域、页面里确实挂了本站链接——全过才写入，没过会在 Issue 里回复具体原因",
+			},
+			{
+				category: "维护",
+				text: "写入只往 friendsConfig 数组头部插一条，已有条目的 rss / homepage 字段和注释一个字节不动，并按域名去重",
+			},
+			{
+				category: "性能",
+				text: "校验脚本零第三方依赖（只用 Node 内置 fetch），不需要装 Chromium，单次运行约 20 秒",
+			},
+			{
+				category: "维护",
+				text: "新增 .github/ISSUE_TEMPLATE/friend-request.yml、.github/scripts/auto-friend-link.cjs、.github/workflows/auto-friend-link.yml，主题源文件零改动",
+			},
+			{
+				category: "修复",
+				text: "MDX 正文里的 <a> 会被 markdown.css 的 a:not(.no-styling) 染色，按钮橙字压橙底导致文字看不见，改用主题自带的 no-styling 类豁免",
+			},
+		],
+		tags: ["友链", "自动化", "新增"],
+	},
+	{
 		version: "V1.20",
 		title: "友链卡片悬停展开首页截图",
 		date: "2026-10-04",
