@@ -803,5 +803,8 @@
   "src:assets/images/DesktopWallpaper/kuroneko-summer.webp": "c9c3bf8e7a74cbb8ab",
   "src:assets/images/DesktopWallpaper/originals/kuroneko-summer.png": "cac4c08e7972cab7ab",
   "src:assets/images/MobileWallpaper/kuroneko-shh.webp": "5b555b5c54606a6464",
-  "src:assets/images/MobileWallpaper/originals/kuroneko-shh.png": "817b8579707cebddd7"
+  "src:assets/images/MobileWallpaper/originals/kuroneko-shh.png": "817b8579707cebddd7",
+  "src:content/posts/recommend/kite/originals/image-001.png": "efefef3b3c3e323234",
+  "src:content/posts/recommend/kite/images/image-001.webp": "e8e8e84342453b3b3d",
+  "src:content/posts/recommend/kite/images/cover.webp": "555457252527201f22"
 }
