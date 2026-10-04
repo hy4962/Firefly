@@ -158,8 +158,19 @@ if (l) {
               <div class="w-0.5 flex-1 bg-(--line-divider) my-1.5"></div>
             </div>
             <div class="pb-4">
-              <p class="font-semibold text-sm mb-1">评论区留言/发送申请邮件至：<code class="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[0.7rem]">{site.email}</code></p>
-              <p class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">申请模板，把内容复制修改后到评论区或邮件中发送。RSS 链接和首页照片为选填项：RSS 用于与本站朋友圈联动；首页照片可选，用于展示网站首页截图</p>
+              <p class="font-semibold text-sm mb-1">提交申请</p>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">点击下方按钮进入申请表。填完提交后机器人会自动访问你的友链页，确认你确实挂了本站链接，通过就自动添加、自动上线，不需要等人工审核。</p>
+              <a
+                href="https://github.com/hy4962/Firefly/issues/new?template=friend-request.yml"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="mt-2.5 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-(--primary) text-white text-sm font-medium shadow-sm hover:brightness-110 active:scale-[0.99] transition-all no-underline"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                <span>自动友链 · 进入申请表</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </a>
+              <p class="text-[0.65rem] text-neutral-400 dark:text-neutral-500 leading-relaxed mt-2">需要 GitHub 账号。不方便用 GitHub 的话，把下面模板发到评论区，或邮件至 <code class="px-1 py-0.5 rounded bg-black/5 dark:bg-white/10">{site.email}</code>，人工处理也行。</p>
               <div class="mt-2.5 rounded-lg border border-(--line-divider) overflow-hidden">
                 <div class="bg-black/5 dark:bg-white/5 px-3.5 py-3 text-[0.7rem] leading-relaxed whitespace-pre-wrap break-words">{applyTemplate}</div>
                 <button type="button" data-copy={applyTemplate} onclick={copyJs} class="w-full flex items-center justify-center gap-1.5 py-2 text-[0.7rem] font-medium text-(--primary) bg-(--primary)/10 hover:bg-(--primary)/20 transition-colors cursor-pointer border-t border-(--line-divider)">

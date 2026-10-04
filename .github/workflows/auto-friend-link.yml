@@ -1,0 +1,55 @@
+name: 🤝 自动友链
+
+# 有人用「申请友链」模板提 Issue 时，自动校验并写入友链列表。
+#
+# 校验：主站可访问 → 友链页可访问且同域 → 页面上确实挂了本站链接
+# 通过后：只往 src/config/friendsConfig.ts 数组头部插入一条 → commit → push
+#         → 平台（Vercel）检测到 HY 分支新提交，自动重新构建部署
+#
+# 只依赖 Node 内置能力，不装 pnpm、不装 playwright，所以跑得很快（~20 秒）。
+
+on:
+  issues:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: auto-friend-link
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Ensure labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "友链申请" --color "0e8a16" --description "友链申请" 2>/dev/null || true
+          gh label create "验证中" --color "fbca04" --description "机器人正在校验" 2>/dev/null || true
+          gh label create "needs-update" --color "d93f0b" --description "需要申请者补充或修改" 2>/dev/null || true
+
+      - name: Process friend request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const path = require('node:path');
+            const handler = require(path.join(process.env.GITHUB_WORKSPACE, '.github/scripts/auto-friend-link.cjs'));
+            await handler({ github, context, core });

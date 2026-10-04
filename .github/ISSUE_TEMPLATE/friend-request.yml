@@ -1,0 +1,87 @@
+name: 申请友链
+description: 申请与「折腾进行时」交换友链，提交后自动校验、自动上线
+title: "[友链申请] "
+labels: ["友链申请"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 友链申请
+
+        填完提交即可。机器人会自动访问你填的友链页，确认**站点可访问**、**友链页与主站同域**、**页面上确实挂了本站链接**，三项全过就自动添加并上线，不需要等人工审核。
+
+        如果没通过，Issue 里会说明原因；你改完站后**回复本 Issue** 就会重新检查一次。
+
+        ## 申请要求
+        1. 先在你的友链页加上本站链接
+        2. 网站能正常访问（不支持纯 JS 客户端渲染的友链页，机器人抓不到）
+        3. 友链页域名与主站域名一致
+
+        ## 请把下面这条加进你的友链页
+        - **名称**：折腾进行时
+        - **链接**：`https://www.9ll.uk/`
+        - **头像**：`https://weavatar.com/api/avatar/e3298b871864a7a21690863f8c930754a36cb5c6f0b105f4b5d4737bfd219f57?s=2000&t=1783684315863`
+        - **描述**：生命不息，折腾不止
+
+  - type: input
+    id: site_name
+    attributes:
+      label: 网站名称
+      description: 你的网站名称，会作为友链卡片标题
+      placeholder: "例如：某某的小站"
+    validations:
+      required: true
+
+  - type: input
+    id: site_url
+    attributes:
+      label: 网站链接
+      description: 你的网站主页地址，必须带 https://
+      placeholder: "https://example.com"
+    validations:
+      required: true
+
+  - type: input
+    id: friend_page_url
+    attributes:
+      label: 友链页面 URL
+      description: 你网站上已经挂好本站链接的那个页面，注意要和主站同域名
+      placeholder: "https://example.com/friends/"
+    validations:
+      required: true
+
+  - type: textarea
+    id: site_desc
+    attributes:
+      label: 网站描述
+      description: 一句话介绍你的站，会显示在友链卡片上
+      placeholder: "例如：记录技术和生活的个人博客"
+    validations:
+      required: false
+
+  - type: input
+    id: site_avatar
+    attributes:
+      label: 网站头像 URL
+      description: 头像或 Logo 的直链，留空会自动生成一个占位图标
+      placeholder: "https://example.com/avatar.png"
+    validations:
+      required: false
+
+  - type: input
+    id: site_rss
+    attributes:
+      label: RSS 链接
+      description: 选填。填了之后你的文章会进入本站「朋友圈」时间线
+      placeholder: "https://example.com/rss.xml"
+    validations:
+      required: false
+
+  - type: input
+    id: site_homepage
+    attributes:
+      label: 首页照片 URL
+      description: 选填。你的首页截图，鼠标悬停在友链卡片上时展示
+      placeholder: "https://example.com/homepage.png"
+    validations:
+      required: false
