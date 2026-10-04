@@ -80,7 +80,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "动态",
-				text: "动态页头部「N 动态」旁注入 RSS 圆形小按钮（页脚 FooterConfig.html 注入，只在 /dynamic/ 出现），点击新标签打开 Feed；head 同步埋 rel=alternate",
+				text: "动态页头部「N 动态」左侧注入「订阅RSS以随时偷窥站长日常」入口（页脚 FooterConfig.html 注入，只在 /dynamic/ 出现，小屏只留图标），点击新标签打开 Feed；head 同步埋 rel=alternate",
 			},
 			{
 				category: "维护",
