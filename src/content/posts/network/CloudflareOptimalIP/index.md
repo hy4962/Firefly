@@ -1,7 +1,7 @@
 ---
 title: Cloudflare Workers优选IP
 published: 2026-07-12
-updated: 2026-09-28
+updated: 2026-10-05
 description: CloudFlare优选IP
 image: ./fengmian.png
 tags: [Cloudflare, Workers, 优选IP, DNS, CDN]
@@ -73,15 +73,16 @@ Cloudflare 用的是 anycast 技术——同一个 IP 地址在全球很多地�
 
 ### 第二步：选一个优选域名
 
-推荐三个网站：
+推荐四个网站：
 
 - [微测网 CF 优选 CNAME](https://www.wetest.vip/page/cloudflare/cname.html) — 更新比较勤，域名多
 - [CF优选域名汇总](https://cf.090227.xyz/) — 界面简单直接
 - [VPS789 CF优选IP监控](https://vps789.com/cfip/?remarks=domain) — 收录最多，三网延迟/丢包/下载速度全给，还带综合评分
+- [NB 优选服务](https://www.byoip.top/) — 不只 CF，EdgeOne / Netlify / Vercel 的优选域名都给了，页面直接标当前延迟，免费
 
 **VPS789 这个表最值得看的地方是它把三网数据分开列。** 同一个域名电信 51ms、移动 87ms、联通 189ms 是常有的事，光看总分挑不出适合自己的，得盯自己运营商那一列。它的评分是按延迟 30%、丢包 50%、下载速度 20% 加权算的，数据每 30 分钟刷新一次——比你自己 ping 那一下靠谱得多，毕竟一次 ping 的延迟高低说明不了稳定性。
 
-上面列出来的域名都是别人维护的优选 CNAME，比如 `vip.090227.xyz`、`cf.011011.xyz` 之类的。
+上面列出来的域名都是别人维护的优选 CNAME，比如 `vip.090227.xyz`、`cf.011011.xyz`、NB 优选的 `*.cloudflare.19931110.xyz` / `*.cf.cnae.top` 之类的。
 
 怎么选？两种方法：
 
@@ -266,7 +267,11 @@ Cloudflare Pages 也能用优选IP。原理跟 Workers 一样——Pages 本质�
 
 ### 跟 Vercel 对比
 
-Vercel 的 Edge Network 在国内也经常绕路，特别是免费计划。很多人选 Cloudflare Workers + 优选IP 而不是 Vercel，就是图个能优化链路。Vercel 你没法选节点，Cloudflare 至少还有这条路。
+Vercel 的 Edge Network 在国内也经常绕路，特别是免费计划。很多人选 Cloudflare Workers + 优选IP 而不是 Vercel，就是图个能优化链路。
+
+不过 Vercel 也不是没路可走：官方自己就维护了一条 `cname-china.vercel-dns.com`，CNAME 指过去就完事；想更进一步，可以指向第三方维护的 Vercel 优选域名（[NB 优选服务](https://www.byoip.top/) 就提供，形如 `*.vercel.19931110.xyz`），原理跟 CF 优选一样。
+
+注意顺序：**先把域名在 Vercel 里绑好、等 SSL 证书签发出来，再去改 CNAME**，反了会验证失败。这一点跟 CF 那边不太一样。
 
 ### 自己维护优选IP列表
 
