@@ -1,9 +1,11 @@
-name: Refresh Friends Feed
+name: Refresh External Snapshots
 
-# 定时刷新朋友圈快照：抓取友链 RSS/Atom 写入
-# src/data/friends-feed-snapshot.json 并提交。
-# 提交推送到 HY 分支后，Cloudflare 检测到新提交会自动重新构建部署，朋友圈内容因此保持新鲜。
-# 抓取失败不会报错——friends-feed.ts 会自动回退到旧快照。
+# 定时刷新「外部数据快照」——目前两类，共用一次提交与一次构建：
+#   1. 朋友圈：抓取友链 RSS/Atom 写入 src/data/friends-feed-snapshot.json
+#   2. Steam 游戏库：调用 Steam Web API 写入 src/data/steam-snapshot.json
+#      （需要仓库 Secret STEAM_API_KEY；未配置时脚本会跳过，不影响第 1 类）
+# 提交推送到 HY 分支后，Cloudflare 检测到新提交会自动重新构建部署，内容因此保持新鲜。
+# 抓取失败不会报错——friends-feed.ts / steam.astro 都会自动回退到旧快照。
 
 on:
   schedule:
@@ -43,14 +45,19 @@ jobs:
       - name: Refresh friends feed snapshot
         run: npx tsx scripts/refresh-friends-feed.ts
 
-      - name: Commit snapshot if changed
+      - name: Refresh Steam library snapshot
+        env:
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+        run: npx tsx scripts/refresh-steam-snapshot.ts
+
+      - name: Commit snapshots if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- src/data/friends-feed-snapshot.json; then
+          git add src/data/friends-feed-snapshot.json src/data/steam-snapshot.json
+          if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git add src/data/friends-feed-snapshot.json
-            git commit -m "chore: refresh friends feed snapshot"
+            git commit -m "chore: refresh external snapshots"
             git push
           fi

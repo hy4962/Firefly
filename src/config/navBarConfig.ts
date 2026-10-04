@@ -75,6 +75,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// MyAnimeList
 			LinkPresets.MAL,
+
+			// Steam 游戏库（数据由 GitHub Actions 定时写入快照）
+			{
+				name: "游戏库",
+				url: "/steam/",
+				icon: "material-symbols:sports-esports",
+			},
 		],
 	});
 

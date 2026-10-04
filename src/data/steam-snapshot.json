@@ -1,0 +1,430 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-04T19:04:23.303Z",
+  "partial": false,
+  "profile": {
+    "steamId": "76561199212880612",
+    "name": "kirineko",
+    "avatar": "https://avatars.steamstatic.com/89bed78a59d232682fb15697c0e610c38020067f_full.jpg",
+    "profileUrl": "https://steamcommunity.com/id/HY-bulebird/",
+    "online": true,
+    "stateMessage": "",
+    "level": 15,
+    "badgeCount": 12
+  },
+  "stats": {
+    "gameCount": 86,
+    "totalMinutes": 201840,
+    "recentMinutes": 3162
+  },
+  "games": [
+    {
+      "appid": 730,
+      "name": "Counter-Strike 2",
+      "minutes": 135901,
+      "recentMinutes": 431,
+      "lastPlayed": 1790854392,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg"
+    },
+    {
+      "appid": 431960,
+      "name": "Wallpaper Engine",
+      "minutes": 17711,
+      "recentMinutes": 0,
+      "lastPlayed": 1789817659,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/431960/header.jpg"
+    },
+    {
+      "appid": 1938090,
+      "name": "Call of Duty®",
+      "minutes": 13033,
+      "recentMinutes": 0,
+      "lastPlayed": 1752126031,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1938090/header.jpg"
+    },
+    {
+      "appid": 413150,
+      "name": "Stardew Valley",
+      "minutes": 4949,
+      "recentMinutes": 0,
+      "lastPlayed": 1775317269,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/413150/header.jpg"
+    },
+    {
+      "appid": 1966720,
+      "name": "Lethal Company",
+      "minutes": 3359,
+      "recentMinutes": 0,
+      "lastPlayed": 1738849398,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1966720/header.jpg"
+    },
+    {
+      "appid": 1517290,
+      "name": "Battlefield™ 2042",
+      "minutes": 3353,
+      "recentMinutes": 0,
+      "lastPlayed": 1750418522,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1517290/header.jpg"
+    },
+    {
+      "appid": 457140,
+      "name": "Oxygen Not Included",
+      "minutes": 3314,
+      "recentMinutes": 0,
+      "lastPlayed": 1767018218,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/457140/header.jpg"
+    },
+    {
+      "appid": 3678970,
+      "name": "TBH: Task Bar Hero",
+      "minutes": 2731,
+      "recentMinutes": 2731,
+      "lastPlayed": 1791139867,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3678970/header.jpg"
+    },
+    {
+      "appid": 394360,
+      "name": "Hearts of Iron IV",
+      "minutes": 2534,
+      "recentMinutes": 0,
+      "lastPlayed": 1764489753,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/394360/header.jpg"
+    },
+    {
+      "appid": 578080,
+      "name": "PUBG: BATTLEGROUNDS",
+      "minutes": 2499,
+      "recentMinutes": 0,
+      "lastPlayed": 1738065666,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/578080/header.jpg"
+    },
+    {
+      "appid": 1366540,
+      "name": "Dyson Sphere Program",
+      "minutes": 1958,
+      "recentMinutes": 0,
+      "lastPlayed": 1761642459,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1366540/header.jpg"
+    },
+    {
+      "appid": 550,
+      "name": "Left 4 Dead 2",
+      "minutes": 1225,
+      "recentMinutes": 0,
+      "lastPlayed": 1697113450,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/550/header.jpg"
+    },
+    {
+      "appid": 1144400,
+      "name": "Senren＊Banka",
+      "minutes": 1058,
+      "recentMinutes": 0,
+      "lastPlayed": 1778376796,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1144400/header.jpg"
+    },
+    {
+      "appid": 1172470,
+      "name": "Apex Legends",
+      "minutes": 1014,
+      "recentMinutes": 0,
+      "lastPlayed": 1788253112,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1172470/header.jpg"
+    },
+    {
+      "appid": 359550,
+      "name": "Tom Clancy's Rainbow Six Siege",
+      "minutes": 931,
+      "recentMinutes": 0,
+      "lastPlayed": 1710753322,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/359550/header.jpg"
+    },
+    {
+      "appid": 1238810,
+      "name": "Battlefield™ V",
+      "minutes": 855,
+      "recentMinutes": 0,
+      "lastPlayed": 1720440648,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1238810/header.jpg"
+    },
+    {
+      "appid": 105600,
+      "name": "Terraria",
+      "minutes": 696,
+      "recentMinutes": 0,
+      "lastPlayed": 1789220175,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/105600/header.jpg"
+    },
+    {
+      "appid": 1281930,
+      "name": "tModLoader",
+      "minutes": 691,
+      "recentMinutes": 0,
+      "lastPlayed": 1789220176,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1281930/header.jpg"
+    },
+    {
+      "appid": 1238840,
+      "name": "Battlefield™ 1",
+      "minutes": 498,
+      "recentMinutes": 0,
+      "lastPlayed": 1695449622,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1238840/header.jpg"
+    },
+    {
+      "appid": 322330,
+      "name": "Don't Starve Together",
+      "minutes": 414,
+      "recentMinutes": 0,
+      "lastPlayed": 1720880436,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/322330/header.jpg"
+    },
+    {
+      "appid": 3097560,
+      "name": "Liar's Bar",
+      "minutes": 379,
+      "recentMinutes": 0,
+      "lastPlayed": 1733672175,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3097560/header.jpg"
+    },
+    {
+      "appid": 2567870,
+      "name": "Chained Together",
+      "minutes": 343,
+      "recentMinutes": 0,
+      "lastPlayed": 1719416523,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/2567870/header.jpg"
+    },
+    {
+      "appid": 251570,
+      "name": "7 Days to Die",
+      "minutes": 318,
+      "recentMinutes": 0,
+      "lastPlayed": 1719488356,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/251570/header.jpg"
+    },
+    {
+      "appid": 1237970,
+      "name": "Titanfall® 2",
+      "minutes": 304,
+      "recentMinutes": 0,
+      "lastPlayed": 1691980908,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1237970/header.jpg"
+    },
+    {
+      "appid": 240,
+      "name": "Counter-Strike: Source",
+      "minutes": 298,
+      "recentMinutes": 0,
+      "lastPlayed": 1768806446,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/240/header.jpg"
+    },
+    {
+      "appid": 3081410,
+      "name": "Battlefield™ 6 Open Beta",
+      "minutes": 175,
+      "recentMinutes": 0,
+      "lastPlayed": 1755229900,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3081410/header.jpg"
+    },
+    {
+      "appid": 2076040,
+      "name": "THE FINALS PLAYTEST",
+      "minutes": 170,
+      "recentMinutes": 0,
+      "lastPlayed": 1699001456,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/2076040/header.jpg"
+    },
+    {
+      "appid": 2281730,
+      "name": "Combat Master",
+      "minutes": 169,
+      "recentMinutes": 0,
+      "lastPlayed": 1750084180,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/2281730/header.jpg"
+    },
+    {
+      "appid": 239140,
+      "name": "Dying Light",
+      "minutes": 130,
+      "recentMinutes": 0,
+      "lastPlayed": 1642218402,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/239140/header.jpg"
+    },
+    {
+      "appid": 346010,
+      "name": "Besiege",
+      "minutes": 114,
+      "recentMinutes": 0,
+      "lastPlayed": 1725880254,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/346010/header.jpg"
+    },
+    {
+      "appid": 2478210,
+      "name": "PAYDAY 3 - Beta",
+      "minutes": 95,
+      "recentMinutes": 0,
+      "lastPlayed": 1694407842,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/2478210/header.jpg"
+    },
+    {
+      "appid": 383180,
+      "name": "Dead Island Riptide Definitive Edition",
+      "minutes": 73,
+      "recentMinutes": 0,
+      "lastPlayed": 1708752726,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/383180/header.jpg"
+    },
+    {
+      "appid": 700330,
+      "name": "SCP: Secret Laboratory",
+      "minutes": 59,
+      "recentMinutes": 0,
+      "lastPlayed": 1706156073,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/700330/header.jpg"
+    },
+    {
+      "appid": 275850,
+      "name": "No Man's Sky",
+      "minutes": 54,
+      "recentMinutes": 0,
+      "lastPlayed": 1724649270,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/275850/header.jpg"
+    },
+    {
+      "appid": 555570,
+      "name": "Infestation: The New Z",
+      "minutes": 54,
+      "recentMinutes": 0,
+      "lastPlayed": 1694165028,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/555570/header.jpg"
+    },
+    {
+      "appid": 1422450,
+      "name": "Deadlock",
+      "minutes": 51,
+      "recentMinutes": 0,
+      "lastPlayed": 1726203322,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1422450/header.jpg"
+    },
+    {
+      "appid": 2357570,
+      "name": "Overwatch®",
+      "minutes": 50,
+      "recentMinutes": 0,
+      "lastPlayed": 1691930573,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/2357570/header.jpg"
+    },
+    {
+      "appid": 1203220,
+      "name": "NARAKA: BLADEPOINT",
+      "minutes": 43,
+      "recentMinutes": 0,
+      "lastPlayed": 1689907880,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1203220/header.jpg"
+    },
+    {
+      "appid": 1928420,
+      "name": "Farlight 84",
+      "minutes": 36,
+      "recentMinutes": 0,
+      "lastPlayed": 1777215276,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1928420/header.jpg"
+    },
+    {
+      "appid": 10,
+      "name": "Counter-Strike",
+      "minutes": 30,
+      "recentMinutes": 0,
+      "lastPlayed": 1779015129,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/10/header.jpg"
+    },
+    {
+      "appid": 218620,
+      "name": "PAYDAY 2",
+      "minutes": 30,
+      "recentMinutes": 0,
+      "lastPlayed": 1697547183,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/218620/header.jpg"
+    },
+    {
+      "appid": 236390,
+      "name": "War Thunder",
+      "minutes": 29,
+      "recentMinutes": 0,
+      "lastPlayed": 1654400342,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/236390/header.jpg"
+    },
+    {
+      "appid": 2923300,
+      "name": "Banana",
+      "minutes": 23,
+      "recentMinutes": 0,
+      "lastPlayed": 1720580280,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/2923300/header.jpg"
+    },
+    {
+      "appid": 1599340,
+      "name": "Lost Ark",
+      "minutes": 20,
+      "recentMinutes": 0,
+      "lastPlayed": 1706324245,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1599340/header.jpg"
+    },
+    {
+      "appid": 674020,
+      "name": "World War 3",
+      "minutes": 19,
+      "recentMinutes": 0,
+      "lastPlayed": 1694926263,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/674020/header.jpg"
+    },
+    {
+      "appid": 3595230,
+      "name": "Call of Duty®: Modern Warfare® II",
+      "minutes": 15,
+      "recentMinutes": 0,
+      "lastPlayed": 1765792493,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3595230/header.jpg"
+    },
+    {
+      "appid": 374280,
+      "name": "Hired Ops",
+      "minutes": 14,
+      "recentMinutes": 0,
+      "lastPlayed": 1693968849,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/374280/header.jpg"
+    },
+    {
+      "appid": 100,
+      "name": "Counter-Strike: Condition Zero Deleted Scenes",
+      "minutes": 7,
+      "recentMinutes": 0,
+      "lastPlayed": 1698046716,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/100/header.jpg"
+    },
+    {
+      "appid": 70,
+      "name": "Half-Life",
+      "minutes": 6,
+      "recentMinutes": 0,
+      "lastPlayed": 1775280285,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/70/header.jpg"
+    },
+    {
+      "appid": 227300,
+      "name": "Euro Truck Simulator 2",
+      "minutes": 6,
+      "recentMinutes": 0,
+      "lastPlayed": 1751954680,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/227300/header.jpg"
+    },
+    {
+      "appid": 400,
+      "name": "Portal",
+      "minutes": 2,
+      "recentMinutes": 0,
+      "lastPlayed": 1775280725,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/400/header.jpg"
+    }
+  ]
+}

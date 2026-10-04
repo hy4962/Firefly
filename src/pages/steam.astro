@@ -1,0 +1,526 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import steamConfig from "@/config/steamConfig";
+import rawSnapshot from "@/data/steam-snapshot.json";
+
+// 数据来自 GitHub Actions 定时写入的快照（见 scripts/refresh-steam-snapshot.ts）。
+// 页面本身不发任何网络请求，构建期读文件即可。
+
+type SnapshotGame = {
+	appid: number;
+	name: string;
+	minutes: number;
+	recentMinutes: number;
+	lastPlayed: number | null;
+	header: string;
+};
+
+type Snapshot = {
+	version: number;
+	updatedAt: string | null;
+	profile: {
+		steamId: string;
+		name: string;
+		avatar: string;
+		profileUrl: string;
+		online: boolean;
+		level: number;
+		badgeCount: number;
+	} | null;
+	stats: {
+		gameCount: number;
+		totalMinutes: number;
+		recentMinutes: number;
+	};
+	games: SnapshotGame[];
+};
+
+const snapshot = rawSnapshot as unknown as Snapshot;
+const profile = snapshot.profile ?? null;
+const games = Array.isArray(snapshot.games) ? snapshot.games : [];
+const hasData = Boolean(profile) && games.length > 0;
+
+function formatMinutes(minutes: number): string {
+	const total = Math.max(0, Math.round(minutes));
+	if (total === 0) return "未游玩";
+	const hours = Math.floor(total / 60);
+	const mins = total % 60;
+	if (hours === 0) return `${mins}m`;
+	return `${hours}h ${mins}m`;
+}
+
+// 快照里存的是 Unix 秒。构建服务器时区不固定，这里统一按东八区呈现，
+// 否则深夜游玩的日期会被算成前一天。
+function formatDate(unixSeconds: number | null): string {
+	if (!unixSeconds) return "";
+	const date = new Date((unixSeconds + 8 * 3600) * 1000);
+	const pad = (value: number) => String(value).padStart(2, "0");
+	return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}
+
+function formatUpdatedAt(iso: string | null): string {
+	if (!iso) return "";
+	const date = new Date(iso);
+	const pad = (value: number) => String(value).padStart(2, "0");
+	return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours() + 8)}:${pad(date.getUTCMinutes())}`;
+}
+
+const recentGames = steamConfig.showRecent
+	? games
+			.filter((game) => game.recentMinutes > 0)
+			.sort((a, b) => b.recentMinutes - a.recentMinutes)
+			.slice(0, 6)
+	: [];
+
+const ownedCount = snapshot.stats?.gameCount ?? 0;
+const isPartial = Boolean(snapshot.partial);
+const level = profile?.level ?? 0;
+
+const stats = [
+	{
+		label: ownedCount > 0 ? "拥有游戏" : "收录游戏",
+		value: String(ownedCount > 0 ? ownedCount : games.length),
+	},
+	{ label: "总游玩时长", value: formatMinutes(snapshot.stats?.totalMinutes ?? 0) },
+	{ label: "近两周", value: formatMinutes(snapshot.stats?.recentMinutes ?? 0) },
+	// 精简模式拿不到等级与徽章，与其显示 0 不如不显示
+	...(!isPartial ? [{ label: "徽章", value: String(profile?.badgeCount ?? 0) }] : []),
+];
+---
+
+<MainGridLayout title="游戏库" description="Steam 游戏库与游玩时长统计">
+	<div class="steam-page">
+		<header class="steam-page__header">
+			<h1 class="steam-page__title">游戏库</h1>
+			<p class="steam-page__subtitle">
+				Steam 数据由 GitHub Actions 定时同步，每天更新一次
+			</p>
+			{
+				isPartial && (
+					<p class="steam-page__notice">
+						精简模式：未配置 Steam API Key，这里只列出常玩的几款游戏。配置后可展示完整游戏库。
+					</p>
+				)
+			}
+		</header>
+
+		{
+			!hasData && (
+				<div class="steam-page__empty">
+					<p>还没有拿到游戏数据。</p>
+					<p class="steam-page__empty-hint">
+						需要在仓库 Secret 配置 <code>STEAM_API_KEY</code>，并在
+						<code>src/config/steamConfig.ts</code> 填好 64 位 Steam ID，
+						然后把 Steam 隐私设置里的「游戏详情」设为公开。
+					</p>
+				</div>
+			)
+		}
+
+		{
+			hasData && profile && (
+				<>
+					<section class="steam-profile">
+						{profile.avatar && (
+							<img
+								class="steam-profile__avatar"
+								src={profile.avatar}
+								alt={profile.name}
+								width="72"
+								height="72"
+								loading="lazy"
+								decoding="async"
+							/>
+						)}
+						<div class="steam-profile__body">
+							<div class="steam-profile__line">
+								<span class="steam-profile__name">{profile.name}</span>
+								<span
+									class={`steam-profile__state ${profile.online ? "is-online" : "is-offline"}`}
+								>
+									{profile.online ? "在线" : "离线"}
+								</span>
+								{level > 0 && (
+									<span class="steam-profile__level">{level} 等级</span>
+								)}
+							</div>
+							{profile.stateMessage && (
+								<span class="steam-profile__state-msg">{profile.stateMessage}</span>
+							)}
+							<a
+								class="steam-profile__link"
+								href={profile.profileUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								Steam 主页
+							</a>
+						</div>
+					</section>
+
+					<section class="steam-stats">
+						{stats.map((item) => (
+							<div class="steam-stat">
+								<div class="steam-stat__value">{item.value}</div>
+								<div class="steam-stat__label">{item.label}</div>
+							</div>
+						))}
+					</section>
+
+					{recentGames.length > 0 && (
+						<section class="steam-section">
+							<h2 class="steam-section__title">最近游玩</h2>
+							<ul class="steam-recent">
+								{recentGames.map((game) => (
+									<li class="steam-recent__item">
+										<a
+											href={`https://store.steampowered.com/app/${game.appid}/`}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<span class="steam-recent__name">{game.name}</span>
+											<span class="steam-recent__time">
+												{formatMinutes(game.recentMinutes)}
+											</span>
+										</a>
+									</li>
+								))}
+							</ul>
+						</section>
+					)}
+
+					<section class="steam-section">
+						<h2 class="steam-section__title">全部游戏</h2>
+						<div class="steam-grid">
+							{games.map((game) => (
+								<a
+									class="steam-card"
+									href={`https://store.steampowered.com/app/${game.appid}/`}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<div class="steam-card__cover">
+										<img
+											src={game.header}
+											alt={game.name}
+											loading="lazy"
+											decoding="async"
+											width="460"
+											height="215"
+										/>
+									</div>
+									<div class="steam-card__meta">
+										<span class="steam-card__name">{game.name}</span>
+										<span class="steam-card__time">
+											{formatMinutes(game.minutes)}
+										</span>
+									</div>
+									{game.lastPlayed && (
+										<span class="steam-card__date">
+											最后游玩 {formatDate(game.lastPlayed)}
+										</span>
+									)}
+								</a>
+							))}
+						</div>
+					</section>
+
+					{snapshot.updatedAt && (
+						<p class="steam-page__updated">
+							数据更新于 {formatUpdatedAt(snapshot.updatedAt)}
+						</p>
+					)}
+				</>
+			)
+		}
+	</div>
+</MainGridLayout>
+
+<style is:global>
+	.steam-page {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.steam-page__header {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.steam-page__title {
+		font-size: 1.5rem;
+		font-weight: 600;
+		margin: 0;
+	}
+
+	.steam-page__subtitle,
+	.steam-page__updated {
+		font-size: 0.8125rem;
+		opacity: 0.6;
+		margin: 0;
+	}
+
+	.steam-page__updated {
+		text-align: right;
+	}
+
+	.steam-page__notice {
+		font-size: 0.75rem;
+		line-height: 1.6;
+		margin: 0.25rem 0 0;
+		padding: 0.375rem 0.625rem;
+		border-radius: 0.5rem;
+		width: fit-content;
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+	}
+
+	.steam-page__empty {
+		border: 1px dashed color-mix(in srgb, var(--primary) 40%, transparent);
+		border-radius: 0.75rem;
+		padding: 1.25rem;
+		background: var(--card-bg);
+	}
+
+	.steam-page__empty p {
+		margin: 0 0 0.5rem;
+	}
+
+	.steam-page__empty p:last-child {
+		margin-bottom: 0;
+	}
+
+	.steam-page__empty-hint {
+		font-size: 0.8125rem;
+		opacity: 0.7;
+		line-height: 1.7;
+	}
+
+	.steam-page__empty code {
+		font-size: 0.75rem;
+		padding: 0.05rem 0.3rem;
+		border-radius: 0.25rem;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+
+	.steam-profile {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 1rem 1.25rem;
+		border-radius: 0.875rem;
+		background: var(--card-bg);
+	}
+
+	.steam-profile__avatar {
+		width: 72px;
+		height: 72px;
+		border-radius: 0.75rem;
+		flex: 0 0 auto;
+	}
+
+	.steam-profile__body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+		min-width: 0;
+	}
+
+	.steam-profile__line {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.steam-profile__name {
+		font-size: 1.125rem;
+		font-weight: 600;
+	}
+
+	.steam-profile__state,
+	.steam-profile__level {
+		font-size: 0.75rem;
+		padding: 0.1rem 0.5rem;
+		border-radius: 999px;
+	}
+
+	.steam-profile__state.is-online {
+		color: #1a7f37;
+		background: color-mix(in srgb, #1a7f37 14%, transparent);
+	}
+
+	.steam-profile__state.is-offline {
+		opacity: 0.7;
+		background: color-mix(in srgb, currentColor 10%, transparent);
+	}
+
+	.steam-profile__level {
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+	}
+
+	.steam-profile__state-msg {
+		font-size: 0.8125rem;
+		opacity: 0.7;
+	}
+
+	.steam-profile__link {
+		font-size: 0.8125rem;
+		opacity: 0.75;
+		width: fit-content;
+	}
+
+	.steam-profile__link:hover {
+		opacity: 1;
+		color: var(--primary);
+	}
+
+	.steam-stats {
+		display: grid;
+		/* 精简模式只有 3 项，用 auto-fit 让它自动撑满而不是留一个空格 */
+		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.steam-stat {
+		padding: 0.875rem 1rem;
+		border-radius: 0.75rem;
+		background: var(--card-bg);
+		text-align: center;
+	}
+
+	.steam-stat__value {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--primary);
+	}
+
+	.steam-stat__label {
+		font-size: 0.75rem;
+		opacity: 0.65;
+		margin-top: 0.125rem;
+	}
+
+	.steam-section {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.steam-section__title {
+		font-size: 1rem;
+		font-weight: 600;
+		margin: 0;
+	}
+
+	.steam-recent {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		gap: 0.5rem;
+	}
+
+	.steam-recent__item a {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.5rem;
+		background: var(--card-bg);
+		transition: color 0.15s ease;
+	}
+
+	.steam-recent__item a:hover {
+		color: var(--primary);
+	}
+
+	.steam-recent__name {
+		font-size: 0.8125rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.steam-recent__time {
+		font-size: 0.75rem;
+		opacity: 0.65;
+		flex: 0 0 auto;
+	}
+
+	.steam-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 0.875rem;
+	}
+
+	.steam-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+		padding: 0.5rem;
+		border-radius: 0.75rem;
+		background: var(--card-bg);
+		overflow: hidden;
+		transition: transform 0.18s ease;
+	}
+
+	.steam-card:hover {
+		transform: translateY(-2px);
+	}
+
+	.steam-card__cover {
+		border-radius: 0.5rem;
+		overflow: hidden;
+		background: color-mix(in srgb, currentColor 6%, transparent);
+		aspect-ratio: 460 / 215;
+	}
+
+	.steam-card__cover img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+
+	.steam-card__meta {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 0.5rem;
+	}
+
+	.steam-card__name {
+		font-size: 0.8125rem;
+		font-weight: 500;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.steam-card__time {
+		font-size: 0.75rem;
+		color: var(--primary);
+		flex: 0 0 auto;
+	}
+
+	.steam-card__date {
+		font-size: 0.6875rem;
+		opacity: 0.55;
+	}
+
+	@media (max-width: 640px) {
+		.steam-stats {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.steam-grid {
+			grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		}
+	}
+</style>
