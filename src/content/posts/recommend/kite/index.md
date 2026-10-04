@@ -181,4 +181,4 @@ Kite 赢在"不用配环境 + 自带后台 + 装东西有统一入口"，Firefly
 
 如果你也在找静态博客的新方案，可以关注一下这个项目。不过还是那句话，早期项目，先看着别急着把主站搬过去。
 
-项目地址自己搜 `kite-plus/kite` 就有了，文档在 `docs/reference.zh-CN.md`，写得比多数项目的文档细，踩坑之前值得先翻一遍。
+项目地址在 [`kite-plus/kite`](https://github.com/kite-plus/kite)，文档在 [`docs/reference.zh-CN.md`](https://github.com/kite-plus/kite/blob/main/docs/reference.zh-CN.md)，写得比多数项目的文档细，踩坑之前值得先翻一遍。
