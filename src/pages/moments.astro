@@ -14,9 +14,6 @@ const timeline = buildMomentsTimeline(feed.items, friends, siteConfig.site_url);
 const momentsItems = timeline.items;
 const title = "朋友圈";
 const description = "把友链博客最近写下的文章，收进一条轻盈的时间线。";
-// 动态时间线有独立的 RSS，页面上给阅读器一个自动发现入口
-const feedUrl = new URL("moments/rss.xml", Astro.site ?? "https://www.9ll.uk/")
-	.href;
 
 const normalizeFriendUrl = (url: string | undefined | null) =>
 	(url ?? "")
@@ -60,9 +57,6 @@ const randomArticleItems = JSON.stringify(
 ---
 
 <MainGridLayout title={title} description={description}>
-	<Fragment slot="head">
-		<link rel="alternate" type="application/rss+xml" title={`${title} RSS`} href={feedUrl} />
-	</Fragment>
 	<section class="moments-shell card-base z-10 px-9 py-6 relative w-full" aria-labelledby="moments-title">
 		<header class="moments-header">
 			<div class="moments-heading">
@@ -92,28 +86,8 @@ const randomArticleItems = JSON.stringify(
 					</span>
 				</p>
 			)}
-		<div class="moments-subscribe">
-			<Icon is:inline name="material-symbols:rss-feed-rounded" aria-hidden="true" />
-			<span class="moments-subscribe__label">订阅这条时间线</span>
-			<code class="moments-subscribe__url" data-moments-feed-url>{feedUrl}</code>
-			<button
-				type="button"
-				class="moments-subscribe__copy"
-				data-moments-feed-copy
-				data-copied-text="已复制"
-				data-failed-text="复制失败"
-				aria-label="复制朋友圈 RSS 链接"
-			>
-				<Icon is:inline name="material-symbols:content-copy-rounded" aria-hidden="true" />
-				<span data-moments-feed-copy-label>复制链接</span>
-			</button>
-			<a class="moments-subscribe__open" data-moments-feed-open href={feedUrl} target="_blank" rel="noopener noreferrer">
-				<Icon is:inline name="material-symbols:open-in-new-rounded" aria-hidden="true" />
-				<span>打开 Feed</span>
-			</a>
-		</div>
-		<article
-			class="moments-random-article"
+			<article
+				class="moments-random-article"
 				data-random-article
 				data-items={randomArticleItems}
 				data-state="loading"
@@ -324,44 +298,6 @@ const randomArticleItems = JSON.stringify(
 					for (const cleanup of cleanups.splice(0)) cleanup();
 					runtime.activeShell = null;
 				};
-
-				// Swup 会拦截站内链接并把 .xml 当页面拉回来，这里统一改为原生新标签页打开
-				const openFeedLink = shell.querySelector("[data-moments-feed-open]");
-				const handleFeedOpen = (event) => {
-					event.preventDefault();
-					event.stopPropagation();
-					window.open(feedUrl, "_blank", "noopener,noreferrer");
-				};
-				if (openFeedLink) {
-					openFeedLink.addEventListener("click", handleFeedOpen);
-					cleanups.push(() => openFeedLink.removeEventListener("click", handleFeedOpen));
-				}
-
-				const feedCopyButton = shell.querySelector("[data-moments-feed-copy]");
-				const feedCopyLabel = feedCopyButton?.querySelector("[data-moments-feed-copy-label]");
-				const feedUrlText = shell.querySelector("[data-moments-feed-url]")?.textContent?.trim() ?? "";
-				if (feedCopyButton instanceof HTMLButtonElement && feedUrlText) {
-					let feedCopyTimer = 0;
-					const handleFeedCopy = async () => {
-						const originalLabel = feedCopyLabel?.textContent ?? "";
-						try {
-							await navigator.clipboard.writeText(feedUrlText);
-							if (feedCopyLabel) feedCopyLabel.textContent = feedCopyButton.dataset.copiedText || "已复制";
-						} catch {
-							if (feedCopyLabel) feedCopyLabel.textContent = feedCopyButton.dataset.failedText || "复制失败";
-						}
-						if (feedCopyTimer) window.clearTimeout(feedCopyTimer);
-						feedCopyTimer = window.setTimeout(() => {
-							if (feedCopyLabel) feedCopyLabel.textContent = originalLabel;
-							feedCopyTimer = 0;
-						}, 1800);
-					};
-					feedCopyButton.addEventListener("click", handleFeedCopy);
-					cleanups.push(() => {
-						feedCopyButton.removeEventListener("click", handleFeedCopy);
-						if (feedCopyTimer) window.clearTimeout(feedCopyTimer);
-					});
-				}
 
 				const randomArticleCard = shell.querySelector("[data-random-article]");
 				if (randomArticleCard instanceof HTMLElement) {
@@ -893,98 +829,6 @@ const randomArticleItems = JSON.stringify(
 		flex: 0 0 auto;
 		margin-top: 0.12rem;
 		color: var(--primary);
-	}
-
-	.moments-subscribe {
-		display: flex;
-		grid-column: 1 / -1;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-		padding: 0.6rem 0.7rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--line-divider));
-		border-radius: 0.8rem;
-		background: color-mix(in srgb, var(--primary) 6%, var(--card-bg));
-		color: var(--content-meta);
-		font-size: 0.74rem;
-		line-height: 1.5;
-	}
-
-	.moments-subscribe > svg {
-		flex: 0 0 auto;
-		color: var(--primary);
-		font-size: 1rem;
-	}
-
-	.moments-subscribe__label {
-		flex: 0 0 auto;
-		color: var(--text-color);
-		font-weight: 700;
-		white-space: nowrap;
-	}
-
-	.moments-subscribe__url {
-		flex: 1 1 5rem;
-		min-width: 0;
-		padding: 0.24rem 0.45rem;
-		border: 1px solid var(--line-divider);
-		border-radius: 0.5rem;
-		background: var(--card-bg);
-		color: var(--content-meta);
-		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-		font-size: 0.68rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.moments-subscribe__copy,
-	.moments-subscribe__open {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.24rem;
-		flex: 0 0 auto;
-		min-height: 1.75rem;
-		padding: 0.28rem 0.5rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--line-divider));
-		border-radius: 0.55rem;
-		background: color-mix(in srgb, var(--primary) 12%, var(--card-bg));
-		color: var(--primary);
-		font-size: 0.7rem;
-		font-weight: 700;
-		white-space: nowrap;
-		text-decoration: none;
-		transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
-	}
-
-	.moments-subscribe__copy {
-		cursor: pointer;
-	}
-
-	.moments-subscribe__copy:hover,
-	.moments-subscribe__open:hover {
-		border-color: color-mix(in srgb, var(--primary) 48%, var(--line-divider));
-		background: color-mix(in srgb, var(--primary) 22%, var(--card-bg));
-		transform: translateY(-1px);
-	}
-
-	.moments-subscribe__copy:focus-visible,
-	.moments-subscribe__open:focus-visible {
-		outline: 2px solid color-mix(in srgb, var(--primary) 72%, white);
-		outline-offset: 2px;
-	}
-
-	.moments-subscribe__copy svg,
-	.moments-subscribe__open svg {
-		font-size: 0.92rem;
-	}
-
-	@media (max-width: 640px) {
-		.moments-subscribe__url {
-			flex-basis: 100%;
-			order: 3;
-		}
 	}
 
 	.moments-random-article {

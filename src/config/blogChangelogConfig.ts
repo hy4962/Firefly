@@ -30,26 +30,50 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
-		version: "V1.24",
-		title: "朋友圈 + 站长动态独立 RSS",
+		version: "V1.25",
+		title: "Steam 游戏库",
 		date: "2026-10-05",
 		summary:
-			"朋友圈和站长动态各自有了独立订阅源（/moments/rss.xml 与 /dynamic/rss.xml），都和页面同一份数据、同一个排序；朋友圈页头部有订阅条，动态页的「N 动态」旁边多了个 RSS 小按钮",
+			"新增 /steam/ 游戏库页面：拥有游戏数、总时长、近两周时长、等级徽章，以及按时长排序的全部游戏列表；数据由定时任务写入快照，跟朋友圈共用同一条流水线",
 		description:
-			"在 blog.fufu520.cn 看到 TA 的动态页挂着独立的 /moments/rss.xml，回头看自己的朋友圈页和站长动态页都只有网页没有 feed——想追更的读者只能手动来翻。于是照着做了两份：朋友圈的新端点和 /moments/ 页面共用 loadFriendsFeed + buildMomentsTimeline，订阅出来的条目顺序、来源占比与页面完全一致；每条 item 的 link 直指友链原文，来源站点写进 dc:creator 和分类，本站内容会额外带上「本站」分类，页面顶部加了订阅条。站长动态的 feed 在构建期拉 Memos 接口（和页面同一份客户端数据），每条跳回 /dynamic/ 的对应锚点，接口挂了自动回退本地内容集合、再不行输出空频道，构建永远不会因此变红。两个页面的 head 都埋了 rel=alternate 自动发现，阅读器打开就能识别到 feed",
+			"在 nxxy335.top/steam 看到他的 Steam 履历页，扒了下源码发现是 Halo 插件在服务端定时拉 Steam Web API、缓存后 SSR——他那边有常驻后端，我这是纯静态站，走不了同一条路。好在博客里早有一条干同类事的流水线：朋友圈的 refresh-friends-feed.yml，定时抓友链 RSS 落快照、有变化就提交、提交触发重建。于是没有新建第二条，直接往里面加了一个步骤，跑一次提交一次构建一次，两类数据一起刷新。取数用官方 Web API（GetPlayerSummaries / GetBadges / GetOwnedGames），需要申请 API Key 并把 Steam 隐私设置的「游戏详情」设为公开；封面图直接按 appid 拼 CDN 地址，不用再拉商店详情。另外补了一条降级路径：没配 Key 时退回抓 steamcommunity 的公开 XML，只拿得到常玩的几款游戏，页面会标出「精简模式」并改称「收录游戏」，不误导读者。密钥只存在于 GitHub Actions 的环境变量里，不进入构建产物与前端，因此 Vercel 和 Cloudflare 后台都不用配任何东西",
 		items: [
 			{
-				category: "朋友圈",
-				text: "新增 /moments/rss.xml 订阅源：与页面共用同一套抓取与配比逻辑（3:4:3），40 条按 balanced 交错输出，每条带 dc:creator 来源与分类标注，本站条目额外标「本站」",
+				category: "Steam",
+				text: "新增 /steam/ 页面与 scripts/refresh-steam-snapshot.ts：取拥有游戏数、总时长、近两周时长、等级与徽章数、最近游玩、全部游戏时长榜（含封面、最后游玩日期）",
 			},
 			{
-				category: "朋友圈",
-				text: "item 的 link 直指友链原文而非跳回本站，阅读器点开即达；lastBuildDate 取最新一条的发布时间，边缘缓存一天",
+				category: "Steam",
+				text: "两条取数路径自动切换：有 STEAM_API_KEY 走 Web API 拿完整游戏库；没有则退回 steamcommunity 公开 XML 的精简模式（仅常玩几款），快照用 partial 字段标记，页面据此显示提示并调整统计卡名称",
 			},
 			{
-				category: "朋友圈",
-				text: "页面顶部新增订阅条：显示 feed 地址、一键复制（复制成功 1.8 秒后还原）、新标签打开 Feed（绕开 Swup 拦截）；head 加 rel=alternate 供阅读器自动发现",
+				category: "Steam",
+				text: "封面图按 https://cdn.cloudflare.steamstatic.com/steam/apps/<appid>/header.jpg 直接拼接，省掉「先拉商店详情拿 hash」这一步",
 			},
+			{
+				category: "维护",
+				text: "refresh-friends-feed.yml 更名为 Refresh External Snapshots，新增一个 step 跑 Steam 脚本（注入 STEAM_API_KEY），提交逻辑改为一次性 add 两份快照；没有新建第二条 workflow",
+			},
+			{
+				category: "首页",
+				text: "导航「我的」子菜单新增「游戏库」入口",
+			},
+			{
+				category: "维护",
+				text: "全为新增文件 + src/config 内改动，组件、布局、样式、i18n 等上游高频改动区零改动",
+			},
+		],
+		tags: ["Steam", "统计", "定时任务", "新增"],
+	},
+	{
+		version: "V1.24",
+		title: "站长动态独立 RSS",
+		date: "2026-10-05",
+		summary:
+			"站长动态有了自己的订阅源 /dynamic/rss.xml，和页面同一份数据；动态页头部的「N 动态」旁边多了个 RSS 小按钮，点一下就能把地址丢进阅读器",
+		description:
+			"在 blog.fufu520.cn 看到 TA 的动态页挂着独立 feed，回头看自己的站长动态页只有网页、没有订阅源——想追更的读者只能手动来翻。于是照着做了一份：feed 在构建期拉 Memos 接口，和页面用的是同一份数据，每条跳回 /dynamic/ 的对应锚点；接口挂了自动回退本地内容集合、再不行输出空频道，构建永远不会因此变红。入口加在动态页头部——那一整页都是主题文件，所以走页脚注入段把 RSS 按钮塞进「N 动态」计数里，只有动态页会出现，head 也一并埋了自动发现声明",
+		items: [
 			{
 				category: "动态",
 				text: "新增 /dynamic/rss.xml：构建期拉 Memos 接口（与页面同源，当前 12 条），每条跳回 /dynamic/ 对应锚点；接口失败自动回退本地内容集合，再不行输出空频道，绝不炸构建",
@@ -60,10 +84,10 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "维护",
-				text: "新增 src/pages/moments/rss.xml.ts、src/pages/dynamic/rss.xml.ts + moments.astro 订阅条一段，全为新增文件或新增块，主题源文件零改动",
+				text: "新增 src/pages/dynamic/rss.xml.ts 一个文件 + FooterConfig.html 注入段，主题源文件零改动",
 			},
 		],
-		tags: ["朋友圈", "动态", "RSS", "新增"],
+		tags: ["动态", "RSS", "新增"],
 	},
 	{
 		version: "V1.23",
