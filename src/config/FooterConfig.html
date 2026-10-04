@@ -579,10 +579,12 @@
 <script>
 	// ===== 动态页 RSS 订阅入口：按需注入 =====
 	// /dynamic/ 整页是上游文件不能改，这里在页脚（swup 容器之外）挂事件，
-	// 只在动态页把 RSS 按钮塞进「N 动态」计数 pill 内部，并给 head 补自动发现声明。
+	// 只在动态页把 RSS 入口塞进「N 动态」计数 pill 的最前面，并给 head 补自动发现声明。
 	// 注意：不能插成 .page-count 的兄弟节点——page-header 是两列 grid，
 	// 多一个直接子元素会把「N 动态」挤到下一行。
-	// Swup 会拦截站内 .xml 链接，所以按钮点击走原生新标签页打开。
+	// 点击不用任何 JS 拦截：Swup 的 triggerWillOpenNewWindow 会跳过 [target="_blank"]，
+	// 原生新标签页打开就是对的。之前用捕获阶段 preventDefault + window.open 兜底，
+	// 结果脚本一旦被重复执行（dev HMR）就会一次点击开两个窗口，已删除。
 	(() => {
 		var RSS_PATH = "/dynamic/rss.xml";
 
@@ -618,15 +620,6 @@
 			// 塞成 pill 的第一个子元素 → RSS 入口排在「N 动态」左边
 			count.insertBefore(button, count.firstChild);
 		}
-
-		function openFeedNative(event) {
-			var target = event.target.closest("#ff-dynrss-btn");
-			if (!target) return;
-			event.preventDefault();
-			event.stopPropagation();
-			window.open(RSS_PATH, "_blank", "noopener,noreferrer");
-		}
-		document.addEventListener("click", openFeedNative, true);
 
 		function initDynamicRss() {
 			mountRssButton();
