@@ -406,6 +406,12 @@ export const booknavConfig: BooknavGroup[] = [
 				weight: 11,
 			},
 			{
+				title: "一起萌 LetMoe",
+				url: "https://www.letmoe.com/",
+				desc: "免费无门槛 ACG 资源站，游戏支持直链下载",
+				weight: 10,
+			},
+			{
 				title: "樱之歌 SakuGAL",
 				url: "https://sakugal.com/",
 				desc: "中文 Galgame 资源分享站，AI 机翻资源多",
