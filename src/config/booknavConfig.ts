@@ -273,7 +273,7 @@ export const booknavConfig: BooknavGroup[] = [
 		name: "基础设施",
 		icon: "material-symbols:cloud-outline-rounded",
 		desc: "云服务与域名管理",
-		weight: 65,
+		weight: 101,
 		items: [
 			{
 				title: "Cloudflare",
@@ -322,7 +322,7 @@ export const booknavConfig: BooknavGroup[] = [
 		name: "ACG",
 		icon: "material-symbols:live-tv-rounded",
 		desc: "追番、找资源、下种子",
-		weight: 78,
+		weight: 103,
 		items: [
 			{
 				title: "蜜柑计划",
@@ -391,7 +391,7 @@ export const booknavConfig: BooknavGroup[] = [
 		name: "Galgame",
 		icon: "material-symbols:videogame-asset-rounded",
 		desc: "Gal 社区、补丁与资源站",
-		weight: 76,
+		weight: 102,
 		items: [
 			{
 				title: "鲲 Galgame 论坛",
