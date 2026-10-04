@@ -37,9 +37,15 @@ theme api kite/v1, plugin abi 1
 
 ![Kite 默认主题的浅色与深色外观，首页是文章卡片流，右侧是浏览器窗口预览](./images/image-001.webp)
 
+![Kite 后台的仪表盘：文章 59、独立页面 5、分类 8、标签 161，右侧是最近十二个月的发布趋势和最新文章](./images/image-002.webp)
+
 关键在"直接读写磁盘"这个说法：内容就是磁盘上的 `.md` 文件，保存时只改写真正变化的部分，key 顺序和注释都原样保留。
 
+![可视化编辑器：分类、标签、slug、置顶、附件都摆在标题下面，正文所见即所得，工具栏能插表格、代码块和图片](./images/image-003.webp)
+
 这意味着你在后台改个标题，`git diff` 只有一行。写错了还能直接在编辑器里切回源码模式手动救。写作这件事和 Git 仓库之间没有割裂感 —— 这一点比很多 CMS 强太多了。
+
+![切到源码模式就是原始 Markdown，顶部会提示这篇用到了内嵌 HTML、可视化编辑器保不住它们](./images/image-004.webp)
 
 我迁移文章的时候全程就是靠这个特性：写脚本批量改 front matter 的键名（`published` 改成 `date`、`category` 改成 `categories`），Kite 认这套规则，一遍过。
 
@@ -68,12 +74,18 @@ theme api kite/v1, plugin abi 1
 
 索引里每个版本都记着要加载哪些外部域名（`loads` 字段），装之前你就能看清它要连哪些 CDN。`search` 那个插件的 `loads` 是空的 —— 搜索索引直接打进包里，一个外部请求都不发。`comments` 则老老实实列了 giscus.app 和两个 CDN。这种把网络依赖摊开给你看、而不是装完再说的做法，我觉得比插件数量更重要。
 
+![应用中心：主题 2 个、插件 4 个，都从索引里按名字装，装进来的文件放在 themes/ 和 plugins/ 里](./images/image-005.webp)
+
+![插件详情里的「会对网站做什么」直接列出它会从哪些外部域名加载内容，装之前就能看到](./images/image-006.webp)
+
 ## 主题市场
 
 主题也是按名字装，官方市场目前两个：
 
 - **Almanac**（年鉴）v0.1.2 —— 杂志风，首页有个刊头，下面是卡片流，还有 projects、books、moments、links、resume 各种版式
 - **Vane**（风标）v1.0.2 —— 已经迭代到 1.0 了
+
+![主题页：年鉴在使用中，版本、作者、许可、仓库地址都列在右边，下面是「自定义」入口](./images/image-007.webp)
 
 我自己装的是 Almanac。它的 `theme.yaml` 里声明 `contentTypes: [post, page]`，只需要 Kite 原生的两种内容类型，正好能直接用上我迁过去的 `posts/` 和 `pages/`。
 
@@ -84,6 +96,8 @@ theme api kite/v1, plugin abi 1
 这块我反而觉得不是重点，但确实自由：
 
 **导出静态页** —— 后台「部署」导出 zip，或者 `kite build` 写到 `public/`，丢到任何静态托管都行。
+
+![部署页：导出 zip 和推送 Git 两条路，最后一段写着每个 Kite 版本都由 kite.lock 固定](./images/image-008.webp)
 
 **跑在自己服务器** —— Docker 一条命令：
 
