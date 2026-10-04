@@ -30,6 +30,34 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.24",
+		title: "朋友圈独立 RSS",
+		date: "2026-10-05",
+		summary:
+			"朋友圈时间线有了自己的订阅源 /moments/rss.xml：和页面同一份数据、同一个配比排序，阅读器里看到的顺序就是网页上的顺序；页面头部加了订阅条，支持一键复制链接",
+		description:
+			"在 blog.fufu520.cn 看到 TA 的动态页挂着独立的 /moments/rss.xml，回头看自己的朋友圈页只有网页没有 feed——想追更友链的读者只能手动来翻。于是照着做了一份：新端点和 /moments/ 页面共用 loadFriendsFeed + buildMomentsTimeline，订阅出来的条目顺序、来源占比与页面完全一致；每条 item 的 link 直指友链原文，来源站点写进 dc:creator 和分类，本站内容会额外带上「本站」分类。页面顶部加了订阅条（复制链接 / 直接打开 Feed），head 里也埋了 rel=alternate 自动发现，阅读器打开这页就能识别到 feed",
+		items: [
+			{
+				category: "朋友圈",
+				text: "新增 /moments/rss.xml 订阅源：与页面共用同一套抓取与配比逻辑（3:4:3），40 条按 balanced 交错输出，每条带 dc:creator 来源与分类标注，本站条目额外标「本站」",
+			},
+			{
+				category: "朋友圈",
+				text: "item 的 link 直指友链原文而非跳回本站，阅读器点开即达；lastBuildDate 取最新一条的发布时间，边缘缓存一天",
+			},
+			{
+				category: "朋友圈",
+				text: "页面顶部新增订阅条：显示 feed 地址、一键复制（复制成功 1.8 秒后还原）、新标签打开 Feed（绕开 Swup 拦截）；head 加 rel=alternate 供阅读器自动发现",
+			},
+			{
+				category: "维护",
+				text: "新增 src/pages/moments/rss.xml.ts + moments.astro 订阅条一段，全为新增文件或新增块，主题源文件零改动",
+			},
+		],
+		tags: ["朋友圈", "RSS", "新增"],
+	},
+	{
 		version: "V1.23",
 		title: "首页动态滚动条",
 		date: "2026-10-05",
@@ -173,7 +201,8 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		version: "V1.19",
 		title: "相册清理两张重复/带底素材",
 		date: "2026-10-03",
-		summary: "「移动壁纸」相册去掉品红底那张原图，「贴纸」相册删掉与单张版重复的模糊画稿",
+		summary:
+			"「移动壁纸」相册去掉品红底那张原图，「贴纸」相册删掉与单张版重复的模糊画稿",
 		description:
 			"昨天归档时把「原图」照单全收进相册，事后翻相册发现两张碍眼的：一是手机壁纸那张品红纯色底的原始版（壁纸池里用的已是抠成透明通道的版本，相册里再留一个刺眼的红底没意义），二是「贴纸」相册里那张从九宫格切出来的草帽 Q 版——它和单张高清版是同款，九宫格那格是 JPEG 压缩过的格子源，放大后帽子和描边都是噪点，留着只是重复占位。两张都从相册目录删掉，LQIP 占位色同步清干净",
 		items: [
@@ -192,7 +221,8 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		version: "V1.18",
 		title: "首页贴纸扩充，壁纸池进两张新图",
 		date: "2026-10-02",
-		summary: "挂件九宫格切开做成 9 张 Q 版贴纸（与单张高清版重复的那张已删），壁纸池新增桌面夏装横图与手机透明底立绘",
+		summary:
+			"挂件九宫格切开做成 9 张 Q 版贴纸（与单张高清版重复的那张已删），壁纸池新增桌面夏装横图与手机透明底立绘",
 		description:
 			"这批素材是一套挂件图：九宫格整版切开抠底出 9 张 Q 版贴纸，另有一张单张高清版一起进首页贴纸池（两者同款的那张后来删掉了）。桌面端随机抽 10 张的机制不用动坐标，手机端自动装箱。横版夏装图直接进桌面壁纸轮播；竖版立绘原来是刺眼的品红纯色底，索性按同色匹配整体抠掉、只留透明通道不做替代底，背后交给页面自身底色，浅色深色各自适应 —— 手机端从单图升级成两张轮播。原图照例全部归档：贴纸画稿进「贴纸」相册，两张壁纸原图分别进桌面 / 移动壁纸相册",
 		items: [
@@ -223,7 +253,8 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		version: "V1.17",
 		title: "追番页从 B站 换成番组计划",
 		date: "2026-09-30",
-		summary: "关掉 /bilibili/ 改由 /bangumi/ 接手：浏览器实时拉 bgm.tv 收藏，动画 308 部、其中看过 277 部",
+		summary:
+			"关掉 /bilibili/ 改由 /bangumi/ 接手：浏览器实时拉 bgm.tv 收藏，动画 308 部、其中看过 277 部",
 		description:
 			"昨天开的 /bilibili/ 页只解决「收藏了什么」，而真正想让人看到的是「看过什么」—— 那部分记录都在 bgm 上，把 B站 的「看过」清单批量补录过去之后，B站 这页就没什么存在必要了。主题其实自带一对平级的追番页，bangumi 那页一直是关着的，而且默认指向第三方镜像 api.bangumi.pro，实测这个域名连 TCP 都建不起来，是条死链。换回官方 api.bgm.tv 之后就能直接用：官方放开了跨域，浏览器可以直连，于是开 dynamic 模式，访客打开页面时现拉数据，收藏有变动不必重新部署",
 		items: [
@@ -250,7 +281,8 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		version: "V1.16",
 		title: "追番页开张，B站收藏搬上来",
 		date: "2026-09-29",
-		summary: "打开 /bilibili/ 页面：构建期拉取 UID 161964502 的追番与追剧清单，共 221 条，均分 8.7",
+		summary:
+			"打开 /bilibili/ 页面：构建期拉取 UID 161964502 的追番与追剧清单，共 221 条，均分 8.7",
 		description:
 			"页面文件和导航菜单项一直都在，只是 siteConfig 里的页面开关是 false，访问会被直接重定向到 /404/，导航里那一项又因为绑了 pageKey 被自动隐藏，等于整页处于「装好了但没通电」的状态。把开关打开后，构建时会请求 B 站 space/bangumi/follow/list 接口，追番（type=1）与追剧（type=2）一起抓，带评分、简介和最新一集的更新进度。封面走的是 hdslb 域名，站点早就配了 noReferrerDomains，不会被防盗链挡回来",
 		items: [
@@ -269,7 +301,8 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		version: "V1.15",
 		title: "统计页的画，搬进相册了",
 		date: "2026-09-29",
-		summary: "把 /analytics/ 页面里的 7 张插画归档成新相册「统计页插画」：页首横幅、两张角色立绘、四张概览卡片插画",
+		summary:
+			"把 /analytics/ 页面里的 7 张插画归档成新相册「统计页插画」：页首横幅、两张角色立绘、四张概览卡片插画",
 		description:
 			"统计页里那些画——页首樱花横幅、推送节奏和访客活跃两张角色立绘、概览区四张卡片插画——散在页面各处，没法单独看。这回把它们归进相册：三张 PNG 立绘与横幅转成 90 质量的 webp，四张概览插画本来就是压缩好的 webp，字节原样拷过去不做二次压缩；原始 PNG 归档在仓库 gallery-originals/analytics/，配套 _manifest.json 记录来源与尺寸",
 		items: [
@@ -288,7 +321,8 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		version: "V1.14",
 		title: "搬来的看板，得改成自己的",
 		date: "2026-09-29",
-		summary: "配色换成站点主题色、提交数修正为只算本人、热力图改 GitHub 绿、两个状态角标归位、Umami 加外链",
+		summary:
+			"配色换成站点主题色、提交数修正为只算本人、热力图改 GitHub 绿、两个状态角标归位、Umami 加外链",
 		description:
 			"上一版整份搬过来，功能是齐的，但用起来处处别扭：整页是参考站的蓝，跟本站的橙黄对不上；推送热力图显示「最近 1690 次」，而我一年的提交明明只有两百多；两个状态角标被 space-between 顶到最右，正好压在角色插画的脸上；DATA SOURCE 那里的 Umami 点进去是登录页。这些都是「能跑但不像自己的」—— 尤其第二项是个实打实的错：这个仓库是 fork，git log 不加过滤会把上游的历史一起算进来，1695 条里属于我的只有 252 条，差了七倍。一条条改完之后才算顺眼",
 		items: [
@@ -371,7 +405,8 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		version: "V1.12",
 		title: "一页真的数据看板",
 		date: "2026-09-29",
-		summary: "新增 /analytics/ 站点统计页：总览、访问脉冲、推送节奏、活跃时间、设备地域、最近评论",
+		summary:
+			"新增 /analytics/ 站点统计页：总览、访问脉冲、推送节奏、活跃时间、设备地域、最近评论",
 		description:
 			"上一条刚给页脚塞了两行数字，转头又看上了 rainzt.cn 的 /analytics/ —— 那不是两行数字，是整整一页看板：四张彩色总览卡、带 7 / 30 / 90 天切换的访问脉冲、按 GitHub 推送时间排的热力图、24 小时活跃分布、设备与地域的环形图，还有一张中国地图和最近评论。第一版我照着截图自己设计了一套，能跑，但一看就不是那个味道：配色、留白、动效节奏全都对不上。被一句话点醒之后才去翻 Aemeath 的仓库——人家根本不是单个文件，页面将近四千行，外加两个组件，其中专门渲染总览数字的那个要是漏了，页面其余模块全部正常、只有四个数字永远停在「加载中」。整份搬过来才算真正对上，顺带把导航入口从「关于」子菜单提到了顶级",
 		items: [
