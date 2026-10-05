@@ -159,6 +159,12 @@ export const booknavConfig: BooknavGroup[] = [
 				weight: 10,
 			},
 			{
+				title: "Cutia",
+				url: "https://cutia.msgbyte.com/zh",
+				desc: "AI 原生开源浏览器视频编辑器，CapCut 免费替代",
+				weight: 9.5,
+			},
+			{
 				title: "Squoosh",
 				url: "https://squoosh.app",
 				desc: "Google 出品的图片压缩与格式转换",
