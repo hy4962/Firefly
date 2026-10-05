@@ -28,8 +28,12 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const DEST = path.join(ROOT, "src", "site-content");
-const URL = process.env.CONTENT_REPO_URL ?? "";
-const REF = process.env.CONTENT_REPO_REF ?? "main";
+// 环境变量面板里粘贴长 URL 时很容易带上换行或首尾空格 —— Vercel 上会直接表现为
+// git clone 报 "url contains a newline in its path component"，
+// Cloudflare 上则表现为 "Invalid username or token"（token 被换行截断）。
+// 这里统一把空白字符清掉，两种平台都不必再手工检查。
+const URL = (process.env.CONTENT_REPO_URL ?? "").replace(/\s+/g, "");
+const REF = (process.env.CONTENT_REPO_REF ?? "main").trim();
 const FORCE = process.env.CONTENT_SYNC_FORCE === "1";
 
 const log = (msg) => console.log(`[sync-content] ${msg}`);
