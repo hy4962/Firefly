@@ -36,7 +36,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		summary:
 			"把全站卡片的边框从几乎看不见的浅灰细线换成 2px 纯黑描边，对齐参考站那种卡片轮廓很清楚的观感",
 		description:
-			"参考站（azuma.mstzuomu.space）的卡片有一圈很深很明显的黑色描边，扒了一下它的做法，其实简单得意外：主题本来就有 enable-card-border 这一套开关（配置项 siteConfig.card.border，本站早就开着 true），head 里的内联脚本会按它给 <html> 打上这个类，再由 src/styles/main.css 里的三条规则给 .card-base / .card-base-transparent / .btn-card 补上 1px 边框和阴影——问题出在颜色，它用的是 --line-divider，亮色下是 rgba(0,0,0,.08) 的浅灰线，深色下是 rgba(255,255,255,.08)，所以只是「有边框」但看不出轮廓。参考站做的就是把它换成纯黑、宽度提到 2px。本站照着改，但没碰上游的 src/styles/**：整段样式塞进 src/config/FooterConfig.html 的注入点（渲染在页脚，而 <Footer /> 在 swup 容器之外，整页加载才跑一次）。能这么改是因为主题那几条规则写在 @layer components 里，而未分层的样式天然压过任何 @layer，所以既不用 !important 也不用靠堆选择器权重去抢。另外暗色主题下纯黑描边贴在深色卡片上等于看不见，和参考站一样自动切成纯白。第一版上线后回头发现留言板和 Steam 页没跟上：这两个页面是本站自己写的，卡片用的是各自的类名（.guestbook-chat / .steam-profile / .steam-card 之类），跟主题的 .card-base 没有任何关系，所以完全没被盖到；它们的样式分别写在页面级的 src/styles/components/guestbook-chat.css 和 steam.astro 的 style is:global 里，只在对应页面加载，属于页面级分块，这里同样只补描边这一件事、不动别的。留言板那两个面板原本是 1px 的 --guestbook-line（透明玻璃面板上的一圈极淡线），Steam 那四类卡片更彻底——压根没有边框，所以给它们补的是完整简写，只写 border-width 和 border-color 是画不出来的（border-style 默认 none）。朋友圈页是第三处，也最绕：它那页的卡片 .moment-card 本来是有描边的，只是「推荐友链」「本站主理人」这两种变体各自把边框染成金色 / 蓝色，1px 又淡，看着就跟没边一样 —— 用户要的是全站统一的深色轮廓，所以连同变体一起收成纯黑 / 纯白，身份识别的活儿交回给背景色和角标。这里还踩到一个特异性问题：暗色段那条 html.dark .moment-card--recommended 是 (0,2,1)，只写 .enable-card-border .moment-card（(0,2,0)）压不住它，得多加一层 .moments-grid 变成 (0,3,0)，否则暗色主题下这两个变体会漏掉、仍留着旧染色边。",
+			"参考站（azuma.mstzuomu.space）的卡片有一圈很深很明显的黑色描边，扒了一下它的做法，其实简单得意外：主题本来就有 enable-card-border 这一套开关（配置项 siteConfig.card.border，本站早就开着 true），head 里的内联脚本会按它给 <html> 打上这个类，再由 src/styles/main.css 里的三条规则给 .card-base / .card-base-transparent / .btn-card 补上 1px 边框和阴影——问题出在颜色，它用的是 --line-divider，亮色下是 rgba(0,0,0,.08) 的浅灰线，深色下是 rgba(255,255,255,.08)，所以只是「有边框」但看不出轮廓。参考站做的就是把它换成纯黑、宽度提到 2px。本站照着改，但没碰上游的 src/styles/**：整段样式塞进 src/config/FooterConfig.html 的注入点（渲染在页脚，而 <Footer /> 在 swup 容器之外，整页加载才跑一次）。能这么改是因为主题那几条规则写在 @layer components 里，而未分层的样式天然压过任何 @layer，所以既不用 !important 也不用靠堆选择器权重去抢。另外暗色主题下纯黑描边贴在深色卡片上等于看不见，和参考站一样自动切成纯白。第一版上线后回头发现留言板和 Steam 页没跟上：这两个页面是本站自己写的，卡片用的是各自的类名（.guestbook-chat / .steam-profile / .steam-card 之类），跟主题的 .card-base 没有任何关系，所以完全没被盖到；它们的样式分别写在页面级的 src/styles/components/guestbook-chat.css 和 steam.astro 的 style is:global 里，只在对应页面加载，属于页面级分块，这里同样只补描边这一件事、不动别的。留言板那两个面板原本是 1px 的 --guestbook-line（透明玻璃面板上的一圈极淡线），Steam 那四类卡片更彻底——压根没有边框，所以给它们补的是完整简写，只写 border-width 和 border-color 是画不出来的（border-style 默认 none）。朋友圈页是第三处，也最绕：它那页的卡片 .moment-card 本来是有描边的，只是「推荐友链」「本站主理人」这两种变体各自把边框染成金色 / 蓝色，1px 又淡，看着就跟没边一样 —— 用户要的是全站统一的深色轮廓，所以连同变体一起收成纯黑 / 纯白，身份识别的活儿交回给背景色和角标。这里还踩到一个特异性问题：暗色段那条 html.dark .moment-card--recommended 是 (0,2,1)，只写 .enable-card-border .moment-card（(0,2,0)）压不住它，得多加一层 .moments-grid 变成 (0,3,0)，否则暗色主题下这两个变体会漏掉、仍留着旧染色边。补到第四、第五处（书签导航、友链、Bilibili 卡片、更新日志页）时索性全站扫了一遍，方法是三条 grep 交叉比对：CSS 里的 border: 1px solid var(--line-divider)、标记里的 border-(--line-divider)、以及拿 var(--card-bg) 当背景的类名，对上就是漏掉的卡片。扫的过程还澄清了一件事：页面自己的样式表是未分层的，而主题那套写在 @layer components 里 —— 未分层压分层，所以一开始担心的「页面里给 .card-base 又写了 border，会不会把我的描边盖掉」是多余的：两边同在未分层这一档时比的是特异性，我的 .enable-card-border .card-base 是 (0,2,0)，页面里那些 (0,1,0) 的（比如 analytics 页的 .analytics-panel、更新日志页的 .blog-changelog-hero）压不过我；只有既未分层、特异性又更高的（比如暗色段那条 html.dark .moment-card--recommended，(0,2,1)）才需要专门加一层选择器去压。",
 		items: [
 			{
 				category: "视觉",
@@ -48,7 +48,11 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "视觉",
-				text: "朋友圈页（/moments/）的文章卡片 .moment-card 也统一：它原本是 1px 的 --line-divider，「推荐友链」「本站主理人」两种变体还各自带金色 / 蓝色描边，现在连同变体一起换成纯黑（暗色纯白），身份仍由背景色与角标区分；代价是悬停时边框不再变成主题色，改由位移和阴影给反馈",
+				text: "自建页逐个补齐：朋友圈 /moments/ 的文章卡片 .moment-card 原本是 1px 的 --line-divider，而「推荐友链」「本站主理人」两种变体各自还带金色 / 蓝色描边，现在连同变体一起换成纯黑（暗色纯白），身份仍由背景色与角标区分；代价是悬停时边框不再变主题色，反馈改由位移和阴影承担",
+			},
+			{
+				category: "视觉",
+				text: "上游页面 / 组件里自己画描边的卡片也一并补齐（这些文件与上游零差异、不能改，只能页脚注入）：书签导航 .booknav-card、友链页 .friend-card、Bilibili 卡片 .media-card、更新日志页的 .blog-changelog-card / .blog-changelog-pager 及翻页卡里的方块按钮；同样牺牲了 hover 时的边框变色",
 			},
 			{
 				category: "视觉",
@@ -59,7 +63,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 				text: "样式落在 src/config/FooterConfig.html 的注入点，未改动上游 src/styles/**，合并上游主题更新仍是零冲突",
 			},
 		],
-		tags: ["博客", "CSS", "视觉", "卡片", "朋友圈"],
+		tags: ["博客", "CSS", "视觉", "卡片", "朋友圈", "书签导航", "友链"],
 	},
 	{
 		version: "V1.28",

@@ -711,4 +711,27 @@
 	.enable-card-border .moments-grid .moment-card {
 		border: var(--card-border-width) solid var(--card-border-color);
 	}
+
+	/* ── 上游页面 / 组件里自己画描边的卡片 ───────────────────────────
+	   下面这些类都在**上游文件**里（与 upstream/master 零差异，不能改），
+	   而且描边多数是 Tailwind 工具类画的（border + border-(--line-divider)，
+	   hover 时变主题色），同样是 1px 淡线，看着就像没边框。
+	   代价：hover:border-(--primary) 那类边框变色会被盖掉
+	   （未分层压过 @layer utilities），悬停反馈还剩背景色、阴影和位移。 */
+	.enable-card-border .booknav-card,
+	.enable-card-border .friend-card,
+	.enable-card-border .media-card {
+		border: var(--card-border-width) solid var(--card-border-color);
+	}
+
+	/* 更新日志页（自建组件 ChangelogTimeline.astro）里同样用 1px --line-divider
+	   画的卡片：条目卡、底部翻页卡，以及翻页卡里的小方块按钮
+	   （跟主题 .btn-card 分页按钮对齐）。注意同页的 .blog-changelog-hero /
+	   .blog-changelog-nav 已经挂了 card-base，上面那段就盖到了，不用重复列。 */
+	.enable-card-border .blog-changelog-card,
+	.enable-card-border .blog-changelog-pager,
+	.enable-card-border .blog-changelog-pager__num,
+	.enable-card-border .blog-changelog-pager__step {
+		border: var(--card-border-width) solid var(--card-border-color);
+	}
 </style>
