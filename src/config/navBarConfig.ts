@@ -78,9 +78,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// Steam 游戏库（数据由 GitHub Actions 定时写入快照）
 			{
-				name: "游戏库",
+				name: "Steam 游戏库",
 				url: "/steam/",
-				icon: "material-symbols:sports-esports",
+				icon: "fa7-brands:steam",
 			},
 		],
 	});

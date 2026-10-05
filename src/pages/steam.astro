@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import steamConfig from "@/config/steamConfig";
 import rawSnapshot from "@/data/steam-snapshot.json";
@@ -88,10 +89,13 @@ const stats = [
 ];
 ---
 
-<MainGridLayout title="游戏库" description="Steam 游戏库与游玩时长统计">
+<MainGridLayout title="Steam 游戏库" description="Steam 游戏库与游玩时长统计">
 	<div class="steam-page">
 		<header class="steam-page__header">
-			<h1 class="steam-page__title">游戏库</h1>
+			<h1 class="steam-page__title">
+				<Icon name="fa7-brands:steam" class="steam-page__title-icon" />
+				Steam 游戏库
+			</h1>
 			<p class="steam-page__subtitle">
 				Steam 数据由 GitHub Actions 定时同步，每天更新一次
 			</p>
@@ -250,9 +254,17 @@ const stats = [
 	}
 
 	.steam-page__title {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 		font-size: 1.5rem;
 		font-weight: 600;
 		margin: 0;
+	}
+
+	.steam-page__title-icon {
+		font-size: 1.35rem;
+		color: var(--primary);
 	}
 
 	.steam-page__subtitle,
