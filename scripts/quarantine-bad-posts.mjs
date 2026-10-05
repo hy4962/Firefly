@@ -8,8 +8,8 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 
-const POSTS_DIR = "src/content/posts";
-const QUARANTINE_DIR = "src/content/_quarantine";
+const POSTS_DIR = "content/posts";
+const QUARANTINE_DIR = "content/_quarantine";
 
 if (!fs.existsSync(QUARANTINE_DIR)) {
 	fs.mkdirSync(QUARANTINE_DIR, { recursive: true });
