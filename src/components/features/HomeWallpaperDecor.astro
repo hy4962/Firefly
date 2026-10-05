@@ -712,9 +712,58 @@ const stickerToggle = config.stickerToggle;
             });
         };
 
+        // ========== 窄屏：卡片给下滑箭头让路 ==========
+        // 卡片在手机端是垂直居中的（top:50%），下滑箭头钉在底部（≤1023px 时 bottom:10rem）。
+        // 屏幕一矮，卡片底边 —— 连同挂在面板下方那排社交标签（socials 的 margin-bottom:-49px）
+        // —— 就会搭到箭头头上；而装饰层 z-index(25) 比箭头(10) 高，看起来就是箭头被卡片糊掉一截。
+        // 这里按实测把卡片整体上抬「刚好够」的量：屏够高时算出来是 0，等于没改。
+        // 不写死在 CSS 里是因为卡片高度会随标题换行 / 导航条数变，写死的常数迟早不够用。
+        //
+        // 量尺寸一律走布局数据（容器高度、offsetHeight），不用 getBoundingClientRect：
+        // 入场动画正在跑时 rect 里混着 transform 的位移与缩放，量出来会偏大或偏小。
+        const CARD_ARROW_GAP = 12; // 卡片视觉底边与箭头之间至少留的净空（px）
+
+        const applyMobileCardLift = (decor) => {
+            const card = decor.querySelector(".home-wallpaper-card");
+            if (!(card instanceof HTMLElement)) return;
+            const reset = () => card.style.setProperty("--home-wallpaper-card-lift", "0px");
+            const socials = decor.querySelector(".home-wallpaper-card__socials");
+            const arrow = document.getElementById("scroll-down-indicator");
+            // 宽屏箭头在 bottom:5rem，卡片够不着；banner 模式下箭头不显示（高度为 0）
+            if (
+                !window.matchMedia("(max-width: 1023px)").matches ||
+                !(socials instanceof HTMLElement) ||
+                !(arrow instanceof HTMLElement) ||
+                arrow.getBoundingClientRect().height < 1
+            ) {
+                reset();
+                return;
+            }
+
+            const decorRect = decor.getBoundingClientRect();
+            if (decorRect.height < 1) {
+                reset();
+                return;
+            }
+            // 换到装饰层坐标系再比，滚动 / 页面偏移都不影响
+            const arrowTop = arrow.getBoundingClientRect().top - decorRect.top;
+            // top:50% 的真相：卡片布局中心就是容器高度的一半（与动画 transform 无关）
+            const center = decorRect.height / 2;
+            const panelBottom = center + card.offsetHeight / 2;
+            const visualBottom = panelBottom + socials.offsetHeight; // 标签垂到面板之外那一截
+            const lift = Math.max(0, visualBottom + CARD_ARROW_GAP - arrowTop);
+            // 兜一下：抬太狠会顶进导航栏，宁可留一点重叠也别把卡片推出画面
+            const cardTop = center - card.offsetHeight / 2;
+            const maxLift = Math.max(0, cardTop - Math.max(56, decorRect.height * 0.08));
+            card.style.setProperty("--home-wallpaper-card-lift", `${Math.round(Math.min(lift, maxLift))}px`);
+        };
+
         const bindMobileStickerLayout = (decor) => {
             const mediaQuery = window.matchMedia("(max-width: 767px)");
             const applyLayout = () => {
+                // 先让卡片把箭头让开，再按「已经让开」的卡片底边去排贴纸 —— 顺序反了
+                // 贴纸会挤在旧位置，卡片一抬就穿帮
+                applyMobileCardLift(decor);
                 if (mediaQuery.matches) {
                     // 同步执行：读 rect 会强制布局，无需 rAF；
                     // rAF 在后台标签页不触发会导致布局不生效
@@ -2145,6 +2194,16 @@ const stickerToggle = config.stickerToggle;
             width: 2.2rem;
             height: 2.2rem;
             font-size: 0.92rem;
+        }
+    }
+
+    /* 窄屏：卡片抬升量（--home-wallpaper-card-lift 由 applyMobileCardLift 按实测写入）。
+       只动 top，不碰 transform —— 卡片的入场与收起动画都在 transform 上，抢了会打起来。
+       变量没写入时（无 JS / 屏够高）calc 结果就是原来的 top:50%，等于没改。
+       断点跟 ↑ 上方箭头那条 bottom:10rem 的媒体查询对齐（都是 ≤1023px）。 */
+    @media (max-width: 1023px) {
+        .home-wallpaper-card {
+            top: calc(50% - var(--home-wallpaper-card-lift, 0px));
         }
     }
 
