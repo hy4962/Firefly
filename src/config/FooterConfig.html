@@ -712,6 +712,17 @@
 		border: var(--card-border-width) solid var(--card-border-color);
 	}
 
+	/* 同一页顶部那两个：招牌的「随机一篇文章」卡（.moments-random-article）和
+	   「未订阅的站点」提示条（.moments-unsubscribed），原本都是 1px 的 primary 染色边。
+	   随机文章卡本来就有一圈会转的 conic-gradient 光束边（它的 ::after，inset:-1px、
+	   画在卡片外缘那 1px 上），跟这条 2px 描边是叠着的 —— 光束照样会扫过，
+	   只是在透明的那 300 多度上露出来的是黑色描边。
+	   .moments-stats 是纯文字、.moments-note 只有一条 border-top 分隔线，都不是卡片，不动。 */
+	.enable-card-border .moments-random-article,
+	.enable-card-border .moments-unsubscribed {
+		border: var(--card-border-width) solid var(--card-border-color);
+	}
+
 	/* ── 上游页面 / 组件里自己画描边的卡片 ───────────────────────────
 	   下面这些类都在**上游文件**里（与 upstream/master 零差异，不能改），
 	   而且描边多数是 Tailwind 工具类画的（border + border-(--line-divider)，

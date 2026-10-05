@@ -68,7 +68,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "视觉",
-				text: "自建页逐个补齐：朋友圈 /moments/ 的文章卡片 .moment-card 原本是 1px 的 --line-divider，而「推荐友链」「本站主理人」两种变体各自还带金色 / 蓝色描边，现在连同变体一起换成纯黑（暗色纯白），身份仍由背景色与角标区分；代价是悬停时边框不再变主题色，反馈改由位移和阴影承担",
+				text: "自建页逐个补齐：朋友圈 /moments/ 的文章卡片 .moment-card 原本是 1px 的 --line-divider，而「推荐友链」「本站主理人」两种变体各自还带金色 / 蓝色描边，现在连同变体一起换成纯黑（暗色纯白），身份仍由背景色与角标区分；同页顶部那张招牌的「随机一篇文章」卡（.moments-random-article，带会转的光束边）和「未订阅的站点」提示条（.moments-unsubscribed）原本也是 1px 染色边，一并收进来；代价是悬停时边框不再变主题色，反馈改由位移和阴影承担",
 			},
 			{
 				category: "视觉",
