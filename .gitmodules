@@ -1,0 +1,3 @@
+[submodule "content"]
+	path = content
+	url = https://github.com/hy4962/firefly-content.git
