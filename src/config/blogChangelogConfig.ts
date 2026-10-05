@@ -30,6 +30,34 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.28",
+		title: "内容与主题分离",
+		date: "2026-10-05",
+		summary:
+			"把文章从主题仓库里搬出去单独立了个私有仓库：主仓库从此只留主题代码，合并上游不用再为文章目录打架，写了一半的草稿也不会躺在公开历史里",
+		description:
+			"文章和主题代码原来住在同一个仓库（src/content），而上游更新很勤——示例文章、文档、demo 项目经常顺带一起改，每次 merge 都在这个目录上解冲突；加上仓库是公开的，没写完的草稿也跟着暴露在历史里。这次做了内容分离：文章迁到独立的私有仓库，构建前由 scripts/sync-content.mjs 从 CONTENT_REPO_URL 浅克隆到 src/site-content/ 再编译。中途换过一次方案——先按最正统的做法试了 git submodule，推送后才发现 Vercel 官方明确不支持私有 submodule（构建阶段直接失败），改成构建时同步。另外踩了两个坑：内容目录一度放在仓库根，导致主题的图片解析（ImageWrapper.astro 里写死扫 src/ 的 import.meta.glob）扫不到图，所有文章封面渲染成空白；以及构建平台的环境变量里混进一个换行符把 token 截断——Vercel 报 url contains a newline，Cloudflare 报 Invalid username or token，其实是同一个病根。最后补上 Deploy Hook：内容仓库推送时由 Actions 调用两个平台的 hook 触发重新构建。",
+		items: [
+			{
+				category: "维护",
+				text: "文章迁至独立私有仓库 hy4962/firefly-content；主仓库 src/site-content/ 进 .gitignore，git ls-files 已归零，主仓库只保留主题代码与配置",
+			},
+			{
+				category: "内容",
+				text: "新增 scripts/sync-content.mjs：构建前从 CONTENT_REPO_URL 浅克隆内容（git clone --depth=1），本地已有内容时自动跳过，日志对 URL 脱敏并清理值中的空白字符",
+			},
+			{
+				category: "维护",
+				text: "Vercel（vercel.json 的 buildCommand）与 Cloudflare（面板里的构建命令）都在 pnpm build 前执行同步脚本，两个平台均需配置环境变量 CONTENT_REPO_URL",
+			},
+			{
+				category: "部署",
+				text: "内容仓库新增 .github/workflows/deploy.yml：push 后调用 Vercel Deploy Hook 与 Cloudflare 部署挂链，文章推上去即自动重新构建上线",
+			},
+		],
+		tags: ["博客", "Git", "部署", "私有仓库"],
+	},
+	{
 		version: "V1.27",
 		title: "首页卡片让位下滑箭头",
 		date: "2026-10-05",
