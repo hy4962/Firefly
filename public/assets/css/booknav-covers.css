@@ -1,0 +1,102 @@
+/**
+ * 书签导航卡片悬停预览封面。
+ *
+ * 由 /assets/js/booknav-covers.js 在进入 /booknav/ 时动态注入 ——
+ * 不做全站 <link>，免得其他页面白等一次样式表往返。
+ *
+ * 选择器都带 .booknav-grid 前缀，只碰书签导航页，不影响主题其他角落。
+ *
+ * 两点必须和页面现状对齐，改页面的话这里要跟着改：
+ *   1. .booknav-card 原本是 flex 横排（图标 + 文字），这里改成 grid，
+ *      才能让封面插成独占一整行的第一行；
+ *   2. 卡片的 padding 是 Tailwind 的 p-3（0.75rem），封面靠负边距顶到卡片边缘，
+ *      数值就是它 —— 改成 p-2.5 之类的要同步改下面两个 margin 值。
+ */
+
+.booknav-grid {
+	/* 悬停展开时只让当前卡片长高，别把同行邻居一起拉变形 */
+	align-items: start;
+}
+
+.booknav-grid .booknav-card {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	/* gap-3 在 grid 下会同时给出行间距，这里改成只留列间距 */
+	column-gap: 0.75rem;
+	row-gap: 0;
+}
+
+.booknav-grid .booknav-card > .ff-booknav-cover {
+	grid-column: 1 / -1;
+	position: relative;
+	display: block;
+	height: 0;
+	margin: -0.75rem -0.75rem 0;
+	opacity: 0;
+	overflow: hidden;
+	transition:
+		height 0.32s ease,
+		opacity 0.3s ease,
+		margin-bottom 0.32s ease;
+}
+
+.booknav-grid .booknav-card:hover > .ff-booknav-cover,
+.booknav-grid .booknav-card:focus-visible > .ff-booknav-cover,
+.booknav-grid .booknav-card:focus-within > .ff-booknav-cover {
+	height: 7rem;
+	margin-bottom: 0.75rem;
+	opacity: 1;
+}
+
+.booknav-grid .booknav-card > .ff-booknav-cover .ff-booknav-cover__img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	/* 截图取顶部落到导航区那一段，比居中裁剪更像「首页」 */
+	object-position: top center;
+	transition: opacity 0.3s ease;
+}
+
+.booknav-grid .booknav-card > .ff-booknav-cover.is-loading .ff-booknav-cover__img {
+	opacity: 0;
+}
+
+/* 图挂了就当没有这层，卡片回到主题原样 */
+.booknav-grid .booknav-card > .ff-booknav-cover.is-error {
+	display: none;
+}
+
+.booknav-grid .booknav-card > .ff-booknav-cover.is-loading::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		90deg,
+		color-mix(in oklab, var(--primary) 6%, transparent) 0%,
+		color-mix(in oklab, var(--primary) 14%, transparent) 50%,
+		color-mix(in oklab, var(--primary) 6%, transparent) 100%
+	);
+	background-size: 200% 100%;
+	animation: ff-booknav-cover-shimmer 1.1s linear infinite;
+}
+
+@keyframes ff-booknav-cover-shimmer {
+	from {
+		background-position: 200% 0;
+	}
+	to {
+		background-position: -200% 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.booknav-grid .booknav-card > .ff-booknav-cover,
+	.booknav-grid .booknav-card > .ff-booknav-cover .ff-booknav-cover__img {
+		transition: none;
+	}
+	.booknav-grid .booknav-card > .ff-booknav-cover.is-loading::before {
+		animation: none;
+	}
+}

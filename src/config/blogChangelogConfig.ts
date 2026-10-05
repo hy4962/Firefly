@@ -30,6 +30,38 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.31",
+		title: "书签卡片悬停预览",
+		date: "2026-10-05",
+		summary:
+			"书签导航页的卡片也做了悬停预览：鼠标放上去展开一张该站点的首页截图，跟友链页一样，离线截好存在站内",
+		description:
+			"友链页早就有悬停预览封面（离线截好、存在本站的 webp），这次把同一套搬到 /booknav/，做法完全同构：scripts/generate-booknav-covers.ts 用本机 chrome-headless-shell 以 1280×512 视口截图，sharp 压成 640 宽 webp 进 public/assets/images/booknav/covers/，同时写 src/data/booknav-covers.json 清单；src/pages/api/booknav-covers.json.ts 在构建期把清单转成静态 JSON；public/assets/js/booknav-covers.js 进页面后拉清单、按 href 匹配、给命中的卡片插一层封面，而且真正悬停过才给 img 赋 src —— 平时对 /booknav/ 零额外流量。页脚那段按需加载器顺手改成了数组配置，以后哪页还要加同款预览，补一条就行。和友链不一样的地方有三个：一是书签有 64 条、同一个域名下挂了好几条（github.com 底下就有七个仓库），只按域名取文件名会互相覆盖，所以文件名带上路径，再撞就补 -2/-3；二是书签里很多是工具页、控制台页，截图直接打那个 URL 反而是对的，不做「回退到首页」处理；三是这次给截图加了校验 —— 有些站点（Cloudflare 那一批）会回一张排版完整的 403 页，截出来是张白底黑字的「正常图」，悬停展开就露馅，所以截图时顺手加上 --dump-dom 把渲染后的 HTML 打到 stdout（它和 --screenshot 能同时用，一次请求两样都拿），在前 4000 字符里匹配拦截页特征就丢弃，另外用 sharp 算通道标准差，整页纯色的空白图也丢掉。64 条里 56 条拿到了能看的封面，剩下 8 条是 Cloudflare 挑战页、纯色空白页或直接超时；脚本会把失败清单打出来，用 --only=xxx 可以单独补。脚本支持增量（文件已存在就跳过），--force 才全量重来。",
+		items: [
+			{
+				category: "视觉",
+				text: "书签导航 /booknav/ 的卡片支持悬停展开站点首页截图：卡片从 flex 改成 grid，封面独占一整行，高度 0 → 7rem 展开；图片首屏不加载，真悬停/聚焦过才请求",
+			},
+			{
+				category: "素材",
+				text: "新增 scripts/generate-booknav-covers.ts：从 booknavConfig 取全部书签（用页面同一套 enabled/weight 筛选），chrome-headless-shell 截图 + sharp 转 webp，产物落 public/assets/images/booknav/covers/，清单写 src/data/booknav-covers.json；文件名带路径段的 slug，同域名多条不会互相覆盖；支持增量、--force、--limit=N、--only=关键字",
+			},
+			{
+				category: "修复",
+				text: "截图加了拦截校验：命令行同时带 --dump-dom 拿渲染后的 HTML，前 4000 字符命中 Cloudflare 403 / 验证页特征就丢弃；再用 sharp 算通道标准差，纯色空白页也丢弃 —— 否则悬停展开会是一张白底黑字的报错页",
+			},
+			{
+				category: "维护",
+				text: "新增 src/pages/api/booknav-covers.json.ts（构建期 prerender 的静态 JSON）与 public/assets/js/booknav-covers.js、public/assets/css/booknav-covers.css；页脚的按需加载器改成数组配置，/friends/ 与 /booknav/ 共用一份逻辑",
+			},
+			{
+				category: "维护",
+				text: "全程新增独立文件，未改动任何上游文件（booknav.css / booknav.astro 与上游保持零差异），合并上游不受影响",
+			},
+		],
+		tags: ["博客", "书签导航", "视觉", "自动化", "性能"],
+	},
+	{
 		version: "V1.30",
 		title: "留言板下移留白",
 		date: "2026-10-05",

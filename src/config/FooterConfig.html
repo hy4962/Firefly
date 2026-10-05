@@ -332,26 +332,45 @@
 </script>
 
 <script>
-	// ===== 友链卡片悬停预览：按需加载 =====
-	// 只在 /friends/ 才去拉 /assets/js/friends-covers.js，其他页面只背这十几行。
+	// ===== 卡片悬停预览脚本：按需加载 =====
+	// 只有进到对应页面才去拉那页的脚本，其他页面只背这十几行。
 	// 之所以放页脚全站引入：页脚在 #swup-container 之外，切页不会重跑，
-	// 用它挂住 swup 事件，才能保证从首页无刷新跳进友链页时预览照样生效。
+	// 用它挂住 swup 事件，才能保证从首页无刷新跳进去时预览照样生效。
+	// 以后哪页还要加同款预览，往 PREVIEW_SCRIPTS 里补一条就行。
 	(function () {
-		function loadFriendCovers() {
-			if (!/^\/friends\/?$/.test(window.location.pathname)) return;
-			if (document.getElementById("ff-friend-covers-js")) return;
-			var script = document.createElement("script");
-			script.id = "ff-friend-covers-js";
-			script.src = "/assets/js/friends-covers.js";
-			script.async = true;
-			document.head.appendChild(script);
+		var PREVIEW_SCRIPTS = [
+			{
+				path: /^\/friends\/?$/,
+				id: "ff-friend-covers-js",
+				src: "/assets/js/friends-covers.js",
+			},
+			{
+				path: /^\/booknav\/?$/,
+				id: "ff-booknav-covers-js",
+				src: "/assets/js/booknav-covers.js",
+			},
+		];
+
+		function loadPreviewScripts() {
+			var pathname = window.location.pathname;
+			for (var i = 0; i < PREVIEW_SCRIPTS.length; i++) {
+				var entry = PREVIEW_SCRIPTS[i];
+				if (!entry.path.test(pathname)) continue;
+				if (document.getElementById(entry.id)) continue;
+				var script = document.createElement("script");
+				script.id = entry.id;
+				script.src = entry.src;
+				script.async = true;
+				document.head.appendChild(script);
+			}
 		}
-		document.addEventListener("astro:page-load", loadFriendCovers);
-		document.addEventListener("swup:page:view", loadFriendCovers);
+
+		document.addEventListener("astro:page-load", loadPreviewScripts);
+		document.addEventListener("swup:page:view", loadPreviewScripts);
 		if (document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", loadFriendCovers, { once: true });
+			document.addEventListener("DOMContentLoaded", loadPreviewScripts, { once: true });
 		} else {
-			loadFriendCovers();
+			loadPreviewScripts();
 		}
 	})();
 </script>
