@@ -113,9 +113,6 @@
 	html[data-wallpaper-mode="banner"] body:not(.is-home) .guestbook-page,
 	html[data-wallpaper-mode="fullscreen"] body:not(.is-home) .guestbook-page {
 		margin-top: 3.5rem;
-		/* 高度放大到原来的 1.2 倍（原本是 100dvh − 4.5rem）。
-		   只在桌面端生效；移动端保持占满一屏，放大只会白白多出滚动。 */
-		height: calc((100dvh - var(--guestbook-viewport-offset)) * 1.2);
 	}
 }
 
