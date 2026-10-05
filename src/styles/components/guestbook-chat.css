@@ -2225,6 +2225,12 @@ dialog.guestbook-announcement-modal[open] {
 
 	.guestbook-chat__conversation {
 		height: 100%;
+		/* 让开浮层式 header。
+		   移动端把 __header 改成 position:absolute 浮在聊天区上方（见上方规则），
+		   它已不在文档流里，所以这里必须自己垫出它那份高度
+		   （0.375rem × 2 padding + 2.5rem 按钮 = 3.25rem）；
+		   否则公告栏与首条消息会被左上角「留言板」、右上角「成员」两个按钮压住。 */
+		padding-top: 3.25rem;
 	}
 
 	.guestbook-chat__sidebar {
@@ -2260,10 +2266,9 @@ dialog.guestbook-announcement-modal[open] {
 		background: var(--guestbook-overlay);
 	}
 
+	/* 公告栏是 position:static 的布局内元素，原来这里写的 top/left/right 全部无效
+	   （static 下不生效），已删除；让开浮层 header 的活交给上面的 __conversation padding-top。 */
 	.guestbook-chat__announcement-bar {
-		top: 3.5rem;
-		left: var(--space-3);
-		right: var(--space-3);
 		min-height: 2.5rem;
 		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
 	}
