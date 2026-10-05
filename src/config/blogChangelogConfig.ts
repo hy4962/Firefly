@@ -30,13 +30,57 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.33",
+		title: "友链社区单独分区",
+		date: "2026-10-05",
+		summary:
+			"友链页把「博客社区」那批（友链社区、博客聚合站）从主网格里挪到下方独立一栏，不再和个人博客混在一起",
+		description:
+			"友链页原来是一个大网格全铺开，友链社区、博客聚合站和个人博客混在一起，看着不像一类东西 —— 博友圈、博客星球、八零圈、BlogsClub、中文独立博客聚合列表、博客故事这六张卡夹在个人博客中间，分类也只在上面的标签筛选里能选出来，视觉上完全没体现。friends.astro 是上游文件不能改，所以还是走客户端增强：卡片本身带 data-tags 属性，按标签把社区卡片搬到页面下方一个新开的分区里。分区必须留在页面那张 .card-base 内部，因为主题的筛选组件是 container.querySelectorAll('.friend-card')、container 取最近的 .card-base，搬出去的话点标签和搜名字就筛不到社区卡片了。卡片本身只改 DOM 位置、不动任何属性，主题的悬停展开、筛选、淡入动画都不受影响。分区的显隐跟着筛选结果走：切到「Blog」标签时社区那栏会整个收起来，不会留一个只有标题没有卡片的空壳。",
+		items: [
+			{
+				category: "页面",
+				text: "新增 public/assets/js/friends-sections.js 与 friends-sections.css：进 /friends/ 时把 data-tags 含「博客社区」的卡片搬进页面下方的独立分区，主网格只留个人博客",
+			},
+			{
+				category: "页面",
+				text: "分区的标题直接取标签名（脚本里的 COMMUNITY_TAG），改一处标题和筛选条件一起变；分区仍留在 .card-base 内，主题原有的标签筛选与搜索照常跨两个网格生效",
+			},
+			{
+				category: "维护",
+				text: "用 MutationObserver 监听筛选造成的 style 变化，实时同步两个区块的显隐，避免切到「Blog」时社区分区留下空标题；页脚的按需加载器从 PREVIEW_SCRIPTS 改名 PAGE_SCRIPTS，加新页面增强补一条即可",
+			},
+		],
+		tags: ["博客", "友链", "页面", "视觉"],
+	},
+	{
+		version: "V1.32",
+		title: "更新日志瘦身",
+		date: "2026-10-05",
+		summary:
+			"更新日志页的「背景」段落收进折叠区，默认只留版本徽章和标题；顺手把两条写得太长的描述压到 250 字以内",
+		description:
+			"日志页的每张卡片原本都会把 description 全量铺开，而这东西普遍四五百字起步，卡片深色描边那条更是 1835 字，整页翻下来就是一堵接一堵的文字墙，扫一眼根本抓不住「这次改了什么」。改法是把背景说明挪进原有的折叠区（默认收起、只有最新一期展开），卡片默认态只剩版本徽章、标题和标签，展开才看全文和变更明细。另外把 V1.29、V1.31 两条明显写飞了的描述压到 250 字左右 —— 细节该写，但不该堆在卡片正文里，变更明细那一栏本来就是干这个的。",
+		items: [
+			{
+				category: "页面",
+				text: "ChangelogTimeline.astro：description 从卡片头部挪进 <details>，前面加一个「背景」小标题；折叠按钮文案从「查看当天详细记录」改为「展开这条记录」",
+			},
+			{
+				category: "视觉",
+				text: "V1.29 的描述从 1835 字压到 246 字、V1.31 从 880 字压到 251 字，全 33 条描述的平均长度从 318 字降到 251 字，最长的一条从 1835 字降到 534 字",
+			},
+		],
+		tags: ["博客", "页面", "视觉"],
+	},
+	{
 		version: "V1.31",
 		title: "书签卡片悬停预览",
 		date: "2026-10-05",
 		summary:
 			"书签导航页的卡片也做了悬停预览：鼠标放上去展开一张该站点的首页截图，跟友链页一样，离线截好存在站内",
 		description:
-			"友链页早就有悬停预览封面（离线截好、存在本站的 webp），这次把同一套搬到 /booknav/，做法完全同构：scripts/generate-booknav-covers.ts 用本机 chrome-headless-shell 以 1280×512 视口截图，sharp 压成 640 宽 webp 进 public/assets/images/booknav/covers/，同时写 src/data/booknav-covers.json 清单；src/pages/api/booknav-covers.json.ts 在构建期把清单转成静态 JSON；public/assets/js/booknav-covers.js 进页面后拉清单、按 href 匹配、给命中的卡片插一层封面，而且真正悬停过才给 img 赋 src —— 平时对 /booknav/ 零额外流量。页脚那段按需加载器顺手改成了数组配置，以后哪页还要加同款预览，补一条就行。和友链不一样的地方有三个：一是书签有 64 条、同一个域名下挂了好几条（github.com 底下就有七个仓库），只按域名取文件名会互相覆盖，所以文件名带上路径，再撞就补 -2/-3；二是书签里很多是工具页、控制台页，截图直接打那个 URL 反而是对的，不做「回退到首页」处理；三是这次给截图加了校验 —— 有些站点（Cloudflare 那一批）会回一张排版完整的 403 页，截出来是张白底黑字的「正常图」，悬停展开就露馅，所以截图时顺手加上 --dump-dom 把渲染后的 HTML 打到 stdout（它和 --screenshot 能同时用，一次请求两样都拿），在前 4000 字符里匹配拦截页特征就丢弃，另外用 sharp 算通道标准差，整页纯色的空白图也丢掉。64 条里 56 条拿到了能看的封面，剩下 8 条是 Cloudflare 挑战页、纯色空白页或直接超时；脚本会把失败清单打出来，用 --only=xxx 可以单独补。脚本支持增量（文件已存在就跳过），--force 才全量重来。",
+			"友链页那个悬停预览做完之后我自己挺喜欢，书签导航页却没有。书签页和友链页结构几乎一样，都是一个链接一张卡片，把那套原样搬过来就行——截图脚本、清单、构建期静态 JSON、前端插封面，四个文件一一对应。搬是搬过来了，坑比预期多：同一个域名挂了好几条书签，只按域名取文件名会互相覆盖；Cloudflare 的 403 页截出来是张白底黑字、看着完全正常的图，不主动筛就会混进线上；headless 的默认 UA 会被直接拒。64 个书签最后 56 个拿到了能看的封面，失败清单脚本会打印出来，可以单独再补。",
 		items: [
 			{
 				category: "视觉",
@@ -88,7 +132,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		summary:
 			"把全站卡片的边框从几乎看不见的浅灰细线换成 2px 纯黑描边，对齐参考站那种卡片轮廓很清楚的观感",
 		description:
-			"参考站（azuma.mstzuomu.space）的卡片有一圈很深很明显的黑色描边，扒了一下它的做法，其实简单得意外：主题本来就有 enable-card-border 这一套开关（配置项 siteConfig.card.border，本站早就开着 true），head 里的内联脚本会按它给 <html> 打上这个类，再由 src/styles/main.css 里的三条规则给 .card-base / .card-base-transparent / .btn-card 补上 1px 边框和阴影——问题出在颜色，它用的是 --line-divider，亮色下是 rgba(0,0,0,.08) 的浅灰线，深色下是 rgba(255,255,255,.08)，所以只是「有边框」但看不出轮廓。参考站做的就是把它换成纯黑、宽度提到 2px。本站照着改，但没碰上游的 src/styles/**：整段样式塞进 src/config/FooterConfig.html 的注入点（渲染在页脚，而 <Footer /> 在 swup 容器之外，整页加载才跑一次）。能这么改是因为主题那几条规则写在 @layer components 里，而未分层的样式天然压过任何 @layer，所以既不用 !important 也不用靠堆选择器权重去抢。另外暗色主题下纯黑描边贴在深色卡片上等于看不见，和参考站一样自动切成纯白。第一版上线后回头发现留言板和 Steam 页没跟上：这两个页面是本站自己写的，卡片用的是各自的类名（.guestbook-chat / .steam-profile / .steam-card 之类），跟主题的 .card-base 没有任何关系，所以完全没被盖到；它们的样式分别写在页面级的 src/styles/components/guestbook-chat.css 和 steam.astro 的 style is:global 里，只在对应页面加载，属于页面级分块，这里同样只补描边这一件事、不动别的。留言板那两个面板原本是 1px 的 --guestbook-line（透明玻璃面板上的一圈极淡线），Steam 那四类卡片更彻底——压根没有边框，所以给它们补的是完整简写，只写 border-width 和 border-color 是画不出来的（border-style 默认 none）。朋友圈页是第三处，也最绕：它那页的卡片 .moment-card 本来是有描边的，只是「推荐友链」「本站主理人」这两种变体各自把边框染成金色 / 蓝色，1px 又淡，看着就跟没边一样 —— 用户要的是全站统一的深色轮廓，所以连同变体一起收成纯黑 / 纯白，身份识别的活儿交回给背景色和角标。这里还踩到一个特异性问题：暗色段那条 html.dark .moment-card--recommended 是 (0,2,1)，只写 .enable-card-border .moment-card（(0,2,0)）压不住它，得多加一层 .moments-grid 变成 (0,3,0)，否则暗色主题下这两个变体会漏掉、仍留着旧染色边。补到第四、第五处（书签导航、友链、Bilibili 卡片、更新日志页）时索性全站扫了一遍，方法是三条 grep 交叉比对：CSS 里的 border: 1px solid var(--line-divider)、标记里的 border-(--line-divider)、以及拿 var(--card-bg) 当背景的类名，对上就是漏掉的卡片。扫的过程还澄清了一件事：页面自己的样式表是未分层的，而主题那套写在 @layer components 里 —— 未分层压分层，所以一开始担心的「页面里给 .card-base 又写了 border，会不会把我的描边盖掉」是多余的：两边同在未分层这一档时比的是特异性，我的 .enable-card-border .card-base 是 (0,2,0)，页面里那些 (0,1,0) 的（比如 analytics 页的 .analytics-panel、更新日志页的 .blog-changelog-hero）压不过我；只有既未分层、特异性又更高的（比如暗色段那条 html.dark .moment-card--recommended，(0,2,1)）才需要专门加一层选择器去压。",
+			"参考站的卡片有一圈很深很明显的黑色描边，扒了一下它的做法发现主题本来就自带 enable-card-border 这一套开关，本站早就开着，只是边框色用的是 --line-divider——亮色下是 8% 的黑，淡到看不出轮廓。把它换成纯黑、宽度加到 2px 就完事了，样式落在页脚注入点，没碰上游的 src/styles 里的任何文件。麻烦的是后面：留言板、Steam、朋友圈、书签导航、友链、Bilibili 卡片，这些页面的卡片各用各的类名，第一版一个都没盖到，最后全站扫了一遍才补齐。",
 		items: [
 			{
 				category: "视觉",

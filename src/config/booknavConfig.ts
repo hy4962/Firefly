@@ -25,56 +25,6 @@ export const booknavPageConfig: BooknavPageConfig = {
 // 每个数组项是一个分类组，分类组内的 items 是该分类下的书签
 export const booknavConfig: BooknavGroup[] = [
 	{
-		id: "dev",
-		name: "开发",
-		icon: "material-symbols:code-rounded",
-		desc: "写代码时离不开的站点",
-		weight: 100,
-		items: [
-			{
-				title: "GitHub",
-				url: "https://github.com",
-				desc: "全球最大的代码托管平台",
-				// icon 字段可以使用 astro-icon 图标库的图标名称
-				// 也可以使用图片 URL 和本地图片路径
-				// 不填则会通过接口自动获取目标站点的 favicon 图标（需要在上面配置）
-				icon: "fa7-brands:github",
-				weight: 10,
-			},
-			{
-				title: "MDN Web Docs",
-				url: "https://developer.mozilla.org",
-				desc: "最权威的 Web 技术文档",
-				weight: 9,
-			},
-			{
-				title: "Astro",
-				url: "https://astro.build",
-				desc: "内容驱动型网站的 Web 框架",
-				weight: 8,
-			},
-			{
-				title: "Svelte",
-				url: "https://svelte.dev",
-				desc: "把组件编译成高效原生 JS 的框架",
-				weight: 7,
-			},
-			{
-				title: "Tailwind CSS",
-				url: "https://tailwindcss.com",
-				desc: "一个功能强大且灵活的 CSS 框架",
-				weight: 6,
-			},
-			{
-				title: "Firefly",
-				url: "https://github.com/hy4962/Firefly",
-				desc: "Firefly 博客源码仓库",
-				icon: "fa7-brands:github",
-				weight: 5,
-			},
-		],
-	},
-	{
 		id: "opensource",
 		name: "项目",
 		icon: "material-symbols:folder-open-rounded",

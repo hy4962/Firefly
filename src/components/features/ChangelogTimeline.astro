@@ -129,16 +129,22 @@ const kindVariant = (index: number) =>
                             <span>{entry.items.length} 条记录</span>
                         </div>
                         <h2>{entry.summary}</h2>
-                        <p>{entry.description}</p>
                     </header>
-                    {/* 默认展开态交给 JS 控制：仅最新一期展开，其余收起（见文件末尾脚本） */}
+                    {/* 背景说明一起收进折叠区。
+                        description 普遍四五百字起，V1.29 那条更是 1800 多字，全铺在卡片里
+                        整页就是一堵文字墙（2026-10-05 反馈「观感极差」）。现在默认态只留
+                        版本徽章 + 标题，展开才看全文，展开逻辑沿用下面这段脚本。 */}
                     <details class="blog-changelog-details" data-changelog-details>
                         <summary>
-                            <span>查看当天详细记录</span>
+                            <span>展开这条记录</span>
                             <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true">
                                 <path fill="currentColor" d="M11.625 14.913q-.175-.063-.325-.213l-4.6-4.6q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l3.9 3.9l3.9-3.9q.275-.275.7-.275t.7.275t.275.7t-.275.7l-4.6 4.6q-.15.15-.325.213t-.375.062t-.375-.062"/>
                             </svg>
                         </summary>
+                        <div class="blog-changelog-details__intro">
+                            <h3>背景</h3>
+                            <p>{entry.description}</p>
+                        </div>
                         <div class="blog-change-points">
                             <div class="blog-change-points__column">
                                 {entry.items.filter((_, i) => i % 2 === 0).map((item, i) => (
@@ -589,7 +595,29 @@ const kindVariant = (index: number) =>
         line-height: 1.45;
     }
 
-    .blog-changelog-card__header > p {
+    /* 折叠区里的背景说明（原先是 header 里直接铺的那个 <p>） */
+    .blog-changelog-details__intro {
+        margin: 0.7rem 0 0.15rem;
+    }
+    .blog-changelog-details__intro h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0 0 0.35rem;
+        color: var(--text-color);
+        font-size: 0.7rem;
+        font-weight: 780;
+        letter-spacing: 0.02em;
+    }
+    .blog-changelog-details__intro h3::before {
+        width: 0.9rem;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--primary);
+        content: "";
+        opacity: 0.7;
+    }
+    .blog-changelog-details__intro p {
         margin: 0;
         color: var(--content-meta);
         font-size: 0.76rem;

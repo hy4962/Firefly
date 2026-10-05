@@ -1,0 +1,76 @@
+/**
+ * 友链页「博客社区」分区样式。
+ *
+ * 由 /assets/js/friends-sections.js 在进入 /friends/ 时注入，
+ * 选择器都带 .friends-community / .friends-grid 前缀，不影响别处。
+ */
+
+.friends-community {
+	margin-top: 1.75rem;
+	padding-top: 1.1rem;
+	border-top: 1px dashed var(--line-divider);
+}
+
+.friends-community[hidden] {
+	display: none;
+}
+
+.friends-community__head {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 0.15rem 0.6rem;
+	margin-bottom: 0.9rem;
+	padding: 0 0.15rem;
+}
+
+.friends-community__title {
+	position: relative;
+	padding-left: 0.6rem;
+	color: var(--text-color);
+	font-size: 0.9rem;
+	font-weight: 780;
+	letter-spacing: -0.01em;
+	line-height: 1.4;
+}
+
+.friends-community__title::before {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 3px;
+	height: 0.95em;
+	border-radius: 3px;
+	background: var(--primary);
+	content: "";
+	transform: translateY(-50%);
+}
+
+.friends-community__desc {
+	color: var(--content-meta);
+	font-size: 0.74rem;
+	line-height: 1.6;
+}
+
+/* 分区里的网格：和主网格同一套列宽，只是上下留白收一点 */
+.friends-grid--community {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+	.friends-community {
+		margin-top: 1.25rem;
+		padding-top: 0.9rem;
+	}
+
+	.friends-community__head {
+		margin-bottom: 0.7rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.friends-community {
+		scroll-behavior: auto;
+	}
+}

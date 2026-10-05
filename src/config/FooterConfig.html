@@ -332,17 +332,23 @@
 </script>
 
 <script>
-	// ===== 卡片悬停预览脚本：按需加载 =====
+	// ===== 页面增强脚本：按需加载 =====
 	// 只有进到对应页面才去拉那页的脚本，其他页面只背这十几行。
 	// 之所以放页脚全站引入：页脚在 #swup-container 之外，切页不会重跑，
-	// 用它挂住 swup 事件，才能保证从首页无刷新跳进去时预览照样生效。
-	// 以后哪页还要加同款预览，往 PREVIEW_SCRIPTS 里补一条就行。
+	// 用它挂住 swup 事件，才能保证从首页无刷新跳进去时增强照样生效。
+	// 以后哪页还要加同类增强，往 PAGE_SCRIPTS 里补一条就行。
 	(function () {
-		var PREVIEW_SCRIPTS = [
+		var PAGE_SCRIPTS = [
 			{
 				path: /^\/friends\/?$/,
 				id: "ff-friend-covers-js",
 				src: "/assets/js/friends-covers.js",
+			},
+			{
+				// 友链页分区：把「博客社区」挪到下方独立一栏
+				path: /^\/friends\/?$/,
+				id: "ff-friend-sections-js",
+				src: "/assets/js/friends-sections.js",
 			},
 			{
 				path: /^\/booknav\/?$/,
@@ -351,10 +357,10 @@
 			},
 		];
 
-		function loadPreviewScripts() {
+		function loadPageScripts() {
 			var pathname = window.location.pathname;
-			for (var i = 0; i < PREVIEW_SCRIPTS.length; i++) {
-				var entry = PREVIEW_SCRIPTS[i];
+			for (var i = 0; i < PAGE_SCRIPTS.length; i++) {
+				var entry = PAGE_SCRIPTS[i];
 				if (!entry.path.test(pathname)) continue;
 				if (document.getElementById(entry.id)) continue;
 				var script = document.createElement("script");
@@ -365,12 +371,12 @@
 			}
 		}
 
-		document.addEventListener("astro:page-load", loadPreviewScripts);
-		document.addEventListener("swup:page:view", loadPreviewScripts);
+		document.addEventListener("astro:page-load", loadPageScripts);
+		document.addEventListener("swup:page:view", loadPageScripts);
 		if (document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", loadPreviewScripts, { once: true });
+			document.addEventListener("DOMContentLoaded", loadPageScripts, { once: true });
 		} else {
-			loadPreviewScripts();
+			loadPageScripts();
 		}
 	})();
 </script>

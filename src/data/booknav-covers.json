@@ -29,12 +29,6 @@
 	"https://dash.cloudflare.com/": "/assets/images/booknav/covers/dash-cloudflare-com.webp",
 	"https://vercel.com/": "/assets/images/booknav/covers/vercel-com.webp",
 	"https://fnnas.com/": "/assets/images/booknav/covers/fnnas-com.webp",
-	"https://github.com": "/assets/images/booknav/covers/github-com.webp",
-	"https://developer.mozilla.org": "/assets/images/booknav/covers/developer-mozilla-org.webp",
-	"https://astro.build": "/assets/images/booknav/covers/astro-build.webp",
-	"https://svelte.dev": "/assets/images/booknav/covers/svelte-dev.webp",
-	"https://tailwindcss.com": "/assets/images/booknav/covers/tailwindcss-com.webp",
-	"https://github.com/hy4962/Firefly": "/assets/images/booknav/covers/github-com-hy4962-firefly.webp",
 	"https://github.com/CuteLeaf/Firefly": "/assets/images/booknav/covers/github-com-cuteleaf-firefly.webp",
 	"https://github.com/keleus/BewlyCat": "/assets/images/booknav/covers/github-com-keleus-bewlycat.webp",
 	"https://github.com/Mai-with-u/MaiBot": "/assets/images/booknav/covers/github-com-mai-with-u-maibot.webp",
@@ -54,5 +48,6 @@
 	"https://carbon.now.sh": "/assets/images/booknav/covers/carbon-now-sh.webp",
 	"https://roar.iiilab.com/": "/assets/images/booknav/covers/roar-iiilab-com.webp",
 	"https://docs-firefly.cuteleaf.cn": "/assets/images/booknav/covers/docs-firefly-cuteleaf-cn.webp",
-	"https://www.spaceship.com/zh/": "/assets/images/booknav/covers/www-spaceship-com-zh.webp"
+	"https://www.spaceship.com/zh/": "/assets/images/booknav/covers/www-spaceship-com-zh.webp",
+	"https://www.nekogal.com/": "/assets/images/booknav/covers/www-nekogal-com.webp"
 }
