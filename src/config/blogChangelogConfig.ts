@@ -30,6 +30,30 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.29",
+		title: "卡片深色描边",
+		date: "2026-10-05",
+		summary:
+			"把全站卡片的边框从几乎看不见的浅灰细线换成 2px 纯黑描边，对齐参考站那种卡片轮廓很清楚的观感",
+		description:
+			"参考站（azuma.mstzuomu.space）的卡片有一圈很深很明显的黑色描边，扒了一下它的做法，其实简单得意外：主题本来就有 enable-card-border 这一套开关（配置项 siteConfig.card.border，本站早就开着 true），head 里的内联脚本会按它给 <html> 打上这个类，再由 src/styles/main.css 里的三条规则给 .card-base / .card-base-transparent / .btn-card 补上 1px 边框和阴影——问题出在颜色，它用的是 --line-divider，亮色下是 rgba(0,0,0,.08) 的浅灰线，深色下是 rgba(255,255,255,.08)，所以只是「有边框」但看不出轮廓。参考站做的就是把它换成纯黑、宽度提到 2px。本站照着改，但没碰上游的 src/styles/**：整段样式塞进 src/config/FooterConfig.html 的注入点（渲染在页脚，而 <Footer /> 在 swup 容器之外，整页加载才跑一次）。能这么改是因为主题那几条规则写在 @layer components 里，而未分层的样式天然压过任何 @layer，所以既不用 !important 也不用靠堆选择器权重去抢。另外暗色主题下纯黑描边贴在深色卡片上等于看不见，和参考站一样自动切成纯白。",
+		items: [
+			{
+				category: "视觉",
+				text: "全站卡片描边改为纯黑 2px：.card-base（文章卡片、侧栏组件）、.card-base-transparent、.btn-card（分页与上下篇按钮）统一生效，粗细由 --card-border-width 一处控制，想加粗改这一行即可",
+			},
+			{
+				category: "视觉",
+				text: "暗色主题下描边自动切纯白（--card-border-color 在 html.dark 段覆盖），避免深色卡片上描边看不见",
+			},
+			{
+				category: "维护",
+				text: "样式落在 src/config/FooterConfig.html 的注入点，未改动上游 src/styles/**，合并上游主题更新仍是零冲突",
+			},
+		],
+		tags: ["博客", "CSS", "视觉", "卡片"],
+	},
+	{
 		version: "V1.28",
 		title: "内容与主题分离",
 		date: "2026-10-05",

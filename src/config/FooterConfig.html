@@ -649,3 +649,33 @@
 		}
 	})();
 </script>
+
+<style>
+	/* ===== 卡片深色描边 =====
+	   参考 azuma.mstzuomu.space 的卡片风格：给卡片加一圈明显的纯黑描边。
+	   主题本身已经有 enable-card-border 这一套（siteConfig.card.border = true，
+	   head 里的内联脚本会按它给 <html> 打类、并补上 border 1px + shadow-xs），
+	   只是颜色用的是 --line-divider —— 亮色下 rgba(0,0,0,.08) 的浅灰线，几乎看不见。
+	   所以这里只做两件事：把描边颜色换成纯黑、把宽度加到 2px，其余全部沿用主题。
+	   注入点在页脚（<Footer /> 在 swup 容器之外，整页加载才跑一次），没有改上游 src/styles/**。
+	   主题那几条规则写在 @layer components 里，未分层的本段天然压过它，不需要 !important。 */
+	:root {
+		/* 描边粗细，想更粗/更细改这一行即可 */
+		--card-border-width: 2px;
+		/* 亮色主题：纯黑描边 */
+		--card-border-color: #000;
+	}
+	html.dark {
+		/* 暗色主题下纯黑描边在深色卡片上等于看不见，跟随参考站换成纯白 */
+		--card-border-color: #fff;
+	}
+
+	/* 与主题 .enable-card-border 的三条卡片规则选择器保持一致：
+	   .card-base / .card-base-transparent / .btn-card（分页、上下篇按钮等） */
+	.enable-card-border .card-base,
+	.enable-card-border .card-base-transparent,
+	.enable-card-border .btn-card {
+		border-color: var(--card-border-color);
+		border-width: var(--card-border-width);
+	}
+</style>
