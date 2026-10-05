@@ -14,6 +14,10 @@
 	--guestbook-chat-height: 100%;
 	--guestbook-chat-min-height: 32rem;
 	--guestbook-mobile-dock-clearance: 0.5rem;
+	/* 桌面端留言板顶边与首屏壁纸下沿之间额外留出的空白。
+	   3.5rem 那部分是用来抵掉主题给主内容区的上浮、让面板正好从壁纸下沿开始，
+	   这里是再往下压的距离 —— 觉得贴太紧就调大，只影响 ≥1024px 且有壁纸时。 */
+	--guestbook-banner-gap: 2rem;
 
 	/* ↓ 以下 --guestbook-* 设计令牌原本写在主题的 src/styles/variables.styl 里。
 	   为了本功能完全不改上游文件（variables.styl 是上游文件），改为就近定义在
@@ -103,16 +107,17 @@
    非首页桌面端的内容起始位置 = 壁纸高度 − 3.5rem（banner 与 fullscreen 两种
    壁纸模式都是这个规则）。普通页面的卡片是不透明白底，压上去正好形成层次感；
    而留言板是透明背景，标题与公告栏会直接压在壁纸图片上。
-   这里在同样条件下把留言板整体下移回 3.5rem，让内容从壁纸下沿开始。
+   这里在同样条件下把留言板整体下移：3.5rem 抵掉那次上浮、让内容从壁纸下沿开始，
+   再叠加 --guestbook-banner-gap 留一段呼吸感（不留的话面板顶边会贴着壁纸下沿，很紧）。
    只动位置、不动高度 —— 聊天区保持原本那份宽松高度
    （沿用上面 .guestbook-page 的 calc(100dvh - var(--guestbook-viewport-offset))），
-   代价只是整页多出这 3.5rem 的滚动距离。
+   代价只是整页多出这段滚动距离。
    不要改成按壁纸高度扣减高度：小视口下会把聊天区压成几百像素，气泡与输入框会叠在一起。
    移动端（<1024px）壁纸不显示，不处理。 */
 @media (min-width: 1024px) {
 	html[data-wallpaper-mode="banner"] body:not(.is-home) .guestbook-page,
 	html[data-wallpaper-mode="fullscreen"] body:not(.is-home) .guestbook-page {
-		margin-top: 3.5rem;
+		margin-top: calc(3.5rem + var(--guestbook-banner-gap));
 	}
 }
 

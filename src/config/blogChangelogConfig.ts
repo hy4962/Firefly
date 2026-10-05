@@ -30,6 +30,26 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.30",
+		title: "留言板下移留白",
+		date: "2026-10-05",
+		summary:
+			"桌面端留言板的面板顶边原来正好贴着首屏壁纸下沿，太挤，往下压 2rem 留出呼吸感",
+		description:
+			"留言板是透明玻璃面板，主题又会让主内容区上浮 3.5rem 叠在首屏壁纸底部，所以之前专门写了 margin-top: 3.5rem 把整块推回壁纸下沿 —— 数值卡得刚好，面板顶边和壁纸下沿严丝合缝地贴在一起。普通页面那边卡片是不透明白底，压在壁纸上正好形成层次感；留言板是透明的，这一贴就只剩下「挤」。改成 calc(3.5rem + var(--guestbook-banner-gap))，多出来的那段单独抽成变量，默认 2rem，嫌不够松只改这一行。只动位置不动高度，聊天区还是原来 100dvh 那份宽松高度，代价是整页多 2rem 滚动距离；没改成按壁纸高度扣减高度，因为那样在小视口下会把聊天区压成几百像素、气泡和输入框叠在一起。只影响 ≥1024px 且有壁纸的情形，移动端本来就不显示壁纸。",
+		items: [
+			{
+				category: "视觉",
+				text: "桌面端留言板整体下移 2rem：新增 --guestbook-banner-gap（默认 2rem），与原本抵掉上浮的 3.5rem 相加，面板顶边不再贴着首屏壁纸下沿",
+			},
+			{
+				category: "修复",
+				text: "只改 margin-top、不动高度：聊天区仍是 calc(100dvh - var(--guestbook-viewport-offset)) 的宽松高度，代价只是整页多 2rem 滚动距离；移动端（<1024px）不显示壁纸，不受影响",
+			},
+		],
+		tags: ["博客", "CSS", "留言板", "视觉"],
+	},
+	{
 		version: "V1.29",
 		title: "卡片深色描边",
 		date: "2026-10-05",
