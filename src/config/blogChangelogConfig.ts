@@ -36,19 +36,19 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		summary:
 			"友链页把「博客社区」那批（友链社区、博客聚合站）从主网格里挪到下方独立一栏，不再和个人博客混在一起",
 		description:
-			"友链页原来是一个大网格全铺开，友链社区、博客聚合站和个人博客混在一起，看着不像一类东西 —— 博友圈、博客星球、八零圈、BlogsClub、中文独立博客聚合列表、博客故事这六张卡夹在个人博客中间，分类也只在上面的标签筛选里能选出来，视觉上完全没体现。friends.astro 是上游文件不能改，所以还是走客户端增强：卡片本身带 data-tags 属性，按标签把社区卡片搬到页面下方一个新开的分区里。分区必须留在页面那张 .card-base 内部，因为主题的筛选组件是 container.querySelectorAll('.friend-card')、container 取最近的 .card-base，搬出去的话点标签和搜名字就筛不到社区卡片了。卡片本身只改 DOM 位置、不动任何属性，主题的悬停展开、筛选、淡入动画都不受影响。分区的显隐跟着筛选结果走：切到「Blog」标签时社区那栏会整个收起来，不会留一个只有标题没有卡片的空壳。",
+			"友链页原来是一个大网格全铺开，友链社区、博客聚合站和个人博客混在一起，看着不像一类东西 —— 博友圈、博客星球、八零圈、BlogsClub、中文独立博客聚合列表、博客故事这六张卡夹在个人博客中间，分类也只在上面的标签筛选里选得出来，视觉上完全没体现。friends.astro 是上游文件不能改，所以走客户端增强：卡片本身带 data-tags 属性，按标签重排成「标题 + 独立网格」的分区区块，结构对齐书签导航页的分组。三个关键点：分区必须留在页面那张 .card-base 内部，因为主题筛选组件是 container.querySelectorAll('.friend-card')、container 取最近的 .card-base，搬出去点标签和搜名字就筛不到了；卡片只改 DOM 位置、不动任何属性，悬停展开、筛选、淡入动画都不受影响；区块显隐跟着筛选结果走，切到「博客社区」时个人博客整块收起，不会留一个只有标题没有卡片的空壳。",
 		items: [
 			{
 				category: "页面",
-				text: "新增 public/assets/js/friends-sections.js 与 friends-sections.css：进 /friends/ 时把 data-tags 含「博客社区」的卡片搬进页面下方的独立分区，主网格只留个人博客",
+				text: "新增 public/assets/js/friends-sections.js 与 friends-sections.css：进 /friends/ 时按卡片 data-tags 重排成分区区块，每个区块一个标题（含名称、说明、卡片数）+ 一张独立网格，视觉结构与书签导航页的分组一致",
 			},
 			{
 				category: "页面",
-				text: "分区的标题直接取标签名（脚本里的 COMMUNITY_TAG），改一处标题和筛选条件一起变；分区仍留在 .card-base 内，主题原有的标签筛选与搜索照常跨两个网格生效",
+				text: "分区配置写在脚本顶部的 GROUPS 数组里（标签、标题、说明），顺序即页面顺序；未归入任何分区的卡片进「其他」兜底区，配置里新加标签也不会丢卡片",
 			},
 			{
 				category: "维护",
-				text: "用 MutationObserver 监听筛选造成的 style 变化，实时同步两个区块的显隐，避免切到「Blog」时社区分区留下空标题；页脚的按需加载器从 PREVIEW_SCRIPTS 改名 PAGE_SCRIPTS，加新页面增强补一条即可",
+				text: "分区仍留在 .card-base 内，主题原有的标签筛选与搜索照常跨区块生效；区块显隐用 MutationObserver 监听 style 变化，只在值变化时写 hidden 以免自触发回环，节流用 setTimeout 而非 rAF（无头环境下 rAF 不一定被调度）",
 			},
 		],
 		tags: ["博客", "友链", "页面", "视觉"],
