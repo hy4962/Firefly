@@ -6,7 +6,7 @@
   "frontMatter.content.pageFolders": [
     {
       "title": "posts",
-      "path": "[[workspace]]/content/posts"
+      "path": "[[workspace]]/src/site-content/posts"
     }
   ],
   "frontMatter.taxonomy.contentTypes": [

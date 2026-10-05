@@ -29,7 +29,7 @@ if (!fileExtensionRegex.test(fileName)) {
 	fileName += ".md";
 }
 
-const targetDir = "./content/posts/";
+const targetDir = "./src/site-content/posts/";
 const fullPath = path.join(targetDir, fileName);
 
 // Generate slug from filename: strip extension, strip trailing /index

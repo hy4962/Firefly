@@ -60,7 +60,7 @@ type ContentCollection<T> = CollectionConfig<
 >;
 
 const postsCollection: ContentCollection<PostData> = defineCollection({
-	loader: glob({ pattern: "**/*.{md,mdx}", base: "./content/posts" }),
+	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/site-content/posts" }),
 	schema: z.object({
 		title: z.string(),
 		published: z.date(),
@@ -92,12 +92,12 @@ const postsCollection: ContentCollection<PostData> = defineCollection({
 
 const specCollection: ContentCollection<Record<string, never>> =
 	defineCollection({
-		loader: glob({ pattern: "**/*.{md,mdx}", base: "./content/spec" }),
+		loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/site-content/spec" }),
 		schema: z.object({}),
 	});
 
 const dynamicCollection: ContentCollection<DynamicData> = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./content/dynamic" }),
+	loader: glob({ pattern: "**/*.md", base: "./src/site-content/dynamic" }),
 	schema: z.object({
 		published: z.date(),
 		pinned: z.boolean().optional().default(false),
@@ -106,7 +106,7 @@ const dynamicCollection: ContentCollection<DynamicData> = defineCollection({
 });
 
 const projectsCollection: ContentCollection<ProjectData> = defineCollection({
-	loader: glob({ pattern: "**/*.{md,mdx}", base: "./content/projects" }),
+	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/site-content/projects" }),
 	schema: z.object({
 		title: z.string(),
 		published: z.date(),

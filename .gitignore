@@ -1,5 +1,7 @@
 # 站点内容（独立私有仓库，构建前由 scripts/sync-content.mjs 同步到本地）
-content/
+# 必须放在 src/ 下：主题的图片解析用 import.meta.glob("../../**") 扫描 src/，
+# 内容目录若位于 src/ 之外，文章封面/配图会全部解析不到。
+src/site-content/
 
 # build output
 dist/

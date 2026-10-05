@@ -1,6 +1,6 @@
 /**
  * 隔离引用了不存在图片的文章
- * 把这些文章移到 src/content/posts/_quarantine/
+ * 把这些文章移到 src/site-content/posts/_quarantine/
  * Astro 不会构建 _quarantine 里的文章
  */
 
@@ -8,8 +8,8 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 
-const POSTS_DIR = "content/posts";
-const QUARANTINE_DIR = "content/_quarantine";
+const POSTS_DIR = "src/site-content/posts";
+const QUARANTINE_DIR = "src/site-content/_quarantine";
 
 if (!fs.existsSync(QUARANTINE_DIR)) {
 	fs.mkdirSync(QUARANTINE_DIR, { recursive: true });

@@ -38,7 +38,7 @@ const minutes = dateParts.minute;
 const seconds = dateParts.second;
 const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 const fileName = `${year}-${month}-${day}-${hours}${minutes}${seconds}.md`;
-const targetDir = path.resolve("content/dynamic");
+const targetDir = path.resolve("src/site-content/dynamic");
 const fullPath = path.join(targetDir, fileName);
 
 fs.mkdirSync(targetDir, { recursive: true });

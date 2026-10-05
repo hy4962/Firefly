@@ -4,7 +4,7 @@ import { glob } from "glob";
 import { isValidGithubRepository } from "../src/utils/github-card-utils";
 
 const OUTPUT_FILE = "src/constants/github-card-data.json";
-const CONTENT_GLOB = "content/**/*.{md,mdx}";
+const CONTENT_GLOB = "src/site-content/**/*.{md,mdx}";
 const GITHUB_DIRECTIVE_PATTERN =
 	/::github\s*\{[^}]*\brepo\s*=\s*["']([^"']+)["'][^}]*\}/g;
 

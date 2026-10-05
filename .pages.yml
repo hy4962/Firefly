@@ -6,7 +6,7 @@ media:
   # 文章配图 - 上传到文章目录的 images 子文件夹
   - name: post-images
     label: 文章配图
-    input: content/posts/images
+    input: src/site-content/posts/images
     output: /images
     categories: [image]
 
@@ -36,7 +36,7 @@ content:
       - name: posts
         label: 📝 博客文章
         type: collection
-        path: content/posts
+        path: src/site-content/posts
         format: yaml-frontmatter
         filename:
           template: "{primary}.md"
@@ -168,7 +168,7 @@ content:
       - name: about
         label: 📄 关于页面
         type: file
-        path: content/spec/about.md
+        path: src/site-content/spec/about.md
         format: yaml-frontmatter
         fields:
           - name: title
@@ -183,7 +183,7 @@ content:
       - name: friends
         label: 🔗 友情链接
         type: file
-        path: content/spec/friends.mdx
+        path: src/site-content/spec/friends.mdx
         format: yaml-frontmatter
         fields:
           - name: title
@@ -204,7 +204,7 @@ content:
       - name: guestbook
         label: 📬 留言板
         type: file
-        path: content/spec/guestbook.md
+        path: src/site-content/spec/guestbook.md
         format: yaml-frontmatter
         fields:
           - name: title
