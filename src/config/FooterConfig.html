@@ -701,4 +701,14 @@
 	.enable-card-border .steam-card {
 		border: var(--card-border-width) solid var(--card-border-color);
 	}
+
+	/* 朋友圈（/moments/，同样自建页）的文章卡片：原本是 1px 的 --line-divider，
+	   而「推荐友链」「本站主理人」两种变体各自还带一圈金色 / 蓝色描边，
+	   这里连同变体一起统一成同款深色描边（身份仍由背景色和角标区分）。
+	   多写一层 .moments-grid 是为了压过暗色段那条 html.dark .moment-card--recommended，
+	   它是 (0,2,1)，而 .enable-card-border .moment-card 只有 (0,2,0)，
+	   不这样写的话暗色主题下这两个变体会漏掉、仍留着旧染色边。 */
+	.enable-card-border .moments-grid .moment-card {
+		border: var(--card-border-width) solid var(--card-border-color);
+	}
 </style>
