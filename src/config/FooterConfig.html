@@ -389,10 +389,26 @@
 	body.is-home .ff-dyn.ff-dyn--ready {
 		display: flex;
 	}
-	/* 移动端整条不显示，避免首屏拥挤 */
-	@media (max-width: 767.98px) {
-		body.is-home .ff-dyn.ff-dyn--ready {
-			display: none;
+	/* 移动端：#main-grid 会变成 display:block（见 layout-styles.css 的 .mobile-no-sidebar），
+	   没有 gap 可用，行间距得自己留；再把两侧胶囊压紧一点，宽度让给滚动区 */
+	@media (max-width: 767px) {
+		.ff-dyn {
+			margin-bottom: 1rem;
+		}
+		.ff-dyn-inner {
+			gap: 8px;
+			padding: 8px 10px;
+		}
+		.ff-dyn-badge,
+		.ff-dyn-more {
+			gap: 3px;
+			padding: 5px 8px;
+			font-size: 12px;
+		}
+		.ff-dyn-badge svg,
+		.ff-dyn-more svg {
+			width: 14px;
+			height: 14px;
 		}
 	}
 	.ff-dyn-inner {
