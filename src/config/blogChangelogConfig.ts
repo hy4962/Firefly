@@ -36,11 +36,15 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		summary:
 			"把全站卡片的边框从几乎看不见的浅灰细线换成 2px 纯黑描边，对齐参考站那种卡片轮廓很清楚的观感",
 		description:
-			"参考站（azuma.mstzuomu.space）的卡片有一圈很深很明显的黑色描边，扒了一下它的做法，其实简单得意外：主题本来就有 enable-card-border 这一套开关（配置项 siteConfig.card.border，本站早就开着 true），head 里的内联脚本会按它给 <html> 打上这个类，再由 src/styles/main.css 里的三条规则给 .card-base / .card-base-transparent / .btn-card 补上 1px 边框和阴影——问题出在颜色，它用的是 --line-divider，亮色下是 rgba(0,0,0,.08) 的浅灰线，深色下是 rgba(255,255,255,.08)，所以只是「有边框」但看不出轮廓。参考站做的就是把它换成纯黑、宽度提到 2px。本站照着改，但没碰上游的 src/styles/**：整段样式塞进 src/config/FooterConfig.html 的注入点（渲染在页脚，而 <Footer /> 在 swup 容器之外，整页加载才跑一次）。能这么改是因为主题那几条规则写在 @layer components 里，而未分层的样式天然压过任何 @layer，所以既不用 !important 也不用靠堆选择器权重去抢。另外暗色主题下纯黑描边贴在深色卡片上等于看不见，和参考站一样自动切成纯白。",
+			"参考站（azuma.mstzuomu.space）的卡片有一圈很深很明显的黑色描边，扒了一下它的做法，其实简单得意外：主题本来就有 enable-card-border 这一套开关（配置项 siteConfig.card.border，本站早就开着 true），head 里的内联脚本会按它给 <html> 打上这个类，再由 src/styles/main.css 里的三条规则给 .card-base / .card-base-transparent / .btn-card 补上 1px 边框和阴影——问题出在颜色，它用的是 --line-divider，亮色下是 rgba(0,0,0,.08) 的浅灰线，深色下是 rgba(255,255,255,.08)，所以只是「有边框」但看不出轮廓。参考站做的就是把它换成纯黑、宽度提到 2px。本站照着改，但没碰上游的 src/styles/**：整段样式塞进 src/config/FooterConfig.html 的注入点（渲染在页脚，而 <Footer /> 在 swup 容器之外，整页加载才跑一次）。能这么改是因为主题那几条规则写在 @layer components 里，而未分层的样式天然压过任何 @layer，所以既不用 !important 也不用靠堆选择器权重去抢。另外暗色主题下纯黑描边贴在深色卡片上等于看不见，和参考站一样自动切成纯白。第一版上线后回头发现留言板和 Steam 页没跟上：这两个页面是本站自己写的，卡片用的是各自的类名（.guestbook-chat / .steam-profile / .steam-card 之类），跟主题的 .card-base 没有任何关系，所以完全没被盖到；它们的样式分别写在页面级的 src/styles/components/guestbook-chat.css 和 steam.astro 的 style is:global 里，只在对应页面加载，属于页面级分块，这里同样只补描边这一件事、不动别的。留言板那两个面板原本是 1px 的 --guestbook-line（透明玻璃面板上的一圈极淡线），Steam 那四类卡片更彻底——压根没有边框，所以给它们补的是完整简写，只写 border-width 和 border-color 是画不出来的（border-style 默认 none）。",
 		items: [
 			{
 				category: "视觉",
 				text: "全站卡片描边改为纯黑 2px：.card-base（文章卡片、侧栏组件）、.card-base-transparent、.btn-card（分页与上下篇按钮）统一生效，粗细由 --card-border-width 一处控制，想加粗改这一行即可",
+			},
+			{
+				category: "视觉",
+				text: "自建页单独补上：留言板主面板与公告/隐私弹窗（.guestbook-chat / .privacy-panel，原来只有 1px 的玻璃边框）、Steam 页四类卡片（.steam-profile / .steam-stat / .steam-recent__item a / .steam-card，原来完全没有描边）也换成同款描边；Steam 那几类要连 border-style 一起补，只写宽度和颜色是画不出来的",
 			},
 			{
 				category: "视觉",

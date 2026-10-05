@@ -678,4 +678,27 @@
 		border-color: var(--card-border-color);
 		border-width: var(--card-border-width);
 	}
+
+	/* ── 自建页面的卡片 ─────────────────────────────────────────────
+	   下面两个页面是我们自己写的，卡片用的是各自的类名，跟主题的 .card-base 无关，
+	   所以上面那段盖不到它们，得单独列。样式本身都写在页面/组件自己的样式表里
+	   （guestbook-chat.css 与 steam.astro 的 <style is:global>，都是页面级分块，
+	   只在对应页面加载），这里只补描边这一件事，别的都不动。 */
+
+	/* 留言板主面板与公告/隐私弹窗：原来只有 1px 的 --guestbook-line（比 --line-divider
+	   还淡的玻璃边框），这里把颜色和宽度换成跟全站卡片一致 */
+	.enable-card-border .guestbook-chat,
+	.enable-card-border .privacy-panel {
+		border-color: var(--card-border-color);
+		border-width: var(--card-border-width);
+	}
+
+	/* Steam 页的四类卡片（个人资料 / 数据块 / 最近游玩行 / 游戏格）原本完全没有描边，
+	   border-style 默认是 none，只写 width/color 不会画出来，所以这里给完整简写 */
+	.enable-card-border .steam-profile,
+	.enable-card-border .steam-stat,
+	.enable-card-border .steam-recent__item a,
+	.enable-card-border .steam-card {
+		border: var(--card-border-width) solid var(--card-border-color);
+	}
 </style>
