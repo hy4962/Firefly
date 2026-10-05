@@ -54,6 +54,10 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 				category: "部署",
 				text: "内容仓库新增 .github/workflows/deploy.yml：push 后调用 Vercel Deploy Hook 与 Cloudflare 部署挂链，文章推上去即自动重新构建上线",
 			},
+			{
+				category: "维护",
+				text: "本地开发改走 CONTENT_DIR + watch-content.mjs：项目内的 src/site-content/ 退化成同步副本（不再手动 pull、不会分叉），dev.sh / dev.bat 一键完成「同步 → 后台监听 → 起 dev」，在外部内容仓保存文件即热重载",
+			},
 		],
 		tags: ["博客", "Git", "部署", "私有仓库"],
 	},
