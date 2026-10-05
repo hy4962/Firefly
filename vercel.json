@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm build",
+  "buildCommand": "node scripts/sync-content.mjs && pnpm build",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
   "framework": "astro",

@@ -1,3 +1,6 @@
+# 站点内容（独立私有仓库，构建前由 scripts/sync-content.mjs 同步到本地）
+content/
+
 # build output
 dist/
 
