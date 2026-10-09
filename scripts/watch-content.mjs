@@ -15,6 +15,7 @@
 import { copyFileSync, existsSync, mkdirSync, rmSync, statSync, watch } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeContentSafelist } from "./content-safelist.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEST = path.join(ROOT, "src", "site-content");
@@ -72,6 +73,8 @@ const pending = new Set();
 function flush() {
 	for (const rel of pending) syncOne(rel);
 	pending.clear();
+	// 内容里出现新的工具类时，登记表要跟着变，否则 Tailwind 不会为它生成 CSS
+	writeContentSafelist(ROOT, DEST, log);
 }
 
 log(`监视目录：${SRC}`);

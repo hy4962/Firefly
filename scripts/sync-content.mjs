@@ -26,6 +26,7 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeContentSafelist } from "./content-safelist.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEST = path.join(ROOT, "src", "site-content");
@@ -76,16 +77,20 @@ if (DIR) {
 	if (hasContent && !FORCE) {
 		log(`src/site-content/ 已存在。要重新同步加 CONTENT_SYNC_FORCE=1，`);
 		log(`或者直接跑 node scripts/watch-content.mjs 开增量监听。`);
+		// 内容已就位也刷新登记表：它才是「内容里的工具类能不能编译出来」的关键
+		writeContentSafelist(ROOT, DEST, log);
 		process.exit(0);
 	}
 	log(`从本地目录同步：${DIR}`);
 	syncFromDir(DIR);
+	writeContentSafelist(ROOT, DEST, log);
 	log("同步完成。");
 	process.exit(0);
 }
 
 if (hasContent && !FORCE) {
 	log("src/site-content/ 已存在，跳过同步（本地开发模式）。");
+	writeContentSafelist(ROOT, DEST, log);
 	process.exit(0);
 }
 
@@ -105,6 +110,7 @@ try {
 	});
 	// 去掉 .git，避免在构建环境里留下嵌套仓库
 	rmSync(path.join(DEST, ".git"), { recursive: true, force: true });
+	writeContentSafelist(ROOT, DEST, log);
 	log("同步完成。");
 } catch (error) {
 	log(`同步失败：${error.message}`);

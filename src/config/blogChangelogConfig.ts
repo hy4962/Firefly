@@ -30,6 +30,30 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.34",
+		title: "友链模板换行",
+		date: "2026-10-09",
+		summary:
+			"修掉友链页申请模板挤成一整行的问题：Tailwind 一直扫不到内容目录，凡是「只写在内容文件里」的工具类都被静默丢掉了",
+		description:
+			"友链页的申请模板本该一条字段一行，实际渲染却挤成一整段、文字还贴着边框。查下来不是 CSS 写错，而是 Tailwind 根本没编译那几个类：内容目录 src/site-content/ 在 .gitignore 里，而 Tailwind v4 的自动内容探测会跳过被 git 忽略的路径 —— 于是「只出现在内容文件、主题源码从没用过」的工具类永远不会生成，类名照旧挂在 HTML 上、规则却不存在。whitespace-pre-wrap、break-words、px-3.5、text-black!、dark:text-white! 五个全中招，邮箱那块 <code> 也因此继承成了主题橙。修法是给 Tailwind 一份扫得到的类名清单：同步脚本把内容里的 class 名汇总到一个没有被忽略的文件里，内容仓那边一个字都没改。",
+		items: [
+			{
+				category: "修复",
+				text: "新增 scripts/content-safelist.mjs：扫描内容目录里的 .md / .mdx，抽出 class=\"…\" / className=\"…\" 的类名，去重排序后写进 src/config/content-tailwind-safelist.txt —— 这个文件没被 .gitignore 覆盖，Tailwind 扫得到，等价于给内容里的类名做了一份可扫描的登记表",
+			},
+			{
+				category: "修复",
+				text: "sync-content.mjs 与 watch-content.mjs 在同步完成后自动重写登记表（本地增量监听也覆盖），生成失败只记日志、不中断构建，沿用上一份即可",
+			},
+			{
+				category: "维护",
+				text: "定位手法：直接调用 @tailwindcss/oxide 的 Scanner 扫项目根目录看候选类，再用 @tailwindcss/node 的 compile() 编译真实 CSS 确认产物里有没有那条规则；修复后 .whitespace-pre-wrap、.break-words、.px-3\\.5、.text-black\\!、.dark\\:text-white\\! 五个规则均已在产物中生成",
+			},
+		],
+		tags: ["博客", "修复", "友链", "页面"],
+	},
+	{
 		version: "V1.33",
 		title: "友链社区单独分区",
 		date: "2026-10-05",
