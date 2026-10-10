@@ -4,7 +4,6 @@ import rss, { type RSSFeedItem } from "@astrojs/rss";
 import type { APIContext } from "astro";
 import { dynamicConfig, profileConfig, siteConfig } from "@/config";
 import { sortDynamics } from "@/utils/dynamic-utils";
-import type { DynamicEntry } from "@/utils/memos-adapter";
 import { fetchMemos } from "@/utils/memos-adapter";
 
 export const prerender = true;
@@ -29,12 +28,63 @@ type MinimalEntry = {
  * 每条 item 的 link 跳回本站 `/dynamic/#dynamic-<id>`（和页内锚点同一套编码），
  * 阅读器点开直达对应那条动态。
  */
+/**
+ * 构建机能不能碰到 Memos？
+ *
+ * Memos 实例（`dynamicConfig.memos.apiUrl`）解析到的是国内 IP，Vercel / Cloudflare
+ * 的构建机在海外，直连基本必然 ConnectTimeout。这里先花最多 4s 探一次：连不上就
+ * 根本不调 `fetchMemos`，直接走本地内容回退。**只要拿到任何 HTTP 响应就算通**，
+ * 不要求 2xx——网络可达与否才是这里要判断的事。
+ */
+async function isMemosReachable(
+	apiUrl: string,
+	timeoutMs = 4000,
+): Promise<boolean> {
+	try {
+		await fetch(new URL("/api/v1/workspace/profile", apiUrl), {
+			headers: { Accept: "application/json" },
+			signal: AbortSignal.timeout(timeoutMs),
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * 吞掉「Memos 请求失败」这一类未处理的 Promise 拒绝。
+ *
+ * 上游 `src/utils/memos-adapter.ts`（本仓库不碰上游）里有一句
+ * `promise.finally(() => pendingRequests.delete(cacheKey))`——`finally()` 会派生一个
+ * 新的 promise，它 reject 时没有任何人接管，于是变成 unhandledRejection；Node 24 默认
+ * `--unhandled-rejections=throw`，会直接把整个构建进程干掉（日志里的
+ * `triggerUncaughtException(err, true /* fromPromise *∕)` 就是这个）。调用方 catch 拦不住它。
+ *
+ * 所以这里在调用前挂一个极窄的监听：只吞 fetch 超时/连接失败，其它拒绝照旧抛出。
+ */
+const ignoreMemosFetchFailure = (reason: unknown): void => {
+	const message =
+		reason instanceof Error
+			? `${reason.name}: ${reason.message}`
+			: String(reason);
+	if (
+		/fetch failed|Connect Timeout|UND_ERR|ECONNRESET|ETIMEDOUT/i.test(message)
+	) {
+		console.warn(
+			`[dynamic/rss] Memos 请求失败，已忽略并回退本地内容：${message}`,
+		);
+		return;
+	}
+	throw reason;
+};
+
 export async function GET(context: APIContext): Promise<Response> {
 	const site = context.site ?? new URL(siteConfig.site_url);
 	const memosConfig = dynamicConfig.memos;
 	let entries: MinimalEntry[] = [];
 
-	if (memosConfig?.enable) {
+	if (memosConfig?.enable && (await isMemosReachable(memosConfig.apiUrl))) {
+		process.on("unhandledRejection", ignoreMemosFetchFailure);
 		try {
 			const fetched = await fetchMemos(memosConfig.apiUrl, {
 				parent: memosConfig.parent,
@@ -53,12 +103,21 @@ export async function GET(context: APIContext): Promise<Response> {
 
 	if (entries.length === 0) {
 		const processor = await createMarkdownProcessor();
-		entries = sortDynamics(await getCollection("dynamic")).map((entry) => ({
-			id: entry.id.replace(/\.(md|mdx)$/i, ""),
-			published: entry.data.published.getTime(),
-			html: processor.render(entry.body || ""),
-			images: [],
-		}));
+		const dynamics = sortDynamics(await getCollection("dynamic"));
+		// processor.render() 是 async 且返回 { code }（对照上游 src/pages/api/dynamic.json.ts 的写法）。
+		// 早先这里漏了 await、也没取 .code，html 拿到的是 Promise → 后面 htmlToTitle() 直接
+		// `html.replace is not a function`，把整次构建炸掉（2026-10-10 线上构建失败就是这条）。
+		entries = await Promise.all(
+			dynamics.map(async (entry) => {
+				const rendered = await processor.render(entry.body || "");
+				return {
+					id: entry.id.replace(/\.(md|mdx)$/i, ""),
+					published: entry.data.published.getTime(),
+					html: rendered.code,
+					images: [],
+				};
+			}),
+		);
 	}
 
 	// fetchMemos 是「置顶优先」，feed 按阅读器习惯改为纯时间倒序
@@ -71,9 +130,9 @@ export async function GET(context: APIContext): Promise<Response> {
 			.replace(/>/g, "&gt;")
 			.replace(/"/g, "&quot;");
 
-	/** 把 HTML 剥成纯文本，取第一段非空内容当标题 */
-	const htmlToTitle = (html: string) =>
-		html
+	/** 把 HTML 剥成纯文本，取第一段非空内容当标题（入参兜底转字符串，别再让类型意外炸掉构建） */
+	const htmlToTitle = (html: unknown) =>
+		String(html ?? "")
 			.replace(/<[^>]+>/g, " ")
 			.replace(/&amp;/g, "&")
 			.replace(/&lt;/g, "<")

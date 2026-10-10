@@ -30,6 +30,34 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.35",
+		title: "构建不再被动拖垮",
+		date: "2026-10-10",
+		summary:
+			"修掉站长动态 RSS 把整次部署搞崩的问题：Memos 接口在国内、构建机在海外，一超时踩中回退分支的 bug，构建直接退出",
+		description:
+			"给站点推了改动，等了十几分钟线上还是旧页面。翻构建日志才发现部署根本没成功：渲染 /dynamic/rss.xml 时报 TypeError: html.replace is not a function，紧接着一条未捕获的 fetch failed 又把 Node 进程带走。链路是这样的 —— Memos 实例（dynamicConfig.memos.apiUrl）解析到的是国内 IP，Vercel 与 Cloudflare 的构建机都在海外，直连必然 ConnectTimeout；接口拿不到数据就落到「回退本地内容集合」那条分支，而那条分支里 createMarkdownProcessor().render() 漏了 await、也没取返回值里的 .code，html 拿到的是个 Promise 对象，再往下当字符串去 replace 就当场抛错。上游 Memos 适配器里还有一句 promise.finally()，它派生出的 promise 没人接管，fetch 一失败就变成未处理的 Promise 拒绝，在 Node 24 下直接把构建进程干掉 —— 这层调用方的 try/catch 是拦不住的。现在改成先花几秒探一次接口可达性，不通就根本不发请求、直接走本地内容；同时对这类网络拒绝挂一层极窄的兜底，只吞超时与连接失败，别的错误照旧抛出。",
+		items: [
+			{
+				category: "修复",
+				text: "修掉站长动态 RSS 回退分支里处理器未 await 的问题：processor.render() 是异步的、返回 { code, metadata }，之前直接把 Promise 当成 HTML 字符串往下传，走到剥标签那步就 TypeError: html.replace is not a function —— 这次线上构建失败的直接原因",
+			},
+			{
+				category: "修复",
+				text: "构建期先做一次带 4 秒超时的接口可达性探测，连不上就完全不调用 Memos 适配器，直接回退本地内容集合；顺便关掉一整类「接口抽风就炸构建」的可能",
+			},
+			{
+				category: "修复",
+				text: "对 Memos 请求失败产生的未处理 Promise 拒绝加了窄范围兜底：只忽略 fetch 超时、连接被重置这一类网络错误并打印告警，其它拒绝照旧抛出，不再让一次接口抖动带走整次构建",
+			},
+			{
+				category: "维护",
+				text: "顺手清掉该文件里一个未被使用的类型导入；已用真实调用复现原报错（未 await 的 Promise 与 await 后的对象传给剥标签函数，均报 TypeError: html.replace is not a function），确认修复后返回字符串正常",
+			},
+		],
+		tags: ["博客", "修复", "动态", "部署"],
+	},
+	{
 		version: "V1.34",
 		title: "友链模板换行",
 		date: "2026-10-09",
