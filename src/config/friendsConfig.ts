@@ -165,6 +165,19 @@ export const friendsConfig: FriendLink[] = [
 		weight: 1,
 		enabled: true,
 	},
+	{
+		title: "Jxe · 轻博客",
+		imgurl: "https://jxe.me/logo.png",
+		desc: "记录生活中的每一个瞬间，图文、视频与心情",
+		siteurl: "https://jxe.me/",
+		// 2026-10-10 核查：对方友链页 9 条卡片**全站统一 rel="noopener noreferrer nofollow"**（站点策略，非针对我方），
+		// 我方 https://www.9ll.uk/ 已挂在其友链列表（分类「技术」，updated 3 days ago）＝已完成回链。
+		// 自研 SPA + Cloudflare Workers 的轻博客（页面靠 JS 渲染，静态 HTML 里查不到友链），
+		// 文章 9-17~10-09 共 10 篇，技术（CF/EdgeOne/R2）与生活随笔混排，动态在更新。不填 rss。
+		tags: ["Blog"],
+		weight: 0,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
