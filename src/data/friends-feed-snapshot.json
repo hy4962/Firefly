@@ -9,6 +9,60 @@
       ],
       "items": [
         {
+          "title": "MiniMax H3 一二采工作流：0.2 分辨率快出，二采补到 720p",
+          "link": "https://www.9ll.uk/posts/ai/comfyui-wrokflow/minimax-h3-twostage/",
+          "description": "分享一个 MiniMax H3 的 ComfyUI 一二采工作流：一采用 0.2 MP 快速出片，二采在 latent 空间放大重采样补回 720p。附模型、插件下载地址和我这边的实测耗时。",
+          "publishedAt": "2026-10-06T00:00:00.000Z"
+        },
+        {
+          "title": "友链申请做成自动的：填完 Issue 表单，机器人验完自己上线",
+          "link": "https://www.9ll.uk/posts/blog/autofriendlink/",
+          "description": "在 blog.amamo.top 的友链页看到他做了「自动友链」：点进去是个 GitHub Issue 表单，提交后机器人自己去验对方的友链页，通过就把友链写进配置。我这边的约束照旧是不能动主题源文件，所以按这个思路重做了一遍——三个新增文件、零第三方依赖，顺带绕开了他脚本里会吃掉 rss / homepage 字段的坑。",
+          "publishedAt": "2026-10-05T00:00:00.000Z"
+        },
+        {
+          "title": "给书签导航加悬停预览：复刻友链流程，多踩三个坑",
+          "link": "https://www.9ll.uk/posts/blog/booknavcoverpreview/",
+          "description": "书签导航那 64 个书签也加上了悬停预览：鼠标放上去展开一张该站点的首页截图。做法是把友链页那套原样搬过来，但书签和友链不是一个东西，中途多踩了三个坑——同域名多条会互相覆盖、Cloudflare 的 403 页截出来是张「看着正常」的白底黑字图、headless 的默认 UA 直接被拒。最后 56 条拿到了能看的封面。",
+          "publishedAt": "2026-10-05T00:00:00.000Z"
+        },
+        {
+          "title": "把博客文章搬进私有仓库：一次内容分离的踩坑记录",
+          "link": "https://www.9ll.uk/posts/blog/contentseparation/",
+          "description": "我的博客是 fork 的 Firefly，文章和主题代码一直挤在同一个仓库，而上游更新很勤，每次合并都要在文章目录上手工解冲突。折腾了一轮把内容搬进独立的私有仓库，中间踩了三个坑：Vercel 根本不支持私有 submodule、内容目录放错位置会让所有封面图消失、环境变量里混进一个换行符就能把 token 截断。",
+          "publishedAt": "2026-10-05T00:00:00.000Z"
+        },
+        {
+          "title": "留言板改成聊天窗口：只改了主题一个文件，还少下载 82 KB",
+          "link": "https://www.9ll.uk/posts/blog/guestbookchat/",
+          "description": "在 blog.amamo.top 的留言板看到群聊风格的界面：气泡、成员列表、公告栏，像开在博客里的群。扒了仓库发现后端就是 Waline，我现成有一个。约束照旧是不能动主题源文件，于是把 11 个文件搬过来之后，把原本要改 6 类上游文件的移植压到只动 guestbook.astro 一个文件，顺带把这一页的评论脚本从 100 KB 减到 23 KB。",
+          "publishedAt": "2026-10-05T00:00:00.000Z"
+        },
+        {
+          "title": "首页加了一条会滚的动态：参考楠枝小筑，一个主题文件都没改",
+          "link": "https://www.9ll.uk/posts/blog/homedynamicbar/",
+          "description": "在楠枝小筑首页看到一条会一直横滚的「瞬间」条，想在自己站上也挂一个。他用的是 Ethereal 主题，代码没法照抄，所以只搬机制：Memos 数据在客户端拉，滚动靠 CSS 把轨道复制成两份，DOM 走页脚注入再加一点点搬运。最后改动落在两个文件里，主题源码一个没碰。",
+          "publishedAt": "2026-10-05T00:00:00.000Z"
+        },
+        {
+          "title": "给博客加了个 Steam 游戏库：没后端，蹭朋友圈的定时任务喂数据",
+          "link": "https://www.9ll.uk/posts/blog/steamlibrary/",
+          "description": "参考站用 Halo 插件在服务端拉 Steam Web API，我这静态站没后端，改成跟朋友圈同一套定时快照，顺带补了没 Key 时的降级路径。",
+          "publishedAt": "2026-10-05T00:00:00.000Z"
+        },
+        {
+          "title": "给友链页加了悬停预览：12 张截图离线截好，主题文件一行没动",
+          "link": "https://www.9ll.uk/posts/blog/friendcoverpreview/",
+          "description": "在 blog.amamo.top 的友链页看到鼠标悬停弹首页截图的效果。我这边的约束是不能动主题源文件，所以换了个做法：截图用本机浏览器离线截、转 webp 存进仓库，卡片用一段独立脚本在浏览器里现场拼。12 张封面一共 190 KB，悬停之前一张都不加载。",
+          "publishedAt": "2026-10-04T00:00:00.000Z"
+        },
+        {
+          "title": "Kite：自带后台的静态博客，主题和插件都能按名字装",
+          "link": "https://www.9ll.uk/posts/recommend/kite/",
+          "description": "刷到一个用 Go 写的静态博客 CMS，最有意思的是它把后台直接编译进单个二进制里，主题和插件从官方市场按名字装。我把博客的 52 篇文章迁过去试了一遍。",
+          "publishedAt": "2026-10-04T00:00:00.000Z"
+        },
+        {
           "title": "给博客加了张站点统计看板：自研翻车之后直接抄了整份实现",
           "link": "https://www.9ll.uk/posts/blog/analyticsdashboard/",
           "description": "看上 rainzt.cn 的 /analytics/ 之后，我先照着自己设计了一版——能跑，但完全不是那个味道。被一句「你不会整就去抄人家代码」点醒，去翻同源 fork 的仓库才发现：人家根本不是单个文件，页面将近四千行，外加两个组件，少一个的话页面其余模块全正常、只有四个数字永远停在「加载中」。搬完又改了四轮：整页蓝换成主题色、推送数从 1695 修正到 252、热力图改 GitHub 绿、角标不再压住插画。",
@@ -25,60 +79,6 @@
           "link": "https://www.9ll.uk/posts/recommend/jietuba/",
           "description": "截图吧（jietuba）是 Windows 上免费开源的截图工具，长截图、标注、本地 OCR、钉图、GIF 录制和剪贴板历史全都有，界面 PySide6 + 底层 Rust，用下来不卡也不占资源。",
           "publishedAt": "2026-09-28T00:00:00.000Z"
-        },
-        {
-          "title": "Snow Shot：常驻 13MB 的截图工具，把 PixPin 的会员功能全免费了",
-          "link": "https://www.9ll.uk/posts/recommend/snow-shot/",
-          "description": "Snow Shot 是免费开源的跨平台截图工具，表格识别、文本翻译、LaTeX 公式识别、多语种 OCR 和录屏记键鼠都不需要会员，常驻内存只有 13MB，还带了一个 MCP 接口，AI 能直接替你截图、识别、导出。",
-          "publishedAt": "2026-09-28T00:00:00.000Z"
-        },
-        {
-          "title": "05 年的《灼眼的夏娜》：三季看完，比现在大多数战斗番还能打",
-          "link": "https://www.9ll.uk/posts/anime/shakugan-no-shana/",
-          "description": "05 年的《灼眼的夏娜》三季看完的观后感。前两季经典到能猜到走向，第三季剧本意外，画风和战斗作画放到今天比大多数战斗番还能打。",
-          "publishedAt": "2026-09-26T00:00:00.000Z"
-        },
-        {
-          "title": "不用域名不用反代，Tailscale 让 NAS 地址变成「设备名:端口」",
-          "link": "https://www.9ll.uk/posts/network/tailscale-magicdns/",
-          "description": "家里几台主机跑着一堆 Docker 服务，IP 和端口根本记不住。用 Tailscale 默认开启的 MagicDNS，浏览器直接输「设备名:端口」就能访问，零配置零成本，顺便对比了一下 ZeroTier。",
-          "publishedAt": "2026-09-24T00:00:00.000Z"
-        },
-        {
-          "title": "给朋友圈加了层来源配额：本站 3 成、Blog 4 成、社区 3 成",
-          "link": "https://www.9ll.uk/posts/blog/momentsmix/",
-          "description": "朋友圈那条时间线被博友圈、八零圈、BlogsClub 这几个聚合站霸榜了。我一开始以为是随机池的比例没配好，结果数完发现池子本身就是 6:4——真正的问题在排序。给时间线加了一层按标签的配额和交错排列，顺手把每个来源的取文上限从 6 篇提到 12 篇。",
-          "publishedAt": "2026-09-12T00:00:00.000Z"
-        },
-        {
-          "title": "用简幻欢开泰拉瑞亚模组服，顺便记几个终端不显示的坑",
-          "link": "https://www.9ll.uk/posts/deploy/simpfunterraria/",
-          "description": "在简幻欢上用 TModLoader 开一个带模组的泰拉瑞亚服务器：从 Steam 提取服务端、上传模组整合包到改启动脚本的完整流程，附创建世界时终端漏显示字段的对照表。",
-          "publishedAt": "2026-09-12T00:00:00.000Z"
-        },
-        {
-          "title": "手机上的 AI Agent：用 Operit 帮我看住了挂机的虚拟机",
-          "link": "https://www.9ll.uk/posts/recommend/operit-ai/",
-          "description": "Operit 是一个安卓上的开源 AI Agent 平台，能直接操作手机。我拿它排查了虚拟机挂机几小时就卡死的问题，最后它给我写了个看门狗程序，检测到卡死就自动重启虚拟机和里面的两个实例。",
-          "publishedAt": "2026-09-10T00:00:00.000Z"
-        },
-        {
-          "title": "给博客加上 Vercel 边缘缓存：顺便把那些英文术语整明白了",
-          "link": "https://www.9ll.uk/posts/deploy/vercelcdncache/",
-          "description": "给博客页面设置分层缓存头，让 CDN 直接吐页面而不是每次都回源，再配一个部署后自动预热的工作流，顺手把 max-age、s-maxage、HIT/MISS 这些缓存术语一个个讲明白",
-          "publishedAt": "2026-09-08T00:00:00.000Z"
-        },
-        {
-          "title": "给博客加了张更新日志页",
-          "link": "https://www.9ll.uk/posts/blog/blogchangelog/",
-          "description": "羡慕 rainzt.cn 的博客日志页，把它的页面结构扒下来，用 Firefly 自己的组件体系重做了一遍。全程只新增三个文件，不碰主题源码，以后合并上游更新不受影响。顺便把折叠动画从 max-height 换成了 grid-template-rows。",
-          "publishedAt": "2026-09-07T00:00:00.000Z"
-        },
-        {
-          "title": "给博客装了个朋友圈：把友链的更新聚成一条时间线",
-          "link": "https://www.9ll.uk/posts/blog/friendsmoments/",
-          "description": "羡慕 rainzt.cn 的朋友圈，把它搬进自己的 Firefly：构建时抓取所有友链的 RSS 合流成时间线，快照兜底，GitHub Actions 每天自动刷新。纯静态，不用服务器，只新增文件不碰主题源码。后来又给时间线加了层来源配额，不让聚合站霸榜。",
-          "publishedAt": "2026-09-07T00:00:00.000Z"
         }
       ]
     },
@@ -90,16 +90,28 @@
       ],
       "items": [
         {
-          "title": "一行gh cli 我的一百个star没了！",
-          "link": "https://upxuu.com/posts/fk-glm/",
-          "description": "0我在写这篇文章时已经要崩溃了，glm一行命令，我的一个就差一个star就100的仓库被设为了私有",
-          "publishedAt": "2026-10-03T00:34:06.000Z"
+          "title": "「说说」简单优化了下博客，lighthouse终于绿了",
+          "link": "https://upxuu.com/talk/2026-10-06-%E7%AE%80%E5%8D%95%E4%BC%98%E5%8C%96%E4%BA%86%E4%B8%8B%E5%8D%9A%E5%AE%A2lighthou-e%E7%BB%88%E4%BA%8E%E7%BB%BF%E4%BA%86/",
+          "description": "之前不知道咋改的，给博客弄的特别重，用edgeone这个测速的一测50分，阻塞时间竟然高达8s（难道是设备问题？我实际挺快啊） 这回彻底优化了一下 终于好多了 !image.pnghttps://img.upxuu.lcrworld.xyz/images/2026/10/6/20261006213757521.png",
+          "publishedAt": "2026-10-06T13:36:35.000Z"
         },
         {
-          "title": "中国新药你99%不知道的那些事",
-          "link": "https://upxuu.com/posts/china-medication/",
-          "description": "从家人二十余年新药研发的亲历出发，梳理中国药审从野蛮生长、7.22 风暴到严格监管的二十年：为什么一款药要做十八年？7.22 到底砍掉了什么？中药又为何恢复最慢？",
-          "publishedAt": "2026-10-01T02:49:07.000Z"
+          "title": "最有生活的九月",
+          "link": "https://upxuu.com/posts/my-2026-09/",
+          "description": "其实这两天一直在忙着复习，不过还是决定写篇小文记录一下吧 开学伊始 其实自从上了初中以来，开学带给我",
+          "publishedAt": "2026-10-05T23:58:53.000Z"
+        },
+        {
+          "title": "如何爽用 glm 免费用 glm-5.3-flash 实现 token 自由",
+          "link": "https://upxuu.com/posts/free-glm/",
+          "description": "众所周知智谱有一个客户端叫 zcode，而如果你用国际版 z.ai 登录，就可以注册无数个账号，一直领 start plan，最逆天的是还可以叠加最近新出的 trust plan 算是智谱对于 git 上传门的补偿吧",
+          "publishedAt": "2026-10-04T08:25:19.000Z"
+        },
+        {
+          "title": "一行gh cli 我的一百个star没了！",
+          "link": "https://upxuu.com/posts/fk-glm/",
+          "description": "我在写这篇文章时已经要崩溃了，glm一行命令，我的一个就差一个star就100的仓库被设为了私有",
+          "publishedAt": "2026-10-03T00:34:06.000Z"
         },
         {
           "title": "因为我余额要过期了免费给大家用longcat!",
@@ -138,7 +150,7 @@
           "publishedAt": "2026-09-09T13:05:20.000Z"
         },
         {
-          "title": "「说说」undefined",
+          "title": "「说说」i just want to be le",
           "link": "https://upxuu.com/talk/20260909004617/",
           "description": "i just want to be left alone no think no talk only clear ​why not zh? no courage 在发生了一些事情后，有感而发 祝我平安",
           "publishedAt": "2026-09-08T16:46:17.000Z"
@@ -148,18 +160,6 @@
           "link": "https://upxuu.com/talk/20260906203359/",
           "description": "!https://img.upxuu.lcrworld.xyz/images/2026/9/6/20260906203435403.jpg 真好听嘻嘻",
           "publishedAt": "2026-09-06T12:33:59.000Z"
-        },
-        {
-          "title": "DMCA下：我的微信聊天记录导出项目SIWX",
-          "link": "https://upxuu.com/posts/siwx/",
-          "description": "就在前几天，曾经在T公司DMCA下唯一存活下来的微信聊天记录导出项目 ciphertalk也宣布闭源",
-          "publishedAt": "2026-09-06T08:03:01.000Z"
-        },
-        {
-          "title": "微信 4.x 图片 dat 加密全解析：一把账号级密钥，离线解密聊天记录与朋友圈图片",
-          "link": "https://upxuu.com/posts/wechat-dat-image-decrypt-info/",
-          "description": "实测微信 4.1.13：聊天图片与朋友圈图片的 .dat 加密格式逐字节解析，离线派生的账号级密钥解密全部 V2 图片，附气泡缓存文件名映射破解、三质量档结构与 wxgf 转码的完整 Python 实现。",
-          "publishedAt": "2026-09-06T04:30:00.000Z"
         }
       ]
     },
@@ -415,76 +415,76 @@
       ],
       "items": [
         {
-          "title": "atpX：西北三日游",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fatpx.com%2Fblog%2Fnorthwest-china-tour%2F",
-          "description": "这趟旅程是八月初临时起意去的，并无太多准备，接近于喊上两个老伙计说走就走。拖到十月初才记录下来是蓄意而为的，因为近半年被工作烦躁到失去写字的心情，是时候忆甜解乏、重振笔鼓了，即使中秋国庆也没有假期。 第一天中午在兰州落地后，顿感心旷神怡，终于从南方的湿热中解放了出来。来不及干上一碗热情的牛肉面，叼上一个肉夹馍直奔甘肃省博物馆。恰逢暑假，人自然是少不了，只好凭借勇气和力量解锁了「马踏飞燕」和「蓝莲盏」。 「热闹的」铜奔马和蓝莲盏。 傍晚出来后，必须来点硬货帮助消化知识。品尝了春台手抓羊肉，鲜嫩肥美、不腻不膻，确实攒劲。不过三泡台越喝越甜，不太习惯。 手抓羊排和羊脖。 吃完后去中山桥吹吹风再消化一下，顺便速登了白塔山。 中山桥。 向黄河",
-          "publishedAt": "2026-10-02T08:36:40.000Z"
+          "title": "小十的个人博客：国庆新郑、新密三日纪行",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiaoten.com%2Fposts%2F2026%2F10%2Fxinzheng-xinmi-three-day-trip%2F",
+          "description": "前言 今年国庆假期，原本计划带父母去一趟宝泉。 10月3日上午还在老家，临出发前才发现宝泉假日期间实行限流，计划日期已经无法订票。临时改去其他热门景区，同样很难避开人多、堵车和预约等问题。另外因工作原因，假期期间仍需随时待命，不适合跑得太远，于是把行程范围缩到了郑州周边。 最后选中了新郑和新密。两个地方距离郑州都不远，也都有相对集中的旅游资源。不过这次行程没有提前规划，后续去的景点，都是根据当天的时间、路况和现场情况临时决定。 第一天｜10月3日 从老家出发 10月3日下午，从老家带着父母出发，先回了一趟郑州。 之前给父亲买了一双鞋，尺码不太合适，趁这次出来先到郑州更换尺码。处理完后，没有停留，直接前往新郑。 抵达新郑后，先到酒店办",
+          "publishedAt": "2026-10-08T06:08:00.000Z"
         },
         {
-          "title": "飞絮落叶雪：安庆大观亭历史文化街区",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.mrhe.net%2F3714.html",
-          "description": "历时两年，安庆大观亭历史文化街区于国庆节正式对外开放。 大观亭历史始于东汉，盛于唐宋 。明清时期，与武昌黄鹤楼、江洲庾楼并称为“长江三楼”，素有“皖省第一名胜之区”之称，曾被列为“安庆古八景”之首。清代历经多次兴废，康熙年间重建，咸丰年间毁于兵燹，同治年间复建 [10]。民国以降，逐渐荒废成为遗址，现为安庆市文物保护单位 。2024年7月，大观亭历史文化街区保护利用项目正式开工建设 [4] [1]，该项目总投资约3.5亿元，计划于2026年12月全面完工。针对大观亭复建问题，2025年8月官方回复称，按照文物保护法相关规定，不得在原址重建，目前规划按旧址公园方式建设。 具体介绍请看此链接。虽然天气不太好，游人如织，和大多数古镇街区一",
-          "publishedAt": "2026-10-02T14:51:35.000Z"
+          "title": "Zimoo's Life：百廿川农，双甲启新",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.zimoo.me%2Fessay%2F1424.html",
+          "description": "一晃眼，川农已经建校120周年，离在校时的06年百年校庆也已20年，自己毕业也马上20年啦…… 上一次回雅安是大概两三年前和客户也是校友一起顺道回雅安逛了一圈，这么久也都没再回去。再往前就是学校110周年校庆时回了雅安看看，那时候校庆氛围一般，只带着家人到处逛了一下而已，领到一个校庆徽章。到今年120周年，校庆特别热闹，宣传特别多，活动也很多，捐赠120元领到一个川农牛摆件，还有农学院赠送的手机支架、纪念徽章、笔记本和笔等，另外买了一个保温杯、盖了一套纪念印章，但还是很遗憾没有回雅安，毕竟雅安是自己学习生活了四年的地方。 5日下午带老婆儿子就近在成都校区逛了一圈，晚上参加了一场校史主题晚会《传承》。第二天上午有一个高质量发展大会，有",
+          "publishedAt": "2026-10-09T15:33:26.000Z"
         },
         {
-          "title": "响石潭：溜达间的遐想",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiangshitan.com%2Fpost%2F3518.html",
-          "description": "国庆第二天，到西体快走，上了跑道索性放下耳机，不听故事也不听音乐，就好好听身边环境的声音。 有鸟叫，有装修的电锯声，有跑步的脚步声，还有风擦过耳边的声响。眼睛平视着前方，一路看过去：有快速跑步的，有慢悠悠快走的，有站成一堆指着前方说话的，也有低着头刷手机的。有满身肌肉的跑者，有脚步拖地的行人，有逆向迎面跑来的人；远处是楼房，两旁是树木和草坪，有人靠着栏杆压腿。场子里什么颜色的衣服都有，黑的、红黑相间的、蓝的、白的、紫的、花色的，还有穿太极服的，也有光着膀子奔跑的大哥。有人腰间、腿上、肩膀上绑着测心率的装备，有人边压腿边看手机；有小孩坐在凳子上愣愣地看，有佝偻着腰的老人盯着手机，有清洁工一下一下扫着落叶，还有位白头发的婆婆静静坐在一旁",
-          "publishedAt": "2026-10-02T03:25:20.000Z"
+          "title": "一派胡言：2026 年十一假期",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fyipai.me%2Fpost%2F2554.html",
+          "description": "今年十一没出门，因为没什么旅游的兴趣，怕了人山人海。境外热门地方也挤满了中国人。还有个原因是娃上小一了，有点紧张怕他请假影响学习，尽管我内心深处认为应该没啥影响。 因为要给娃腾空间放学习桌，十一前一周我就开始收拾书房了，此项工作持续到假期最后一天。扔了十几大袋闲置或无用的物品，才发现有很多没拆封的玩具、书籍。有些是我买的，有些是别人送的，虽然可惜，但既然这么多年没用过，那应该也是没什么用的。 给娃买的学习桌，本来想买升降的。去宜家和林氏木业的店里看了下，桌面都不稳定，稍微用力就会晃动，这是我接受不了的。山姆在卖的那几个牌子线下又不能看实物，不知道是否稳定。最后还是选了个非升降的桌子，对娃来说可能高了点，只能靠椅子调整。椅子上自带脚踏",
+          "publishedAt": "2026-10-09T14:35:22.000Z"
         },
         {
-          "title": "李文君's Blog AI：国庆遛娃｜龙泉花海乐园不虚此行💐",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Floglib.cn%2Fpost%2F49",
-          "description": "国庆假期不想远行，就近带娃打卡了龙泉花海乐园，真的是挖到宝藏的一次亲子出行！不用长途奔波、不用人挤人，轻轻松松度过了治愈又充实的一天，太适合带小朋友短途游玩了。 一进园区就是大片绚烂花海，各色花卉层层叠叠，配上精致的景观喷泉，整体氛围感特别温柔好看。园区随处都是取景位，自然风光氛围感拉满，随便一拍都很出片，非常适合拍照打卡、休闲散步。 最让人惊喜的是园区活动非常丰富，一整天都不会无聊。园区有特色的NPC互动游戏，参与互动可以赢取银票，能够兑换大锅饭、小动物投喂粮、游船体验等超多福利，互动性很强，大人小孩都能参与体验。 除此之外还有趣味情景剧演绎、夜间热闹的篝火晚会，节目安排充实丰富，从白天一直畅玩至夜晚，游玩体验非常饱满。 整个园区",
-          "publishedAt": "2026-10-01T13:20:00.000Z"
+          "title": "obaby 𝐢‍𝐧⃝ void：竹子庵",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fzhongxiaojie.cn%2F2026%2F10%2F2125%2F",
+          "description": "十一假期虽然没有远行，就近还是稍微转悠了一圈，多近呢？大约十来公里的路程吧。 没到假期的时候，宝子就开始各种打卡任务：跳绳、仰卧起坐、英语、特色活动等等。当然，带着宝子到处溜达并不是为了完成作业，纯粹就是觉得宝子应该在外面多待会儿，接收阳光多运动，仅此而已。 竹子庵这个公园，听到过很多次了，但是却一直并未涉足，公园距离世博园不远，多数的时间都是去世博园转转。去世博园的主要原因是里面有各种游乐设施，对于孩子来说，这些东西比一个纯粹的公园更有吸引力。 早上吃过早饭，驱车到公园的时候公园停车场已经满了，门口有几辆车在排队。看右侧有个停车场，牌子上写着『停车费封顶十元』，看到这个还以为是按小时收费的，直到离开的时候才发现进去就是10块，说封",
+          "publishedAt": "2026-10-09T01:58:57.000Z"
         },
         {
-          "title": "Vei Blog：消失的我——最近都在做什么？",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.veitzn.top%2F%25e6%25b6%2588%25e5%25a4%25b1%25e7%259a%2584%25e6%2588%2591-%25e6%259c%2580%25e8%25bf%2591%25e9%2583%25bd%25e5%259c%25a8%25e5%2581%259a%25e4%25bb%2580%25e4%25b9%2588%25ef%25bc%259f%2F",
-          "description": "好久不见。 如果你发现我最近更新少了、动态少了，先别急着把我归入“失踪人口”。我没有消失，只是在认真的生活。 马上就是国庆假期了，到今天才有时间坐下来，把这阵子的事情一次性交代清楚。 01 从成都出发：一辆车、两个人、一只小狗 88月初，我和老婆带着小狗，从成都出发，自驾去海南。 沿着攻略里规划好的路线：成都—贵阳—徐闻港—海南。如今回头看，恍惚只在一瞬：千里已至，又眨眼间千里尽去。这并非我们第一次自驾。有了上一次青甘环线的经验，我们出发前买了不少零食，用来打发漫漫长路。一路上听脱口秀，竟比听音乐还提神。 小狗大概并不知道我们要去那么远的地方。它只知道，车里多了一个属于自己的位置，而窗外，是不断后退的城市和山。 一路上，隧道一个接一",
-          "publishedAt": "2026-09-30T17:15:33.000Z"
+          "title": "傥师妹的小空间：十一放假，回家搬家",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.224418.xyz%2Fposts%2F3657ca94%2F",
+          "description": "之前暑假的时候家里就说着国庆的时候让我回家，就准备搬家了。在之前的小区住了12年，还是有点感情的，而且之前的小区的地理位置比现在的地理位置好的多，这个搬家的感觉就像是我们学院从东丽校区搬到宁河校区的感觉。",
+          "publishedAt": "2026-10-08T15:14:00.000Z"
         },
         {
-          "title": "我剑也未尝不利：九月 - 养一个老车的成本也太高了",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Ftch.cool%2Farchives%2FOeGiGyMt",
-          "description": "1. 修车 家里的车在我手上开了不到半年，花了快五千块。 第一次是上坡时，油门怎么踩速度都上不去，甚至还在慢慢掉速，降档都不管用。刹车也踩着软软的，开回家后发现刹车片都暖烘烘的。开到最近的途虎养车，小哥听完症状描述略微瞄了一眼，就说刹车片子该换了。作为一个新手也不懂这些，只能选择相信人家说的。于是花",
-          "publishedAt": "2026-09-30T16:00:00.000Z"
+          "title": "老张博客：国庆，回老家住两天！",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Flaozhang.org%2Farchives%2F4406.html",
+          "description": "今年儿子高三，开始通知国庆只放一天假，班主任的消息才发出没几分钟，接着又来发了一个通知，说是开学时间待定。十月一号上午的时候，老师就发了四天的作业，我想着这个国庆儿子的放假时间不会低于四天了。哪不知，这一放就是七天！高三，国庆放七天假，真的是少有！ 因为儿子的放假时间开始不确定，所以就没有计划外出，但是这个假一天接着一天，宅在县城家里也不是个事。还好前几天就打电话给老爸让把床上被套、床单都洗净了，那就回老家住两天吧！ 每次回老家，大桥是必打卡的地方，也只有这个地方可以打卡了！ 大桥横跨淮洪新河，早上、傍晚都有人在桥上撒鱼。当天我们去的时候，桥上只有这一位在撒鱼，技术不太行，网都撒的不是太开，抓拍了N张照片，只有这张照片上的网开的最大",
+          "publishedAt": "2026-10-08T15:11:58.000Z"
         },
         {
-          "title": "记录生活，精彩一刻：试了一下午白茶，学习途中慢慢入坑，心系水仙",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.9sb.net%2Farchives%2Fi-tried-white-tea-all-afternoon-and-slowly-fell-into-a-pit-on-the-way-to-study-with-my-heart-fixed-on-the-narcissus.html",
-          "description": "今天难得不忙，专门去茶店坐了一下午。跟平时爱喝茶的两个朋友学习去了，说是茶楼，其实更像一家茶铺，门口挂着 &quot;品瑞茗茶&quot; 的牌子。进去试了不少茶，主攻白茶。 {mx_photo} {mx_photo} 第一杯是老白茶。墙上就挂着一块木牌，写着 &quot;老白茶&quot;，旁边还跟着 &quot;闷着喝&quot; 三个字。店员说这种茶就得闷，闷透了才有那股醇。端起玻璃杯一看，汤色红褐红褐的，入口跟平时随便泡的完全不一样，又厚又顺，还带点枣香。我擦，原来茶跟茶差别能这么大。 接着又试了别的白茶，盖碗冲的、闷泡杯闷的都有。店里货架摆满了 &quot;白大师&quot; 的礼盒，什么开仓十周年纪念茶、小方片闷泡杯，一",
-          "publishedAt": "2026-09-30T14:54:03.000Z"
+          "title": "湘铭：国庆游记：逃离城市，听凌晨两点的鸡叫",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fxiangming.site%2F1154.html",
+          "description": "国庆标配：回乡下躲清净 今年国庆依旧老规矩，回老婆老家过节。彻底远离城市的喧嚣，不用堵车、不用看人挤人，主打一个自在。最搞笑的是，在乡下静到离谱，直接实现了听凌晨2点鸡叫的自由！哈哈哈。 难得长假肯定要出门溜达一下。说来惭愧，结婚8年，我居然第一次去黄山市里的屯溪老街。车程要一个半小时，之前一直懒得跑，今年总算安排上了。 屯溪老街：一路被美食疯狂投喂 屯溪老街整体体验真的不错，有吃有喝有玩，烟火气拉满。 整条街从头吃到尾，全程被黄山烧饼、葛根饼、毛豆腐轮番投喂，根本停不下来。除了各种特色小吃，街上还有超多徽州特色好物，砚台、墨块、毛笔琳琅满目，古韵氛围感很足。 最有意思的是街头的古风NPC互动，答题闯关就能赢“会子”，攒够了可以兑换",
+          "publishedAt": "2026-10-08T09:26:00.000Z"
         },
         {
-          "title": "韩情脉脉：九月末小记",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fhxy.cc%2F9yuemo.html",
-          "description": "放假回家 下半月临近中秋节国庆节加起来十天的假期，早早就没了上班的心思，由于中间还有三天的工作日，本来打算月末30号回老家，赶上国庆节回家，奈何节假日的票实在是太难抢了，月中的时候放票秒售罄，于...",
-          "publishedAt": "2026-09-30T13:46:18.000Z"
+          "title": "ZJBLOG：国庆假期生活",
+          "link": "https://www.boyouquan.com/go?from=feed&link=http%3A%2F%2Fwww.zjhuiwan.cn%2Finfo%2F20261008%2F5220162508813827.html",
+          "description": "国庆小长假已经结束，每次假期到了要结束的时候才发觉时间过得真快！媳妇孕晚期了，不敢出远门，没能出去旅游，应该是第一次长假不出远门的！不过美好的假期就算啥也不干在家躺平也很舒服。",
+          "publishedAt": "2026-10-08T09:25:09.000Z"
         },
         {
-          "title": "faryou的博客：博客三周年 - 我为什么而写博客",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.faryou.eu.org%2Flife-article-26.html",
-          "description": "分类：生活 不知不觉间，博客已经陪我走完了三年的路，也恰好是我的初中三年 首先，我对自己能够把这个“事业”（至少对我一个中学生来说是的）坚持三年肯定是非常之自豪的，毕竟我和我的同龄人中，会坚持长期的写一些文字毕竟是少数，那再加上独立博客的技术门槛，真的是极少了。 我在生活中其实是比较孤独的，所以尝试在网上寻求一些寄托，那对于身边的这些伙伴当然也是相当的珍惜，西瓜猜字谜、彬红茶、hjz713……这些... 阅读全文 →",
-          "publishedAt": "2026-09-30T12:36:00.000Z"
+          "title": "水拍石：2026年国庆川西朝圣之旅",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.leitao.cn%2F11478.html",
+          "description": "今年中秋和国庆假期只相隔三天，休了这三天便可以连休十三天，足够一次长途旅行。 对于藏区一直情有独钟，一个原因是藏区都在高原，我比较喜欢高原的蓝天和草地；另一方面，藏族全民信佛教，宗教文化已经嵌入民族文...",
+          "publishedAt": "2026-10-08T05:21:16.000Z"
         },
         {
-          "title": "DAIDAIFU'S BLOG：怀胎十月终如愿—妹妹出生啦！",
-          "link": "https://www.boyouquan.com/go?from=feed&link=http%3A%2F%2Fwww.ddf.im%2Findex.php%2F2026%2F09%2F30%2F1269.html",
-          "description": "之前媳妇儿刚怀二宝的时候，我们两个就一直希望能给儿子生一个妹妹，顺利凑成一个“好”字。 但是期间绝大部分的人，看到媳妇儿的肚子，说这个肚形看起来绝对是个儿子，看到大家都很笃定，我们俩一直都按捺着自己的好奇心，坚定不移选择闷开。 心想，不管是儿子还是女儿，都是我们的心头宝，不过内心深处还是希望是个女儿。 9月21日，盲盒总算是开了！终于是如愿，是个妹妹！给儿子生了个千金小妹妹。媳妇儿和我简直不要太高兴！哈哈哈哈 家里从1+1=2，变成2+1=3，到现在3+1=4。一家四口热热闹闹。 这几天一直休陪产假，照顾女儿和媳妇儿。虽然请了月嫂在家坐月子，但是总归还是要自己帮忙搭把手。 买菜、换尿布、兑奶粉、洗衣服、拖地，一众事务，样样都不能落下",
-          "publishedAt": "2026-09-30T12:33:33.000Z"
+          "title": "风渡言：十一大连旅游记录",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.fdsay.com%2F2026%2F10%2Fshi-yi-da-lian-lyu-you-ji-lu%2F",
+          "description": "其实去大连这事真的是临时决定的，比较仓促，甚至攻略都是在小红书让AI给生成的。 我们原本的计划是十一去青甘大环线，不过因为临时有变故，所以取消了行程，眼瞅着就要抢国庆假期的车票了，扒拉着地图，临时决定不如去大连。 哈哈哈，也算是说走就走了。 因为大连比较小，能玩的地方属实不算多，所以计划的也就是在大连呆三天左右，事实证明三天真的绰绰有余。 三天的话，抢票就从容许多，完全可以错峰出行，所以我们选择了10.2号上午从北京出发，10.5号返程。 2号下午到的大连北站，然后地铁直达酒店，办完入住就直接去了星海广场看海鸥去了 […]",
+          "publishedAt": "2026-10-08T03:29:48.000Z"
         },
         {
-          "title": "CHEGVA：又是一年翻缸时",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fchegva.com%2F6819.html",
-          "description": "又到了一年翻缸的时候，趁着中秋国庆连休，前天晚上把乌龟缸翻了下缸，现在是每年翻一次，平时就是每一两周加水或者换水，旁边的小鱼缸上了打氧过滤后，已经不用翻缸了。前两月小孩从电玩城捞了几条病草金放鱼缸里，搞得差点团灭，死得就剩两条鱼，后边又上了一批国斗，鼠鱼，条纹小鲃重建了。之前养龟买的新手快乐缸又倒腾了出来，现在用来养观背青鳉，白云金丝，鳑鲏这些小鱼了。先回顾下去年底的翻缸视频。[video dplayer=&quot;true&quot; autoplay=&quot;false&quot; src=&quot;https://cdn.chegva.com/ueditor/php/upload/video/20260930/yg00",
-          "publishedAt": "2026-09-30T09:55:23.000Z"
+          "title": "叁拾玖：木棉花与青橄榄",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.sanshijiu.cn%2Fpost%2F46",
+          "description": "电影《给阿嬷的情书》观后 《给阿嬷的情书》讲的是侨批。潮汕话里，&quot;批&quot;就是信，信里夹着钱，钱里夹着命。穷小子郑木生和富家女叶淑柔私奔成家不久，为躲抓壮丁过番下了暹罗，夫妻俩从此一生未见。几十年后家人才知道，木生早已客死异乡，此后十八年的批，全是受过他恩惠的客栈女儿谢南枝，以他的名义写的、寄的。木、叶、枝，三个名字长在一起，人却一辈子没有凑齐过。 一纸平安 看完这部片子我才意识到，我们这代人已经不会…",
+          "publishedAt": "2026-10-07T15:55:31.000Z"
         },
         {
-          "title": "小十的个人博客：执铜者：在河南博物院看见亚欧大陆的青铜世界",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiaoten.com%2Fposts%2F2026%2F09%2Fbronze-bearers-eurasian-bronze-world%2F",
-          "description": "前言 我就是那个请了 3 天公休，硬是凑出 13 天长假的人。 9月29日，再次去了趟河南博物院。本以为工作日人会少一些，结果馆里依旧人山人海。 人山人海的场馆（手机拍摄） 今年1月，我曾利用几个工作日的午休时间，断断续续把河南博物院的常设展览重新走了一遍。从贾湖骨笛、妇好鸮尊，到四神云气图、汝窑天蓝釉刻花鹅颈瓶，再到云纹铜禁，前前后后写成了三篇 《河南博物院两小时纪行》 。 原本以为，至少短时间内不会再专门来逛一次河南博物院。结果休假在家待着无聊，也没做什么攻略，临时预约了当天上午的参观时段，便又来了。 没想到这次进馆，却在主展馆一楼偶然发现了一个收费特展——《执铜者——亚欧大陆青铜艺术展》。 河南博物院场馆外 26-9-29 ·",
-          "publishedAt": "2026-09-29T12:44:00.000Z"
+          "title": "小猪的窝：假期终结",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fezo.biz%2FDiary%2F1728.html",
+          "description": "国庆七天假期，被我完整地荒废了。 整个假期，没有任何实质性计划，只是想好好地休息一下。期间，没有出游，没有应酬，也没有工作计划；终于享受久违的睡到自然醒。可如果诚实一点说，我其实连“自然醒”都没怎么享受。因为大多数时候，我醒了翻个身，又睡了过去。这七天，我除了睡觉，什么事情也没有做。 我没有去任何地方，没有见任何人，没有读完一本书，没有写出一个字的计划。朋友圈里有人在海边，有人在山顶，有人在排队，有人在堵车。我唯一拥有的，是一张越来越皱的床单，和一个越来越沉的自己。过去，我总觉得假期是资源，必须被利用：要旅行，要社交，要学习，要在七天里活出别人一个月的精彩。可这一次，我彻底放弃了。我把闹钟关掉，把窗帘拉上，把“应该”两个字从脑子里删",
+          "publishedAt": "2026-10-07T15:54:00.000Z"
         }
       ]
     },
@@ -496,76 +496,76 @@
       ],
       "items": [
         {
+          "title": "宗宗酱：最充实的一次国庆，七天满格治愈！",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fygz.ink%2Farchives%2F5893.html",
+          "description": "今年的国庆假期，大概是我过得最饱满、最尽兴的一次。没有虚度光阴，每天都有不一样的烟火和风景，七天的时光被认真填满，回头看只觉得格外珍贵。 1号｜奔赴山野，开启峨眉山之旅 假期第一天，早早收拾好行李，和我的五人搭子小队整装出发。早上九点多从重庆金家湾出发，一路自驾奔赴峨眉山，四个多小时的车程，伴着沿途的风景流转，满心都是期待。抵达景区后，我们先找了一家饭馆填饱肚子，休整完毕，正式开启峨眉山徒步之旅，山野之行就此启程。 2号｜夜爬金顶，奔赴清晨云海 凌晨三点多，我们终于登顶峨眉山金顶。山顶的冷风扑面而来，凉意十足，真切体会到了高山的低温，还好全程爬山都没有下雨，运气满满。深夜登山的人依旧络绎不绝，人山人海，大家都怀揣着对日出的期待，并肩",
+          "publishedAt": "2026-10-08T02:54:21.000Z"
+        },
+        {
+          "title": "秋记Autumn：十一国庆野钓收获",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.zhyok.cn%2Farchives%2F519%2F",
+          "description": "平时上班没有时间钓鱼，作为一名钓鱼佬，时时刻刻都在准备者，等待许久的十一国庆假期，终于到来了，空军是不可能空军的，只有爆护。由于装备不在身边，花了不到一百元买了一套野钓鲫鱼装备，下面亮亮我的鱼获和野钓环境。",
+          "publishedAt": "2026-10-07T03:14:00.000Z"
+        },
+        {
+          "title": "磊磊落落：2026 国庆假期大连游",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fleileiluoluo.com%2Fposts%2Fnational-day-holiday-2026.html",
+          "description": "今年的国庆假期，去了旅顺博物馆、山海奇幻谷和海之韵公园。到旅顺博物馆感受了近代屈辱的历史和我们先辈的自强不息。当年俄国和苏联侵占时期的建筑很漂亮，但愈加了解会愈加共情先辈的苦难与历史的沉重。好在旅顺除了历史还有机会看到我们现代化的军舰，特别振奋人心，感叹被列强欺负的日子一去不复返。",
+          "publishedAt": "2026-10-06T02:00:00.000Z"
+        },
+        {
+          "title": "徐建伟：游兰崖湾",
+          "link": "https://www.80tz.cn/go?from=feed&link=http%3A%2F%2Fwww.xulog.cn%2Findex.php%3Fact%3Dpl%26id%3D1226",
+          "description": "国庆第二天我带着两个孩子驱车来到了伏羲山兰崖湾风景区游玩，在这附近有两三个新开发的景点，之前我们去过小马高原和大峡谷，还有红石林和云上牧场，扶来洲没去，它们之间相距都不是很远，如果你有足够的时间晚上可以住在悬崖民宿也是非常不错的选择，把这里的景区都玩过来遍！",
+          "publishedAt": "2026-10-06T01:29:57.000Z"
+        },
+        {
+          "title": "徐建伟：户外露营",
+          "link": "https://www.80tz.cn/go?from=feed&link=http%3A%2F%2Fwww.xulog.cn%2Findex.php%3Fact%3Dpl%26id%3D1225",
+          "description": "昨晚上的雨洗刷了整个空气，早上九点多来到石河道公园还稍微有点冷，但不影响我们出来玩的心情，找了一个极佳的位置，凳子桌子帐篷吊床等等都有序的展开，带着刚买的新鲜牛羊和鱿鱼等先来烧烤，我把烤炉支起来，因为昨晚上下雨，所以树林里的树枝落叶都是湿漉漉的没办法用，只好用炉子先把木炭烧起来！",
+          "publishedAt": "2026-10-05T11:28:31.000Z"
+        },
+        {
+          "title": "小朱的博客：如何把腾讯视频转换成MP3",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F10%2F05%2F407%2F",
+          "description": "除了Ai怎么手动把喜欢的视频转换成MP3",
+          "publishedAt": "2026-10-05T01:03:00.000Z"
+        },
+        {
+          "title": "宗宗酱：13小时徒步峨眉山，南线挑战登金顶",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fygz.ink%2Farchives%2F5871.html",
+          "description": "本次路线：报国寺全程徒步上山，金顶索道下山。 你们想要同款这个纪念证的话，要在最开始徒步的时候。微信小程序搜索：峨眉拿捏 然后依次打卡就可以了。然后全程打完卡后，可以在小程序上面有个奖牌，可以6折买那个奖牌，原价39元如果你全程打卡打完，24块即可拿下。等我知道的时候已经回重庆了！只有下次去挑战北线再去兑换！ 中秋的时候，我在自己组建的徒步搭子群里，看到群友提议国庆去爬峨眉山。一开始我觉得峨眉山强度不小，原本计划先在重庆周边爬山拉练，攒够体力再挑战。没想到群里很快凑出三人组队，国庆高速免收过路费，只需要 AA 油费（电车更加便宜！），我一想可以参与，短短一会儿，五人小队就组建完成。我们提前买好了门票、索道票与景区周转大巴票，景区内单",
+          "publishedAt": "2026-10-04T05:25:31.000Z"
+        },
+        {
+          "title": "折腾进行中：Kite：自带后台的静态博客，主题和插件都能按名字装",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.9ll.uk%2Fposts%2Frecommend%2Fkite%2F",
+          "description": "前两天刷 GitHub 的时候看到一个新项目，叫 Kite。star 才 12 个，创建也就半个多月，看着像是个玩具。 结果点进去一看，作者是把它当正经产品在做的 —— Go 写的 CMS，Apache-2.0，主题契约、插件 ABI、构建产物版本锁定，该有的都有。 我最近正好想给博客找个新后端，就顺手把这 52 篇文章全迁过去试了一圈。 为什么觉得它有意思# 我做这个博客的时候有个一直很别扭的地方：写文章是纯 Markdown，但要改个标题、加张图、调整标签，得开编辑器改文件，存盘，切窗口看效果，来回折腾。 别的静态博客方案要么还是这套，要么就得自己配一个 CMS 前端 —— 通常是个单独的 Node 项目，跑起来还要连数据库。 ",
+          "publishedAt": "2026-10-04T00:00:00.000Z"
+        },
+        {
+          "title": "热衷于的博客：TypechoLLMLens：给AI一份摘要",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fzooyoo.top%2Farticle%2F68%2F",
+          "description": "LLMLens 是一款 Typecho 插件，将站点的文章、页面与分类整理为符合 llmstxt.org 规范的 llms.txt 文件，供大语言模型（LLM）抓取与理解站点内容。 本文考验读者的快速阅读和信息提炼能力，如果您需要快速高效的版本，请移步至 Github FurYuenji/LLMLens。 众所周知，本博客经常使用脑回路清奇的方式来进行 SEO 和 GEO 优化，结果时不时就 适得其反地得到惩罚，正所谓江山易改，本性难移，即便如此，我还是会在浏览别人的热文时不由自主按下 Ctrl+U 一探究竟，果然，一个新的名词又一次浮现在我的眼前。 何为 llms.txt？ 又一个众所周知，大语言模型越来越深入地融入我们的日常，每",
+          "publishedAt": "2026-10-03T15:35:00.000Z"
+        },
+        {
+          "title": "蒂诺星球：Spring Boot 多模块工程的 Thin-Jar 实践：基于 Unpack 扁平化构建与自动配置治理",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fink.tino.im%2Farchives%2Fuwfy8pTe8uu",
+          "description": "在 Spring Boot 项目的部署优化中，将动辄上百兆的 Fat-Jar 拆分为 Thin-Jar（瘦包）是一个很常见的思路。通常的做法是借助构建插件将所有依赖抽取到外部 lib 目录，发版时只更新业务包。但在多模块工程中，如果只是简单地把所有依赖拆出，往往会带来“既要维护多个业务 jar 又要管理第三方库”的尴尬。本文记录一种基于 unpack 扁平化合并内部模块的 Thin-Jar 方案，以及由此引发的 Spring Boot 自动配置加载失效与治理实践。 适用环境参考：Spring Boot 3.x / JDK 17+ / Maven 3.8+ 1. 背景与痛点 传统的 Spring Boot 项目打包后通常是一个 Fat",
+          "publishedAt": "2026-10-03T13:00:00.000Z"
+        },
+        {
+          "title": "姓王者的博客：[短讯]:查询whois for edu.cn",
+          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fxingwangzhe.fun%2Fposts%2Fwhois-for-edu-cn%2F",
+          "description": "查询 edu.cn WHOIS 可以在教育网环境尝试 CERNIC 官方目录，也可以使用 needhelp 查看公开静态快照。本文给出域名输入示例、JSON 数据入口，以及未找到记录和实时登记状态之间的区别。",
+          "publishedAt": "2026-10-03T11:57:22.000Z"
+        },
+        {
           "title": "阿伏伽德罗的云端：和 Edge 更新错误搏斗的一天",
           "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fmolyun.com%2Fposts%2F%25E5%2592%258C-edge-%25E6%259B%25B4%25E6%2596%25B0%25E9%2594%2599%25E8%25AF%25AF%25E6%2590%258F%25E6%2596%2597%25E7%259A%2584%25E4%25B8%2580%25E5%25A4%25A9%2F",
           "description": "edge更新 一个看似简单的错误 最开始是检查更新时弹出错误：无法创建该组件(错误代码 1: 0X80004005)。我当时想应该很简单，网上一搜，无非就是修复、重置、重启服务这几招。结果查了一圈，不知道怎么解决了。 然后我就想，那就覆盖安装呗。微软官网下载页面点进去，下载了个安装器，运行之后无提示秒退，问题没解决。 MSI 包的安装 我以为是下载器问题，然后下载了 MicrosoftEdgeEnterpriseX64.msi，双击安装，同样出现安装程序窗口一闪就没了，自动退出。右键选修复，也没用。 于是用命令行生成安装日志，拿到日志一看，好家伙——日志末尾写着 Configuration completed successfull",
           "publishedAt": "2026-10-02T15:07:00.000Z"
-        },
-        {
-          "title": "小朱的博客：战争和贸易",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.blog.80tz.cn%2F2026%2F10%2F02%2Fzz%2F",
-          "description": "战争和贸易对等吗？",
-          "publishedAt": "2026-10-01T15:25:18.000Z"
-        },
-        {
-          "title": "热衷于的博客：洞察中国“姊妹品牌”",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fzooyoo.top%2Farticle%2F66%2F",
-          "description": "如果只是瞥一眼包装，我很难分清伊利 “心情” 和蒙牛 “绿色心情”、康师傅 “冰红茶” 和统一 “冰红茶”、王老吉和加多宝。 但比产品更值得玩味的，是人。对标从不只是产品的竞争，更是人的纠葛。 “蒙牛” 与 “伊利” 品类 伊利 蒙牛 高端白奶 金典 特仑苏 基础纯奶 伊利纯牛奶 蒙牛纯牛奶 常温酸奶 安慕希 纯甄 含乳饮料 优酸乳 酸酸乳 儿童饮品 QQ 星 未来星 两家的冰淇淋品牌也有明显的对标现象，比如 巧乐兹 和 随变、冰工厂 和 冰+、四个圈 和 蒙牛圈，甚至于 小布丁 和 老冰棍 都各有一个同名版本。 更能直接感受到其对标程度之深的，是双方在法律上的拉锯：2025 年，蒙牛 “精选牧场” 因包装与伊利 “金典” 高度近似",
-          "publishedAt": "2026-10-01T06:10:00.000Z"
-        },
-        {
-          "title": "益友网站：如果你在海边遇见了她",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fblog.yiyou.bj.cn%2Farchives%2Fru-guo-ni-zai-hai-bian-yu-jian-liao-ta",
-          "description": "大半夜……， 在一个交友群里我认识了她。 面朝大海的头像，一头乌黑的长发。 那甜甜的情话聊到天亮， 从她缺爱的童年，聊到贫穷的家。 她有个瘫痪的爸爸和精神病的妈， 跟老公已经分了200多年了， 她有破裂的婚姻还带着两岁的娃， 我不爱她，谁爱她！ 她挺要强的，也不图我啥， 说彼此有真爱就很幸运了， 就",
-          "publishedAt": "2026-09-28T07:41:29.000Z"
-        },
-        {
-          "title": "徐果萍博客网：兰溪市“一老一小”免费流感疫苗开打 谁能打、何时打、要注意什么",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.xuguoping.net%2Fshenghuo%2Flanxi-mianfei-liugan-yimiao.html",
-          "description": "冬春季节是流感的高发期，病毒传播快，学校里一旦出现病例就容易扎堆，而老年人感染后发展成重症、甚至危及生命的风险也明显更高。今年兰溪面向重点人群的免费流感疫苗接种陆续启动，家里有老人、有在读中小学生的，值得先把这件事弄清楚。 &quot;一老一小&quot;，哪些人能免费打 兰溪这次免费接种的对象，概括起来就是&quot;一老一小&quot;。前提是没有流感疫苗接种禁忌，按照知情同意、愿接尽接的原则，免费接种1剂次三价流感疫苗。 &quot;一老&quot;，是60周岁以上的老年人，出生日期在1966年12月31日之前。 &quot;一小&quot;，是义务教育阶段的中小学生，也就是兰溪全市小学、初中的在校学生。 这项政策有明确的上位",
-          "publishedAt": "2026-09-28T00:53:03.000Z"
-        },
-        {
-          "title": "秋记Autumn：皖北八月十五摇火把子，摸秋",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.zhyok.cn%2Farchives%2F507%2F",
-          "description": "今天是八月十五，还记得皖北农村的中秋吗？可不只是赏月吃月饼。八月十五的夜晚还有摇火把子，孩子们扎起高粱杆、麦秸火把，点燃之后在田埂上挥舞，星火流转，像一条游走的火龙。老话讲&quot;八月半摸秋不算偷&quot;，举着火把结伴走进瓜田菜园，借着月色摸秋摘瓜果。 火把驱虫祈福，摸秋期盼丰收人旺。没有绚烂灯火，月光伴着漫天火星，这是刻在我们这辈记忆里，最热闹浪漫的中秋！在此祝朋友们中秋节快乐。",
-          "publishedAt": "2026-09-25T08:56:00.000Z"
-        },
-        {
-          "title": "落梦陳的小站：月圆人团圆：祝全体站长中秋快乐",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Ffcattles.com%2Farchives%2Fmid-autumn-wishes-webmasters-2026",
-          "description": "中秋月圆，祝全体站长节日快乐！从古人的祭月、唐宋的赏月节俗，到嫦娥奔月的民间传说，一起聊聊中秋的来历，也把祝福送给每一位认真经营网站的人。",
-          "publishedAt": "2026-09-25T07:37:05.000Z"
-        },
-        {
-          "title": "旺东自留地：博海故人杳然",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwang618.cn%2Fbo-hai-gu-ren-yao-ran.html",
-          "description": "今日维护更新，发现昔日的许多友链已经无法访问。 挨个点开链接，域名过期注销、服务器关停，一页页都是失效的痕迹。从前时常互相串门留言、互换友链认识的博主同好，就这样静静消失于网络，不由得心生怅惘。 想来互联网大抵便是这样，网站的命运本就浮沉难料。个人博客更是如此，凭着一腔兴致搭建，又会迫于生活奔波、工作更迭渐渐搁置，最后默默归于沉寂。虚拟世界里的相遇，亦是一场没有告别的离散。",
-          "publishedAt": "2026-09-21T17:24:43.000Z"
-        },
-        {
-          "title": "徐建伟：所谓自愿",
-          "link": "https://www.80tz.cn/go?from=feed&link=http%3A%2F%2Fwww.xulog.cn%2Findex.php%3Fact%3Dpl%26id%3D1215",
-          "description": "我就是看不惯这“官僚作风”，完全没必要的，国家减免了孩子们的学费，那辅导费相比就起来了，记得我上学那会儿有课本作业费，但没辅导费，现在是没作业费，辅导费猛的剧增，是上级的意思还是下面学校在暗箱操作，不说那么透大家都知道什么意思！当然有家长会说你爱买不买，老师又没强迫你！可我同事说她班主任给她打电话说全班就你孩子没买辅导书，我只简单的问了一句最后怎么说，我同事说交钱买书！呵呵，拿着孩子学习做当盾牌，真正获利的是谁我想都懂，这个社会就这样，我也只能吐槽一下而已，笑笑罢了",
-          "publishedAt": "2026-09-07T06:42:50.000Z"
-        },
-        {
-          "title": "小黄的博客：给静态博客文章添加Lottie表情包",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fblog.weasel6.cn%2Fposts%2Flottie%2F",
-          "description": "前言# 看到标题旁边可爱生动的表情包了吗？这是在《让Halo博客支持Lottie动画文件渲染》一文中发现的好东西，查阅了一下Lottie动画的原理，原来QQ上的超级表情就是Lottie动画，该文作者为Halo做了Lottie动画插件，使用Halo的朋友可以看看他的文章。想给我的静态博客也添加这个有趣的功能，感觉能给文章增添一些趣味性，于是新的折腾之旅开始了。 为什么选择用Lottie动画# 和GIF相比，Lottie极小的体积带来近乎瞬时的加载体验，显著提升网页的启动与响应速度。 Lottie不仅支持复杂的视觉效果，而且由于是基于矢量的动画，在任何屏幕尺寸下都能保持清晰锐利。 动画本质是JSON数据，可直接通过修改代码来调整颜色、速",
-          "publishedAt": "2026-09-06T10:09:00.000Z"
-        },
-        {
-          "title": "朝朝听雨：从母系社会到父权制度：亲缘、私有制与现代性别关系的演变(浅谈男女对立)",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Frainzt.cn%2Fposts%2Ffrom-matriarchal-society-to-patriarchy%2F",
-          "description": "最近网络上的声音很大，男女对立也很严重，本期我们不站队任何一方，只从历史的角度去看待客观事实。 再次叠甲，“男女对立是阶级矛盾转移”的观点认为，社会中的一些性别冲突，表面上表现为男性与女性之间的利益冲突，但深层可能与经济结构、资源分配和阶层差异有关。例如，住房、就业、生育、教育等压力，本质上可能来自社会资源分配问题，却容易被转化为男女之间的相互指责。上层或既有利益结构在这种理论中被认为可能通过强化身份矛盾，让普通群体内部产生分裂，从而弱化对更深层经济问题的关注。不过，这并不意味着所有性别问题都是阶级矛盾造成的，现实中的性别不平等也有其独立存在的原因，二者往往是相互交织的。 再次声明，本站文章仅代表本站观点，若你不认可我的观点尽可离去",
-          "publishedAt": "2026-08-20T00:00:00.000Z"
-        },
-        {
-          "title": "磊磊落落：当下国内汽车制造行业的乱象",
-          "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fleileiluoluo.com%2Fposts%2Fqi-che-zhi-zao-luan-xiang.html",
-          "description": "我们国家在几十年之前就意识到国际石油供应的不稳定性，大力提倡发展新能源汽车。经过十年二十年的发展，当下我们国家在新能源汽车领域取得了不菲的成绩。尤其在今年「美伊战争」打响后，我们普通老百姓都能真真切切体会到油价飞涨对自己生活带来的影响，不少人会不由的感叹国家高层发展新能源汽车的前瞻性。但国内新能源汽车行业发展到现在，有成绩，同时也出现了很多乱象，而且有种朝「无序」的方向发展的势头。",
-          "publishedAt": "2026-08-19T06:20:00.000Z"
         }
       ]
     },
@@ -576,6 +576,30 @@
         "https://www.blogsclub.org/feed/"
       ],
       "items": [
+        {
+          "title": "猫尾巴纸箱？",
+          "link": "https://www.blogsclub.org/blog/937.html",
+          "description": "猫尾巴纸箱？",
+          "publishedAt": "2026-10-09T14:54:55.000Z"
+        },
+        {
+          "title": "涅槃博客",
+          "link": "https://www.blogsclub.org/blog/933.html",
+          "description": "涅槃博客",
+          "publishedAt": "2026-10-05T09:27:21.000Z"
+        },
+        {
+          "title": "响石潭",
+          "link": "https://www.blogsclub.org/blog/931.html",
+          "description": "响石潭",
+          "publishedAt": "2026-10-05T01:14:00.000Z"
+        },
+        {
+          "title": "鼠子Blog",
+          "link": "https://www.blogsclub.org/blog/930.html",
+          "description": "鼠子Blog",
+          "publishedAt": "2026-10-03T11:34:22.000Z"
+        },
         {
           "title": "云海札记",
           "link": "https://www.blogsclub.org/blog/929.html",
@@ -611,30 +635,6 @@
           "link": "https://www.blogsclub.org/blog/923.html",
           "description": "知享客",
           "publishedAt": "2026-09-28T03:23:35.000Z"
-        },
-        {
-          "title": "晓正杨博客",
-          "link": "https://www.blogsclub.org/blog/922.html",
-          "description": "晓正杨博客",
-          "publishedAt": "2026-09-27T09:37:10.000Z"
-        },
-        {
-          "title": "磊的博客",
-          "link": "https://www.blogsclub.org/blog/921.html",
-          "description": "磊的博客",
-          "publishedAt": "2026-09-27T00:11:45.000Z"
-        },
-        {
-          "title": "FGHRSH 日记簿",
-          "link": "https://www.blogsclub.org/blog/920.html",
-          "description": "FGHRSH 日记簿",
-          "publishedAt": "2026-09-26T00:00:42.000Z"
-        },
-        {
-          "title": "落梦陳的小站",
-          "link": "https://www.blogsclub.org/blog/919.html",
-          "description": "落梦陳的小站",
-          "publishedAt": "2026-09-24T09:40:16.000Z"
         }
       ]
     },
@@ -647,64 +647,146 @@
       ],
       "items": [
         {
-          "title": "夜钓灯会不会惊鱼？光怎么打才不赶鱼",
-          "link": "https://chumendiao.com/yediao-deng-hui-bu-hui-jing-yu/",
-          "description": "夜钓灯照进水里确实会改变鱼的活动，但影响主要在光斑正下方和晃动的时候。把光固定、压低、别来回扫，比换灯的颜色更管用",
-          "publishedAt": "2026-10-02T12:00:09.000Z"
+          "title": "调漂时的水深和实际钓的水深不一样，有影响吗？",
+          "link": "https://chumendiao.com/tiaopiao-shuishen-bu-yizhi/",
+          "description": "调漂的水深和实际钓的水深不一样会有影响，水线变长会多压掉几目。半水不是水深的一半，换钓点之后重新找底、复验一次调目更稳妥。",
+          "publishedAt": "2026-10-10T01:00:04.000Z"
         },
         {
-          "title": "夜钓前白天怎么踩点？到现场要记哪些东西",
-          "link": "https://chumendiao.com/yediao-baitian-caidian/",
-          "description": "夜钓踩点要记的是白天看得到、晚上看不到的东西：脚下地形、身后障碍、水下的坎和草边、以及收竿的路线",
-          "publishedAt": "2026-10-01T12:00:09.000Z"
+          "title": "水底有沟有坎，怎么判断哪条是鱼道？",
+          "link": "https://chumendiao.com/shuidi-gou-kan-na-tiao-shi-yudao/",
+          "description": "水底有沟有坎，不是每条都是鱼道。判断看两头通不通、走向是横还是斜、路上有没有东西吃，重铅探完地形还要打两个窝试钓确认。",
+          "publishedAt": "2026-10-09T11:00:04.000Z"
         },
         {
-          "title": "钩和饵的大小不匹配会怎样？小钩挂大饵、大钩挂小饵",
-          "link": "https://chumendiao.com/gou-yu-er-dapei/",
-          "description": "钩和饵要配着看：饵太大鱼吸不进、钩尖被包住；饵太小挂不住、鱼只吃饵不碰钩。判断标准是钩尖能不能露出来",
-          "publishedAt": "2026-09-30T12:00:09.000Z"
+          "title": "开饵用冷水还是温水，有区别吗？",
+          "link": "https://chumendiao.com/kai-er-yong-lengshui-huan-wenshui/",
+          "description": "开饵用冷水还是温水有区别，区别在出丝快慢上，不在最终状态。饵不出丝先查水比和醒饵，再看水温；开好的饵越放越差跟水温关系不大。",
+          "publishedAt": "2026-10-09T06:00:04.000Z"
         },
         {
-          "title": "七星漂（散子漂）怎么调、怎么看信号？",
-          "link": "https://chumendiao.com/qixingpiao-zenme-yong/",
-          "description": "七星漂是几颗散子穿在主线上，靠露出水面的颗数和水面那颗的状态判断鱼讯。它调法简单、适合浅水和草区，但读不了很细的信号",
-          "publishedAt": "2026-09-29T12:00:11.000Z"
+          "title": "螺蛳、河蚌很多的水域怎么钓？",
+          "link": "https://chumendiao.com/shuili-luosi-hebang-duo/",
+          "description": "螺蛳河蚌多说明水底有硬底和食物，常是青鱼、鲤鱼一类会来觅食的地方。钓这类水域要往硬底和深浅交界靠，饵偏实在",
+          "publishedAt": "2026-10-09T01:00:05.000Z"
         },
         {
-          "title": "海竿、远投竿在野钓里怎么用？什么情况比手竿好",
-          "link": "https://chumendiao.com/haigan-yuantou-yediao/",
-          "description": "海竿远投竿的价值是把饵送到手竿够不到的远处，还能同时放几支守不同距离。代价是信号粗、灵敏度低，不适合抓轻口",
-          "publishedAt": "2026-09-28T12:00:09.000Z"
+          "title": "漂慢慢往上顶一点点，算不算送漂？",
+          "link": "https://chumendiao.com/piao-manman-wang-shang-ding-suan-songpiao/",
+          "description": "漂慢慢往上顶一点点也算送漂，难的是判断这次上浮是不是鱼把饵顶起来了。看它顶完停不停、回不回落、换饵后还来不来，比数顶了几目有用。",
+          "publishedAt": "2026-10-08T11:00:05.000Z"
         },
         {
-          "title": "包食钓法怎么用？适合守什么鱼情",
-          "link": "https://chumendiao.com/baoshi-diaofa/",
-          "description": "包食是在芯饵外面再包一层雾化饵，钩上留耐泡的芯、水里散出诱鱼的雾。它把诱和钓合到一处，适合守个体大的鱼",
-          "publishedAt": "2026-09-27T12:00:09.000Z"
+          "title": "竿子借给别人用过，回来要检查什么？",
+          "link": "https://chumendiao.com/ganzi-jie-gei-bieren-yongguo-jiancha/",
+          "description": "竿子借出去再拿回来，要查的不是坏没坏，是那几天它经历过什么。竿袋、接口、竿体、导环、配件各过一遍，借出前先拍照留底最省事。",
+          "publishedAt": "2026-10-08T06:00:05.000Z"
         },
         {
-          "title": "钓法换了一段时间还是没口，该换回来还是继续等？",
-          "link": "https://chumendiao.com/diaofa-huanle-mei-xiaoguo/",
-          "description": "换钓法后多久见效没有统一时间。判断依据不是等了多久，而是有没有出现该钓法对应的那种反馈；没有反馈就换，不要靠继续等",
-          "publishedAt": "2026-09-26T12:00:10.000Z"
+          "title": "第一次钓鱼需要有人带吗？自己能不能学会？",
+          "link": "https://chumendiao.com/diyici-diaoyu-yaobuyao-youren-dai/",
+          "description": "第一次钓鱼可以自学，但调漂、看漂和头一回进陌生水域这几样，有人带着会快很多。差别在反馈速度，不在能不能学会。",
+          "publishedAt": "2026-10-08T01:00:05.000Z"
         },
         {
-          "title": "谷麦钓法是什么？什么时候比商品饵好用",
-          "link": "https://chumendiao.com/gumai-diaofa/",
-          "description": "谷麦钓法是用泡制过的谷物（麦粒、玉米、谷子）既做窝料又做钓饵，靠耐泡、少招小鱼来守个体大的鱼。它的长处是稳，不是快",
-          "publishedAt": "2026-09-25T12:00:09.000Z"
+          "title": "夜钓收摊容易丢什么？怎么收得干净",
+          "link": "https://chumendiao.com/yediao-shoutan-shoushi/",
+          "description": "夜钓最容易丢的是小件：漂座、铅皮、挡豆、钩、钳子。收摊按“先小件后大件、先水面后地面”的顺序，比靠灯光找更可靠",
+          "publishedAt": "2026-10-07T11:00:05.000Z"
         },
         {
-          "title": "长竿短线戳茬怎么玩？什么水域比台钓好使",
-          "link": "https://chumendiao.com/changgan-duanxian-chuocha/",
-          "description": "长竿短线是用长竿配短线组，把钩饵直接送到草缝、芦苇边、树棵底下这些台钓抛不到的位置。它的优势是落点准，不是钓得远",
-          "publishedAt": "2026-09-24T12:00:09.000Z"
+          "title": "钓上来的鱼怎么带回家不会死？",
+          "link": "https://chumendiao.com/diaoshanglai-de-yu-zenme-dai-huijia-bu-hui-si/",
+          "description": "活鱼能不能活着回家，关键在路上一段时间：包湿、降温、少折腾，到家先别急着拆袋。",
+          "publishedAt": "2026-10-07T06:00:05.000Z"
         },
         {
-          "title": "不用浮漂、绷着竿尖看信号怎么钓？",
-          "link": "https://chumendiao.com/bengjianzi-zenme-diao/",
-          "description": "绷尖子是不靠浮漂、靠竿尖的抖动和线绷紧的程度判断鱼讯，多用在水浅、走水急、漂立不住的地方。它的信号比漂粗，适合抓实口",
-          "publishedAt": "2026-09-23T12:00:08.000Z"
+          "title": "钓了一天没钓到，怎么判断这一天有没有白来？",
+          "link": "https://chumendiao.com/diaole-yitian-mei-didao-zenme-pan-bai-lai/",
+          "description": "空军一天算不算白来，标准在你手上：带回了地形和水情就不算白，带不回东西也不等于亏。",
+          "publishedAt": "2026-10-07T01:00:05.000Z"
+        }
+      ]
+    },
+    {
+      "friendUrl": "https://blog.amamo.top/",
+      "feedUrl": "https://blog.amamo.top/rss.xml",
+      "feedUrls": [
+        "https://blog.amamo.top/rss.xml",
+        "https://blog.amamo.top/atom.xml"
+      ],
+      "items": [
+        {
+          "title": "AI短剧越来越low，为什么？",
+          "link": "https://blog.amamo.top/posts/fk-ai-potboiler/",
+          "description": "从AI短剧的观感变化聊起，谈谈剧情和人物到底决定了什么。用《简·爱》当例子，说说情感主题和反套路怎么落地。",
+          "publishedAt": "2026-10-06T00:00:00.000Z"
+        },
+        {
+          "title": "把 Aemeath 的站点统计页移植到 Firefly",
+          "link": "https://blog.amamo.top/posts/firefly-aemeath-analytics-port/",
+          "description": "记录把 Aemeath 主题的公开站点统计页 /analytics 移植到 Firefly 博客主题的过程：Umami 公开分享接口、Waline 最新评论、GitHub 推送热力图与侧栏统计快照组件的适配记录。",
+          "publishedAt": "2026-10-05T00:00:00.000Z"
+        },
+        {
+          "title": "dsh-fs-link2symlink-fix：一个插件修好 dsh 在 PRoot 下 write 丢文件",
+          "link": "https://blog.amamo.top/posts/dsh-fs-link2symlink-fix/",
+          "description": "dsh 的 write 工具在 Termux/PRoot 里新建文件只留一个悬空的 .l2s 符号链接，内容直接蒸发。排查到 PRoot 的 --link2symlink 把 link(2) 仿真坏了，于是写了个零依赖插件在发布原语上把它兜住。",
+          "publishedAt": "2026-10-03T00:00:00.000Z"
+        },
+        {
+          "title": "随机封面修复记：同一篇文章，列表和详情页竟然两张图",
+          "link": "https://blog.amamo.top/posts/firefly-random-cover/",
+          "description": "博客列表页和文章详情页的随机封面每次都不一样，排查后发现是图床 /random 接口不支持种子参数。记录用\"构建期固定封面\"彻底解决这个问题的过程。",
+          "publishedAt": "2026-10-03T00:00:00.000Z"
+        },
+        {
+          "title": "怎么让 dsh 搜索用上 Exa 插件",
+          "link": "https://blog.amamo.top/posts/zen-me-rang-dsh-sou-suo-yong-shang-exa-cha-jian/",
+          "description": "dsh 基础包把 web 行的 searchProvider 钉死为 deepseek-official，导致搜索插件的\"零配置自动接管\"不会生效；本文记录排查过程与 profile 补丁层的修复方法。2026-10-05 勘误：profile 补丁层是整值替换而非合并，web 行必须把 fetchProvider 一并写上。",
+          "publishedAt": "2026-10-02T00:00:00.000Z"
+        },
+        {
+          "title": "测试",
+          "link": "https://blog.amamo.top/posts/back-end_testing/",
+          "description": "<p>用新的后台发一篇文章测试</p>",
+          "publishedAt": "2026-10-01T00:00:00.000Z"
+        },
+        {
+          "title": "课表是怎么做的",
+          "link": "https://blog.amamo.top/posts/%E8%AF%BE%E8%A1%A8%E6%98%AF%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84/",
+          "description": "记录一下给 Firefly 博客主题添加课表组件的过程",
+          "publishedAt": "2026-09-19T00:00:00.000Z"
+        },
+        {
+          "title": "Mobi 转 PDF 完整指南",
+          "link": "https://blog.amamo.top/posts/mobi%E8%BD%ACpdf%E6%8C%87%E5%8D%97/",
+          "description": "用 Calibre 把 MOBI 电子书转换成 PDF 的详细教程，解决排版错乱问题",
+          "publishedAt": "2026-09-12T00:00:00.000Z"
+        },
+        {
+          "title": "dsh-toolcall-id：一个插件修好 dsh 的历史加载失败",
+          "link": "https://blog.amamo.top/posts/dsh-toolcall-id/",
+          "description": "dsh Web GUI 重开多步会话时报 \"received more than one start Match\"，排源发现是工具调用 id 每步重号撞车。写了个开源插件挂在官方钩子上修掉它，升级 dsh 不会被覆盖",
+          "publishedAt": "2026-08-21T00:00:00.000Z"
+        },
+        {
+          "title": "怎么让 dsh 无限重试",
+          "link": "https://blog.amamo.top/posts/zen-me-rang-dsh-wu-xian-zhong-shi/",
+          "description": "dsh 默认只会重试 5 次且间隔很快；本文展示通过配置 retryPolicy 为 always，实现指数退避的无限重试。",
+          "publishedAt": "2026-08-21T00:00:00.000Z"
+        },
+        {
+          "title": "记一次博客收录优化：从 1 个页面到全部可收录",
+          "link": "https://blog.amamo.top/posts/seo-indexing-fix-journey/",
+          "description": "分享为博客排查 Google/Bing 收录问题的全过程：canonical 缺失、重复页面判定、meta description 雷同，以及 IndexNow 接入时踩过的各种坑。",
+          "publishedAt": "2026-08-19T00:00:00.000Z"
+        },
+        {
+          "title": "开源推荐：把 QQ 机器人搬到 Hugging Face 免费跑（AstrBot + NapCat）",
+          "link": "https://blog.amamo.top/posts/%E5%BC%80%E6%BA%90%E6%8E%A8%E8%8D%90-astrbot-napcat-%E9%83%A8%E7%BD%B2%E5%88%B0huggingface/",
+          "description": "开源推荐：把 QQ 机器人搬到 Hugging Face 免费跑（AstrBot + NapCat）",
+          "publishedAt": "2026-08-19T00:00:00.000Z"
         }
       ]
     }

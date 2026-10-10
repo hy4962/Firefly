@@ -1,21 +1,21 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-04T19:04:23.303Z",
+  "updatedAt": "2026-10-10T01:24:39.619Z",
   "partial": false,
   "profile": {
     "steamId": "76561199212880612",
     "name": "kirineko",
     "avatar": "https://avatars.steamstatic.com/89bed78a59d232682fb15697c0e610c38020067f_full.jpg",
     "profileUrl": "https://steamcommunity.com/id/HY-bulebird/",
-    "online": true,
+    "online": false,
     "stateMessage": "",
     "level": 15,
     "badgeCount": 12
   },
   "stats": {
     "gameCount": 86,
-    "totalMinutes": 201840,
-    "recentMinutes": 3162
+    "totalMinutes": 202172,
+    "recentMinutes": 3495
   },
   "games": [
     {
@@ -30,8 +30,8 @@
       "appid": 431960,
       "name": "Wallpaper Engine",
       "minutes": 17711,
-      "recentMinutes": 0,
-      "lastPlayed": 1789817659,
+      "recentMinutes": 1,
+      "lastPlayed": 1791183515,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/431960/header.jpg"
     },
     {
@@ -77,9 +77,9 @@
     {
       "appid": 3678970,
       "name": "TBH: Task Bar Hero",
-      "minutes": 2731,
-      "recentMinutes": 2731,
-      "lastPlayed": 1791139867,
+      "minutes": 3063,
+      "recentMinutes": 3063,
+      "lastPlayed": 1791519304,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3678970/header.jpg"
     },
     {
