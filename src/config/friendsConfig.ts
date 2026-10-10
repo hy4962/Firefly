@@ -153,6 +153,18 @@ export const friendsConfig: FriendLink[] = [
 		weight: 2,
 		enabled: true,
 	},
+	{
+		title: "蒂诺星球",
+		imgurl: "https://ink.tino.im/logo",
+		desc: "开发者的数字花园。这里种着技术笔记与代码实验，也开着深夜的碎碎念。",
+		siteurl: "https://ink.tino.im",
+		// 2026-10-10 核查：对方友链页 dofollow（21 条链接全为 noopener noreferrer，无 nofollow/ugc），
+		// 我方 https://9ll.uk 已挂在其友链列表内（已完成回链）。Halo + Joe2.0 主题的技术博客，
+		// 内容为 Spring Boot / Nginx / CF 等后端实践。不填 rss，避免对方文章进入本站朋友圈时间线。
+		tags: ["Blog"],
+		weight: 1,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
