@@ -819,19 +819,27 @@
 </style>
 
 <style>
-	/* ===== 顶栏项目内边距收窄（1024–1599px）=====
-	   背景：顶栏是 grid 三列 [logo | 菜单(1fr) | 图标簇]，菜单居中；每项是
-	   `.btn-plain px-4`，里面放 icon + 名字。这一排的余量接近 0 ——
-	   实测线上（8 项）在 1280–1408px 就已经「差几个像素」，而匿名 flex 文本项
-	   一旦差 1px 就会每个字各占一行，于是「主页/朋友圈/站点统计」全被压成竖排
-	   （元素是固定 h-10，文字直接溢出到导航栏外，看着像字体炸了）。
-	   加「开往」后这个区间扩大成 1024–1536px，覆盖 1280/1366/1440 这些笔记本宽度，
-	   所以在 1024–1599px 段把左右内边距从 16px 收到 8px。
-	   下拉触发按钮（文章/我的/关于）右侧保留 28px，给那个绝对定位的下拉箭头让位。
-	   1600px 以上余量本来够，保持主题原样，不做无谓的收紧。
-	   这也是为什么这段写在页脚注入里：它只覆盖样式，不动上游 DropdownMenu.astro。
-	   未分层 CSS 压过 @layer utilities 里的 px-4，不需要 !important。 */
+	/* ===== 顶栏紧凑模式（1024–1599px）=====
+	   背景：顶栏是三列 grid [logo | 菜单(1fr) | 图标簇]，菜单居中，每项是 `.btn-plain px-4`
+	   里放 icon + 名字。这一排的余量本来就接近 0，而名字是**匿名 flex 文本项** ——
+	   只要差 1px 就逐字换行，标签被压成竖排并溢出（按钮是固定 h-10，不裁切，直接糊在外面）。
+	   两处加压正好撞在一起：
+	     · 主题在 `@media (max-width:1279px)` 隐藏 `.navbar-icon`（见 navbar.css），
+	       于是 1280px 起每项突然多出约 30px 需求（×8 项 ≈ 237px）；
+	     · 同一档宽度上右侧搜索框还从图标态展宽成输入框，中间列可用宽度反而从 828px 掉到 758px。
+	   实测线上（8 项，主题原样）就已中招：1024px 差 4px、1280–1366px 差 8–87px；本站有 9 项，
+	   区间进一步扩大。所以 1024–1599px 走「紧凑模式」：
+	     1) 继续隐藏导航项图标（沿用主题 <1280px 的做法，因为本站导航项更多）；
+	     2) 左右内边距 16px → 8px，下拉触发按钮右侧保留 28px 给绝对定位的箭头。
+	   实测余量：该区间最小 +40px（1024px 处），1280px 处 +194px；≥1600px 恢复主题原样（余量 +179px 起）。
+	   改导航项数或文案后，用 `.workbuddy/scratch/nav-natural.cjs` 重跑一遍确认余量仍为正。
+	   这段写在页脚注入里，只覆盖样式，不动上游 DropdownMenu.astro / navbar.css。 */
 	@media (min-width: 1024px) and (max-width: 1599px) {
+		/* 只打顶级菜单项自己的图标；下拉面板里的条目图标保持显示 */
+		#navbar .dropdown-container > a > div > .navbar-icon,
+		#navbar .dropdown-container > button > div > .navbar-icon {
+			display: none;
+		}
 		#navbar .dropdown-container > a,
 		#navbar .dropdown-container > button {
 			padding-left: 0.5rem;
