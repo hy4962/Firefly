@@ -5,6 +5,52 @@
 	</a>
 </div>
 
+<!-- 开往（Travellings）友链接力徽标：官方要求外链放在「打开网站就能看到的地方」，
+     顶栏已有一个入口，这里再放一份兜底（移动端、以及只想看页脚的访客都能点到）。
+     两份图都是自托管的，不依赖对方站点的可用性：
+       travellings-b.png 黑底白字 → 亮色主题下用
+       travellings-w.png 白底黑字 → 暗色主题下用（否则墨块贴在深色页脚上看不见）
+     换新素材时直接从 https://www.travellings.cn/assets/b.png 与 w.png 覆盖即可。 -->
+<div class="ff-trav">
+	<a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener" title="开往 - 友链接力">
+		<img class="ff-trav-img ff-trav-img--b" src="/assets/images/travellings-b.png" alt="开往 - 友链接力" height="18" loading="lazy" />
+		<img class="ff-trav-img ff-trav-img--w" src="/assets/images/travellings-w.png" alt="" aria-hidden="true" height="18" loading="lazy" />
+	</a>
+</div>
+
+<style>
+	/* 开往徽标：跟随主题切换黑白两版，和上面那行萌 ICP 备案号排在一起 */
+	.ff-trav {
+		margin: 6px 0 0;
+		text-align: center;
+		line-height: 1;
+	}
+	.ff-trav a {
+		display: inline-flex;
+		align-items: center;
+		transition: opacity 180ms ease;
+	}
+	.ff-trav a:hover {
+		opacity: 0.72;
+	}
+	.ff-trav-img {
+		height: 18px;
+		width: auto;
+		vertical-align: middle;
+	}
+	/* 默认（亮色）只显示黑底版 */
+	.ff-trav-img--w {
+		display: none;
+	}
+	/* 暗色主题：换白底版。本站暗色是 html.dark（类切换），不是媒体查询 */
+	html.dark .ff-trav-img--b {
+		display: none;
+	}
+	html.dark .ff-trav-img--w {
+		display: inline-block;
+	}
+</style>
+
 <style>
 	/* 页脚运行时间：与 siteConfig.siteStartDate 保持一致 */
 	.ff-uptime {
@@ -769,5 +815,30 @@
 	.enable-card-border .blog-changelog-pager__num,
 	.enable-card-border .blog-changelog-pager__step {
 		border: var(--card-border-width) solid var(--card-border-color);
+	}
+</style>
+
+<style>
+	/* ===== 顶栏项目内边距收窄（1024–1599px）=====
+	   背景：顶栏是 grid 三列 [logo | 菜单(1fr) | 图标簇]，菜单居中；每项是
+	   `.btn-plain px-4`，里面放 icon + 名字。这一排的余量接近 0 ——
+	   实测线上（8 项）在 1280–1408px 就已经「差几个像素」，而匿名 flex 文本项
+	   一旦差 1px 就会每个字各占一行，于是「主页/朋友圈/站点统计」全被压成竖排
+	   （元素是固定 h-10，文字直接溢出到导航栏外，看着像字体炸了）。
+	   加「开往」后这个区间扩大成 1024–1536px，覆盖 1280/1366/1440 这些笔记本宽度，
+	   所以在 1024–1599px 段把左右内边距从 16px 收到 8px。
+	   下拉触发按钮（文章/我的/关于）右侧保留 28px，给那个绝对定位的下拉箭头让位。
+	   1600px 以上余量本来够，保持主题原样，不做无谓的收紧。
+	   这也是为什么这段写在页脚注入里：它只覆盖样式，不动上游 DropdownMenu.astro。
+	   未分层 CSS 压过 @layer utilities 里的 px-4，不需要 !important。 */
+	@media (min-width: 1024px) and (max-width: 1599px) {
+		#navbar .dropdown-container > a,
+		#navbar .dropdown-container > button {
+			padding-left: 0.5rem;
+			padding-right: 0.5rem;
+		}
+		#navbar .dropdown-container > button {
+			padding-right: 1.75rem;
+		}
 	}
 </style>

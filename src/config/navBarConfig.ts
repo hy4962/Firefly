@@ -169,6 +169,17 @@ url: "https://kuma.9ll.uk/status/9ll",
 		icon: "material-symbols:analytics",
 	});
 
+	// 开往（Travellings）：友链接力项目。官方要求外链必须放在「打开网站就能看到的地方」
+	// （顶栏 / 侧栏），所以给它一个顶级入口，而不是塞进「关于」子菜单。
+	// ⚠️ 这里故意不给 icon：本站顶栏在 1024–1600px 区间已经排满（实测最窄处只剩 4px 余量），
+	//    带图标会让它在 1280–1366 这类笔记本宽度上压到右侧搜索图标（实测压 5px），
+	//    不加图标则可保证全区间不重叠。页脚还有一份徽标兜底，移动端抽屉里也能找到。
+	links.push({
+		name: "开往",
+		url: "https://www.travellings.cn/go.html",
+		external: true,
+	});
+
 	// 自定义导航栏链接示例（已合并到"关于"菜单，保留作为参考）
 	// links.push({
 	// 	name: "链接",
