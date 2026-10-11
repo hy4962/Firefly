@@ -128,6 +128,14 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "material-symbols:image",
 			},
 
+			// 图片混淆工具（自建，部署在 Cloudflare Workers）
+			{
+				name: "图片混淆",
+				url: "https://hunxi.9ll.uk/",
+				external: true,
+				icon: "material-symbols:blur-on",
+			},
+
 			// 邮箱
 			{
 				name: "免费邮局",

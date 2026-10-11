@@ -148,6 +148,13 @@ export const booknavConfig: BooknavGroup[] = [
 				weight: 10,
 			},
 			{
+				title: "图片混淆",
+				url: "https://hunxi.9ll.uk/",
+				desc: "图片混淆 / 解混淆工具，可调强度、可多次处理",
+				icon: "material-symbols:blur-on",
+				weight: 9.5,
+			},
+			{
 				title: "免费图床",
 				url: "https://imgbed.9ll.uk/",
 				desc: "自建图片托管服务",
