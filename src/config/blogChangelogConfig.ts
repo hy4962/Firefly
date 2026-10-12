@@ -31,20 +31,20 @@ export interface ChangelogEntry {
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
 		version: "V1.37",
-		title: "动态页最近评论",
+		title: "全站最近评论",
 		date: "2026-10-12",
 		summary:
-			"动态页右栏新增「最近评论」组件，直连 Waline 公开接口拉最新 8 条评论，把访客互动也摆到台面上",
+			"全站右栏新增「最近评论」组件：桌面挂右栏、移动端挂底部栏，直连 Waline 公开接口拉最新 8 条，把访客互动摆到台面上",
 		description:
-			"留言板的互动原本全藏在各页面评论区里，有人留了言，除了当场那一下别处再也看不到。参考站在右栏挂了「最近评论」，于是给 /dynamic/ 也加了一个：数据就在自己的 Waline 后端里，直接调它的公开最近评论接口（CORS 已放开），头像、昵称、相对时间、「评论于 /路径」、两行摘要一应俱全，底部标注「已展示 N 条公开评论 · 内容来自 Waline」。落法还是页脚注入那一套 —— /dynamic/ 整页和侧栏的 SideBar.astro 都是上游文件改不得，所以外壳 DOM 与样式追加在 FooterConfig.html，脚本由页脚的 PAGE_SCRIPTS 按 pathname 按需加载，只在动态页把组件搬进右栏「最新动态」之后；离开页面自动隐藏，swup 无刷新往返不丢。样式全部自带（主题 CSS 变量 + card-base，几何复刻 WidgetLayout），不碰 Tailwind 工具类，亮/暗主题与 1280px 窄栏都验过。",
+			"留言板的互动原本全藏在各页面评论区里，有人留了言，除了当场那一下别处再也看不到。参考站在右栏挂了「最近评论」，于是给全站都加了一个：数据就在自己的 Waline 后端里，直接调它的公开最近评论接口（CORS 已放开），头像、昵称、相对时间、「评论于 /路径」、两行摘要一应俱全，底部标注「已展示 N 条公开评论 · 内容来自 Waline」。落法还是页脚注入那一套 —— 页面和侧栏的 SideBar.astro 都是上游文件改不得，所以外壳 DOM 与样式追加在 FooterConfig.html，脚本由页脚的 PAGE_SCRIPTS 全站加载：桌面把组件搬进右栏「最新动态」之后，<768px 搬进移动端底部组件栏（#bottom-sidebar），跨断点自动换挂载点；两类容器都在 swup 替换范围外，搬一次永久有效，切页不丢。样式全部自带（主题 CSS 变量 + card-base，几何复刻 WidgetLayout），不碰 Tailwind 工具类，亮/暗主题与 1280px 窄栏都验过。",
 		items: [
 			{
 				category: "动态",
-				text: "右栏「最新动态」下方新增「最近评论」：拉 Waline 最近 8 条公开评论，每条含头像（接口没给头像时用昵称首字 + 哈希色相的文字头像垫底，图片加载失败自动露出文字）、昵称、相对时间、「评论于 /路径」和两行摘要；标题右侧「去留言板」直达留言板，窄栏放不下时优先截断路径、保昵称完整",
+				text: "全站右栏「最新动态」下方新增「最近评论」（移动端在底部组件栏）：拉 Waline 最近 8 条公开评论，每条含头像（接口没给头像时用昵称首字 + 哈希色相的文字头像垫底，图片加载失败自动露出文字）、昵称、相对时间、「评论于 /路径」和两行摘要；标题右侧「去留言板」直达留言板，窄栏放不下时优先截断路径、保昵称完整",
 			},
 			{
 				category: "页脚",
-				text: "注入方式：组件外壳与全部样式追加在 src/config/FooterConfig.html，recent-comments.js 由页脚 PAGE_SCRIPTS 按 /^\\/dynamic\\/?$/ 按需加载，其他页面只多十几行判断；组件挂在 #right-sidebar 的 top 容器里「最新动态」之后，该容器在 swup 替换范围外，搬一次永久有效。以后改那个 js 记得把 ?v= 往上加（/assets/* 有 30 天强缓存）",
+				text: "注入方式：组件外壳与全部样式追加在 src/config/FooterConfig.html，recent-comments.js 由页脚 PAGE_SCRIPTS 全站加载（path: /.*/ ），桌面挂 #right-sidebar 的 top 容器「最新动态」之后、移动端挂 #bottom-sidebar，两类容器都在 swup 替换范围外，搬一次永久有效。以后改那个 js 记得把 ?v= 往上加（/assets/* 有 30 天强缓存）",
 			},
 			{
 				category: "维护",

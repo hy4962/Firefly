@@ -1,33 +1,33 @@
 /**
- * 动态页（/dynamic/）右栏「最近评论」组件。
+ * 全站「最近评论」组件（桌面右栏 / 移动端底部栏）。
  *
  * 数据源是本站 Waline 后端的公开接口：
  *   GET https://waline.9ll.uk/api/comment?type=recent&count=8
- * 返回 { errno: 0, data: Comment[] }，字段含 nick / avatar / orig（纯文本）/
+ * 返回 { errno: 0, data: Comment[] }，字段含 nick / avatar / orig / comment /
  * url（评论所在页面路径）/ time（毫秒时间戳）/ status。
  * 该接口已放开 CORS（Access-Control-Allow-Origin: *），前端直连无需代理。
  *
  * 注入路径（不改任何上游文件）：
  *   1. 组件外壳 DOM 与全部样式在 src/config/FooterConfig.html —— 页脚在 #swup-container
  *      之外，整页加载才跑一次，正好用来挂 swup 事件；
- *   2. 本脚本由页脚的 PAGE_SCRIPTS 按 pathname 按需加载，只在 /dynamic/ 生效；
- *   3. 挂载点是右栏 top 组件容器（#right-sidebar 的第一个子 div），插在
- *      「最新动态」widget-layout[data-id="latest-dynamics"] 之后。
- *      #right-sidebar-static 整个在 swup 替换范围外，搬一次即永久有效，切页不会丢；
- *   4. 离开 /dynamic/ 只把组件 hidden（节点留在右栏里），回来再显示并按缓存刷新。
- *      右栏在 ≤768px 被布局隐藏（layout-base.css），组件随之隐藏，移动端不显示。
+ *   2. 本脚本由页脚的 PAGE_SCRIPTS 全站加载（第一个页面进来就装上，之后切页不重跑）；
+ *   3. 挂载点按视口分：≥768px 进右栏 top 组件容器（#right-sidebar 第一个子 div），
+ *      插在「最新动态」widget-layout[data-id="latest-dynamics"] 之后；<768px 进移动端
+ *      底部组件栏 #bottom-sidebar。#right-sidebar-static 与 #mobile-bottom-sidebar 都在
+ *      swup 替换范围外，搬一次即永久有效，切页不会丢；
+ *   4. 没有任何侧栏容器的页面（理论情况）组件留在页脚停车位、保持 hidden，不占布局。
  */
 (function () {
 	"use strict";
 
 	// ===== 配置 =====
-	// 换 Waline 地址或显示条数只改这两行
+	// 换 Waline 地址或显示条数只改这一行
 	var API_URL = "https://waline.9ll.uk/api/comment?type=recent&count=8";
-	var GUESTBOOK_PATH = "/guestbook/";
 
-	var PAGE_RE = /^\/dynamic\/?$/;
+	// 移动端断点与主题布局保持一致（layout-base.css：≤767px 隐藏左右侧栏、启用底部栏）
+	var MOBILE_QUERY = "(max-width: 767px)";
 	var CACHE_KEY = "ff:recent-comments:v1";
-	var CACHE_TTL = 120000; // 缓存 2 分钟：/dynamic/ 与别的页之间来回跳时不重复请求
+	var CACHE_TTL = 120000; // 缓存 2 分钟：全站任何页面间来回跳都不重复请求
 	var EXCERPT_MAX = 120; // 摘要最多字符数（CSS 还会再截到两行）
 
 	var root = document.getElementById("ff-rc");
@@ -236,7 +236,21 @@
 	}
 
 	// ===== 挂载 / 隐藏 =====
+	// 全站显示：桌面端挂右栏 top 容器「最新动态」之后；<768px 挂移动端底部组件栏
+	// （#mobile-bottom-sidebar 里的 #bottom-sidebar，主题在移动端用这套替代左右侧栏）。
+	// #right-sidebar-static 与 #mobile-bottom-sidebar 都在 swup 替换范围外，搬一次即永久有效。
+	function isMobileNow() {
+		return !!(
+			window.matchMedia && window.matchMedia(MOBILE_QUERY).matches
+		);
+	}
+
 	function findMountPoint() {
+		if (isMobileNow()) {
+			var bar = document.getElementById("bottom-sidebar");
+			if (bar) return { parent: bar, before: null };
+			// 移动端容器还没渲染（极端情况）就退回桌面逻辑，不显示好过报错
+		}
 		var sidebar = document.getElementById("right-sidebar");
 		if (!sidebar) return null;
 		var wrapper = sidebar.firstElementChild; // top 组件容器（flex flex-col gap-4）
@@ -244,30 +258,29 @@
 		var latest = sidebar.querySelector(
 			'widget-layout[data-id="latest-dynamics"]',
 		);
-		return { wrapper: wrapper, after: latest };
+		return { parent: wrapper, before: latest ? latest.nextSibling : null };
 	}
 
 	function mount() {
 		var point = findMountPoint();
-		if (!point) return;
-		if (root.parentNode !== point.wrapper) {
-			if (point.after && point.after.parentNode === point.wrapper) {
-				point.wrapper.insertBefore(root, point.after.nextSibling);
+		if (!point) {
+			// 没有任何侧栏容器（理论上的特殊页面）：留在页脚停车位，不占布局
+			root.hidden = true;
+			return;
+		}
+		if (root.parentNode !== point.parent) {
+			if (point.before && point.before.parentNode === point.parent) {
+				point.parent.insertBefore(root, point.before);
 			} else {
-				point.wrapper.appendChild(root);
+				point.parent.appendChild(root);
 			}
 		}
 		root.hidden = false;
 		load(false);
 	}
 
-	function unmount() {
-		root.hidden = true;
-	}
-
 	function sync() {
-		if (PAGE_RE.test(window.location.pathname)) mount();
-		else unmount();
+		mount();
 	}
 
 	document.addEventListener("astro:page-load", sync);
@@ -276,5 +289,20 @@
 		document.addEventListener("DOMContentLoaded", sync, { once: true });
 	} else {
 		sync();
+	}
+
+	// 跨 768px 断点时把节点搬到另一个挂载点（主题在该断点整块切换侧栏 / 底部栏）
+	var motionQuery = window.matchMedia
+		? window.matchMedia(MOBILE_QUERY)
+		: null;
+	if (motionQuery) {
+		var onBreakpointChange = function () {
+			sync();
+		};
+		if (motionQuery.addEventListener) {
+			motionQuery.addEventListener("change", onBreakpointChange);
+		} else if (motionQuery.addListener) {
+			motionQuery.addListener(onBreakpointChange); // 旧版 Safari
+		}
 	}
 })();
