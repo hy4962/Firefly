@@ -30,6 +30,31 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.37",
+		title: "动态页最近评论",
+		date: "2026-10-12",
+		summary:
+			"动态页右栏新增「最近评论」组件，直连 Waline 公开接口拉最新 8 条评论，把访客互动也摆到台面上",
+		description:
+			"留言板的互动原本全藏在各页面评论区里，有人留了言，除了当场那一下别处再也看不到。参考站在右栏挂了「最近评论」，于是给 /dynamic/ 也加了一个：数据就在自己的 Waline 后端里，直接调它的公开最近评论接口（CORS 已放开），头像、昵称、相对时间、「评论于 /路径」、两行摘要一应俱全，底部标注「已展示 N 条公开评论 · 内容来自 Waline」。落法还是页脚注入那一套 —— /dynamic/ 整页和侧栏的 SideBar.astro 都是上游文件改不得，所以外壳 DOM 与样式追加在 FooterConfig.html，脚本由页脚的 PAGE_SCRIPTS 按 pathname 按需加载，只在动态页把组件搬进右栏「最新动态」之后；离开页面自动隐藏，swup 无刷新往返不丢。样式全部自带（主题 CSS 变量 + card-base，几何复刻 WidgetLayout），不碰 Tailwind 工具类，亮/暗主题与 1280px 窄栏都验过。",
+		items: [
+			{
+				category: "动态",
+				text: "右栏「最新动态」下方新增「最近评论」：拉 Waline 最近 8 条公开评论，每条含头像（接口没给头像时用昵称首字 + 哈希色相的文字头像垫底，图片加载失败自动露出文字）、昵称、相对时间、「评论于 /路径」和两行摘要；标题右侧「去留言板」直达留言板，窄栏放不下时优先截断路径、保昵称完整",
+			},
+			{
+				category: "页脚",
+				text: "注入方式：组件外壳与全部样式追加在 src/config/FooterConfig.html，recent-comments.js 由页脚 PAGE_SCRIPTS 按 /^\\/dynamic\\/?$/ 按需加载，其他页面只多十几行判断；组件挂在 #right-sidebar 的 top 容器里「最新动态」之后，该容器在 swup 替换范围外，搬一次永久有效。以后改那个 js 记得把 ?v= 往上加（/assets/* 有 30 天强缓存）",
+			},
+			{
+				category: "维护",
+				text: 
+				"三个坑留档：① Waline 的 orig 字段是渲染前的 HTML（含 wl-badge 之类标签），不能直接当摘要文本，要用渲染后的 comment 过 DOM 取 textContent；② 条目文字容器类名和内容外包装撞名（都叫 ff-rc-body），外包装的 padding: 1rem 把每条评论多吃 32px，meta 行被挤到 162px；③ 窄栏 flex 布局里文字容器没有 flex-grow 时宽度按 max-content 算（长 URL 把行撑爆），补 flex: 1 1 auto + min-width: 0 后才稳定。另：改完 FooterConfig.html 先用 new Function 校验全部内联脚本 —— 一次编辑把缩排弄坏，整个 PAGE_SCRIPTS IIFE 语法错误静默失效，脚本压根没加载",
+			},
+		],
+		tags: ["博客", "动态", "页脚", "Waline"],
+	},
+	{
 		version: "V1.36",
 		title: "开往入口与顶栏挤压",
 		date: "2026-10-12",

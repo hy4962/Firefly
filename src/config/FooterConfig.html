@@ -401,6 +401,12 @@
 				id: "ff-booknav-covers-js",
 				src: "/assets/js/booknav-covers.js",
 			},
+			{
+				// 动态页右栏「最近评论」：数据走 Waline 公开接口，外壳与样式在本文件末尾
+				path: /^\/dynamic\/?$/,
+				id: "ff-recent-comments-js",
+				src: "/assets/js/recent-comments.js?v=1",
+			},
 		];
 
 		function loadPageScripts() {
@@ -850,3 +856,216 @@
 		}
 	}
 </style>
+
+<style>
+	/* ===== 动态页右栏「最近评论」=====
+	   外壳默认藏在页脚（hidden），recent-comments.js 只在 /dynamic/ 把它搬进右栏
+	   「最新动态」之后并填数据（Waline 公开接口，CORS 已放开），其它页面原样不动。
+	   样式全部自带：几何复刻 WidgetLayout（标题条 ml-8/mt-4/mb-2 + 主题色竖条、
+	   内容 px-4/pt-4、卡片 pb-4），配色只用主题 CSS 变量与 card-base，
+	   不碰 Tailwind 工具类 —— 注入 HTML 里的工具类一旦没被内容探测扫到就会静默失效。 */
+	.ff-rc[hidden] {
+		display: none;
+	}
+	.ff-rc {
+		padding-bottom: 1rem; /* 对应 WidgetLayout 的 pb-4 */
+	}
+	.ff-rc-title {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin: 1rem 2rem 0.5rem; /* 对应 widget-title 的 mt-4 ml-8 mb-2 */
+		font-size: 1.125rem;
+		font-weight: 700;
+		line-height: 1.5;
+		color: rgb(23 23 23);
+	}
+	html.dark .ff-rc-title {
+		color: rgb(245 245 245);
+	}
+	.ff-rc-title::before {
+		content: "";
+		position: absolute;
+		left: -1rem;
+		top: 5.5px;
+		width: 0.25rem;
+		height: 1rem;
+		border-radius: 0.375rem;
+		background: var(--primary);
+	}
+	.ff-rc-goto {
+		flex: 0 0 auto;
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--primary);
+		text-decoration: none;
+		transition: opacity 180ms ease;
+	}
+	.ff-rc-goto:hover {
+		opacity: 0.72;
+	}
+	.ff-rc-goto:hover span {
+		text-decoration: underline dashed;
+		text-underline-offset: 0.25em;
+	}
+	.ff-rc-body {
+		padding: 1rem; /* 对应 WidgetLayout 内容区的 px-4 pt-4 */
+	}
+	.ff-rc-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+	}
+	.ff-rc-item {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		padding: 0.4375rem;
+		border-radius: 0.5rem;
+		text-decoration: none;
+		transition: background-color 150ms;
+	}
+	.ff-rc-item:hover {
+		background: var(--btn-plain-bg-hover);
+	}
+	.ff-rc-avatar {
+		position: relative;
+		flex: 0 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 50%;
+		overflow: hidden;
+		background: oklch(0.85 0.06 var(--ff-rc-hue, 250));
+	}
+	html.dark .ff-rc-avatar {
+		background: oklch(0.45 0.07 var(--ff-rc-hue, 250));
+	}
+	.ff-rc-initial {
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: oklch(0.5 0.09 var(--ff-rc-hue, 250));
+	}
+	html.dark .ff-rc-initial {
+		color: oklch(0.88 0.05 var(--ff-rc-hue, 250));
+	}
+	.ff-rc-img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.ff-rc-main {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.ff-rc-meta {
+		display: flex;
+		align-items: baseline;
+		gap: 0.25rem;
+	}
+	.ff-rc-nick {
+		flex: 0 0 auto; /* 昵称永不收缩：窄栏放不下时截断「评论于」，身份优先 */
+		min-width: 0;
+		max-width: 12em;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: rgb(38 38 38);
+	}
+	html.dark .ff-rc-nick {
+		color: rgb(229 229 229);
+	}
+	.ff-rc-item:hover .ff-rc-nick {
+		color: var(--primary);
+	}
+	.ff-rc-time {
+		flex: 0 0 auto;
+		font-size: 0.625rem;
+		white-space: nowrap;
+		color: var(--content-meta);
+	}
+	.ff-rc-where {
+		flex: 1 2 auto; /* 有余量时靠 margin-left 靠右；放不下时优先截断它，保昵称完整 */
+		min-width: 0;
+		margin-left: auto;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 0.625rem;
+		text-align: right;
+		color: var(--content-meta);
+	}
+	.ff-rc-text {
+		margin: 0.125rem 0 0;
+		font-size: 0.8125rem;
+		line-height: 1.35;
+		color: rgb(64 64 64 / 0.75);
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+	}
+	html.dark .ff-rc-text {
+		color: rgb(212 212 212 / 0.75);
+	}
+	.ff-rc-state {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		min-height: 3rem;
+	}
+	.ff-rc-state-text {
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+	.ff-rc-empty {
+		margin: 0;
+		padding: 0.75rem 0;
+		text-align: center;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+	.ff-rc-spinner {
+		width: 1.25rem;
+		height: 1.25rem;
+		color: var(--primary);
+		animation: ff-rc-spin 0.8s linear infinite;
+	}
+	@keyframes ff-rc-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ff-rc-spinner {
+			animation: none;
+		}
+	}
+	.ff-rc-foot {
+		margin-top: 0.5rem;
+		font-size: 0.6875rem;
+		color: var(--content-meta);
+	}
+</style>
+
+<!-- ===== 动态页右栏「最近评论」=====
+     位置由 recent-comments.js 决定：只在 /dynamic/ 搬进右栏「最新动态」之后，
+     其它页面保持 hidden 留在页脚，不占布局。改显示条数改 JS 里的 API_URL。 -->
+<div id="ff-rc" class="ff-rc card-base" hidden>
+	<div class="ff-rc-title">
+		<span class="ff-rc-name">最近评论</span>
+		<a class="ff-rc-goto" href="/guestbook/"><span>去留言板</span></a>
+	</div>
+	<div class="ff-rc-body">
+		<div class="ff-rc-list" data-ff-rc-list></div>
+		<div class="ff-rc-foot" data-ff-rc-foot></div>
+	</div>
+</div>
