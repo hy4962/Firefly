@@ -39,6 +39,7 @@ const readManifest = (): Record<string, string> => {
 export const GET: APIRoute = async () => {
 	const local = readManifest();
 	const covers: Record<string, string> = {};
+	const missing: string[] = [];
 
 	// 遍历方式跟 booknav.astro 保持一致（同一套 enabled/weight 筛选），
 	// 免得清单里混进页面上根本不渲染的书签
@@ -48,7 +49,19 @@ export const GET: APIRoute = async () => {
 			if (!url) continue;
 			const cover = local[url];
 			if (cover) covers[url] = cover;
+			else missing.push(`${item.title}（${url}）`);
 		}
+	}
+
+	// 构建期体检：这个路由是 prerender 的，astro build 一定会执行到这里。
+	// 封面截图脚本是手动的、不在 build 流程里，所以「新增书签忘了补图」只能靠这一步兜住 ——
+	// 不联网、不耗时，只在日志里列出来，不改变输出。
+	if (missing.length > 0) {
+		console.warn(
+			`[booknav-covers] 有 ${missing.length} 个书签没有悬停封面（在 /booknav/ 上悬停不会展开）：\n` +
+				missing.map((line) => `  - ${line}`).join("\n") +
+				"\n  本地补图：npx tsx scripts/generate-booknav-covers.ts --only=<关键字>",
+		);
 	}
 
 	return new Response(JSON.stringify({ ok: true, covers }), {
