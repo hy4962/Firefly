@@ -162,6 +162,13 @@ export const booknavConfig: BooknavGroup[] = [
 				weight: 9.8,
 			},
 			{
+				title: "音乐播放器",
+				url: "https://music.9ll.uk/",
+				desc: "全屏歌词动画，网易云 / 本地歌库，可当 PWA 装到手机",
+				icon: "material-symbols:music-note-rounded",
+				weight: 9.7,
+			},
+			{
 				title: "免费图床",
 				url: "https://imgbed.9ll.uk/",
 				desc: "自建图片托管服务",
