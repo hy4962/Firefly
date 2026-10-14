@@ -1,5 +1,5 @@
 /**
- * 全站「最近评论」组件（桌面右栏 / 移动端底部栏）。
+ * 「最近评论」组件（桌面右栏 / 移动端底部栏）—— **只在博客首页显示**。
  *
  * 数据源是本站 Waline 后端的公开接口：
  *   GET https://waline.9ll.uk/api/comment?type=recent&count=8
@@ -11,11 +11,13 @@
  *   1. 组件外壳 DOM 与全部样式在 src/config/FooterConfig.html —— 页脚在 #swup-container
  *      之外，整页加载才跑一次，正好用来挂 swup 事件；
  *   2. 本脚本由页脚的 PAGE_SCRIPTS 全站加载（第一个页面进来就装上，之后切页不重跑）；
- *   3. 挂载点按视口分：≥768px 挂 #right-sidebar 的最末尾（排在 top 容器的「最新动态」
- *      与 sticky 容器的「文章目录」之后，整栏最后一个）；<768px 进移动端底部组件栏
- *      #bottom-sidebar。#right-sidebar 与 #mobile-bottom-sidebar 都在 swup 替换范围外，
- *      搬一次即永久有效，切页不会丢；
- *   4. 没有任何侧栏容器的页面（理论情况）组件留在页脚停车位、保持 hidden，不占布局。
+ *   3. **只在博客首页显示**：isHomePage() 认 / 与 /2/ /3/ 这类分页，其余页面
+ *      findMountPoint() 直接返回 null，组件留在页脚停车位、保持 hidden，不占布局。
+ *      文章详情页就是被这条挡掉的（2026-10-14 站长的要求）；
+ *   4. 首页上按视口分挂载点：≥768px 进右栏 top 组件容器（#right-sidebar 第一个子 div），
+ *      插在「最新动态」widget-layout[data-id="latest-dynamics"] 之后；<768px 进移动端
+ *      底部组件栏 #bottom-sidebar。#right-sidebar 与 #mobile-bottom-sidebar 都在 swup
+ *      替换范围外，搬一次即永久有效，切页不会丢。
  */
 (function () {
 	"use strict";
@@ -236,8 +238,9 @@
 	}
 
 	// ===== 挂载 / 隐藏 =====
-	// 全站显示：桌面端挂右栏 #right-sidebar 的最末尾（top 容器「最新动态」、sticky 容器
-	// 「文章目录」都在它前面，所以它永远排整栏最后）；<768px 挂移动端底部组件栏
+	// 只在博客首页显示，其余页面（含文章详情页）返回 null → mount() 把它置回 hidden，
+	// 留在页脚停车位、不占布局。
+	// 桌面端插在右栏 top 容器「最新动态」之后；<768px 挂移动端底部组件栏
 	// （#mobile-bottom-sidebar 里的 #bottom-sidebar，主题在移动端用这套替代左右侧栏）。
 	// 这两个容器都在 swup 替换范围外，搬一次即永久有效。
 	function isMobileNow() {
@@ -246,7 +249,16 @@
 		);
 	}
 
+	// 博客首页判定：/ 与 Astro 分页出来的 /2/ /3/ …（见 src/pages/[...page].astro 的
+	// paginate()，分页路径是 /<页码>/ 而不是 /page/<页码>/）。
+	// /en/ 英文首页不算 —— 那里的评论内容主要是中文。
+	function isHomePage() {
+		var p = window.location.pathname || "/";
+		return p === "/" || p === "/index.html" || /^\/\d+\/?$/.test(p);
+	}
+
 	function findMountPoint() {
+		if (!isHomePage()) return null;
 		if (isMobileNow()) {
 			var bar = document.getElementById("bottom-sidebar");
 			if (bar) return { parent: bar, before: null };
@@ -254,10 +266,12 @@
 		}
 		var sidebar = document.getElementById("right-sidebar");
 		if (!sidebar) return null;
-		// 直接挂到 #right-sidebar 末尾：它下面依次是 top 容器和 sticky 容器（文章目录），
-		// appendChild 即落在整栏最后。以前是插进 top 容器「最新动态」之后，
-		// 结果排在文章目录上面；改成最后一位是站长 2026-10-14 的顺序要求。
-		return { parent: sidebar, before: null };
+		var wrapper = sidebar.firstElementChild; // top 组件容器（flex flex-col gap-4）
+		if (!wrapper) return null;
+		var latest = sidebar.querySelector(
+			'widget-layout[data-id="latest-dynamics"]',
+		);
+		return { parent: wrapper, before: latest ? latest.nextSibling : null };
 	}
 
 	function mount() {

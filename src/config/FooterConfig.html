@@ -405,7 +405,7 @@
 				// 「最近评论」：全站加载 —— 桌面挂右栏、移动端挂底部栏，挂载逻辑在 js 里
 				path: /.*/,
 				id: "ff-recent-comments-js",
-				src: "/assets/js/recent-comments.js?v=3",
+				src: "/assets/js/recent-comments.js?v=5",
 			},
 		];
 
@@ -858,10 +858,10 @@
 </style>
 
 <style>
-	/* ===== 全站「最近评论」（桌面右栏 / 移动端底部栏）=====
-	   外壳默认藏在页脚（hidden），recent-comments.js 全站加载：≥768px 把它搬到右栏
-	   最末尾（「最新动态」和「文章目录」之后），<768px 搬进移动端底部组件栏，
-	   再填数据（Waline 公开接口，CORS 已放开）。
+	/* ===== 「最近评论」（只在博客首页：桌面右栏 / 移动端底部栏）=====
+	   外壳默认藏在页脚（hidden），recent-comments.js 全站加载但只在首页挂载：
+	   ≥768px 插到右栏「最新动态」之后，<768px 搬进移动端底部组件栏，再填数据
+	   （Waline 公开接口，CORS 已放开）。其余页面保持 hidden、不占布局。
 	   样式全部自带：几何复刻 WidgetLayout（标题条 ml-8/mt-4/mb-2 + 主题色竖条、
 	   内容 px-4/pt-4、卡片 pb-4），配色只用主题 CSS 变量与 card-base，
 	   不碰 Tailwind 工具类 —— 注入 HTML 里的工具类一旦没被内容探测扫到就会静默失效。 */
@@ -1057,9 +1057,9 @@
 	}
 </style>
 
-<!-- ===== 全站「最近评论」=====
-     位置由 recent-comments.js 决定：桌面搬到右栏最末尾（「最新动态」「文章目录」之后），
-     移动端搬进底部组件栏；没有任何侧栏容器的页面才保持 hidden 留在页脚。
+<!-- ===== 「最近评论」（只在博客首页）=====
+     位置由 recent-comments.js 决定：只有首页（含 /2/ /3/ 这类分页）才挂载 —— 桌面插在
+     右栏「最新动态」之后，移动端搬进底部组件栏；其余页面保持 hidden 留在页脚。
      改显示条数改 JS 里的 API_URL。 -->
 <div id="ff-rc" class="ff-rc card-base" hidden>
 	<div class="ff-rc-title">
