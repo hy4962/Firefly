@@ -30,6 +30,34 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.40",
+		title: "音乐进「关于」",
+		date: "2026-10-14",
+		summary:
+			"「关于」下拉新增「音乐播放器」入口，点开的就是顶栏右上角那个同一块播放器面板；顺手把「本站评论系统」改回「本站评论」",
+		description:
+			"音乐播放器原本只有顶栏右上角一个图标入口，混在搜索、调色板、明暗切换那一排图标里，不熟的人根本认不出那是播放器。现在把它挪进「关于」下拉，跟打赏、图床、监控这些站内服务排在一起，等于给它补了一个带文字的正式入口；顶栏那个图标照旧保留，两处点开的是同一个面板（面板位置改不了，仍然从右上角弹出）。顺手把「本站评论系统」这个啰嗦的名字砍成「本站评论」，同一排里就它多带两个字，看着不齐。",
+		items: [
+			{
+				category: "导航",
+				text: "「关于」下拉在「关于我」之后新增「音乐播放器」一项，图标沿用顶栏按钮同款的 material-symbols:music-note-rounded；同一排的「本站评论系统」改名为「本站评论」。改动只有 src/config/navBarConfig.ts 两处，没碰主题文件",
+			},
+			{
+				category: "交互",
+				text: "那一项填的是锚点 #music-nav-panel，不是真实页面 —— DropdownItem 只渲染 <a href>，没留点击回调的口子，为这点事改上游组件不值当。点击由页脚注入的脚本接管：捕获阶段拦掉跳转，顺手 stopPropagation 挡住 Navbar 里那条「点到面板和按钮之外就收起」的 document 监听（不挡的话刚打开就被它关掉），然后切面板的 .float-panel-closed。inert 与 aria-hidden 不用自己写 —— floating-panel-utils 的 MutationObserver 盯着 class 变化会同步，点开、点关、Esc 三条路径都由它兜住",
+			},
+			{
+				category: "修复",
+				text: "移动端抽屉里同样会出现这一项，而 NavMenuPanel 的 markActiveNav 是拿 data-nav-href 跟 location.pathname 比的 —— \"/#music-nav-panel\" 的 pathname 正好是 \"/\"，首页会被误判成「当前页」，既高亮「音乐播放器」又把「关于」自动展开。页脚脚本因此先把那个属性摘掉再动手；摘除挂在 DOMContentLoaded 上，因为页脚在 NavMenuPanel 之前渲染、解析期还看不到抽屉那半截 DOM，而本脚本是解析期内联执行、监听注册早于 NavMenuPanel 的模块脚本，恰好赶在 markActiveNav 之前跑完",
+			},
+			{
+				category: "维护",
+				text: "复核用 dev server + puppeteer 真实鼠标点击，15 项断言全过：点击不跳转、面板开合与 inert/aria-hidden 同步、顶栏原按钮仍能开关同一面板、移动端首页不再误判高亮、/about/ 上「关于」的自动展开没被误伤。另加一道内联脚本语法自检（.workbuddy/scratch/check-footer-scripts.cjs），页脚注入的 5 段脚本全部能过 new Function —— 这段注入改坏了一个语法错误就会整段静默失效，零报错",
+			},
+		],
+		tags: ["博客", "导航", "交互", "音乐"],
+	},
+	{
 		version: "V1.39",
 		title: "开往带上图标",
 		date: "2026-10-14",

@@ -1071,3 +1071,63 @@
 		<div class="ff-rc-foot" data-ff-rc-foot></div>
 	</div>
 </div>
+
+<script>
+	/* ===== 「关于」菜单里的「音乐播放器」入口 =====
+	   navBarConfig 里那一项是个锚点（url: "#music-nav-panel"），不是真实页面：
+	   DropdownItem 只渲染 <a href>，没留点击回调的口子，改上游组件又犯不上。
+	   所以在这里接管 —— 拦掉跳转，改成开关顶栏右上角那个同款播放器面板。
+	   面板的展开/收起就是切 .float-panel-closed（Navbar.astro 自己的按钮也是这么干的），
+	   inert / aria-hidden 由 floating-panel-utils 的 MutationObserver 跟着同步，不用管。
+	   两个必须这么写的点：
+	   1) 捕获阶段 + stopPropagation。Navbar 里有一条「点到面板和按钮之外就收起」的
+	      document 监听，不拦的话刚打开就被它关掉；顺带也拦住 swup 的链接劫持
+	      （href 落在首页，不拦会真的跳走）。
+	   2) 移动端抽屉里那一份带 data-nav-href，NavMenuPanel 的 markActiveNav 拿它跟
+	      location.pathname 比，而 "/#music-nav-panel" 的 pathname 正好是 "/" ——
+	      首页会被误判成「当前页」，既高亮又把「关于」自动展开。所以先把那个属性摘掉。
+	   页脚在 NavMenuPanel 之前渲染（MainGridLayout 里 <Footer /> 在 <NavMenuPanel /> 前面），
+	   这里解析期还看不到抽屉那半截 DOM，清理因此挂在 DOMContentLoaded 上 —— 本脚本是
+	   解析期内联执行，监听注册先于 NavMenuPanel 那个模块脚本，会赶在它的 markActiveNav 之前跑。 */
+	(function () {
+		var MUSIC_HREF_SUFFIX = "#music-nav-panel";
+		var MUSIC_LINK_SELECTOR = 'a[href$="' + MUSIC_HREF_SUFFIX + '"]';
+
+		function dropActiveHook() {
+			var links = document.querySelectorAll(
+				'a[data-nav-href$="' + MUSIC_HREF_SUFFIX + '"]',
+			);
+			for (var i = 0; i < links.length; i += 1) {
+				links[i].removeAttribute("data-nav-href");
+				links[i].setAttribute("data-active", "false");
+			}
+		}
+
+		function onClick(event) {
+			if (event.defaultPrevented || event.button !== 0) return;
+			if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+			var target = event.target;
+			if (!(target instanceof Element)) return;
+			var link = target.closest(MUSIC_LINK_SELECTOR);
+			if (!link) return;
+
+			var panel = document.getElementById("music-nav-panel");
+			if (!panel) return;
+
+			event.preventDefault();
+			event.stopPropagation();
+
+			// 从移动端抽屉点的话顺手把抽屉收起来：上面 stopPropagation 把抽屉自己那条
+			// 「点到链接就关」的委托也拦了，得自己补一次。
+			var drawer = link.closest("#nav-menu-panel");
+			if (drawer) drawer.classList.add("float-panel-closed");
+
+			panel.classList.toggle("float-panel-closed");
+		}
+
+		document.addEventListener("click", onClick, true);
+		document.addEventListener("DOMContentLoaded", dropActiveHook, true);
+		document.addEventListener("astro:page-load", dropActiveHook, true);
+		dropActiveHook();
+	})();
+</script>
