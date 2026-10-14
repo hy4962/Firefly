@@ -30,6 +30,30 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.39",
+		title: "开往带上图标",
+		date: "2026-10-14",
+		summary:
+			"顶栏「开往」补上列车图标，把 V1.36 为了省空间留下的「纯文字」补回来；加之前先复核了顶栏余量",
+		description:
+			"V1.36 把开往入口放进顶栏时故意只留文字：那时这一排正好卡在临界点上，多一个图标就可能把标签压成竖排。现在情况变了 —— 拥挤的真正来源是「1280px 起主题恢复导航项图标 + 同一档搜索框展宽」，而 1024–1599px 已经改走紧凑模式、在该区间统一隐藏顶级项图标，加不加图标对这档宽度毫无影响。图标只在 ≥1600px 真的占位，那里余量足够。于是补上：用 material-symbols 的列车造型（train-rounded），呼应页脚开往徽标里的车头，也和其余顶级项同属一个图标集。实测 1024–1599px 余量与加图标前一字不差（1024px +40px、1280px +194px），≥1600px 为 1600px +90px、1760px 以上 +218px，全程无换行、无溢出。",
+		items: [
+			{
+				category: "导航",
+				text: "顶栏「开往」补上 material-symbols:train-rounded 图标（列车正面造型，呼应页脚开往徽标的车头造型）。改动只有 src/config/navBarConfig.ts 里的一个 icon 字段，没碰主题文件",
+			},
+			{
+				category: "修复",
+				text: "加之前的余量复核：1024–1599px 零影响 —— 页脚注入的紧凑模式那段选择器命中所有 .dropdown-container 直接子项，开往同样被隐藏，实测余量仍是 1024px +40px、1280px +194px，与 V1.36 记录的数字完全一致；只有 ≥1600px 主题原样时才多出这个图标（1600px 余量 +90px，1760px 以上 +218px），全部宽度无换行",
+			},
+			{
+				category: "维护",
+				text: "测量口径沿用 V1.36：用 Range.getClientRects() 数标签占几行（按钮定高 h-10，量高度看不出换行），余量则先强制 flex:0 0 auto + nowrap 再量内容自然宽度和（.workbuddy/scratch/nav-natural.cjs），且每个宽度都重新加载页面再测",
+			},
+		],
+		tags: ["博客", "导航", "视觉", "开往"],
+	},
+	{
 		version: "V1.38",
 		title: "最近评论只在首页",
 		date: "2026-10-14",
