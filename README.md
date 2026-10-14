@@ -36,7 +36,7 @@
 - **内容与主题分离**：文章存放在私有仓库，构建前由脚本同步到 `src/site-content/`，主仓库只留主题代码与配置
 - **构建期兜底**：外部接口不可达时先探测再回退本地数据，不让一次超时带走整次构建
 
-完整的改动清单见站内 [`/blog-changelog/`](https://www.9ll.uk/blog-changelog/)。
+完整的改动清单见站内 [`/blog-changelog/`](https://www.9ll.uk/blog-changelog/)（V1.0 到 V1.40，42 版 / 200 条明细）；四十版的取舍与踩坑整理在《[把 Firefly 魔改了四十版](https://www.9ll.uk/posts/blog/modssummary/)》里。
 
 ------
 
