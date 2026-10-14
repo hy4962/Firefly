@@ -97,6 +97,10 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 	],
 
 	// 右侧边栏组件配置列表
+	// 渲染顺序：最新动态 →（站点统计 / 站点信息）→ 文章目录 → 日历 →「最近评论」
+	// 「最近评论」不是这里的组件：它由页脚注入（public/assets/js/recent-comments.js），
+	// 运行时 appendChild 到 #right-sidebar 末尾，所以永远排整栏最后。
+	// ⚠️ 右栏刻意不留 sticky 组件：有 sticky 元素在前，末尾的评论往上滚时会压上去重叠。
 	rightComponents: [
 		{
 			// 组件类型：最新动态组件
@@ -143,14 +147,33 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			},
 		},
 		{
+			// 组件类型：侧边栏目录组件（只在文章详情页显示）
+			type: "sidebarToc",
+			// 是否启用该组件
+			enable: true,
+			// 组件位置：top（不吸顶）
+			// ⚠️ 2026-10-14 由 sticky 改为 top，别改回去。
+			//    右栏底部挂了自己注入的「最近评论」（见 public/assets/js/recent-comments.js），
+			//    它在普通流里，排在 sticky 容器后面。而 #right-sidebar 会被拉满到正文高度
+			//    （实测单篇 6516px），sticky 元素的吸顶区间因此极长，评论往上滚时会直接
+			//    钻进目录钉住的位置，两块叠在一起。
+			//    顺序要求是「最新动态 → 文章目录 → 最近评论」，目录留在 sticky 组就必然重叠，
+			//    所以让目录进 top 组；sticky 组清空后容器整个不渲染，从根上消除叠压。
+			position: "top",
+			// 是否在文章详情页显示
+			showOnPostPage: true,
+			// 是否在非文章详情页隐藏
+			hideOnNonPostPage: true,
+		},
+		{
 			// 组件类型：日历组件
 			type: "calendar",
 			// 是否启用该组件
 			enable: true,
 			// 是否显示组件标题
 			showTitle: false,
-			// 组件位置
-			position: "sticky",
+			// 组件位置：top（不吸顶），原因同上面的 sidebarToc
+			position: "top",
 			// 是否在文章详情页显示
 			showOnPostPage: false,
 			// 组件专属配置
@@ -160,18 +183,6 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 					showHeatmap: true,
 				},
 			},
-		},
-		{
-			// 组件类型：侧边栏目录组件（只在文章详情页显示）
-			type: "sidebarToc",
-			// 是否启用该组件
-			enable: true,
-			// 组件位置
-			position: "sticky",
-			// 是否在文章详情页显示
-			showOnPostPage: true,
-			// 是否在非文章详情页隐藏
-			hideOnNonPostPage: true,
 		},
 		{
 			// 组件类型：广告栏组件 1

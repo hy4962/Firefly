@@ -34,17 +34,21 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		title: "右栏顺序调整",
 		date: "2026-10-14",
 		summary:
-			"右栏顺序由「最新动态 → 最近评论 → 文章目录」改为「最新动态 → 文章目录 → 最近评论」，「最近评论」沉到整栏最末尾",
+			"右栏顺序由「最新动态 → 最近评论 → 文章目录」改为「最新动态 → 文章目录 → 最近评论」，并且右栏取消吸顶",
 		description:
-			"V1.37 加「最近评论」时，桌面端是插进右栏 top 容器「最新动态」的后面，于是右栏从上到下成了：最新动态 → 最近评论 → 文章目录。这次把顺序倒过来：目录紧跟最新动态，最近评论挪到整栏最后。只改注入点，没碰任何上游文件 —— recent-comments.js 的 findMountPoint 从「塞进 #right-sidebar 第一个子容器、插在 latest-dynamics 之后」改成直接 appendChild 到 #right-sidebar 末尾，top 容器与 sticky 容器都在它前面，天然就排最后；移动端本来就是 appendChild 到 #bottom-sidebar，行为不变。",
+			"V1.37 加「最近评论」时，桌面端是插进右栏 top 容器「最新动态」的后面，于是右栏从上到下成了：最新动态 → 最近评论 → 文章目录。这次把顺序倒过来：目录紧跟最新动态，最近评论挪到整栏最后。只改注入点，没碰任何上游文件 —— recent-comments.js 的 findMountPoint 从「塞进 #right-sidebar 第一个子容器、插在 latest-dynamics 之后」改成直接 appendChild 到 #right-sidebar 末尾，top 容器与 sticky 容器都在它前面，天然就排最后；移动端本来就是 appendChild 到 #bottom-sidebar，行为不变。改完撞上一个更麻烦的问题：右栏往下滑，最近评论会跟文章目录叠在一起。根因是 #right-sidebar 会被拉满到正文高度（实测单篇 6516px），里面的 sticky 元素吸顶区间因此极长，而末尾的评论是普通流，往上滚就直接钻进目录钉住的位置。实测目录 569px + 评论 694px = 1279px > 视口 898px，所以「把评论并进吸顶块」也不成立 —— 底部会有 380px 在吸顶期间够不着。最后按站长的取舍放弃吸顶：右栏不再有任何 sticky 组件，顺序与不重叠都要。",
 		items: [
 			{
 				category: "侧栏",
-				text: "右栏顺序改为「最新动态 → 文章目录 → 最近评论」：「最近评论」不再插进 top 容器，改为 appendChild 到 #right-sidebar 末尾，永远排整栏最后；「文章目录」上移，紧跟「最新动态」。容器本身没有 gap，间距靠 .ff-rc-title 自带的 margin-top: 1rem，与 WidgetLayout 的 mt-4 一致",
+				text: "右栏顺序改为「最新动态 → 文章目录 → 最近评论」：「最近评论」不再插进 top 容器，改为 appendChild 到 #right-sidebar 末尾，永远排整栏最后；「文章目录」上移，紧跟「最新动态」。容器本身没有 gap，间距靠 .ff-rc-title 自带的 margin-top: 1rem",
+			},
+			{
+				category: "侧栏",
+				text: "右栏取消吸顶：sidebarConfig.ts 里 sidebarToc 与 calendar 由 position: sticky 改为 top，sticky 组清空后容器整个不渲染。原因是目录吸顶 + 评论排在它后面 + 侧栏被拉满到正文高度，三者叠加必然重叠；实测 1279px 的吸顶块也塞不进 898px 的视口。代价是长文里目录不再跟随，滚上去就看不见 —— 站长已确认接受",
 			},
 			{
 				category: "维护",
-				text: "改动落在 public/assets/js/recent-comments.js 的 findMountPoint 与文件头注释；FooterConfig.html 里两处位置说明同步更新，脚本引用 ?v=2 升到 ?v=3 —— /assets/* 有 30 天强缓存，改 js 不加版本号，老访客拿到的还是旧脚本，位置不会变",
+				text: "改动落在 public/assets/js/recent-comments.js 的 findMountPoint、src/config/sidebarConfig.ts 的 rightComponents。FooterConfig.html 里两处位置说明同步更新，脚本引用 ?v=2 升到 ?v=3 —— /assets/* 有 30 天强缓存，改 js 不加版本号，老访客拿到的还是旧脚本，位置不会变",
 			},
 		],
 		tags: ["博客", "侧栏", "动态"],
