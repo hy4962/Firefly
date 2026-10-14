@@ -104,16 +104,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 关于页面
 			LinkPresets.About,
 
-			// 音乐播放器：和顶栏右上角那个按钮是同一个入口，点开的是同一个面板（面板留在顶栏右侧弹出）。
-			// url 故意写成面板 id 而不是真实页面 —— DropdownItem 只渲染 <a href>，没留点击回调的口子，
-			// 点击由页脚注入的脚本接管（拦掉跳转 → 开关 #music-nav-panel），这样不用改上游组件。
-			// ⚠️ 改这个 url 必须同步改 FooterConfig.html 里那段的 MUSIC_HREF_SUFFIX。
-			{
-				name: "音乐播放器",
-				url: "#music-nav-panel",
-				icon: "material-symbols:music-note-rounded",
-			},
-
 			// GitHub
 			{
 				name: "GitHub",
@@ -128,6 +118,14 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				url: "https://waline.9ll.uk/",
 				external: true,
 				icon: "material-symbols:chat",
+			},
+
+			// 音乐播放器（自建服务，music.9ll.uk；书签导航里也是同一条）
+			{
+				name: "音乐播放器",
+				url: "https://music.9ll.uk/",
+				external: true,
+				icon: "material-symbols:music-note-rounded",
 			},
 
 			// 免费图床
