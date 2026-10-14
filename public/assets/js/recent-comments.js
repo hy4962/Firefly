@@ -11,10 +11,10 @@
  *   1. 组件外壳 DOM 与全部样式在 src/config/FooterConfig.html —— 页脚在 #swup-container
  *      之外，整页加载才跑一次，正好用来挂 swup 事件；
  *   2. 本脚本由页脚的 PAGE_SCRIPTS 全站加载（第一个页面进来就装上，之后切页不重跑）；
- *   3. 挂载点按视口分：≥768px 进右栏 top 组件容器（#right-sidebar 第一个子 div），
- *      插在「最新动态」widget-layout[data-id="latest-dynamics"] 之后；<768px 进移动端
- *      底部组件栏 #bottom-sidebar。#right-sidebar-static 与 #mobile-bottom-sidebar 都在
- *      swup 替换范围外，搬一次即永久有效，切页不会丢；
+ *   3. 挂载点按视口分：≥768px 挂 #right-sidebar 的最末尾（排在 top 容器的「最新动态」
+ *      与 sticky 容器的「文章目录」之后，整栏最后一个）；<768px 进移动端底部组件栏
+ *      #bottom-sidebar。#right-sidebar 与 #mobile-bottom-sidebar 都在 swup 替换范围外，
+ *      搬一次即永久有效，切页不会丢；
  *   4. 没有任何侧栏容器的页面（理论情况）组件留在页脚停车位、保持 hidden，不占布局。
  */
 (function () {
@@ -236,9 +236,10 @@
 	}
 
 	// ===== 挂载 / 隐藏 =====
-	// 全站显示：桌面端挂右栏 top 容器「最新动态」之后；<768px 挂移动端底部组件栏
+	// 全站显示：桌面端挂右栏 #right-sidebar 的最末尾（top 容器「最新动态」、sticky 容器
+	// 「文章目录」都在它前面，所以它永远排整栏最后）；<768px 挂移动端底部组件栏
 	// （#mobile-bottom-sidebar 里的 #bottom-sidebar，主题在移动端用这套替代左右侧栏）。
-	// #right-sidebar-static 与 #mobile-bottom-sidebar 都在 swup 替换范围外，搬一次即永久有效。
+	// 这两个容器都在 swup 替换范围外，搬一次即永久有效。
 	function isMobileNow() {
 		return !!(
 			window.matchMedia && window.matchMedia(MOBILE_QUERY).matches
@@ -253,12 +254,10 @@
 		}
 		var sidebar = document.getElementById("right-sidebar");
 		if (!sidebar) return null;
-		var wrapper = sidebar.firstElementChild; // top 组件容器（flex flex-col gap-4）
-		if (!wrapper) return null;
-		var latest = sidebar.querySelector(
-			'widget-layout[data-id="latest-dynamics"]',
-		);
-		return { parent: wrapper, before: latest ? latest.nextSibling : null };
+		// 直接挂到 #right-sidebar 末尾：它下面依次是 top 容器和 sticky 容器（文章目录），
+		// appendChild 即落在整栏最后。以前是插进 top 容器「最新动态」之后，
+		// 结果排在文章目录上面；改成最后一位是站长 2026-10-14 的顺序要求。
+		return { parent: sidebar, before: null };
 	}
 
 	function mount() {
