@@ -155,6 +155,13 @@ export const booknavConfig: BooknavGroup[] = [
 				weight: 9.5,
 			},
 			{
+				title: "图片工具",
+				url: "https://img.9ll.uk/",
+				desc: "压缩 / 格式转换 + AI 放大 + AI 抠图，全程本地处理不上传",
+				icon: "material-symbols:auto-fix-high",
+				weight: 9.8,
+			},
+			{
 				title: "免费图床",
 				url: "https://imgbed.9ll.uk/",
 				desc: "自建图片托管服务",
