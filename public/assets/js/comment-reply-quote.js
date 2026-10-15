@@ -132,6 +132,12 @@
 		btn.title = "跳到这条评论";
 		btn.setAttribute("aria-label", "跳到 " + quote.name + " 的那条评论");
 
+		// ↩︎ 用真实元素，不用 ::before（在 <button> + -webkit-box 下伪元素不生成）
+		var iconEl = document.createElement("span");
+		iconEl.className = "ff-rq-icon";
+		iconEl.setAttribute("aria-hidden", "true");
+		iconEl.textContent = "\u21A9\uFE0E";
+
 		var nameEl = document.createElement("span");
 		nameEl.className = "ff-rq-nick";
 		nameEl.textContent = quote.name + "：";
@@ -140,6 +146,7 @@
 		textEl.className = "ff-rq-text";
 		textEl.textContent = quote.text;
 
+		btn.appendChild(iconEl);
 		btn.appendChild(nameEl);
 		btn.appendChild(textEl);
 		btn.addEventListener("click", function () {
