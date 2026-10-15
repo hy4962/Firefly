@@ -3,7 +3,7 @@
 	"https://upxuu.com": "/assets/images/friends/covers/upxuu-com.webp",
 	"https://kasuha.com": "/assets/images/friends/covers/kasuha-com.webp",
 	"https://blog.cuteleaf.cn": "/assets/images/friends/covers/blog-cuteleaf-cn.webp",
-	"https://rainzt.cn/": "/assets/images/friends/covers/rainzt-cn.webp",
+	"https://rainzt.cn/": "https://rainzt.cn/index.png",
 	"https://www.boyouquan.com/home": "/assets/images/friends/covers/www-boyouquan-com.webp",
 	"https://www.blogplanet.cn/": "/assets/images/friends/covers/www-blogplanet-cn.webp",
 	"https://www.80tz.cn/home": "/assets/images/friends/covers/www-80tz-cn.webp",

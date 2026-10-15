@@ -11,9 +11,12 @@
  * 依赖本机的 chrome-headless-shell（Playwright 自带那套），没有就用系统 Chrome。
  * 想换浏览器：设环境变量 CHROME_HEADLESS_SHELL 指向可执行文件。
  *
+ * 清单里已经是绝对外链（http/https）的条目 = 人工指定的封面（对方自己提供了首页截图），
+ * 自动截图不会覆盖它，--force 也保留 —— 想改回自动截图，得先把那行值删掉。
+ *
  * 用法：
  *   npx tsx scripts/generate-friends-covers.ts          # 只补缺失的
- *   npx tsx scripts/generate-friends-covers.ts --force  # 全部重新截图
+ *   npx tsx scripts/generate-friends-covers.ts --force  # 全部重新截图（人工指定的条目除外）
  */
 
 import { execFile } from "node:child_process";
@@ -41,6 +44,27 @@ const SHOT_TIMEOUT_MS = 45000;
 const DELAY_BETWEEN_MS = 500;
 
 const FORCE = process.argv.includes("--force");
+
+/**
+ * 读出清单里已是绝对外链的条目。
+ * 约定：值是 http/https 开头 → 人工指定（对方提供的截图），自动截图不碰。
+ */
+const readPinnedManifest = async (): Promise<Record<string, string>> => {
+	try {
+		const parsed = JSON.parse(await fs.readFile(MANIFEST_PATH, "utf8"));
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+		const pinned: Record<string, string> = {};
+		for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+			if (typeof value === "string" && /^https?:\/\//i.test(value)) {
+				pinned[key] = value;
+			}
+		}
+		return pinned;
+	} catch {
+		// 首次运行、清单不存在时按「没有人工条目」处理
+		return {};
+	}
+};
 
 const exists = async (filePath: string): Promise<boolean> => {
 	try {
@@ -147,9 +171,11 @@ async function main() {
 	await fs.mkdir(TMP_DIR, { recursive: true });
 
 	const friends = getEnabledFriends();
+	const pinned = await readPinnedManifest();
 	const manifest: Record<string, string> = {};
 	let shotCount = 0;
 	let cachedCount = 0;
+	let pinnedCount = 0;
 	let failedCount = 0;
 
 	for (const friend of friends) {
@@ -162,6 +188,14 @@ async function main() {
 		const slug = slugOf(siteurl);
 		const webpPath = path.join(OUTPUT_DIR, `${slug}.webp`);
 		const publicPath = `${PUBLIC_PREFIX}/${slug}.webp`;
+
+		const manual = pinned[siteurl];
+		if (manual) {
+			manifest[siteurl] = manual;
+			pinnedCount += 1;
+			console.log(`[friends-covers] 保留人工指定封面 ${friend.title} → ${manual}`);
+			continue;
+		}
 
 		if (!FORCE && (await exists(webpPath))) {
 			manifest[siteurl] = publicPath;
@@ -199,7 +233,7 @@ async function main() {
 	);
 
 	console.log(
-		`[friends-covers] 完成：新截图 ${shotCount}，复用缓存 ${cachedCount}，失败 ${failedCount}，共 ${Object.keys(manifest).length} 条写入 ${MANIFEST_PATH}`,
+		`[friends-covers] 完成：新截图 ${shotCount}，复用缓存 ${cachedCount}，人工指定 ${pinnedCount}，失败 ${failedCount}，共 ${Object.keys(manifest).length} 条写入 ${MANIFEST_PATH}`,
 	);
 }
 
