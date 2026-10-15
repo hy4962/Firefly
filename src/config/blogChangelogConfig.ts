@@ -30,6 +30,29 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.45",
+		title: "页脚去掉开往徽标",
+		date: "2026-10-16",
+		summary: "页脚那枚「开往 Travellings」徽标撤掉，顶栏入口保留，两处不再重复",
+		description:
+			"当初在页脚补这枚徽标，是为了照顾移动端和不看顶栏的访客，但顶栏那个入口已经在，两处就成了重复。现在把页脚这份撤掉 —— 开往只要求外链放在「打开网站就能看到的地方」，顶栏满足，不影响参与该项目。徽标撤掉的同时把自托管的两张黑白图一并删了（不再被任何地方引用），顺带省一点页脚体积。",
+		items: [
+			{
+				category: "视觉",
+				text: "页脚萌 ICP 备案号下方的「开往 Travellings」徽标移除，连同它那段 <style> 一起删",
+			},
+			{
+				category: "清理",
+				text: "删掉自托管的 travellings-b.png / travellings-w.png —— 不再被引用",
+			},
+			{
+				category: "说明",
+				text: "顶栏的「开往」入口保留，不影响参与友链接力",
+			},
+		],
+		tags: ["博客", "页脚", "视觉"],
+	},
+	{
 		version: "V1.44",
 		title: "引用块瘦身",
 		date: "2026-10-16",

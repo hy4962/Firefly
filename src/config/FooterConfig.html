@@ -5,52 +5,6 @@
 	</a>
 </div>
 
-<!-- 开往（Travellings）友链接力徽标：官方要求外链放在「打开网站就能看到的地方」，
-     顶栏已有一个入口，这里再放一份兜底（移动端、以及只想看页脚的访客都能点到）。
-     两份图都是自托管的，不依赖对方站点的可用性：
-       travellings-b.png 黑底白字 → 亮色主题下用
-       travellings-w.png 白底黑字 → 暗色主题下用（否则墨块贴在深色页脚上看不见）
-     换新素材时直接从 https://www.travellings.cn/assets/b.png 与 w.png 覆盖即可。 -->
-<div class="ff-trav">
-	<a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener" title="开往 - 友链接力">
-		<img class="ff-trav-img ff-trav-img--b" src="/assets/images/travellings-b.png" alt="开往 - 友链接力" height="18" loading="lazy" />
-		<img class="ff-trav-img ff-trav-img--w" src="/assets/images/travellings-w.png" alt="" aria-hidden="true" height="18" loading="lazy" />
-	</a>
-</div>
-
-<style>
-	/* 开往徽标：跟随主题切换黑白两版，和上面那行萌 ICP 备案号排在一起 */
-	.ff-trav {
-		margin: 6px 0 0;
-		text-align: center;
-		line-height: 1;
-	}
-	.ff-trav a {
-		display: inline-flex;
-		align-items: center;
-		transition: opacity 180ms ease;
-	}
-	.ff-trav a:hover {
-		opacity: 0.72;
-	}
-	.ff-trav-img {
-		height: 18px;
-		width: auto;
-		vertical-align: middle;
-	}
-	/* 默认（亮色）只显示黑底版 */
-	.ff-trav-img--w {
-		display: none;
-	}
-	/* 暗色主题：换白底版。本站暗色是 html.dark（类切换），不是媒体查询 */
-	html.dark .ff-trav-img--b {
-		display: none;
-	}
-	html.dark .ff-trav-img--w {
-		display: inline-block;
-	}
-</style>
-
 <style>
 	/* 页脚运行时间：与 siteConfig.siteStartDate 保持一致 */
 	.ff-uptime {
