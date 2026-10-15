@@ -30,6 +30,33 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.43",
+		title: "回复带上引用",
+		date: "2026-10-15",
+		summary: "回复别人时把他那句话一起引出来 —— 光看「@昵称：」猜不出在回哪一句",
+		description:
+			"Waline 的二级回复只渲染一行「@昵称：」，接下来就是自己的话。谁在回谁，一眼看得出；回的是他那句话里的哪一句，全靠猜 —— 一条评论下面十几条你来我往，读起来像拼拼图。Waline 其实在 DOM 里留了线索：回复正文的第一行是 `p.wl-reply-to`，里面那个 a 标签的 href 就是**被回复评论的 objectId**，而每条评论节点的 id 正好也是它。顺着锚点把目标评论找回来，摘出「谁 + 说了什么」做成引用块，插在「@昵称：」下面；点它会滚到原评论并闪一下，目标若正被「回复折叠」收着，还会先自动展开到那一条。找不到目标的（分页翻走了、评论被删）就静默跳过，保持 Waline 原样。做法照旧：只加文件，没动主题源文件。",
+		items: [
+			{
+				category: "交互",
+				text: "回复正文上方多一个引用块：被回复者昵称 + 正文摘要（两行截断）。原本的「@昵称：」那行保持不动，引用块排在它下面",
+			},
+			{
+				category: "交互",
+				text: "点引用块滚到原评论并高亮闪一下；目标正被「回复折叠」收着时，先自动展开到它那一条再滚（两个脚本之间用一个全局钩子对接）",
+			},
+			{
+				category: "边界",
+				text: "目标不在当前页（分页翻走、评论已删）时静默跳过，不插引用块，Waline 原样显示；摘内容时只取纯文本，不把用户内容再插回页面",
+			},
+			{
+				category: "实现",
+				text: "新增 public/assets/js/comment-reply-quote.js，样式与 PAGE_SCRIPTS 条目加在 src/config/FooterConfig.html",
+			},
+		],
+		tags: ["博客", "评论区", "Waline", "交互"],
+	},
+	{
 		version: "V1.42",
 		title: "评论回复折叠",
 		date: "2026-10-15",
