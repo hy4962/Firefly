@@ -9,5 +9,16 @@
 		// 站点自定义的 404 页面（dist/404.html）不会生效——这是从 Vercel 迁移过来
 		// 最容易漏掉的一处行为差异。
 		"not_found_handling": "404-page"
+	},
+	// Workers Logs（可观测性）。与 CF 面板「Observability」页给出的配置保持一致，
+	// 否则面板上会一直提示「配置与部署不同步」，而且下次 wrangler deploy 会把面板上的开关覆盖掉。
+	// 注意：本站是纯静态资产 Worker（没有 main 脚本），命中 dist 文件的请求由资产层直接返回、
+	// 不产生 Worker 调用，因此这里基本不会写入日志事件；开着是为了保留 404 兜底路径的痕迹。
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+			"persist": true
+		}
 	}
 }
