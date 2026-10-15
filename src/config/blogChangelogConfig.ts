@@ -30,6 +30,34 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.41",
+		title: "站内搜索提速",
+		date: "2026-10-15",
+		summary:
+			"把 Pagefind 那串必须串行加载的资源提前到用户输入之前；顶栏搜索的取数请求从 45 个收敛到 6 个，顺带补上「回车 = 进第一条结果」",
+		description:
+			"站内搜索一直有个说不清的「慢」：敲完字按回车，要等好几秒才出结果。查下来是两件事叠在一起。一是资源加载链太深 —— pagefind.js、worker、wasm、entry、meta、索引分片是严格串行依赖的，而 pagefind.js 只在用户碰到搜索框时才开始加载，于是这几跳的等待全部落在输入之后；二是取数请求数量和结果条数同阶，主题的取数写法是对「全部」结果调用 data()，而每个结果的 data() 就是一次 fragment 请求，搜一个常见词命中 45 条就是 45 个 HTTP 请求。现在新增一个全站注入的预热脚本：首屏空闲或鼠标碰到搜索框时就把 worker 起来、wasm 编译好、索引读进内存；再用一层代理只让前 6 条真正拉正文（面板本来就只显示 5 条），结果总数保持不变，所以「查看更多 N 条」的计数仍然准确。全程通过页脚注入实现，没有改动任何主题源文件。",
+		items: [
+			{
+				category: "性能",
+				text: "预热 Pagefind 加载链：新增 public/assets/js/search-warmup.js，在 requestIdleCallback（或鼠标悬停/焦点/触摸搜索框）时调用 __loadPagefind() 并用几个中文高频字 preload()。实测一次预热会提前拉好 js + worker + wasm + entry + meta + 3 个索引分片共 8 个文件",
+			},
+			{
+				category: "性能",
+				text: "收敛取数请求：运行时用 Proxy 包一层 pagefind.search，只让前 6 条结果真正拉取正文摘要，其余条目返回空摘要。结果数组长度保持真实，「查看更多 N 条」计数不受影响；/search/ 页面要展示完整列表，不做限制。实测顶栏搜索的 fragment 请求 45 → 6（本地索引对照）",
+			},
+			{
+				category: "交互",
+				text: "回车补上行为：主题的搜索框没有绑定 Enter，敲回车什么都不发生。现在回车进入第一条结果，并且 isComposing 为真时放行，不干扰中文输入法用回车确认候选项",
+			},
+			{
+				category: "性能",
+				text: "移动网络与省流模式（navigator.connection 的 saveData 或 2G）下跳过预热，不抢带宽",
+			},
+		],
+		tags: ["博客", "搜索", "性能", "Pagefind"],
+	},
+	{
 		version: "V1.40",
 		title: "关于菜单加自建服务",
 		date: "2026-10-14",
