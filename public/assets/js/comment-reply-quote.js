@@ -62,6 +62,14 @@
 		var prefix = clone.querySelector(".wl-reply-to");
 		if (prefix) prefix.remove();
 
+		// 还要剥掉目标自己那条引用块。不剥的话引用是会套娃的：
+		// A 回 B、B 回 C，摘 B 的内容时会把 B 的引用块（「C：……」）一起摘进来，
+		// 到 A 这里就成了「B：C：……」—— 一层层叠上去，越往下越像回音。
+		// 引用块是 .wl-content 的直接子（插在 .wl-reply-to 后面），所以只看直接子就够。
+		for (var k = clone.children.length - 1; k >= 0; k--) {
+			if (clone.children[k].classList.contains(CLS)) clone.children[k].remove();
+		}
+
 		var text = (clone.textContent || "").replace(/\s+/g, " ").trim();
 		if (!text) return null;
 
