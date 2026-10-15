@@ -1,11 +1,12 @@
 /**
  * 评论区「回复折叠」（全站，Waline）—— 每条评论下的回复默认收起。
  *
- * 行为（站长 2026-10-15 定的）：
+ * 行为（站长 2026-10-15 定的，当晚改过一版）：
  *   1. 顶层评论照常全部显示，不动；
- *   2. 它下面的回复默认全部收起，只留一个「展开 N 条回复」；
- *   3. 点一下先摊开 5 条，还有剩就变成「展开更多（还剩 M 条）」，每次再放 5 条；
- *   4. 全摊完按钮变「收起回复」，可以再折回去。
+ *   2. 它下面的回复**默认展示 2 条**，后面的先收着；
+ *   3. 还有剩就给个「展开更多（还剩 M 条）」，每次再放 5 条；
+ *   4. 全摊完按钮变「收起回复」，点一下回到默认的 2 条；
+ *   5. 回复本来就不超过 2 条的评论完全不碰，连按钮都不插。
  *
  * 为什么这么写（都是实测踩出来的）：
  *   · Waline 的 DOM 是 Vue 渲染的，回复挂在 **.wl-quote** 里（不是嵌套条目），
@@ -25,7 +26,8 @@
 (function () {
 	"use strict";
 
-	var STEP = 5; // 每次展开的条数
+	var DEFAULT_SHOWN = 2; // 默认展示的回复条数（不超过这个数就不插按钮）
+	var STEP = 5; // 「展开更多」每次追加的条数
 	var DEBOUNCE = 160; // MutationObserver 防抖
 	var ITEM = "wl-card-item";
 	var BTN = "ff-rp-toggle";
@@ -54,7 +56,6 @@
 	}
 
 	function labelOf(shown, total) {
-		if (shown === 0) return "展开 " + total + " 条回复";
 		if (shown >= total) return "收起回复";
 		return "展开更多（还剩 " + (total - shown) + " 条）";
 	}
@@ -84,7 +85,8 @@
 		if (quote.dataset.ffRp === "1" && findButton(quote)) return;
 
 		var items = directItems(quote);
-		if (items.length === 0) return;
+		// 回复本来就没超过默认条数：原样摊着，不插按钮，也不打标记
+		if (items.length <= DEFAULT_SHOWN) return;
 
 		quote.dataset.ffRp = "1";
 
@@ -93,13 +95,13 @@
 		btn.className = BTN;
 		btn.innerHTML = ICON + '<span class="ff-rp-label"></span>';
 		btn.addEventListener("click", function () {
-			var shown = Number(quote.dataset.ffShown || 0);
 			var total = directItems(quote).length;
-			apply(quote, shown >= total ? 0 : shown + STEP);
+			var shown = Number(quote.dataset.ffShown || DEFAULT_SHOWN);
+			apply(quote, shown >= total ? DEFAULT_SHOWN : shown + STEP);
 		});
 
 		quote.appendChild(btn);
-		apply(quote, 0);
+		apply(quote, DEFAULT_SHOWN);
 	}
 
 	function scan() {
