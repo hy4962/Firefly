@@ -407,6 +407,13 @@
 				id: "ff-recent-comments-js",
 				src: "/assets/js/recent-comments.js?v=5",
 			},
+			{
+				// 搜索预热：全站加载 —— 空转时就起 pagefind 的 worker/wasm/索引，
+				// 顺带把「回车 = 进第一条结果」补上（上游搜索框没有 Enter 处理）
+				path: /.*/,
+				id: "ff-search-warmup-js",
+				src: "/assets/js/search-warmup.js?v=1",
+			},
 		];
 
 		function loadPageScripts() {
