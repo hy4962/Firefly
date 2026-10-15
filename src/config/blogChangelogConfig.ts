@@ -30,6 +30,38 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.42",
+		title: "评论回复折叠",
+		date: "2026-10-15",
+		summary:
+			"每条评论下的回复默认收起，点开先摊 5 条，还有剩就变成「展开更多」，全部摊完可以再「收起回复」",
+		description:
+			"评论区里长回复串能把一整屏吃光 —— 友链页有一条评论下面挂着 13 条回复，想看下一条评论得一路滚过去。现在每条评论的回复默认收成一个「展开 N 条回复」按钮：点开先放 5 条，还剩就用「展开更多（还剩 M 条）」继续放，每次 5 条；全部摊开后按钮变「收起回复」，箭头翻上去，可以再折回去。实现上照旧只加文件、不动上游：样式写在 FooterConfig.html 的 style 块里（页脚在 swup 容器之外，切页不会被换掉），逻辑放在新增的 comment-reply-collapse.js，用页脚现成的 PAGE_SCRIPTS 全站加载。Waline 的 DOM 是 Vue 渲染的，回复并没有嵌成嵌套条目，而是统一挂在每张卡片的 .wl-quote 里（一条顶层评论 = .wl-card-item > .wl-card > .wl-quote > .wl-card-item × N），没有回复时 .wl-quote 仍然存在、只是空的，所以判定必须按「有直接子 .wl-card-item」；而收起也只认直接子，Waline 点「回复」时插进来的编辑框不是这个类，不会被误伤。观察器挂在 document.body 而不是 #waline —— 后者会随 swup 换页被整个替换，挂它身上的观察器会失效；挂 body 则换页后 Waline 重新渲染出的新节点也能接住。",
+		items: [
+			{
+				category: "交互",
+				text: "每条评论下的回复默认收起，只留一个「展开 N 条回复」；点一下先展示 5 条",
+			},
+			{
+				category: "交互",
+				text: "还有剩余时按钮变「展开更多（还剩 M 条）」，每次再放 5 条；全部展开后变「收起回复」，chevron 箭头同步翻转",
+			},
+			{
+				category: "交互",
+				text: "回复只有 1~2 条的评论也一并默认收起，行为统一；顶层评论本身不动，照常全部显示",
+			},
+			{
+				category: "实现",
+				text: "新增 public/assets/js/comment-reply-collapse.js，样式与 PAGE_SCRIPTS 条目加在 src/config/FooterConfig.html，没有改任何主题源文件",
+			},
+			{
+				category: "健壮性",
+				text: "MutationObserver 挂 document.body，接住 swup 无刷新切页与 Waline 自身的重绘。实测切换排序（整个列表重渲染）后按钮仍是 4 个、每条评论最多 1 个、无重复插入，并回到默认折叠态",
+			},
+		],
+		tags: ["博客", "评论区", "Waline", "交互"],
+	},
+	{
 		version: "V1.41",
 		title: "站内搜索提速",
 		date: "2026-10-15",
