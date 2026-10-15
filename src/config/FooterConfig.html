@@ -414,6 +414,13 @@
 				id: "ff-search-warmup-js",
 				src: "/assets/js/search-warmup.js?v=1",
 			},
+			{
+				// 评论区「回复折叠」：全站加载 —— 每条评论下的回复默认收起，
+				// 点开先放 5 条，还有更多就「展开更多」。没有 #waline 的页面自动空转。
+				path: /.*/,
+				id: "ff-comment-reply-collapse-js",
+				src: "/assets/js/comment-reply-collapse.js?v=1",
+			},
 		];
 
 		function loadPageScripts() {
@@ -1078,3 +1085,58 @@
 		<div class="ff-rc-foot" data-ff-rc-foot></div>
 	</div>
 </div>
+
+<style>
+	/* ===== 评论区「回复折叠」=====
+	   DOM 与类名都由 Waline（Vue）渲染，按钮由 comment-reply-collapse.js 插进 .wl-quote 末尾。
+	   这里只管样式，逻辑全在 js 里。写在页脚是因为页脚在 #swup-container 之外，
+	   切页不会被替换掉；而且未分层的这段天然压过主题 @layer 里的规则。
+	   配色只用主题变量，亮/暗色自动跟随，不需要另写 html.dark 分支。 */
+
+	/* 被折叠起来的回复。收在 .wl-quote 下写，优先级 (0,2,0) 稳过 Waline 自己的 .wl-card-item */
+	.wl-quote > .ff-rp-hidden {
+		display: none;
+	}
+
+	.ff-rp-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35em;
+		margin: 0.5rem 0 0.25rem;
+		padding: 0.3rem 0.7rem;
+		border: none;
+		border-radius: 999px;
+		background: var(--btn-regular-bg);
+		color: var(--primary);
+		font-family: inherit;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		line-height: 1.2;
+		cursor: pointer;
+		transition:
+			background-color 150ms ease,
+			color 150ms ease;
+	}
+	.ff-rp-toggle:hover {
+		background: var(--btn-regular-bg-hover);
+	}
+	.ff-rp-toggle:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+	.ff-rp-toggle svg {
+		width: 0.9em;
+		height: 0.9em;
+		fill: currentColor;
+		transition: transform 200ms ease;
+	}
+	/* 全摊开时箭头朝上，提示「再点就是收起」 */
+	.ff-rp-toggle.ff-rp-open svg {
+		transform: rotate(180deg);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ff-rp-toggle svg {
+			transition: none;
+		}
+	}
+</style>
