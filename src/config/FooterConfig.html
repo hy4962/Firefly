@@ -415,11 +415,18 @@
 				src: "/assets/js/search-warmup.js?v=1",
 			},
 			{
-				// 评论区「回复折叠」：全站加载 —— 每条评论下的回复默认收起，
-				// 点开先放 5 条，还有更多就「展开更多」。没有 #waline 的页面自动空转。
+				// 评论区「回复折叠」：全站加载 —— 每条评论下的回复默认展示 2 条，
+				// 多出来的收在「展开更多」后面。没有 #waline 的页面自动空转。
 				path: /.*/,
 				id: "ff-comment-reply-collapse-js",
-				src: "/assets/js/comment-reply-collapse.js?v=1",
+				src: "/assets/js/comment-reply-collapse.js?v=2",
+			},
+			{
+				// 评论区「回复引用」：全站加载 —— 顺着 wl-reply-to 的锚点把被回复那条
+				// 摘成引用块，免得只看到 `@昵称：` 却不知道在回哪句。
+				path: /.*/,
+				id: "ff-comment-reply-quote-js",
+				src: "/assets/js/comment-reply-quote.js?v=1",
 			},
 		];
 
@@ -1137,6 +1144,71 @@
 	@media (prefers-reduced-motion: reduce) {
 		.ff-rp-toggle svg {
 			transition: none;
+		}
+	}
+</style>
+
+<style>
+	/* ===== 评论区「回复引用」=====
+	   回复块由 comment-reply-quote.js 插进 .wl-content 里、紧跟那行 `@昵称：` 之后。
+	   样式同样写页脚（swup 容器之外，切页不丢；未分层压过主题 @layer）。 */
+
+	.ff-rq {
+		/* 两行截断：引用只是提示「在回哪句」，不该跟正文抢长度 */
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		box-sizing: border-box;
+		width: 100%;
+		margin: 0.375rem 0 0.5rem;
+		padding: 0.4rem 0.65rem;
+		border: none;
+		border-left: 3px solid var(--primary);
+		border-radius: 0 0.375rem 0.375rem 0;
+		background: var(--btn-regular-bg);
+		color: var(--content-meta);
+		font-family: inherit;
+		font-size: 0.8125rem;
+		line-height: 1.55;
+		text-align: left;
+		cursor: pointer;
+		transition: background-color 150ms ease;
+	}
+	.ff-rq:hover {
+		background: var(--btn-regular-bg-hover);
+	}
+	.ff-rq:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+	.ff-rq-nick {
+		margin-right: 0.35em;
+		font-weight: 700;
+		color: var(--primary);
+	}
+	.ff-rq-text {
+		color: var(--content-meta);
+	}
+
+	/* 点引用后，目标评论闪一下，不然滚过去也不知道该看哪条 */
+	.wl-card-item.ff-rq-flash {
+		border-radius: 0.5rem;
+		animation: ff-rq-flash 1.9s ease;
+	}
+	@keyframes ff-rq-flash {
+		0%,
+		100% {
+			background-color: transparent;
+		}
+		15%,
+		55% {
+			background-color: color-mix(in srgb, var(--primary) 14%, transparent);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.wl-card-item.ff-rq-flash {
+			animation: none;
 		}
 	}
 </style>

@@ -104,6 +104,19 @@
 		apply(quote, DEFAULT_SHOWN);
 	}
 
+	// 给 comment-reply-quote.js 用的钩子：点「回复引用」想跳到某条回复，
+	// 但那条正被收着时，scrollIntoView 对 display:none 的节点是没反应的，
+	// 所以先展开到它为止。没有引用脚本时这个钩子也不会有人调用。
+	window.__ffReplyCollapseExpand = function (item) {
+		var quote = item.parentElement;
+		if (!quote || !quote.classList || !quote.classList.contains("wl-quote")) return;
+		var items = directItems(quote);
+		var index = items.indexOf(item);
+		if (index < 0) return;
+		if (index < Number(quote.dataset.ffShown || 0)) return;
+		apply(quote, Math.min(items.length, index + 1));
+	};
+
 	function scan() {
 		var root = document.getElementById("waline");
 		if (!root) return;
