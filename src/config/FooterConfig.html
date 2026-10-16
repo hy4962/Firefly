@@ -383,14 +383,13 @@
 				src: "/assets/js/comment-reply-quote.js?v=3",
 			},
 			{
-				// 动态页内嵌评论增强：干两件事 —— 一是让评论面板默认展开（替用户点一下
-				// 上游那颗「评论」按钮，滚到哪展开到哪），二是把回复折叠 / 回复引用的
-				// 样式与脚本代投进那个同源 iframe。之所以要代投：动态的评论跑在
-				// /dynamic/comments/ 里，那个页面走 Layout、没有页脚 —— 上面两条全站脚本
-				// 与样式压根到不了它，动态里的回复就成了全站唯一「不折叠、无引用」的评论区。
+				// 动态页内嵌评论增强：把回复折叠 / 回复引用的样式与脚本代投进那个同源
+				// iframe。之所以要代投：动态的评论跑在 /dynamic/comments/ 里，那个页面
+				// 走 Layout、没有页脚 —— 上面两条全站脚本与样式压根到不了它，动态里的
+				// 回复就成了全站唯一「不折叠、无引用」的评论区。
 				path: /^\/dynamic\/?$/,
 				id: "ff-dynamic-comment-enhance-js",
-				src: "/assets/js/dynamic-comment-enhance.js?v=2",
+				src: "/assets/js/dynamic-comment-enhance.js?v=3",
 			},
 		];
 
