@@ -269,6 +269,35 @@ html.dark .ff-wx-pinned-tag {
 	}
 }
 
+/* ===== 页面头部：拆掉那层卡片壳 =====
+   上游的 .page-header 自己是一张 card-base（图标 + 标题 + 计数 + 搜索/年份筛选）。
+   它紧跟在封面区下面，两张卡片叠着等于两层壳，站长要求把壳去掉、内容直接收上去。
+   功能一个不动（RSS 入口、动态计数、搜索、年份筛选都在原位）。 */
+
+/* 封面区与按钮行之间不留缝 */
+.ff-wx-cover {
+	margin-bottom: 0;
+}
+
+.ff-wx-actions {
+	margin: -0.5rem 0 0.25rem;
+}
+
+/* 拆壳：背景、边框、圆角、阴影全撤，只留下内边距把内容跟上面的封面拉开一点 */
+.page-header {
+	margin: 0 0 1rem;
+	padding: 0.75rem 0.5rem 1rem;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+/* 左首那个大图标一并撤掉（站长点名） */
+.page-header .page-icon {
+	display: none;
+}
+
 /* ===== 卡片本体 ===== */
 
 /* 上游 .page-entry 是 overflow: visible，竖条要贴边得先裁住 */
