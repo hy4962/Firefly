@@ -399,6 +399,13 @@
 				id: "ff-dynamic-hero-js",
 				src: "/assets/js/dynamic-hero.js?v=3",
 			},
+			{
+				// 「天气预报」卡片：全站加载 —— 数据来自 uapis.cn（免费无 key，按访客
+				// IP 定位），桌面挂右栏、移动端挂底部栏，挂载与渲染逻辑都在 js 里。
+				path: /.*/,
+				id: "ff-weather-js",
+				src: "/assets/js/weather-card.js?v=1",
+			},
 		];
 
 		// 同样是按需加载，只不过加载的是样式表。规则里已经用元素名限定作用域，
@@ -1730,6 +1737,470 @@
 		cursor: var(--ffc-resize-horizontal-1) var(--ffc-resize-horizontal-hx) var(--ffc-resize-horizontal-hy), ew-resize;
 		cursor: -webkit-image-set(var(--ffc-resize-horizontal-1) 1x, var(--ffc-resize-horizontal-2) 2x) var(--ffc-resize-horizontal-hx) var(--ffc-resize-horizontal-hy), ew-resize;
 		cursor: image-set(var(--ffc-resize-horizontal-1) 1x, var(--ffc-resize-horizontal-2) 2x) var(--ffc-resize-horizontal-hx) var(--ffc-resize-horizontal-hy), ew-resize;
+		}
+	}
+</style>
+
+<!-- ===== 「天气预报」卡片（参考站 blog.amamo.top 同款）=====
+     全站显示：桌面进右栏 top 组件容器末尾，<768px 进移动端底部组件栏。
+     DOM 由 public/assets/js/weather-card.js 自己拼（脚本在页脚 PAGE_SCRIPTS 里全站加载），
+     这里只放样式。类名一律 ff-w- 前缀，避免和任何现有规则撞名。
+     ⚠️ 改这个 js 记得把 PAGE_SCRIPTS 里的 ?v= 往上加（/assets/* 有 30 天强缓存）。 -->
+<style id="ff-weather-style">
+	/* 卡片外壳：背景/圆角/暗色由上游 card-base 提供 */
+	#ff-weather {
+		position: relative;
+		padding-bottom: 1rem;
+		color: #171717;
+	}
+
+	:root.dark #ff-weather {
+		color: #f5f5f5;
+	}
+
+	#ff-weather[hidden] {
+		display: none !important;
+	}
+
+	/* 标题：几何复刻上游 widget-title（ml-8 mt-4 mb-2 + 左侧主题色竖条） */
+	.ff-w-title {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin: 1rem 1rem 0.5rem 2rem;
+		font-size: 1.125rem;
+		font-weight: 700;
+		line-height: 1.75rem;
+	}
+
+	.ff-w-title::before {
+		content: "";
+		position: absolute;
+		left: -1rem;
+		top: 5.5px;
+		width: 0.25rem;
+		height: 1rem;
+		border-radius: 0.375rem;
+		background: var(--primary);
+	}
+
+	/* 折叠容器：展开时放开高度，收起时截到「地点 + 温度 + 高低温」 */
+	.ff-w-body {
+		overflow: hidden;
+		padding: 0 1rem;
+		max-height: 200rem;
+		transition: max-height 0.35s ease;
+	}
+
+	#ff-weather.is-collapsed .ff-w-body {
+		max-height: 9.5rem;
+	}
+
+	/* 通用图标：尺寸 + 跟随文字色（path 里已写死 fill="currentColor"） */
+	.ff-w-ico {
+		width: 1.25rem;
+		height: 1.25rem;
+		flex-shrink: 0;
+		fill: currentColor;
+	}
+
+	/* ===== 加载 / 错误态 ===== */
+	.ff-w-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		padding: 2rem 0;
+	}
+
+	.ff-w-state[hidden] {
+		display: none !important;
+	}
+
+	.ff-w-spinner {
+		width: 2rem;
+		height: 2rem;
+		border: 2px solid var(--primary);
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: ff-w-spin 0.8s linear infinite;
+	}
+
+	.ff-w-state-text {
+		font-size: 0.875rem;
+		color: var(--primary);
+		text-align: center;
+	}
+
+	.ff-w-error-ico {
+		width: 2rem;
+		height: 2rem;
+		color: #ef4444;
+	}
+
+	.ff-w-retry {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin-top: 0.5rem;
+		padding: 0.375rem 0.75rem;
+		font-family: inherit;
+		font-size: 0.75rem;
+		color: var(--primary);
+		background: transparent;
+		border: 1px solid var(--primary);
+		border-radius: 0.375rem;
+		cursor: pointer;
+		transition: background-color 0.2s, color 0.2s;
+	}
+
+	.ff-w-retry:hover {
+		background: var(--primary);
+		color: #fff;
+	}
+
+	.ff-w-retry-ico {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	/* ===== 内容 ===== */
+	.ff-w-content {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.ff-w-content[hidden] {
+		display: none !important;
+	}
+
+	.ff-w-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.ff-w-loc {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		min-width: 0;
+		flex-wrap: wrap;
+	}
+
+	.ff-w-loc-ico {
+		color: var(--primary);
+	}
+
+	.ff-w-city {
+		font-size: 1.0625rem;
+		font-weight: 600;
+	}
+
+	.ff-w-district {
+		font-size: 0.875rem;
+		color: var(--content-meta);
+	}
+
+	.ff-w-sky {
+		flex-shrink: 0;
+	}
+
+	.ff-w-sky-ico {
+		width: 3rem;
+		height: 3rem;
+		color: var(--primary);
+		animation: ff-w-float 3s ease-in-out infinite;
+	}
+
+	.ff-w-temp-row {
+		display: flex;
+		align-items: baseline;
+		gap: 0.25rem;
+	}
+
+	.ff-w-temp {
+		font-size: 2.5rem;
+		font-weight: 700;
+		line-height: 1;
+	}
+
+	.ff-w-deg {
+		position: relative;
+		top: -1rem;
+		font-size: 1rem;
+		color: var(--content-meta);
+	}
+
+	.ff-w-desc {
+		margin-left: 0.5rem;
+		font-size: 1.5rem;
+	}
+
+	.ff-w-range {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+	}
+
+	.ff-w-range b {
+		font-weight: 600;
+	}
+
+	.ff-w-max {
+		color: #ef4444;
+	}
+
+	.ff-w-min {
+		color: #3b82f6;
+	}
+
+	.ff-w-sep {
+		color: var(--primary);
+	}
+
+	/* ===== 指标网格：固定两列（右栏最窄的 280px 也放得下），
+	   一列会让卡片飙到 900px 以上，右栏根本吃不消 ===== */
+	.ff-w-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.25rem 0.5rem;
+		border-top: 1px dashed var(--primary);
+		padding-top: 1rem;
+	}
+
+	.ff-w-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+		padding: 0.375rem 0.25rem;
+		border-radius: 0.5rem;
+		transition: transform 0.2s, box-shadow 0.2s;
+	}
+
+	.ff-w-item:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	:root.dark .ff-w-item:hover {
+		box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+	}
+
+	.ff-w-item-full {
+		grid-column: 1 / -1;
+		align-items: flex-start;
+	}
+
+	.ff-w-meta {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.ff-w-meta-wide {
+		width: 100%;
+	}
+
+	.ff-w-label {
+		font-size: 0.625rem;
+		letter-spacing: 0.05em;
+		color: var(--content-meta);
+	}
+
+	.ff-w-value {
+		font-size: 0.875rem;
+		font-weight: 500;
+	}
+
+	/* 指标图标配色 */
+	.is-wind {
+		color: var(--primary);
+	}
+
+	.is-visibility {
+		color: #3b82f6;
+	}
+
+	.is-feels {
+		color: #f97316;
+	}
+
+	.is-humidity {
+		color: var(--primary);
+	}
+
+	.is-pressure {
+		color: #8b5cf6;
+	}
+
+	.is-aqi {
+		color: #22c55e;
+	}
+
+	.is-cloud {
+		color: #64748b;
+	}
+
+	.is-uv {
+		color: #eab308;
+	}
+
+	.is-precipitation {
+		color: #06b6d4;
+	}
+
+	.is-pop {
+		color: #0ea5e9;
+	}
+
+	.is-sunrise {
+		color: #fbbf24;
+	}
+
+	.is-sunset {
+		color: #fb923c;
+	}
+
+	.is-pollutant {
+		color: #ef4444;
+		margin-top: 0.125rem;
+	}
+
+	/* 空气质量等级标签 */
+	.ff-w-aqi-tag {
+		margin-left: 0.25rem;
+		padding: 0.125rem 0.375rem;
+		border-radius: 0.25rem;
+		font-size: 0.625rem;
+	}
+
+	.ff-w-aqi-tag:empty {
+		display: none;
+	}
+
+	.ff-w-aqi-tag.is-good {
+		background: #22c55e;
+		color: #fff;
+	}
+
+	.ff-w-aqi-tag.is-moderate {
+		background: #eab308;
+		color: #1f2937;
+	}
+
+	.ff-w-aqi-tag.is-bad {
+		background: #ef4444;
+		color: #fff;
+	}
+
+	/* 污染物浓度：固定三列（跟参考站一致） */
+	.ff-w-pollutants {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.125rem 0.5rem;
+		margin-top: 0.25rem;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+
+	.ff-w-pollutant b {
+		font-weight: 600;
+	}
+
+	.ff-w-time {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.375rem;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+
+	.ff-w-time-ico {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	/* ===== 折叠按钮 ===== */
+	.ff-w-toggle-box {
+		padding: 0 1rem;
+		margin-bottom: -0.5rem;
+	}
+
+	.ff-w-toggle {
+		display: block;
+		width: 100%;
+		height: 2.25rem;
+		padding: 0;
+		font-family: inherit;
+		font-size: 1rem;
+		color: inherit;
+		background: transparent;
+		border: none;
+		border-radius: 0.5rem;
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+
+	.ff-w-toggle:hover {
+		background: var(--btn-plain-bg-hover);
+	}
+
+	.ff-w-toggle-inner {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		color: var(--primary);
+		transform: translateX(-0.5rem);
+	}
+
+	.ff-w-toggle-more,
+	.ff-w-toggle-less {
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+
+	#ff-weather:not(.is-collapsed) .ff-w-toggle-more {
+		display: none;
+	}
+
+	#ff-weather.is-collapsed .ff-w-toggle-less {
+		display: none;
+	}
+
+	@keyframes ff-w-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes ff-w-float {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-4px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ff-w-sky-ico,
+		.ff-w-spinner {
+			animation: none;
+		}
+
+		.ff-w-body {
+			transition: none;
 		}
 	}
 </style>
