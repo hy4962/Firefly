@@ -389,7 +389,7 @@
 				// 回复就成了全站唯一「不折叠、无引用」的评论区。
 				path: /^\/dynamic\/?$/,
 				id: "ff-dynamic-comment-enhance-js",
-				src: "/assets/js/dynamic-comment-enhance.js?v=4",
+				src: "/assets/js/dynamic-comment-enhance.js?v=6",
 			},
 			{
 				// 动态页封面区：把页脚那个 #ff-wx-hero 壳子搬进正文顶部（版式照
@@ -1267,26 +1267,263 @@
 	}
 </style>
 
-<!-- ===== 「俺妹」鼠标指针（Oreimo Mouse Cursor Set）=====
-     素材：public/images/cursors/*.png —— 由 Gemini 生成的两张图切图、去白底、预乘 alpha 缩放而来。
-     每枚出 32px(1x) + 64px(2x)，用 image-set() 覆盖高分屏；两种倍率共用同一组 CSS px 热点，
-     所以热点只需写一份（3 2 / 6 4 / 16 16），不用跟着倍率换算。
-     每条先写纯 url() 兜底，再写 -webkit-image-set() 与标准 image-set()，不支持的浏览器自动忽略后者。
-     ⚠️ pre / code 必须保留 cursor: text —— 位图会覆盖掉浏览器自动给文本区选的原生 I 型光标，
-        代码块是复制命令的地方，细十字比 32px 位图好瞄。
-     ⚠️ 换素材后要同步改文件名或加 ?v=（长缓存）。
-     ⚠️ 忙碌 / 帮助两枚在本站没有天然触发点，留 data-cursor 与 html.ff-busy 两个 opt-in 钩子。 -->
+<!-- ===== 《俺妹》鼠标指针主题（Oreimo Mouse Cursor Theme）=====
+     素材：public/images/cursors/kirino|kuroneko/*.png
+       亮色主题 = 高坂桐乃，深色主题 = 五更琉璃（黑猫）。
+       每枚 32px(1x) + 64px(2x)，用 image-set() 覆盖高分屏，两种倍率共用同一组 CSS px 热点。
+     实现上把「哪张图 + 热点」全放进自定义属性：
+       :root        -> 桐乃
+       html.dark    -> 黑猫
+     于是 28 条 cursor 规则只写一遍，切主题只换变量；热点也能跟着主题换（桐乃/黑猫的指尖位置差 1~2px）。
+     每条规则三档声明：纯 url(1x) 兜底 -> -webkit-image-set -> 标准 image-set，
+     不支持 image-set 的浏览器自动落回 1x 位图，而不是直接丢掉整条。
+     ⚠️ pre / code 必须保留 cursor: text —— 见下面那条注释里的 expressive-code 陷阱。
+     ⚠️ 换素材后要同步改文件名或加 ?v=（长缓存）。 -->
 <style id="ff-cursor-style">
 	@media (pointer: fine) {
-		/* 正常选择：黄箭头 + 粉色发夹 + 蓝蝴蝶结 */
-		html,
-		body {
-			cursor: url("/images/cursors/normal-32.png") 3 2, auto;
-			cursor: -webkit-image-set(url("/images/cursors/normal-32.png") 1x, url("/images/cursors/normal-64.png") 2x) 3 2, auto;
-			cursor: image-set(url("/images/cursors/normal-32.png") 1x, url("/images/cursors/normal-64.png") 2x) 3 2, auto;
+		/* 亮色主题：桐乃 */
+		:root {
+			--ffc-normal-1: url("/images/cursors/kirino/normal-32.png");
+			--ffc-normal-2: url("/images/cursors/kirino/normal-64.png");
+			--ffc-normal-hx: 4;
+			--ffc-normal-hy: 2;
+			--ffc-link-1: url("/images/cursors/kirino/link-32.png");
+			--ffc-link-2: url("/images/cursors/kirino/link-64.png");
+			--ffc-link-hx: 8;
+			--ffc-link-hy: 3;
+			--ffc-hand-1: url("/images/cursors/kirino/hand-32.png");
+			--ffc-hand-2: url("/images/cursors/kirino/hand-64.png");
+			--ffc-hand-hx: 6;
+			--ffc-hand-hy: 3;
+			--ffc-text-1: url("/images/cursors/kirino/text-32.png");
+			--ffc-text-2: url("/images/cursors/kirino/text-64.png");
+			--ffc-text-hx: 16;
+			--ffc-text-hy: 16;
+			--ffc-text-horizontal-1: url("/images/cursors/kirino/text-horizontal-32.png");
+			--ffc-text-horizontal-2: url("/images/cursors/kirino/text-horizontal-64.png");
+			--ffc-text-horizontal-hx: 8;
+			--ffc-text-horizontal-hy: 7;
+			--ffc-text-vertical-1: url("/images/cursors/kirino/text-vertical-32.png");
+			--ffc-text-vertical-2: url("/images/cursors/kirino/text-vertical-64.png");
+			--ffc-text-vertical-hx: 7;
+			--ffc-text-vertical-hy: 8;
+			--ffc-help-1: url("/images/cursors/kirino/help-32.png");
+			--ffc-help-2: url("/images/cursors/kirino/help-64.png");
+			--ffc-help-hx: 4;
+			--ffc-help-hy: 2;
+			--ffc-precision-1: url("/images/cursors/kirino/precision-32.png");
+			--ffc-precision-2: url("/images/cursors/kirino/precision-64.png");
+			--ffc-precision-hx: 16;
+			--ffc-precision-hy: 16;
+			--ffc-move-1: url("/images/cursors/kirino/move-32.png");
+			--ffc-move-2: url("/images/cursors/kirino/move-64.png");
+			--ffc-move-hx: 16;
+			--ffc-move-hy: 16;
+			--ffc-grab-1: url("/images/cursors/kirino/grab-32.png");
+			--ffc-grab-2: url("/images/cursors/kirino/grab-64.png");
+			--ffc-grab-hx: 16;
+			--ffc-grab-hy: 16;
+			--ffc-grabbing-1: url("/images/cursors/kirino/grabbing-32.png");
+			--ffc-grabbing-2: url("/images/cursors/kirino/grabbing-64.png");
+			--ffc-grabbing-hx: 16;
+			--ffc-grabbing-hy: 16;
+			--ffc-busy-1: url("/images/cursors/kirino/busy-32.png");
+			--ffc-busy-2: url("/images/cursors/kirino/busy-64.png");
+			--ffc-busy-hx: 16;
+			--ffc-busy-hy: 16;
+			--ffc-working-1: url("/images/cursors/kirino/working-32.png");
+			--ffc-working-2: url("/images/cursors/kirino/working-64.png");
+			--ffc-working-hx: 16;
+			--ffc-working-hy: 16;
+			--ffc-loading-1: url("/images/cursors/kirino/loading-32.png");
+			--ffc-loading-2: url("/images/cursors/kirino/loading-64.png");
+			--ffc-loading-hx: 16;
+			--ffc-loading-hy: 16;
+			--ffc-done-1: url("/images/cursors/kirino/done-32.png");
+			--ffc-done-2: url("/images/cursors/kirino/done-64.png");
+			--ffc-done-hx: 16;
+			--ffc-done-hy: 16;
+			--ffc-candidate-1: url("/images/cursors/kirino/candidate-32.png");
+			--ffc-candidate-2: url("/images/cursors/kirino/candidate-64.png");
+			--ffc-candidate-hx: 16;
+			--ffc-candidate-hy: 16;
+			--ffc-unavailable-1: url("/images/cursors/kirino/unavailable-32.png");
+			--ffc-unavailable-2: url("/images/cursors/kirino/unavailable-64.png");
+			--ffc-unavailable-hx: 16;
+			--ffc-unavailable-hy: 16;
+			--ffc-background-1: url("/images/cursors/kirino/background-32.png");
+			--ffc-background-2: url("/images/cursors/kirino/background-64.png");
+			--ffc-background-hx: 16;
+			--ffc-background-hy: 16;
+			--ffc-add-1: url("/images/cursors/kirino/add-32.png");
+			--ffc-add-2: url("/images/cursors/kirino/add-64.png");
+			--ffc-add-hx: 16;
+			--ffc-add-hy: 16;
+			--ffc-delete-1: url("/images/cursors/kirino/delete-32.png");
+			--ffc-delete-2: url("/images/cursors/kirino/delete-64.png");
+			--ffc-delete-hx: 16;
+			--ffc-delete-hy: 16;
+			--ffc-scroll-up-1: url("/images/cursors/kirino/scroll-up-32.png");
+			--ffc-scroll-up-2: url("/images/cursors/kirino/scroll-up-64.png");
+			--ffc-scroll-up-hx: 16;
+			--ffc-scroll-up-hy: 16;
+			--ffc-scroll-down-1: url("/images/cursors/kirino/scroll-down-32.png");
+			--ffc-scroll-down-2: url("/images/cursors/kirino/scroll-down-64.png");
+			--ffc-scroll-down-hx: 16;
+			--ffc-scroll-down-hy: 16;
+			--ffc-scroll-left-1: url("/images/cursors/kirino/scroll-left-32.png");
+			--ffc-scroll-left-2: url("/images/cursors/kirino/scroll-left-64.png");
+			--ffc-scroll-left-hx: 16;
+			--ffc-scroll-left-hy: 16;
+			--ffc-scroll-right-1: url("/images/cursors/kirino/scroll-right-32.png");
+			--ffc-scroll-right-2: url("/images/cursors/kirino/scroll-right-64.png");
+			--ffc-scroll-right-hx: 16;
+			--ffc-scroll-right-hy: 16;
+			--ffc-resize-nwse-1: url("/images/cursors/kirino/resize-nwse-32.png");
+			--ffc-resize-nwse-2: url("/images/cursors/kirino/resize-nwse-64.png");
+			--ffc-resize-nwse-hx: 16;
+			--ffc-resize-nwse-hy: 16;
+			--ffc-resize-nesw-1: url("/images/cursors/kirino/resize-nesw-32.png");
+			--ffc-resize-nesw-2: url("/images/cursors/kirino/resize-nesw-64.png");
+			--ffc-resize-nesw-hx: 16;
+			--ffc-resize-nesw-hy: 16;
+			--ffc-resize-vertical-1: url("/images/cursors/kirino/resize-vertical-32.png");
+			--ffc-resize-vertical-2: url("/images/cursors/kirino/resize-vertical-64.png");
+			--ffc-resize-vertical-hx: 16;
+			--ffc-resize-vertical-hy: 16;
+			--ffc-resize-horizontal-1: url("/images/cursors/kirino/resize-horizontal-32.png");
+			--ffc-resize-horizontal-2: url("/images/cursors/kirino/resize-horizontal-64.png");
+			--ffc-resize-horizontal-hx: 16;
+			--ffc-resize-horizontal-hy: 16;
 		}
 
-		/* 链接选择：黑猫耳箭头 */
+		/* 深色主题：黑猫 */
+		html.dark {
+			--ffc-normal-1: url("/images/cursors/kuroneko/normal-32.png");
+			--ffc-normal-2: url("/images/cursors/kuroneko/normal-64.png");
+			--ffc-normal-hx: 4;
+			--ffc-normal-hy: 2;
+			--ffc-link-1: url("/images/cursors/kuroneko/link-32.png");
+			--ffc-link-2: url("/images/cursors/kuroneko/link-64.png");
+			--ffc-link-hx: 7;
+			--ffc-link-hy: 5;
+			--ffc-hand-1: url("/images/cursors/kuroneko/hand-32.png");
+			--ffc-hand-2: url("/images/cursors/kuroneko/hand-64.png");
+			--ffc-hand-hx: 5;
+			--ffc-hand-hy: 4;
+			--ffc-text-1: url("/images/cursors/kuroneko/text-32.png");
+			--ffc-text-2: url("/images/cursors/kuroneko/text-64.png");
+			--ffc-text-hx: 16;
+			--ffc-text-hy: 16;
+			--ffc-text-horizontal-1: url("/images/cursors/kuroneko/text-horizontal-32.png");
+			--ffc-text-horizontal-2: url("/images/cursors/kuroneko/text-horizontal-64.png");
+			--ffc-text-horizontal-hx: 8;
+			--ffc-text-horizontal-hy: 7;
+			--ffc-text-vertical-1: url("/images/cursors/kuroneko/text-vertical-32.png");
+			--ffc-text-vertical-2: url("/images/cursors/kuroneko/text-vertical-64.png");
+			--ffc-text-vertical-hx: 6;
+			--ffc-text-vertical-hy: 9;
+			--ffc-help-1: url("/images/cursors/kuroneko/help-32.png");
+			--ffc-help-2: url("/images/cursors/kuroneko/help-64.png");
+			--ffc-help-hx: 2;
+			--ffc-help-hy: 2;
+			--ffc-precision-1: url("/images/cursors/kuroneko/precision-32.png");
+			--ffc-precision-2: url("/images/cursors/kuroneko/precision-64.png");
+			--ffc-precision-hx: 16;
+			--ffc-precision-hy: 16;
+			--ffc-move-1: url("/images/cursors/kuroneko/move-32.png");
+			--ffc-move-2: url("/images/cursors/kuroneko/move-64.png");
+			--ffc-move-hx: 16;
+			--ffc-move-hy: 16;
+			--ffc-grab-1: url("/images/cursors/kuroneko/grab-32.png");
+			--ffc-grab-2: url("/images/cursors/kuroneko/grab-64.png");
+			--ffc-grab-hx: 16;
+			--ffc-grab-hy: 16;
+			--ffc-grabbing-1: url("/images/cursors/kuroneko/grabbing-32.png");
+			--ffc-grabbing-2: url("/images/cursors/kuroneko/grabbing-64.png");
+			--ffc-grabbing-hx: 16;
+			--ffc-grabbing-hy: 16;
+			--ffc-busy-1: url("/images/cursors/kuroneko/busy-32.png");
+			--ffc-busy-2: url("/images/cursors/kuroneko/busy-64.png");
+			--ffc-busy-hx: 16;
+			--ffc-busy-hy: 16;
+			--ffc-working-1: url("/images/cursors/kuroneko/working-32.png");
+			--ffc-working-2: url("/images/cursors/kuroneko/working-64.png");
+			--ffc-working-hx: 16;
+			--ffc-working-hy: 16;
+			--ffc-loading-1: url("/images/cursors/kuroneko/loading-32.png");
+			--ffc-loading-2: url("/images/cursors/kuroneko/loading-64.png");
+			--ffc-loading-hx: 16;
+			--ffc-loading-hy: 16;
+			--ffc-done-1: url("/images/cursors/kuroneko/done-32.png");
+			--ffc-done-2: url("/images/cursors/kuroneko/done-64.png");
+			--ffc-done-hx: 16;
+			--ffc-done-hy: 16;
+			--ffc-candidate-1: url("/images/cursors/kuroneko/candidate-32.png");
+			--ffc-candidate-2: url("/images/cursors/kuroneko/candidate-64.png");
+			--ffc-candidate-hx: 16;
+			--ffc-candidate-hy: 16;
+			--ffc-unavailable-1: url("/images/cursors/kuroneko/unavailable-32.png");
+			--ffc-unavailable-2: url("/images/cursors/kuroneko/unavailable-64.png");
+			--ffc-unavailable-hx: 16;
+			--ffc-unavailable-hy: 16;
+			--ffc-background-1: url("/images/cursors/kuroneko/background-32.png");
+			--ffc-background-2: url("/images/cursors/kuroneko/background-64.png");
+			--ffc-background-hx: 16;
+			--ffc-background-hy: 16;
+			--ffc-add-1: url("/images/cursors/kuroneko/add-32.png");
+			--ffc-add-2: url("/images/cursors/kuroneko/add-64.png");
+			--ffc-add-hx: 16;
+			--ffc-add-hy: 16;
+			--ffc-delete-1: url("/images/cursors/kuroneko/delete-32.png");
+			--ffc-delete-2: url("/images/cursors/kuroneko/delete-64.png");
+			--ffc-delete-hx: 16;
+			--ffc-delete-hy: 16;
+			--ffc-scroll-up-1: url("/images/cursors/kuroneko/scroll-up-32.png");
+			--ffc-scroll-up-2: url("/images/cursors/kuroneko/scroll-up-64.png");
+			--ffc-scroll-up-hx: 16;
+			--ffc-scroll-up-hy: 16;
+			--ffc-scroll-down-1: url("/images/cursors/kuroneko/scroll-down-32.png");
+			--ffc-scroll-down-2: url("/images/cursors/kuroneko/scroll-down-64.png");
+			--ffc-scroll-down-hx: 16;
+			--ffc-scroll-down-hy: 16;
+			--ffc-scroll-left-1: url("/images/cursors/kuroneko/scroll-left-32.png");
+			--ffc-scroll-left-2: url("/images/cursors/kuroneko/scroll-left-64.png");
+			--ffc-scroll-left-hx: 16;
+			--ffc-scroll-left-hy: 16;
+			--ffc-scroll-right-1: url("/images/cursors/kuroneko/scroll-right-32.png");
+			--ffc-scroll-right-2: url("/images/cursors/kuroneko/scroll-right-64.png");
+			--ffc-scroll-right-hx: 16;
+			--ffc-scroll-right-hy: 16;
+			--ffc-resize-nwse-1: url("/images/cursors/kuroneko/resize-nwse-32.png");
+			--ffc-resize-nwse-2: url("/images/cursors/kuroneko/resize-nwse-64.png");
+			--ffc-resize-nwse-hx: 16;
+			--ffc-resize-nwse-hy: 16;
+			--ffc-resize-nesw-1: url("/images/cursors/kuroneko/resize-nesw-32.png");
+			--ffc-resize-nesw-2: url("/images/cursors/kuroneko/resize-nesw-64.png");
+			--ffc-resize-nesw-hx: 16;
+			--ffc-resize-nesw-hy: 16;
+			--ffc-resize-vertical-1: url("/images/cursors/kuroneko/resize-vertical-32.png");
+			--ffc-resize-vertical-2: url("/images/cursors/kuroneko/resize-vertical-64.png");
+			--ffc-resize-vertical-hx: 16;
+			--ffc-resize-vertical-hy: 16;
+			--ffc-resize-horizontal-1: url("/images/cursors/kuroneko/resize-horizontal-32.png");
+			--ffc-resize-horizontal-2: url("/images/cursors/kuroneko/resize-horizontal-64.png");
+			--ffc-resize-horizontal-hx: 16;
+			--ffc-resize-horizontal-hy: 16;
+		}
+
+		/* ---------- 有天然触发点的 ---------- */
+
+		/* 正常选择 */
+		html,
+		body {
+		cursor: var(--ffc-normal-1) var(--ffc-normal-hx) var(--ffc-normal-hy), auto;
+		cursor: -webkit-image-set(var(--ffc-normal-1) 1x, var(--ffc-normal-2) 2x) var(--ffc-normal-hx) var(--ffc-normal-hy), auto;
+		cursor: image-set(var(--ffc-normal-1) 1x, var(--ffc-normal-2) 2x) var(--ffc-normal-hx) var(--ffc-normal-hy), auto;
+		}
+
+		/* 链接选择（!important：主题里 a/button 自带的 cursor 得压住） */
 		a,
 		button,
 		[role="button"],
@@ -1298,24 +1535,12 @@
 		input[type="reset"],
 		.clickable,
 		[data-cursor="link"] {
-			cursor: url("/images/cursors/link-select-32.png") 6 4, pointer !important;
-			cursor: -webkit-image-set(url("/images/cursors/link-select-32.png") 1x, url("/images/cursors/link-select-64.png") 2x) 6 4, pointer !important;
-			cursor: image-set(url("/images/cursors/link-select-32.png") 1x, url("/images/cursors/link-select-64.png") 2x) 6 4, pointer !important;
-		}
-		/* 深色主题下黑猫箭头会糊进背景，换带白描边的版本（素材同名加 -dark） */
-		html.dark a,
-		html.dark button,
-		html.dark [role="button"],
-		html.dark summary,
-		html.dark label[for],
-		html.dark select,
-		html.dark [data-cursor="link"] {
-			cursor: url("/images/cursors/link-select-dark-32.png") 6 4, pointer !important;
-			cursor: -webkit-image-set(url("/images/cursors/link-select-dark-32.png") 1x, url("/images/cursors/link-select-dark-64.png") 2x) 6 4, pointer !important;
-			cursor: image-set(url("/images/cursors/link-select-dark-32.png") 1x, url("/images/cursors/link-select-dark-64.png") 2x) 6 4, pointer !important;
+		cursor: var(--ffc-link-1) var(--ffc-link-hx) var(--ffc-link-hy), pointer !important;
+		cursor: -webkit-image-set(var(--ffc-link-1) 1x, var(--ffc-link-2) 2x) var(--ffc-link-hx) var(--ffc-link-hy), pointer !important;
+		cursor: image-set(var(--ffc-link-1) 1x, var(--ffc-link-2) 2x) var(--ffc-link-hx) var(--ffc-link-hy), pointer !important;
 		}
 
-		/* 文本选择：粉色魔法棒（正文、表格、表单、可编辑区） */
+		/* 文本选择（正文 / 表格 / 表单 / 可编辑区） */
 		p,
 		li,
 		td,
@@ -1333,17 +1558,38 @@
 		textarea,
 		[contenteditable],
 		input:not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]) {
-			cursor: url("/images/cursors/text-select-32.png") 16 16, text;
-			cursor: -webkit-image-set(url("/images/cursors/text-select-32.png") 1x, url("/images/cursors/text-select-64.png") 2x) 16 16, text;
-			cursor: image-set(url("/images/cursors/text-select-32.png") 1x, url("/images/cursors/text-select-64.png") 2x) 16 16, text;
+		cursor: var(--ffc-text-1) var(--ffc-text-hx) var(--ffc-text-hy), text;
+		cursor: -webkit-image-set(var(--ffc-text-1) 1x, var(--ffc-text-2) 2x) var(--ffc-text-hx) var(--ffc-text-hy), text;
+		cursor: image-set(var(--ffc-text-1) 1x, var(--ffc-text-2) 2x) var(--ffc-text-hx) var(--ffc-text-hy), text;
 		}
+		[data-cursor="text"], .ff-cur-text {
+		cursor: var(--ffc-text-1) var(--ffc-text-hx) var(--ffc-text-hy), text;
+		cursor: -webkit-image-set(var(--ffc-text-1) 1x, var(--ffc-text-2) 2x) var(--ffc-text-hx) var(--ffc-text-hy), text;
+		cursor: image-set(var(--ffc-text-1) 1x, var(--ffc-text-2) 2x) var(--ffc-text-hx) var(--ffc-text-hy), text;
+		}
+		[data-cursor="normal"], .ff-cur-normal {
+		cursor: var(--ffc-normal-1) var(--ffc-normal-hx) var(--ffc-normal-hy), auto;
+		cursor: -webkit-image-set(var(--ffc-normal-1) 1x, var(--ffc-normal-2) 2x) var(--ffc-normal-hx) var(--ffc-normal-hy), auto;
+		cursor: image-set(var(--ffc-normal-1) 1x, var(--ffc-normal-2) 2x) var(--ffc-normal-hx) var(--ffc-normal-hy), auto;
+		}
+		[data-cursor="text-horizontal"] {
+		cursor: var(--ffc-text-horizontal-1) var(--ffc-text-horizontal-hx) var(--ffc-text-horizontal-hy), text;
+		cursor: -webkit-image-set(var(--ffc-text-horizontal-1) 1x, var(--ffc-text-horizontal-2) 2x) var(--ffc-text-horizontal-hx) var(--ffc-text-horizontal-hy), text;
+		cursor: image-set(var(--ffc-text-horizontal-1) 1x, var(--ffc-text-horizontal-2) 2x) var(--ffc-text-horizontal-hx) var(--ffc-text-horizontal-hy), text;
+		}
+		[data-cursor="text-vertical"], [style*="vertical-rl"] {
+		cursor: var(--ffc-text-vertical-1) var(--ffc-text-vertical-hx) var(--ffc-text-vertical-hy), vertical-text;
+		cursor: -webkit-image-set(var(--ffc-text-vertical-1) 1x, var(--ffc-text-vertical-2) 2x) var(--ffc-text-vertical-hx) var(--ffc-text-vertical-hy), vertical-text;
+		cursor: image-set(var(--ffc-text-vertical-1) 1x, var(--ffc-text-vertical-2) 2x) var(--ffc-text-vertical-hx) var(--ffc-text-vertical-hy), vertical-text;
+		}
+
 		/* 代码区保留系统原生 I 型光标：这里是选中复制命令行的地方。
-		   ⚠️ 必须加 !important —— expressive-code 自带一条
+		   ⚠️ !important 不能去掉 —— expressive-code 自带一条
 		      `.expressive-code :not(:is(svg, svg *)) { cursor: revert }`（特异性 0,1,1 > 0,0,1），
-		      会把 pre 的 cursor 回滚成「继承」，于是代码块里继承到 body 的黄箭头。
-		      revert 是非 important 声明，这里加 !important 才压得住；
-		      pre / code 定住之后，内部那些同样 `revert` 的后代会顺着一路继承下来。
-		      expressive-code 的复制按钮在 <figcaption> 里、不在 pre 内，不会被这条误伤。 */
+		      会把 pre 的 cursor 回滚成「继承」，代码块里就继承了 body 的箭头。
+		      revert 是非 important 声明，加 !important 才压得住；
+		      pre / code 定住后，内部那些同样 revert 的后代会一路继承下来。
+		      expressive-code 的复制按钮在 <figcaption> 里、不在 pre 内，不会被误伤。 */
 		pre,
 		code,
 		kbd,
@@ -1353,33 +1599,131 @@
 			cursor: text !important;
 		}
 
-		/* 不可用：粉色禁止符 */
+		/* 不可用 */
 		:disabled,
-		button:disabled,
-		input:disabled,
 		[aria-disabled="true"],
 		.is-disabled,
 		[data-cursor="unavailable"] {
-			cursor: url("/images/cursors/unavailable-32.png") 16 16, not-allowed !important;
-			cursor: -webkit-image-set(url("/images/cursors/unavailable-32.png") 1x, url("/images/cursors/unavailable-64.png") 2x) 16 16, not-allowed !important;
-			cursor: image-set(url("/images/cursors/unavailable-32.png") 1x, url("/images/cursors/unavailable-64.png") 2x) 16 16, not-allowed !important;
+		cursor: var(--ffc-unavailable-1) var(--ffc-unavailable-hx) var(--ffc-unavailable-hy), not-allowed !important;
+		cursor: -webkit-image-set(var(--ffc-unavailable-1) 1x, var(--ffc-unavailable-2) 2x) var(--ffc-unavailable-hx) var(--ffc-unavailable-hy), not-allowed !important;
+		cursor: image-set(var(--ffc-unavailable-1) 1x, var(--ffc-unavailable-2) 2x) var(--ffc-unavailable-hx) var(--ffc-unavailable-hy), not-allowed !important;
 		}
 
-		/* 帮助：问号（本站没有天然触发点，opt-in） */
-		abbr[title],
-		[data-cursor="help"] {
-			cursor: url("/images/cursors/help-32.png") 16 16, help;
-			cursor: -webkit-image-set(url("/images/cursors/help-32.png") 1x, url("/images/cursors/help-64.png") 2x) 16 16, help;
-			cursor: image-set(url("/images/cursors/help-32.png") 1x, url("/images/cursors/help-64.png") 2x) 16 16, help;
+		/* 繁忙 / 加载（挂 html.ff-busy / html.ff-loading 即全站生效） */
+		html.ff-busy, html.ff-busy *, [data-cursor="busy"] {
+		cursor: var(--ffc-busy-1) var(--ffc-busy-hx) var(--ffc-busy-hy), wait !important;
+		cursor: -webkit-image-set(var(--ffc-busy-1) 1x, var(--ffc-busy-2) 2x) var(--ffc-busy-hx) var(--ffc-busy-hy), wait !important;
+		cursor: image-set(var(--ffc-busy-1) 1x, var(--ffc-busy-2) 2x) var(--ffc-busy-hx) var(--ffc-busy-hy), wait !important;
+		}
+		html.ff-loading, html.ff-loading *, [data-cursor="working"], [data-cursor="loading"] {
+		cursor: var(--ffc-working-1) var(--ffc-working-hx) var(--ffc-working-hy), progress !important;
+		cursor: -webkit-image-set(var(--ffc-working-1) 1x, var(--ffc-working-2) 2x) var(--ffc-working-hx) var(--ffc-working-hy), progress !important;
+		cursor: image-set(var(--ffc-working-1) 1x, var(--ffc-working-2) 2x) var(--ffc-working-hx) var(--ffc-working-hy), progress !important;
+		}
+		[data-cursor="loading"] {
+		cursor: var(--ffc-loading-1) var(--ffc-loading-hx) var(--ffc-loading-hy), progress !important;
+		cursor: -webkit-image-set(var(--ffc-loading-1) 1x, var(--ffc-loading-2) 2x) var(--ffc-loading-hx) var(--ffc-loading-hy), progress !important;
+		cursor: image-set(var(--ffc-loading-1) 1x, var(--ffc-loading-2) 2x) var(--ffc-loading-hx) var(--ffc-loading-hy), progress !important;
 		}
 
-		/* 后台/忙碌：加 html.ff-busy 即全站生效（异步操作时可以手动挂） */
-		html.ff-busy,
-		html.ff-busy *,
-		[data-cursor="busy"] {
-			cursor: url("/images/cursors/busy-32.png") 16 16, progress !important;
-			cursor: -webkit-image-set(url("/images/cursors/busy-32.png") 1x, url("/images/cursors/busy-64.png") 2x) 16 16, progress !important;
-			cursor: image-set(url("/images/cursors/busy-32.png") 1x, url("/images/cursors/busy-64.png") 2x) 16 16, progress !important;
+		/* 精确选择 / 移动 / 抓取 */
+		[data-cursor="precision"], .ff-cur-precision {
+		cursor: var(--ffc-precision-1) var(--ffc-precision-hx) var(--ffc-precision-hy), crosshair;
+		cursor: -webkit-image-set(var(--ffc-precision-1) 1x, var(--ffc-precision-2) 2x) var(--ffc-precision-hx) var(--ffc-precision-hy), crosshair;
+		cursor: image-set(var(--ffc-precision-1) 1x, var(--ffc-precision-2) 2x) var(--ffc-precision-hx) var(--ffc-precision-hy), crosshair;
+		}
+		[draggable="true"], [data-cursor="move"], .ff-cur-move {
+		cursor: var(--ffc-move-1) var(--ffc-move-hx) var(--ffc-move-hy), move;
+		cursor: -webkit-image-set(var(--ffc-move-1) 1x, var(--ffc-move-2) 2x) var(--ffc-move-hx) var(--ffc-move-hy), move;
+		cursor: image-set(var(--ffc-move-1) 1x, var(--ffc-move-2) 2x) var(--ffc-move-hx) var(--ffc-move-hy), move;
+		}
+		[data-cursor="grab"], .ff-grab {
+		cursor: var(--ffc-grab-1) var(--ffc-grab-hx) var(--ffc-grab-hy), grab;
+		cursor: -webkit-image-set(var(--ffc-grab-1) 1x, var(--ffc-grab-2) 2x) var(--ffc-grab-hx) var(--ffc-grab-hy), grab;
+		cursor: image-set(var(--ffc-grab-1) 1x, var(--ffc-grab-2) 2x) var(--ffc-grab-hx) var(--ffc-grab-hy), grab;
+		}
+		[data-cursor="grabbing"], .ff-grab:active {
+		cursor: var(--ffc-grabbing-1) var(--ffc-grabbing-hx) var(--ffc-grabbing-hy), grabbing;
+		cursor: -webkit-image-set(var(--ffc-grabbing-1) 1x, var(--ffc-grabbing-2) 2x) var(--ffc-grabbing-hx) var(--ffc-grabbing-hy), grabbing;
+		cursor: image-set(var(--ffc-grabbing-1) 1x, var(--ffc-grabbing-2) 2x) var(--ffc-grabbing-hx) var(--ffc-grabbing-hy), grabbing;
+		}
+
+		/* ---------- 只靠 [data-cursor] 点名的（本站没有天然触发点） ---------- */
+
+		[data-cursor="hand"] {
+		cursor: var(--ffc-hand-1) var(--ffc-hand-hx) var(--ffc-hand-hy), pointer;
+		cursor: -webkit-image-set(var(--ffc-hand-1) 1x, var(--ffc-hand-2) 2x) var(--ffc-hand-hx) var(--ffc-hand-hy), pointer;
+		cursor: image-set(var(--ffc-hand-1) 1x, var(--ffc-hand-2) 2x) var(--ffc-hand-hx) var(--ffc-hand-hy), pointer;
+		}
+		[data-cursor="help"], abbr[title] {
+		cursor: var(--ffc-help-1) var(--ffc-help-hx) var(--ffc-help-hy), help;
+		cursor: -webkit-image-set(var(--ffc-help-1) 1x, var(--ffc-help-2) 2x) var(--ffc-help-hx) var(--ffc-help-hy), help;
+		cursor: image-set(var(--ffc-help-1) 1x, var(--ffc-help-2) 2x) var(--ffc-help-hx) var(--ffc-help-hy), help;
+		}
+		[data-cursor="done"] {
+		cursor: var(--ffc-done-1) var(--ffc-done-hx) var(--ffc-done-hy), auto;
+		cursor: -webkit-image-set(var(--ffc-done-1) 1x, var(--ffc-done-2) 2x) var(--ffc-done-hx) var(--ffc-done-hy), auto;
+		cursor: image-set(var(--ffc-done-1) 1x, var(--ffc-done-2) 2x) var(--ffc-done-hx) var(--ffc-done-hy), auto;
+		}
+		[data-cursor="candidate"] {
+		cursor: var(--ffc-candidate-1) var(--ffc-candidate-hx) var(--ffc-candidate-hy), auto;
+		cursor: -webkit-image-set(var(--ffc-candidate-1) 1x, var(--ffc-candidate-2) 2x) var(--ffc-candidate-hx) var(--ffc-candidate-hy), auto;
+		cursor: image-set(var(--ffc-candidate-1) 1x, var(--ffc-candidate-2) 2x) var(--ffc-candidate-hx) var(--ffc-candidate-hy), auto;
+		}
+		[data-cursor="background"] {
+		cursor: var(--ffc-background-1) var(--ffc-background-hx) var(--ffc-background-hy), no-drop;
+		cursor: -webkit-image-set(var(--ffc-background-1) 1x, var(--ffc-background-2) 2x) var(--ffc-background-hx) var(--ffc-background-hy), no-drop;
+		cursor: image-set(var(--ffc-background-1) 1x, var(--ffc-background-2) 2x) var(--ffc-background-hx) var(--ffc-background-hy), no-drop;
+		}
+		[data-cursor="add"] {
+		cursor: var(--ffc-add-1) var(--ffc-add-hx) var(--ffc-add-hy), copy;
+		cursor: -webkit-image-set(var(--ffc-add-1) 1x, var(--ffc-add-2) 2x) var(--ffc-add-hx) var(--ffc-add-hy), copy;
+		cursor: image-set(var(--ffc-add-1) 1x, var(--ffc-add-2) 2x) var(--ffc-add-hx) var(--ffc-add-hy), copy;
+		}
+		[data-cursor="delete"] {
+		cursor: var(--ffc-delete-1) var(--ffc-delete-hx) var(--ffc-delete-hy), not-allowed;
+		cursor: -webkit-image-set(var(--ffc-delete-1) 1x, var(--ffc-delete-2) 2x) var(--ffc-delete-hx) var(--ffc-delete-hy), not-allowed;
+		cursor: image-set(var(--ffc-delete-1) 1x, var(--ffc-delete-2) 2x) var(--ffc-delete-hx) var(--ffc-delete-hy), not-allowed;
+		}
+		[data-cursor="scroll-up"] {
+		cursor: var(--ffc-scroll-up-1) var(--ffc-scroll-up-hx) var(--ffc-scroll-up-hy), n-resize;
+		cursor: -webkit-image-set(var(--ffc-scroll-up-1) 1x, var(--ffc-scroll-up-2) 2x) var(--ffc-scroll-up-hx) var(--ffc-scroll-up-hy), n-resize;
+		cursor: image-set(var(--ffc-scroll-up-1) 1x, var(--ffc-scroll-up-2) 2x) var(--ffc-scroll-up-hx) var(--ffc-scroll-up-hy), n-resize;
+		}
+		[data-cursor="scroll-down"] {
+		cursor: var(--ffc-scroll-down-1) var(--ffc-scroll-down-hx) var(--ffc-scroll-down-hy), s-resize;
+		cursor: -webkit-image-set(var(--ffc-scroll-down-1) 1x, var(--ffc-scroll-down-2) 2x) var(--ffc-scroll-down-hx) var(--ffc-scroll-down-hy), s-resize;
+		cursor: image-set(var(--ffc-scroll-down-1) 1x, var(--ffc-scroll-down-2) 2x) var(--ffc-scroll-down-hx) var(--ffc-scroll-down-hy), s-resize;
+		}
+		[data-cursor="scroll-left"] {
+		cursor: var(--ffc-scroll-left-1) var(--ffc-scroll-left-hx) var(--ffc-scroll-left-hy), w-resize;
+		cursor: -webkit-image-set(var(--ffc-scroll-left-1) 1x, var(--ffc-scroll-left-2) 2x) var(--ffc-scroll-left-hx) var(--ffc-scroll-left-hy), w-resize;
+		cursor: image-set(var(--ffc-scroll-left-1) 1x, var(--ffc-scroll-left-2) 2x) var(--ffc-scroll-left-hx) var(--ffc-scroll-left-hy), w-resize;
+		}
+		[data-cursor="scroll-right"] {
+		cursor: var(--ffc-scroll-right-1) var(--ffc-scroll-right-hx) var(--ffc-scroll-right-hy), e-resize;
+		cursor: -webkit-image-set(var(--ffc-scroll-right-1) 1x, var(--ffc-scroll-right-2) 2x) var(--ffc-scroll-right-hx) var(--ffc-scroll-right-hy), e-resize;
+		cursor: image-set(var(--ffc-scroll-right-1) 1x, var(--ffc-scroll-right-2) 2x) var(--ffc-scroll-right-hx) var(--ffc-scroll-right-hy), e-resize;
+		}
+		[data-cursor="resize-nwse"], [data-cursor="nwse-resize"] {
+		cursor: var(--ffc-resize-nwse-1) var(--ffc-resize-nwse-hx) var(--ffc-resize-nwse-hy), nwse-resize;
+		cursor: -webkit-image-set(var(--ffc-resize-nwse-1) 1x, var(--ffc-resize-nwse-2) 2x) var(--ffc-resize-nwse-hx) var(--ffc-resize-nwse-hy), nwse-resize;
+		cursor: image-set(var(--ffc-resize-nwse-1) 1x, var(--ffc-resize-nwse-2) 2x) var(--ffc-resize-nwse-hx) var(--ffc-resize-nwse-hy), nwse-resize;
+		}
+		[data-cursor="resize-nesw"], [data-cursor="nesw-resize"] {
+		cursor: var(--ffc-resize-nesw-1) var(--ffc-resize-nesw-hx) var(--ffc-resize-nesw-hy), nesw-resize;
+		cursor: -webkit-image-set(var(--ffc-resize-nesw-1) 1x, var(--ffc-resize-nesw-2) 2x) var(--ffc-resize-nesw-hx) var(--ffc-resize-nesw-hy), nesw-resize;
+		cursor: image-set(var(--ffc-resize-nesw-1) 1x, var(--ffc-resize-nesw-2) 2x) var(--ffc-resize-nesw-hx) var(--ffc-resize-nesw-hy), nesw-resize;
+		}
+		[data-cursor="resize-vertical"], [data-cursor="ns-resize"] {
+		cursor: var(--ffc-resize-vertical-1) var(--ffc-resize-vertical-hx) var(--ffc-resize-vertical-hy), ns-resize;
+		cursor: -webkit-image-set(var(--ffc-resize-vertical-1) 1x, var(--ffc-resize-vertical-2) 2x) var(--ffc-resize-vertical-hx) var(--ffc-resize-vertical-hy), ns-resize;
+		cursor: image-set(var(--ffc-resize-vertical-1) 1x, var(--ffc-resize-vertical-2) 2x) var(--ffc-resize-vertical-hx) var(--ffc-resize-vertical-hy), ns-resize;
+		}
+		[data-cursor="resize-horizontal"], [data-cursor="ew-resize"] {
+		cursor: var(--ffc-resize-horizontal-1) var(--ffc-resize-horizontal-hx) var(--ffc-resize-horizontal-hy), ew-resize;
+		cursor: -webkit-image-set(var(--ffc-resize-horizontal-1) 1x, var(--ffc-resize-horizontal-2) 2x) var(--ffc-resize-horizontal-hx) var(--ffc-resize-horizontal-hy), ew-resize;
+		cursor: image-set(var(--ffc-resize-horizontal-1) 1x, var(--ffc-resize-horizontal-2) 2x) var(--ffc-resize-horizontal-hx) var(--ffc-resize-horizontal-hy), ew-resize;
 		}
 	}
 </style>

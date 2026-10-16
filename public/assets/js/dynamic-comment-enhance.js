@@ -1,46 +1,51 @@
 /**
- * 动态页「内嵌评论」增强（只在 /dynamic/ 跑）—— 把全站评论区的两件事补进 iframe：
- * 回复折叠（默认展示 2 条）与回复引用。
+ * 动态页「内嵌评论」增强（只在 /dynamic/ 跑）—— 干四件事：
  *
- * 起因：动态页每条动态下面的评论区是个同源 iframe（src = /dynamic/comments/?path=...），
- * 而那个页面走的是 Layout —— 它**没有页脚**。全站的评论增强（回复折叠、回复引用）
- * 都是靠 FooterConfig.html 的注入 + 页脚 PAGE_SCRIPTS 全站分发的，注入到不了那个文档，
- * 结果就是：文章页 / 留言板 / 友链页的回复默认展示 2 条、多余的收进「展开更多」，
- * 唯独动态里的回复一条不落地全摊着，成了全站唯一一套不一样的评论区。
+ *   1. 按钮上标评论数：一进页面就批量问一次 Waline 的公开计数接口，把「评论」
+ *      改成「评论 2」—— 不用点开也知道有没有人聊过。没有评论就不带数字。
+ *   2. 有评论的默认展开，没评论的保持收起：一条都没有的面板摊开只是占地方，
+ *      所以只自动展开 count > 0 的。滚到哪展开到哪（IntersectionObserver，400px 提前量）——
+ *      一页十几条动态全展开就是十几个 Waline 实例同时拉 CDN，首屏直接废掉。
+ *      自动展开只做一次，用户手动收起后不会再被弹开。
+ *   3. 把 Waline 那个大编辑器压成一行：默认展开之后，昵称/邮箱/网址那一整块表单
+ *      顶在最上面太挡视野。压成一行输入框，点进去（:focus-within）自动还原。
+ *   4. 把全站的回复折叠 / 回复引用投进 iframe。
  *
- * 修法（前提是 iframe 与主站同源，直接摸它的 document 是合法的）：
+ * 关于「默认展开」的反复（留个记录，别再绕一圈）：
+ *   2026-10-16 先做过一版自动展开，站长看过否掉了 —— 那时一进页面每条动态下面都
+ *   摊着带大表单的评论区，观感确实差，所以整段移除。随后站长又提了两件事：
+ *   「每次都要点开才能查看，不点开又不知道有没有人评论」。所以这次把方案补齐再上：
+ *   按钮带评论数（1）+ 只展开有评论的、没评论的不动（2）+ 编辑器压成一行（3）。
+ *   真正让人烦的是「空面板摊开」和「大表单挡视野」，不是展开本身。
+ *
+ * 第 4 件事的前提：iframe 与主站同源，直接摸它的 document 是合法的。
  *   · 样式 —— 按 id 取父文档页脚里的那两个 <style> 块，cloneNode 丢进 iframe 的 head。
  *     单一来源：以后改 FooterConfig.html 的样式，两边一起变，不用同步维护第二份。
- *   · 逻辑 —— 往 iframe 里插 <script src>，直接复用现成的 comment-reply-collapse.js
- *     与 comment-reply-quote.js。这两个脚本都是自包含的（只碰自己 document 的 DOM，
- *     MutationObserver 挂自己的 body），塞进任何文档都能独立跑，不依赖父文档的全局。
+ *     （编辑器压扁那条是 iframe 专属，直接由本脚本 build 一个 <style> 塞进去。）
+ *   · 逻辑 —— 往 iframe 里插 <script src>，复用现成的 comment-reply-collapse.js
+ *     与 comment-reply-quote.js。这两个脚本都是自包含的，塞进任何文档都能独立跑。
  *
- * 时机：iframe 是用户点「评论」那一刻才由上游的 dynamic-inline-comments 动态创建的，
- * 所以不能「脚本一跑就去找元素」。MutationObserver 盯新增节点，拿到 iframe 后**轮询**
- * 它的 contentDocument.readyState，complete 了再注入；初次执行时也扫一遍已有的 iframe。
- *   ⚠️ 一开始用的是「window 上捕获阶段监听 load（load 不冒泡但走捕获路径）」，实测
- *   在 Chrome 155 上压根收不到，注入永远不发生 —— 别再用事件，轮询才是可靠的。
- *   ⚠️ 刚 appendChild 的 iframe，document 还是 about:blank，而 **它的 readyState 同样是
- *   complete** —— 不辨身份就会把样式注进空气里，所以要按 location.pathname 前缀认页面。
- *   注入本身有幂等标记（iframe documentElement 上的 dataset），重复调用无害。
- *
- * ⚠️ 曾经还在这里做过「评论面板默认展开」（IntersectionObserver + 替访客点上游那颗
- *    「评论」按钮）。站长 2026-10-16 看过后否掉了：这样不好，已整段移除，别再往回加。
- *    评论面板维持上游的「点一下才展开」。
+ * 时机：iframe 是面板展开那一刻才由上游创建的，所以不能「脚本一跑就去找元素」。
+ * MutationObserver 盯新增节点，拿到 iframe 后**轮询**它的 contentDocument.readyState，
+ * complete 了再注入；初次执行时也扫一遍页面上已有的 iframe。
+ *   ⚠️ 「window 捕获阶段监听 iframe 的 load」实测在 Chrome 155 上压根收不到，别用事件。
+ *   ⚠️ 刚 appendChild 的 iframe，document 还是 about:blank，而**它的 readyState 同样是
+ *   complete** —— 不辨身份就会把样式注进空气里，所以按 location.pathname 前缀认页面。
+ *   注入本身有幂等标记，重复调用无害。
  *
  * ⚠️ vercel.json 给 /assets/* 配了 30 天强缓存，改完本文件记得把
  *    FooterConfig.html 里 PAGE_SCRIPTS 那条的 ?v= 往上加。
- * ⚠️ 这里的 ?v= 要和 PAGE_SCRIPTS 里那两条（collapse / quote）保持一致，
- *    否则 iframe 里可能拿到旧版本脚本。
+ * ⚠️ 这里的 ?v= 要和 PAGE_SCRIPTS 里那两条（collapse / quote）保持一致。
  */
 (function () {
 	"use strict";
 
+	// Waline 后端地址（评论数计数接口用）。换后端只改这一行。
+	var WALINE = "https://waline.9ll.uk";
+
 	// 父文档里要搬进 iframe 的样式块，以及要补进 iframe 的脚本。
 	// 版本号与 FooterConfig.html 的 PAGE_SCRIPTS 保持一致。
-	// ff-cursor-style 也一并搬过去：那个 iframe 走的是 Layout（没有页脚），
-	// 不搬的话评论区里会是系统原生指针，和全站不一致。
-	var STYLE_IDS = ["ff-comment-style-collapse", "ff-comment-style-quote", "ff-cursor-style"];
+	var STYLE_IDS = ["ff-comment-style-collapse", "ff-comment-style-quote"];
 	var SCRIPTS = [
 		{
 			id: "ff-comment-reply-collapse-js",
@@ -55,8 +60,167 @@
 	var FRAME_CLASS = "page-comment-frame";
 	var PATH_PREFIX = "/dynamic/comments/";
 	var MARK = "ffCommentEnhanced";
+	var EDITOR_STYLE_ID = "ff-compact-editor-style";
+	var AUTO_MARGIN = "400px 0px";
 	var POLL_MS = 150;
 	var POLL_TIMEOUT = 20000;
+	var COUNT_DEBOUNCE = 200;
+
+	// iframe 专属：把编辑器压成一行。
+	// ⚠️ Waline v3 的输入框是 <textarea class="wl-editor">（**不是** .wl-textarea），
+	//    头部是 .wl-header、底部是 .wl-footer，两个都由 Waline 自己写 display。
+	// ⚠️ 压缩走「加一个 .ff-compact 类」，聚焦时**摘掉这个类**回到 Waline 原样 ——
+	//    比用 :not(:focus-within) 反转更稳，不用去猜它原本的 display 是 flex 还是 block。
+	var EDITOR_CSS =
+		"#waline .wl-comment.ff-compact .wl-header," +
+		"#waline .wl-comment.ff-compact .wl-footer{display:none!important}" +
+		"#waline .wl-comment.ff-compact .wl-editor{min-height:2.5rem!important;height:2.5rem!important}" +
+		"#waline .wl-comment.ff-compact .wl-editor{transition:height 160ms ease}";
+
+	var COMPACT_CLASS = "ff-compact";
+
+	// 有内容的输入框不收起来 —— 写了一半被收走太烦
+	function compactEditor(doc, attempt) {
+		var editor = doc.querySelector("#waline .wl-comment");
+		if (!editor) {
+			// 编辑器是 Waline 异步渲染的，注入时可能还没长出来，等一等
+			if ((attempt || 0) < 12) {
+				window.setTimeout(function () {
+					compactEditor(doc, (attempt || 0) + 1);
+				}, 300);
+			}
+			return;
+		}
+		if (editor.dataset.ffCompact === "1") return;
+		editor.dataset.ffCompact = "1";
+
+		var field = editor.querySelector(".wl-editor");
+		var hasText = function () {
+			return !!(field && field.value && field.value.trim());
+		};
+
+		editor.classList.add(COMPACT_CLASS);
+		editor.addEventListener("focusin", function () {
+			editor.classList.remove(COMPACT_CLASS);
+		});
+		editor.addEventListener("focusout", function () {
+			window.setTimeout(function () {
+				if (editor.contains(doc.activeElement) || hasText()) return;
+				editor.classList.add(COMPACT_CLASS);
+			}, 140);
+		});
+	}
+
+	// ===== 一、评论数：批量查一次，回填到按钮上 =====
+
+	function pathOf(host) {
+		var src = (host && host.dataset.src) || "";
+		var q = src.indexOf("?");
+		if (q < 0) return "";
+		try {
+			return new URLSearchParams(src.slice(q + 1)).get("path") || "";
+		} catch (error) {
+			return "";
+		}
+	}
+
+	function labelOf(host, count) {
+		var span = host.querySelector(".page-comment-toggle span");
+		if (!span) return;
+		// 没有评论就保持原样的「评论」二字 —— 有数字本身就是在说「有人聊过」
+		span.textContent = count > 0 ? "评论 " + count : "评论";
+	}
+
+	var counts = {}; // path -> 评论数
+	var pending = {}; // 本轮待查的 path
+	var countTimer = null;
+
+	function flushCounts() {
+		var paths = Object.keys(pending);
+		pending = {};
+		if (!paths.length) return;
+		var url = WALINE + "/api/comment?type=count";
+		for (var i = 0; i < paths.length; i++) {
+			url += "&url=" + encodeURIComponent(paths[i]);
+		}
+		fetch(url)
+			.then(function (res) {
+				return res.json();
+			})
+			.then(function (json) {
+				var data = json && json.data;
+				if (!Array.isArray(data)) return;
+				for (var j = 0; j < paths.length; j++) {
+					counts[paths[j]] = Number(data[j]) || 0;
+				}
+				applyCounts();
+			})
+			.catch(function () {
+				/* 拿不到就保持原样，不影响其他功能 */
+			});
+	}
+
+	function requestCount(host) {
+		var path = pathOf(host);
+		if (!path) return;
+		if (counts[path] !== undefined) {
+			labelOf(host, counts[path]);
+			maybeAutoOpen(host, counts[path]);
+			return;
+		}
+		pending[path] = 1;
+		if (countTimer) return;
+		countTimer = window.setTimeout(function () {
+			countTimer = null;
+			flushCounts();
+		}, COUNT_DEBOUNCE);
+	}
+
+	function applyCounts() {
+		var hosts = document.querySelectorAll("dynamic-inline-comments");
+		for (var i = 0; i < hosts.length; i++) {
+			var path = pathOf(hosts[i]);
+			if (!path || counts[path] === undefined) continue;
+			labelOf(hosts[i], counts[path]);
+			maybeAutoOpen(hosts[i], counts[path]);
+		}
+	}
+
+	// ===== 二、有评论的才默认展开（懒）=====
+
+	var autoObserver =
+		typeof IntersectionObserver === "function"
+			? new IntersectionObserver(
+					function (entries) {
+						for (var i = 0; i < entries.length; i++) {
+							if (!entries[i].isIntersecting) continue;
+							autoObserver.unobserve(entries[i].target);
+							openPanel(entries[i].target);
+						}
+					},
+					{ rootMargin: AUTO_MARGIN },
+				)
+			: null;
+
+	function openPanel(host) {
+		if (!host || host.dataset.ffAutoOpened === "1") return;
+		host.dataset.ffAutoOpened = "1";
+		var panel = host.querySelector("[data-comment-panel]");
+		var toggle = host.querySelector("[data-comment-toggle]");
+		if (!panel || !toggle) return;
+		if (!panel.hidden) return; // 用户已经自己点开了
+		toggle.click(); // 走上游自己的开合逻辑，不自己造 DOM
+	}
+
+	function maybeAutoOpen(host, count) {
+		if (host.dataset.ffAutoWatch === "1") return;
+		if (!count) return; // 没评论就不展开，也不盯着它
+		host.dataset.ffAutoWatch = "1";
+		if (autoObserver) autoObserver.observe(host);
+		else openPanel(host);
+	}
+
+	// ===== 三、往 iframe 里投样式与脚本 =====
 
 	function inject(frame) {
 		var doc;
@@ -69,6 +233,15 @@
 		if (!doc || !doc.head || !doc.body) return;
 		if (doc.documentElement.dataset[MARK] === "1") return;
 		doc.documentElement.dataset[MARK] = "1";
+
+		// 编辑器压扁：iframe 专属样式 + 折叠逻辑
+		if (!doc.getElementById(EDITOR_STYLE_ID)) {
+			var editorStyle = doc.createElement("style");
+			editorStyle.id = EDITOR_STYLE_ID;
+			editorStyle.textContent = EDITOR_CSS;
+			doc.head.appendChild(editorStyle);
+		}
+		compactEditor(doc, 0);
 
 		for (var i = 0; i < STYLE_IDS.length; i++) {
 			var id = STYLE_IDS[i];
@@ -139,8 +312,10 @@
 			return;
 		}
 		if (!node.querySelectorAll) return;
+		var hosts = node.querySelectorAll("dynamic-inline-comments");
+		for (var i = 0; i < hosts.length; i++) requestCount(hosts[i]);
 		var frames = node.querySelectorAll("iframe." + FRAME_CLASS);
-		for (var i = 0; i < frames.length; i++) handleFrame(frames[i]);
+		for (var j = 0; j < frames.length; j++) handleFrame(frames[j]);
 	}
 
 	new MutationObserver(function (records) {
@@ -150,6 +325,6 @@
 		}
 	}).observe(document.body, { childList: true, subtree: true });
 
-	// 兜底：iframe 可能比脚本先到（比如 swup 切进 /dynamic/ 时评论区已经开着）
+	// 兜底：脚本可能比列表晚到（swup 切进 /dynamic/ 时列表已渲染完）
 	scan(document.body);
 })();
