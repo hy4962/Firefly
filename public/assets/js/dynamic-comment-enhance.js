@@ -45,7 +45,10 @@
 
 	// 父文档里要搬进 iframe 的样式块，以及要补进 iframe 的脚本。
 	// 版本号与 FooterConfig.html 的 PAGE_SCRIPTS 保持一致。
-	var STYLE_IDS = ["ff-comment-style-collapse", "ff-comment-style-quote"];
+	// ff-cursor-style 也一并搬：那个 iframe 走 Layout（没有页脚），不搬就是系统原生指针。
+	// 该块内部自己用 :root / html.dark 分了桐乃 / 黑猫两套，iframe 同样能从 localStorage
+	// 拿到 dark 类，两边自然一致。
+	var STYLE_IDS = ["ff-comment-style-collapse", "ff-comment-style-quote", "ff-cursor-style"];
 	var SCRIPTS = [
 		{
 			id: "ff-comment-reply-collapse-js",
