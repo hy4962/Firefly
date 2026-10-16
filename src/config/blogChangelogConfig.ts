@@ -34,10 +34,18 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		title: "动态评论跟上全站",
 		date: "2026-10-16",
 		summary:
-			"动态页内嵌评论区的回复也按全站规则默认展示 2 条、多余的收进「展开更多」，回复引用一并补上",
+			"动态页的评论默认展开、不用再点「评论」，回复也按全站规则展示 2 条、多余的收进「展开更多」，回复引用一并补上",
 		description:
-			"「回复默认展示 2 条」和「回复引用」两项全站上线后，动态页成了唯一的例外 —— 文章页、留言板、友链页的回复都规规矩矩显示 2 条，唯独动态里那条 13 条回复的长串一条不落地全摊着。根子在结构上：动态页每条动态的评论区是个同源 iframe（src 指向 /dynamic/comments/），而那个页面走的是 Layout —— 它没有页脚。全站的评论增强都是靠页脚注入 + PAGE_SCRIPTS 分发的，注入压根到不了 iframe 那个文档，样式和脚本一起落空，所以在动态里看起来就是「什么都没装」的原生 Waline。修法顺着同源这一点做：只在 /dynamic/ 多跑一个 dynamic-comment-enhance.js，由父页面按 id 把页脚里那两个 <style> 块 clone 进 iframe，再把 comment-reply-collapse.js / comment-reply-quote.js 以 script 标签代投进去 —— 单一样式来源，以后改 FooterConfig.html 两边一起变；两个脚本本来就自包含，塞进任何文档都能独立跑。iframe 是点「评论」那一刻才由上游创建、脚本却早就加载好了，所以靠 MutationObserver 盯新增节点、再轮询 contentDocument.readyState 等它真正导航到评论页（刚插进 DOM 时 document 还是 about:blank，而它的 readyState 也是 complete，不辨一下就会把样式注进空气里）。全程零改动主题源文件。",
+			"「回复默认展示 2 条」和「回复引用」两项全站上线后，动态页成了唯一的例外 —— 文章页、留言板、友链页的回复都规规矩矩显示 2 条，唯独动态里那条 13 条回复的长串一条不落地全摊着；而且评论本身还得点一下「评论」才出来，不像别处一进去就能看到。根子在结构上：动态页每条动态的评论区是个同源 iframe（src 指向 /dynamic/comments/），而那个页面走的是 Layout —— 它没有页脚。全站的评论增强都是靠页脚注入 + PAGE_SCRIPTS 分发的，注入压根到不了 iframe 那个文档，样式和脚本一起落空，所以在动态里看起来就是「什么都没装」的原生 Waline。修法顺着同源这一点做：只在 /dynamic/ 多跑一个 dynamic-comment-enhance.js。评论面板默认展开不是自己重建 DOM，而是替访客点一下上游那颗「评论」按钮 —— 开合、iframe 创建、主题同步、高度上报全在上游的 custom element 里，自己抄一遍等于等着漂；但要懒，一页十几条动态全展开就是十几个 Waline 实例同时去拉 CDN 上的客户端、每个 iframe 里还各跑一整套页面脚本，所以用 IntersectionObserver 兜着，离视口 400px 以内才展开，滚到哪展开到哪，首屏那条进页面就有评论。回复折叠与引用则靠父页面代投：按 id 把页脚里那两个 <style> 块 clone 进 iframe，再把 comment-reply-collapse.js / comment-reply-quote.js 以 script 标签插进去 —— 单一样式来源，以后改 FooterConfig.html 两边一起变；两个脚本本来就自包含，塞进任何文档都能独立跑。iframe 是面板展开那一刻才由上游创建、脚本却早就加载好了，所以靠 MutationObserver 盯新增节点、再轮询 contentDocument.readyState 等它真正导航到评论页（刚插进 DOM 时 document 还是 about:blank，而它的 readyState 也是 complete，不辨一下就会把样式注进空气里）。全程零改动主题源文件。",
 		items: [
+			{
+				category: "交互",
+				text: "评论面板默认展开 —— 滚到哪展开到哪，不用再点「评论」；点它仍可收起，且手动收起后滚动不会再把它弹开",
+			},
+			{
+				category: "性能",
+				text: "默认展开走 IntersectionObserver，离视口 400px 以内才点那颗按钮。实测 17 条动态：首屏展开 2 条、滚到 35% / 70% / 底部分别 5 / 10 / 13 条，视口内始终只有 1 条在加载",
+			},
 			{
 				category: "交互",
 				text: "动态页内嵌评论区的回复同样默认展示 2 条，多出来的收进「展开更多（还剩 M 条）」，展开/收起行为与全站完全一致",
@@ -56,7 +64,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "健壮性",
-				text: "iframe 刚插入时 document 还是 about:blank（readyState 同样是 complete），所以按 location.pathname 必须是 /dynamic/comments/ 才注入；iframe 在轮询期间被 swup 换页拿掉时立即停止追踪。实测：13 条回复的长串默认 2 条 + 11 条收着，连点「展开更多」按 7 / 12 / 13 递增，摊完变「收起回复」，点一下回到 2 条；回复引用的引用块在动态里的真实评论上也已生效",
+				text: "iframe 刚插入时 document 还是 about:blank（readyState 同样是 complete），所以按 location.pathname 必须是 /dynamic/comments/ 才注入；iframe 在轮询期间被 swup 换页拿掉时立即停止追踪。实测：13 条回复的长串默认 2 条 + 11 条收着，连点「展开更多」按 7 / 12 / 13 递增，摊完变「收起回复」，点一下回到 2 条",
 			},
 		],
 		tags: ["博客", "评论区", "Waline", "动态页"],
