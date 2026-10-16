@@ -391,6 +391,14 @@
 				id: "ff-dynamic-comment-enhance-js",
 				src: "/assets/js/dynamic-comment-enhance.js?v=4",
 			},
+			{
+				// 动态页封面区：把页脚那个 #ff-wx-hero 壳子搬进正文顶部（版式照
+				// blog.huchao.vip/moments/ 的 wx-cover）。搬运用 clone，原壳留在页脚，
+				// 不然 swup 切一次页搬过去的节点就没了。
+				path: /^\/dynamic\/?$/,
+				id: "ff-dynamic-hero-js",
+				src: "/assets/js/dynamic-hero.js?v=1",
+			},
 		];
 
 		// 同样是按需加载，只不过加载的是样式表。规则里已经用元素名限定作用域，
@@ -438,6 +446,37 @@
 		}
 	})();
 </script>
+
+<!-- ===== 动态页封面区（仿朋友圈个人主页头部）=====
+     只在 /dynamic/ 显示：DOM 先挂在页脚这儿（swup 容器之外，切页不丢），
+     由 dynamic-hero.js 搬进正文顶部；没搬走之前一直 hidden，不会露在页脚位置。
+     ⚠️ 封面图、昵称、签名、两个按钮的链接都是写死的，想换直接改这一段就行。 -->
+<div id="ff-wx-hero" hidden>
+	<div class="ff-wx-cover">
+		<div class="ff-wx-cover-img-box">
+			<img class="ff-wx-cover-img" src="/gallery/desktop-wallpaper/sunset-1.jpg" alt="" />
+		</div>
+		<div class="ff-wx-info-bar">
+			<div class="ff-wx-avatar-box">
+				<img class="ff-wx-avatar" src="/gallery/blog/avatar.avif" alt="HY" />
+			</div>
+			<div class="ff-wx-name">HY</div>
+			<div class="ff-wx-bio">记录一些生活，爱好技术和相关的东西</div>
+		</div>
+	</div>
+	<div class="ff-wx-actions">
+		<a class="ff-wx-action-btn ff-wx-action-primary" href="https://memos.49o.pw" target="_blank" rel="noopener noreferrer">
+			<span>写说说</span>
+		</a>
+		<a class="ff-wx-action-btn" href="https://memos.49o.pw" target="_blank" rel="noopener noreferrer">
+			<span>后台</span>
+		</a>
+	</div>
+	<a class="ff-wx-pinned" id="ff-wx-pinned" hidden>
+		<div class="ff-wx-pinned-tag"><span>置顶</span></div>
+		<div class="ff-wx-pinned-items"></div>
+	</a>
+</div>
 
 <div id="ff-dyn" class="ff-dyn" data-ff-dyn-owner="HY">
 	<div class="ff-dyn-inner card-base">

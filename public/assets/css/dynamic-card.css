@@ -19,6 +19,256 @@
  * 尺寸的方块网格。
  */
 
+/* ===== 封面区（仿朋友圈个人主页头部）=====
+   外壳 DOM 写在 FooterConfig.html 的 #ff-wx-hero 里，由 dynamic-hero.js 搬进正文顶部。
+   版式照的是 blog.huchao.vip/moments/：封面图 280px，下面一条 info-bar，
+   头像从 info-bar 里向上浮出（-65%）压在封面图上，昵称浮在头像左侧，
+   签名落在 info-bar 里右对齐。 */
+
+.ff-wx-cover {
+	position: relative;
+	margin-bottom: 1.25rem;
+	border-radius: var(--radius-large);
+}
+
+.ff-wx-cover-img-box {
+	height: 280px;
+	overflow: hidden;
+	border-radius: var(--radius-large) var(--radius-large) 0 0;
+}
+
+.ff-wx-cover-img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	transition: transform 600ms ease;
+}
+
+.ff-wx-cover:hover .ff-wx-cover-img {
+	transform: scale(1.02);
+}
+
+.ff-wx-info-bar {
+	position: relative;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	min-height: 2rem;
+	padding: 0.75rem 1.25rem 1rem;
+	border-radius: 0 0 var(--radius-large) var(--radius-large);
+	background: var(--card-bg);
+}
+
+.ff-wx-avatar-box {
+	position: absolute;
+	top: 0;
+	right: 1.25rem;
+	z-index: 20;
+	transform: translateY(-65%);
+}
+
+.ff-wx-avatar {
+	display: block;
+	width: 5rem;
+	height: 5rem;
+	border: 3px solid var(--card-bg);
+	border-radius: 6px;
+	object-fit: cover;
+	box-shadow: 0 2px 12px rgb(0 0 0 / 20%);
+}
+
+/* 昵称压在封面图那半边上，所以固定白字 + 阴影，不跟主题明暗走 */
+.ff-wx-name {
+	position: absolute;
+	top: 0;
+	right: 7rem;
+	z-index: 15;
+	transform: translateY(-110%);
+	color: #fff;
+	font-size: 1.25rem;
+	font-weight: 700;
+	text-shadow: 0 1px 6px rgb(0 0 0 / 60%);
+	white-space: nowrap;
+}
+
+.ff-wx-bio {
+	max-width: calc(100% - 8rem);
+	margin-top: 2rem;
+	margin-left: auto;
+	overflow: hidden;
+	color: var(--content-meta);
+	font-size: 0.8125rem;
+	line-height: 1.5;
+	text-align: right;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* 按钮行：右对齐，往上收一点贴着封面 */
+.ff-wx-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	margin: -0.5rem 0 1rem;
+}
+
+.ff-wx-action-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.4375rem 0.875rem;
+	border: 1px solid var(--border);
+	border-radius: 9999px;
+	background: var(--btn-regular-bg);
+	color: var(--text-color);
+	font-size: 0.8125rem;
+	font-weight: 500;
+	text-decoration: none;
+	transition: all 200ms ease;
+}
+
+.ff-wx-action-btn:hover {
+	border-color: var(--primary);
+	color: var(--primary);
+}
+
+.ff-wx-action-primary {
+	border-color: var(--primary);
+	background: var(--primary);
+	color: #fff;
+}
+
+.ff-wx-action-primary:hover {
+	color: #fff;
+	opacity: 0.9;
+}
+
+/* 置顶条：左侧一块「置顶」标签，右侧横排预览（内容由 JS 从列表里抽） */
+.ff-wx-pinned {
+	display: flex;
+	align-items: stretch;
+	min-height: 4.5rem;
+	margin-bottom: 1.25rem;
+	overflow: hidden;
+	border: 1.5px solid transparent;
+	border-radius: var(--radius-large);
+	background: var(--card-bg);
+	color: var(--text-color);
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		border-color 200ms ease,
+		transform 200ms ease;
+}
+
+.ff-wx-pinned[hidden] {
+	display: none;
+}
+
+.ff-wx-pinned:hover {
+	border-color: var(--primary);
+	transform: translateY(-2px);
+}
+
+.ff-wx-pinned-tag {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	padding: 0 0.75rem;
+	background: #fff;
+	color: #1a1a1a;
+	font-size: 1.625rem;
+	font-weight: 400;
+	white-space: nowrap;
+}
+
+html.dark .ff-wx-pinned-tag {
+	background: transparent;
+	color: #fff;
+}
+
+.ff-wx-pinned-items {
+	display: flex;
+	flex: 1;
+	justify-content: flex-end;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: none;
+}
+
+.ff-wx-pinned-items::-webkit-scrollbar {
+	display: none;
+}
+
+.ff-wx-pinned-preview {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	justify-content: center;
+	min-width: 4rem;
+	max-width: 7.5rem;
+	padding: 0.5rem;
+	overflow: hidden;
+	border-left: 1px solid var(--border);
+}
+
+.ff-wx-pinned-preview:first-child {
+	border-left: none;
+}
+
+.ff-wx-pinned-text {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	color: var(--content-meta);
+	font-size: 0.75rem;
+	line-height: 1.4;
+}
+
+.ff-wx-pinned-img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+@media (max-width: 480px) {
+	.ff-wx-cover-img-box {
+		height: 200px;
+	}
+
+	.ff-wx-info-bar {
+		padding: 0.625rem 1rem 0.75rem;
+	}
+
+	.ff-wx-avatar {
+		width: 4rem;
+		height: 4rem;
+	}
+
+	.ff-wx-avatar-box {
+		right: 1rem;
+	}
+
+	.ff-wx-name {
+		right: 5.75rem;
+		font-size: 1.0625rem;
+	}
+
+	.ff-wx-bio {
+		font-size: 0.75rem;
+	}
+
+	.ff-wx-pinned-preview {
+		min-width: 3.5rem;
+		max-width: 6rem;
+		padding: 0.375rem;
+	}
+}
+
 /* ===== 卡片本体 ===== */
 
 /* 上游 .page-entry 是 overflow: visible，竖条要贴边得先裁住 */
