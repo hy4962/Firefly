@@ -62,7 +62,7 @@
 - **内容推送自动部署**：内容仓 push 后触发两个平台的部署挂链
 - **构建期兜底**：外部接口不可达时先探测再回退本地数据，不让一次超时带走整次构建
 
-完整的改动清单见站内 [`/blog-changelog/`](https://www.9ll.uk/blog-changelog/)（V1.0 到 V1.46，48 版 / 224 条明细）；同样的清单也在[「关于」页](https://www.9ll.uk/about/)，逐版的取舍与踩坑整理在《[把 Firefly 魔改了四十八版](https://www.9ll.uk/posts/blog/modssummary/)》里。
+完整的改动清单见站内 [`/blog-changelog/`](https://www.9ll.uk/blog-changelog/)（V1.0 到 V1.46，48 版 / 226 条明细）；同样的清单也在[「关于」页](https://www.9ll.uk/about/)，逐版的取舍与踩坑整理在《[把 Firefly 魔改了四十八版](https://www.9ll.uk/posts/blog/modssummary/)》里。
 
 ------
 
