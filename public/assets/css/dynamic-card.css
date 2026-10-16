@@ -1,0 +1,231 @@
+/**
+ * 动态页卡片改版 —— 只在 /dynamic/ 生效。
+ *
+ * 为什么单独一个文件：这些规则要改动卡片的骨架（缩进、图片网格尺寸），
+ * 写在 FooterConfig.html 里会让那个文件继续膨胀，抽出来更好维护。引入方式
+ * 还是页脚按需注入（<link>），所以它天然是**未分层** CSS，能压过主题的 @layer。
+ *
+ * ⚠️ 所有选择器一律以 `dynamic-entry` 打头。上游的 `.page-*` 在友链页、
+ *    书签导航那批自建页里也在用，不加这个前缀会误伤它们。
+ * ⚠️ 图片网格那几条必须写成 `dynamic-entry .page-gallery > .page-gallery-grid[data-count=…]`。
+ *    上游的同一批规则是 `.page-gallery-grid[data-count="N"]`（0-2-0），只加一个元素名前缀
+ *    只有 (0-1-1)，压不过它 —— 实测容器宽度会残留成 `min(100%, 28rem)` = 448px，
+ *    格子设成 100px 也只会被这 448px 摊开，白设。
+ * ⚠️ /assets/* 有 30 天强缓存，改完本文件记得把 FooterConfig.html 里那条
+ *    <link> 的 ?v= 往上加。
+ *
+ * 参考的是 blog.huchao.vip/moments/ 的卡片：左侧一根主题色竖条、圆形头像带
+ * 主题色描边、昵称用主题色、元信息一行小字用 · 分隔、图片按张数排成固定
+ * 尺寸的方块网格。
+ */
+
+/* ===== 卡片本体 ===== */
+
+/* 上游 .page-entry 是 overflow: visible，竖条要贴边得先裁住 */
+dynamic-entry.page-entry {
+	position: relative;
+	overflow: hidden;
+	padding: 1rem;
+	transition:
+		box-shadow 250ms ease,
+		transform 250ms ease,
+		border-color 250ms ease;
+}
+
+/* 左侧那根主题色竖条 */
+dynamic-entry.page-entry::before {
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: 4px;
+	border-radius: 0 2px 2px 0;
+	background: var(--primary);
+	opacity: 0.35;
+	content: "";
+	pointer-events: none;
+}
+
+/* 暗色下悬停描一圈白边加柔光 —— 跟参考站一致，亮色下不动 */
+html.dark dynamic-entry.page-entry:hover {
+	border-color: #fff;
+	box-shadow: 0 4px 24px rgb(255 255 255 / 8%);
+}
+
+/* ===== 头部 ===== */
+
+dynamic-entry .page-entry-header {
+	gap: 0.625rem;
+	margin-bottom: 0.75rem;
+}
+
+/* 头像：40px 圆 + 2px 主题色描边（上游的 3rem 偏大、也没描边） */
+dynamic-entry .page-avatar {
+	width: 2.5rem;
+	height: 2.5rem;
+	flex: 0 0 2.5rem;
+	border: 2px solid var(--primary);
+	box-sizing: border-box;
+}
+
+dynamic-entry .page-identity strong {
+	color: var(--primary);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+/* 昵称本身就是主题色了，悬停改走透明度，不然 hover 反而没反馈 */
+dynamic-entry .page-author:hover strong {
+	opacity: 0.8;
+}
+
+/* ===== 元信息行（时间 · 地点）===== */
+
+dynamic-entry .page-meta {
+	gap: 0;
+}
+
+dynamic-entry .page-time,
+dynamic-entry .page-location {
+	color: var(--content-meta);
+	font-size: 0.75rem;
+	line-height: 1.5;
+}
+
+/* 时间与地点之间补一个 · —— 上游只靠 gap 分隔，参考站是这种点 */
+dynamic-entry .page-meta > * + *::before {
+	margin: 0 0.375rem;
+	color: inherit;
+	opacity: 0.5;
+	content: "·";
+}
+
+dynamic-entry .page-location {
+	max-width: 12rem;
+}
+
+/* ===== 置顶徽章 ===== */
+
+dynamic-entry .page-pinned-badge {
+	border-radius: var(--radius);
+	background: var(--btn-regular-bg);
+	color: var(--btn-content);
+	padding: 0.125rem 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+/* 右上角那枚引号纯装饰，参考站没有，撤掉 */
+dynamic-entry .page-entry-decoration {
+	display: none;
+}
+
+/* ===== 正文：取消跟头像对齐的缩进 ===== */
+
+dynamic-entry .page-content {
+	margin: 0 0 0.75rem;
+	font-size: 0.95rem;
+	line-height: 1.7;
+}
+
+dynamic-entry .page-content p {
+	margin-bottom: 0.375rem;
+}
+
+dynamic-entry .page-content > :last-child {
+	margin-bottom: 0;
+}
+
+/* 正文里的图片也给个圆角，跟网格保持一致 */
+dynamic-entry .page-content img {
+	border-radius: var(--radius);
+}
+
+/* ===== 图片网格：固定尺寸方块，按张数排 ===== */
+
+dynamic-entry .page-gallery {
+	width: 100%;
+	margin: 0.25rem 0 0;
+}
+
+dynamic-entry .page-gallery > .page-gallery-grid {
+	width: fit-content;
+	max-width: 100%;
+	gap: 0.375rem;
+	grid-auto-rows: 100px;
+	grid-template-columns: repeat(3, 100px);
+}
+
+/* 上游给 3 张、5 张做的「首图跨两行」特殊布局，这里统一成等大方块 */
+dynamic-entry .page-gallery > .page-gallery-grid[data-count="3"] .page-gallery-grid-item:first-child,
+dynamic-entry .page-gallery > .page-gallery-grid[data-count="5"] .page-gallery-grid-item:first-child {
+	aspect-ratio: 1;
+	grid-row: auto;
+}
+
+dynamic-entry .page-gallery > .page-gallery-grid[data-count="1"] {
+	grid-template-columns: 100px;
+}
+
+dynamic-entry .page-gallery > .page-gallery-grid[data-count="2"],
+dynamic-entry .page-gallery > .page-gallery-grid[data-count="4"] {
+	grid-template-columns: repeat(2, 100px);
+}
+
+dynamic-entry .page-gallery > .page-gallery-grid .page-gallery-grid-item {
+	border-radius: var(--radius);
+}
+
+/* 单图保持上游的「完整显示不裁剪」—— 一张风景照被裁成 100px 方块反而难看 */
+dynamic-entry .page-gallery > .page-gallery-grid[data-layout="single"] {
+	width: fit-content;
+	max-width: 100%;
+}
+
+dynamic-entry .page-gallery > .page-gallery-grid[data-layout="single"] img {
+	max-width: min(100%, 32rem);
+	max-height: min(24rem, 60vh);
+}
+
+/* ===== 窄屏：网格自适应，不再固定 100px ===== */
+
+@media (max-width: 480px) {
+	dynamic-entry.page-entry {
+		padding: 0.875rem;
+	}
+
+	dynamic-entry .page-avatar {
+		width: 2.25rem;
+		height: 2.25rem;
+		flex: 0 0 2.25rem;
+	}
+
+	dynamic-entry .page-identity strong {
+		font-size: 0.875rem;
+	}
+
+	dynamic-entry .page-time,
+	dynamic-entry .page-location {
+		font-size: 0.6875rem;
+	}
+
+	dynamic-entry .page-location {
+		max-width: 6rem;
+	}
+
+	dynamic-entry .page-gallery > .page-gallery-grid {
+		width: 100%;
+		gap: 0.25rem;
+		grid-auto-rows: auto;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	dynamic-entry .page-gallery > .page-gallery-grid[data-count="1"] {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	dynamic-entry .page-gallery > .page-gallery-grid[data-count="2"],
+	dynamic-entry .page-gallery > .page-gallery-grid[data-count="4"] {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}

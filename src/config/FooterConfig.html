@@ -393,9 +393,21 @@
 			},
 		];
 
-		function loadPageScripts() {
+		// 同样是按需加载，只不过加载的是样式表。规则里已经用元素名限定作用域，
+		// 挂在这儿只是为了别让每个页面都白白多请求一个只对 /dynamic/ 有用的文件。
+		var PAGE_STYLES = [
+			{
+				// 动态页卡片改版：左侧主题色竖条、圆形头像描边、固定尺寸的图片方块网格
+				path: /^\/dynamic\/?$/,
+				id: "ff-dynamic-card-css",
+				href: "/assets/css/dynamic-card.css?v=1",
+			},
+		];
+
+		function loadPageAssets() {
 			var pathname = window.location.pathname;
-			for (var i = 0; i < PAGE_SCRIPTS.length; i++) {
+			var i;
+			for (i = 0; i < PAGE_SCRIPTS.length; i++) {
 				var entry = PAGE_SCRIPTS[i];
 				if (!entry.path.test(pathname)) continue;
 				if (document.getElementById(entry.id)) continue;
@@ -405,14 +417,24 @@
 				script.async = true;
 				document.head.appendChild(script);
 			}
+			for (i = 0; i < PAGE_STYLES.length; i++) {
+				var style = PAGE_STYLES[i];
+				if (!style.path.test(pathname)) continue;
+				if (document.getElementById(style.id)) continue;
+				var link = document.createElement("link");
+				link.id = style.id;
+				link.rel = "stylesheet";
+				link.href = style.href;
+				document.head.appendChild(link);
+			}
 		}
 
-		document.addEventListener("astro:page-load", loadPageScripts);
-		document.addEventListener("swup:page:view", loadPageScripts);
+		document.addEventListener("astro:page-load", loadPageAssets);
+		document.addEventListener("swup:page:view", loadPageAssets);
 		if (document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", loadPageScripts, { once: true });
+			document.addEventListener("DOMContentLoaded", loadPageAssets, { once: true });
 		} else {
-			loadPageScripts();
+			loadPageAssets();
 		}
 	})();
 </script>
