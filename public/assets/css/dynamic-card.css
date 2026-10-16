@@ -107,13 +107,6 @@
 }
 
 /* 按钮行：右对齐，往上收一点贴着封面 */
-.ff-wx-actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: 0.5rem;
-	margin: -0.5rem 0 1rem;
-}
-
 .ff-wx-action-btn {
 	display: inline-flex;
 	align-items: center;
@@ -280,8 +273,12 @@ html.dark .ff-wx-pinned-tag {
 	margin-bottom: 0.5rem;
 }
 
-.ff-wx-actions {
-	margin: 0 0 0.25rem;
+/* 「写说说」被搬进页面头部右侧那一排之后（跟「订阅RSS」「N 动态」并排），
+   尺寸收一收才跟那两个协调 —— 它们都是 0.75rem 上下的小字 */
+.page-count .ff-wx-action-btn {
+	margin-right: 0.5rem;
+	padding: 0.25rem 0.625rem;
+	font-size: 0.75rem;
 }
 
 /* 拆壳：背景、边框、圆角、阴影全撤，只留下内边距把内容跟上面的封面拉开一点 */

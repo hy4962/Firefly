@@ -42,7 +42,25 @@
 		copy.removeAttribute("id");
 		copy.hidden = false;
 		host.insertBefore(copy, anchor);
+		mountActions(copy);
 		fillPinned(copy);
+	}
+
+	// 「写说说」并进页面头部右侧那一排（跟「订阅RSS」「N 动态」排一起）。
+	// 它原来是封面区下面单独的一行，只有一个按钮，又空又占一整行高度。
+	// .page-header 是 Astro 静态吐出来的（Svelte 只管下面的动态列表），
+	// 插进去的节点不会被重建，所以不用像封面区那样每次克隆。
+	function mountActions(hero) {
+		var actions = hero.querySelector(".ff-wx-actions");
+		var count = document.querySelector(".page-count");
+		if (!actions || !count) return;
+		var btn = actions.querySelector(".ff-wx-action-btn");
+		if (!btn) {
+			actions.remove();
+			return;
+		}
+		count.insertBefore(btn, count.firstChild);
+		actions.remove();
 	}
 
 	function fillPinned(hero) {
