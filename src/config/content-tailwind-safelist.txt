@@ -1,7 +1,7 @@
 # 自动生成，勿手改 —— 由 scripts/content-safelist.mjs 重写。
 # 起因：src/site-content/ 被 git 忽略，Tailwind 的自动内容探测会跳过它，
 # 只出现在内容文件里的工具类因此不会被编译出来。这里把它们登记成可扫描的候选。
-# 共 133 个。
+# 共 134 个。
 
 -bottom-1
 -right-1
@@ -77,6 +77,7 @@ not-prose
 object-cover
 overflow-hidden
 p-5
+page-comment-frame
 pb-4
 px-1
 px-3
