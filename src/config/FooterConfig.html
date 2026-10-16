@@ -382,6 +382,16 @@
 				id: "ff-comment-reply-quote-js",
 				src: "/assets/js/comment-reply-quote.js?v=3",
 			},
+			{
+				// 动态页内嵌评论增强：动态页每条动态的评论挂在 iframe 里，而那个
+				// iframe 的页面（/dynamic/comments/）走 Layout、没有页脚 —— 上面两条
+				// 全站脚本与样式压根到不了那个文档，动态里的回复就成了全站唯一
+				// 「不折叠、无引用」的评论区。所以只在 /dynamic/ 额外跑这个脚本，
+				// 由父页面把样式与两条脚本代投进同源 iframe。
+				path: /^\/dynamic\/?$/,
+				id: "ff-dynamic-comment-enhance-js",
+				src: "/assets/js/dynamic-comment-enhance.js?v=1",
+			},
 		];
 
 		function loadPageScripts() {
@@ -1047,8 +1057,12 @@
 	</div>
 </div>
 
-<style>
+<style id="ff-comment-style-collapse">
 	/* ===== 评论区「回复折叠」=====
+	   ⚠️ 这个 id 有用途，别删：动态页的内嵌评论跑在同源 iframe 里，那个文档
+	   （/dynamic/comments/）走的是 Layout、没有页脚，注入到不了它，于是由父页面
+	   的 dynamic-comment-enhance.js 按 id 找到本块、clone 进 iframe —— 单一来源，
+	   改样式两边一起变，不需要再维护第二份。
 	   DOM 与类名都由 Waline（Vue）渲染，按钮由 comment-reply-collapse.js 插进 .wl-quote 末尾。
 	   这里只管样式，逻辑全在 js 里。写在页脚是因为页脚在 #swup-container 之外，
 	   切页不会被替换掉；而且未分层的这段天然压过主题 @layer 里的规则。
@@ -1102,8 +1116,9 @@
 	}
 </style>
 
-<style>
+<style id="ff-comment-style-quote">
 	/* ===== 评论区「回复引用」=====
+	   ⚠️ 同 ff-comment-style-collapse：id 是给动态页 iframe 克隆用的，别删。
 	   回复块由 comment-reply-quote.js 插进 .wl-content 里、紧跟那行 `@昵称：` 之后。
 	   样式同样写页脚（swup 容器之外，切页不丢；未分层压过主题 @layer）。 */
 

@@ -30,6 +30,38 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.46",
+		title: "动态评论跟上全站",
+		date: "2026-10-16",
+		summary:
+			"动态页内嵌评论区的回复也按全站规则默认展示 2 条、多余的收进「展开更多」，回复引用一并补上",
+		description:
+			"「回复默认展示 2 条」和「回复引用」两项全站上线后，动态页成了唯一的例外 —— 文章页、留言板、友链页的回复都规规矩矩显示 2 条，唯独动态里那条 13 条回复的长串一条不落地全摊着。根子在结构上：动态页每条动态的评论区是个同源 iframe（src 指向 /dynamic/comments/），而那个页面走的是 Layout —— 它没有页脚。全站的评论增强都是靠页脚注入 + PAGE_SCRIPTS 分发的，注入压根到不了 iframe 那个文档，样式和脚本一起落空，所以在动态里看起来就是「什么都没装」的原生 Waline。修法顺着同源这一点做：只在 /dynamic/ 多跑一个 dynamic-comment-enhance.js，由父页面按 id 把页脚里那两个 <style> 块 clone 进 iframe，再把 comment-reply-collapse.js / comment-reply-quote.js 以 script 标签代投进去 —— 单一样式来源，以后改 FooterConfig.html 两边一起变；两个脚本本来就自包含，塞进任何文档都能独立跑。iframe 是点「评论」那一刻才由上游创建、脚本却早就加载好了，所以靠 MutationObserver 盯新增节点、再轮询 contentDocument.readyState 等它真正导航到评论页（刚插进 DOM 时 document 还是 about:blank，而它的 readyState 也是 complete，不辨一下就会把样式注进空气里）。全程零改动主题源文件。",
+		items: [
+			{
+				category: "交互",
+				text: "动态页内嵌评论区的回复同样默认展示 2 条，多出来的收进「展开更多（还剩 M 条）」，展开/收起行为与全站完全一致",
+			},
+			{
+				category: "交互",
+				text: "回复引用在动态里也生效 —— 被回复那条的内容摘成引用块，`@昵称：` 那行同样不再重复显示",
+			},
+			{
+				category: "实现",
+				text: "新增 public/assets/js/dynamic-comment-enhance.js，只在 /dynamic/ 按需加载；样式按 id 从页脚 clone 进 iframe，两个脚本以标签代投，单一来源不另存一份",
+			},
+			{
+				category: "实现",
+				text: "FooterConfig.html 里两个评论样式块补上 id（ff-comment-style-collapse / ff-comment-style-quote）供 iframe 克隆用，PAGE_SCRIPTS 增加一条 /dynamic/ 专属条目；主题源文件零改动",
+			},
+			{
+				category: "健壮性",
+				text: "iframe 刚插入时 document 还是 about:blank（readyState 同样是 complete），所以按 location.pathname 必须是 /dynamic/comments/ 才注入；iframe 在轮询期间被 swup 换页拿掉时立即停止追踪。实测：13 条回复的长串默认 2 条 + 11 条收着，连点「展开更多」按 7 / 12 / 13 递增，摊完变「收起回复」，点一下回到 2 条；回复引用的引用块在动态里的真实评论上也已生效",
+			},
+		],
+		tags: ["博客", "评论区", "Waline", "动态页"],
+	},
+	{
 		version: "V1.45",
 		title: "页脚去掉开往徽标",
 		date: "2026-10-16",
