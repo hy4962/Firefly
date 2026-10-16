@@ -69,16 +69,24 @@
 	var POLL_TIMEOUT = 20000;
 	var COUNT_DEBOUNCE = 200;
 
-	// iframe 专属：把编辑器压成一行。
+	// iframe 专属样式，两块：
+	//
+	// ① 编辑器压成一行。
 	// ⚠️ Waline v3 的输入框是 <textarea class="wl-editor">（**不是** .wl-textarea），
 	//    头部是 .wl-header、底部是 .wl-footer，两个都由 Waline 自己写 display。
 	// ⚠️ 压缩走「加一个 .ff-compact 类」，聚焦时**摘掉这个类**回到 Waline 原样 ——
 	//    比用 :not(:focus-within) 反转更稳，不用去猜它原本的 display 是 flex 还是 block。
-	var EDITOR_CSS =
+	//
+	// ② 藏掉评论区标题（「评论区 / 分享你的想法，与大家交流讨论」那一块）。
+	//    它来自全站共用的 src/components/comment/index.astro（上游文件，动不得），
+	//    在文章页里是正文与评论的分界、有用；但动态页这里一条动态配一个评论区，
+	//    标题只是白占地方。所以只在动态这个 iframe 里藏。
+	var IFRAME_CSS =
 		"#waline .wl-comment.ff-compact .wl-header," +
 		"#waline .wl-comment.ff-compact .wl-footer{display:none!important}" +
 		"#waline .wl-comment.ff-compact .wl-editor{min-height:2.5rem!important;height:2.5rem!important}" +
-		"#waline .wl-comment.ff-compact .wl-editor{transition:height 160ms ease}";
+		"#waline .wl-comment.ff-compact .wl-editor{transition:height 160ms ease}" +
+		"#post-comments > .relative.z-10.mb-6{display:none!important}";
 
 	var COMPACT_CLASS = "ff-compact";
 
@@ -237,11 +245,11 @@
 		if (doc.documentElement.dataset[MARK] === "1") return;
 		doc.documentElement.dataset[MARK] = "1";
 
-		// 编辑器压扁：iframe 专属样式 + 折叠逻辑
+		// iframe 专属样式 + 折叠逻辑
 		if (!doc.getElementById(EDITOR_STYLE_ID)) {
 			var editorStyle = doc.createElement("style");
 			editorStyle.id = EDITOR_STYLE_ID;
-			editorStyle.textContent = EDITOR_CSS;
+			editorStyle.textContent = IFRAME_CSS;
 			doc.head.appendChild(editorStyle);
 		}
 		compactEditor(doc, 0);
