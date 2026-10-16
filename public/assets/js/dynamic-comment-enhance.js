@@ -38,7 +38,9 @@
 
 	// 父文档里要搬进 iframe 的样式块，以及要补进 iframe 的脚本。
 	// 版本号与 FooterConfig.html 的 PAGE_SCRIPTS 保持一致。
-	var STYLE_IDS = ["ff-comment-style-collapse", "ff-comment-style-quote"];
+	// ff-cursor-style 也一并搬过去：那个 iframe 走的是 Layout（没有页脚），
+	// 不搬的话评论区里会是系统原生指针，和全站不一致。
+	var STYLE_IDS = ["ff-comment-style-collapse", "ff-comment-style-quote", "ff-cursor-style"];
 	var SCRIPTS = [
 		{
 			id: "ff-comment-reply-collapse-js",

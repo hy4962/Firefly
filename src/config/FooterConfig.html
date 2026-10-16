@@ -389,7 +389,7 @@
 				// 回复就成了全站唯一「不折叠、无引用」的评论区。
 				path: /^\/dynamic\/?$/,
 				id: "ff-dynamic-comment-enhance-js",
-				src: "/assets/js/dynamic-comment-enhance.js?v=3",
+				src: "/assets/js/dynamic-comment-enhance.js?v=4",
 			},
 		];
 
@@ -1224,6 +1224,123 @@
 	@media (prefers-reduced-motion: reduce) {
 		.wl-card-item.ff-rq-flash {
 			animation: none;
+		}
+	}
+</style>
+
+<!-- ===== 「俺妹」鼠标指针（Oreimo Mouse Cursor Set）=====
+     素材：public/images/cursors/*.png —— 由 Gemini 生成的两张图切图、去白底、预乘 alpha 缩放而来。
+     每枚出 32px(1x) + 64px(2x)，用 image-set() 覆盖高分屏；两种倍率共用同一组 CSS px 热点，
+     所以热点只需写一份（3 2 / 6 4 / 16 16），不用跟着倍率换算。
+     每条先写纯 url() 兜底，再写 -webkit-image-set() 与标准 image-set()，不支持的浏览器自动忽略后者。
+     ⚠️ pre / code 必须保留 cursor: text —— 位图会覆盖掉浏览器自动给文本区选的原生 I 型光标，
+        代码块是复制命令的地方，细十字比 32px 位图好瞄。
+     ⚠️ 换素材后要同步改文件名或加 ?v=（长缓存）。
+     ⚠️ 忙碌 / 帮助两枚在本站没有天然触发点，留 data-cursor 与 html.ff-busy 两个 opt-in 钩子。 -->
+<style id="ff-cursor-style">
+	@media (pointer: fine) {
+		/* 正常选择：黄箭头 + 粉色发夹 + 蓝蝴蝶结 */
+		html,
+		body {
+			cursor: url("/images/cursors/normal-32.png") 3 2, auto;
+			cursor: -webkit-image-set(url("/images/cursors/normal-32.png") 1x, url("/images/cursors/normal-64.png") 2x) 3 2, auto;
+			cursor: image-set(url("/images/cursors/normal-32.png") 1x, url("/images/cursors/normal-64.png") 2x) 3 2, auto;
+		}
+
+		/* 链接选择：黑猫耳箭头 */
+		a,
+		button,
+		[role="button"],
+		summary,
+		label[for],
+		select,
+		input[type="submit"],
+		input[type="button"],
+		input[type="reset"],
+		.clickable,
+		[data-cursor="link"] {
+			cursor: url("/images/cursors/link-select-32.png") 6 4, pointer !important;
+			cursor: -webkit-image-set(url("/images/cursors/link-select-32.png") 1x, url("/images/cursors/link-select-64.png") 2x) 6 4, pointer !important;
+			cursor: image-set(url("/images/cursors/link-select-32.png") 1x, url("/images/cursors/link-select-64.png") 2x) 6 4, pointer !important;
+		}
+		/* 深色主题下黑猫箭头会糊进背景，换带白描边的版本（素材同名加 -dark） */
+		html.dark a,
+		html.dark button,
+		html.dark [role="button"],
+		html.dark summary,
+		html.dark label[for],
+		html.dark select,
+		html.dark [data-cursor="link"] {
+			cursor: url("/images/cursors/link-select-dark-32.png") 6 4, pointer !important;
+			cursor: -webkit-image-set(url("/images/cursors/link-select-dark-32.png") 1x, url("/images/cursors/link-select-dark-64.png") 2x) 6 4, pointer !important;
+			cursor: image-set(url("/images/cursors/link-select-dark-32.png") 1x, url("/images/cursors/link-select-dark-64.png") 2x) 6 4, pointer !important;
+		}
+
+		/* 文本选择：粉色魔法棒（正文、表格、表单、可编辑区） */
+		p,
+		li,
+		td,
+		th,
+		blockquote,
+		dd,
+		dt,
+		figcaption,
+		h1,
+		h2,
+		h3,
+		h4,
+		h5,
+		h6,
+		textarea,
+		[contenteditable],
+		input:not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]) {
+			cursor: url("/images/cursors/text-select-32.png") 16 16, text;
+			cursor: -webkit-image-set(url("/images/cursors/text-select-32.png") 1x, url("/images/cursors/text-select-64.png") 2x) 16 16, text;
+			cursor: image-set(url("/images/cursors/text-select-32.png") 1x, url("/images/cursors/text-select-64.png") 2x) 16 16, text;
+		}
+		/* 代码区保留系统原生 I 型光标：这里是选中复制命令行的地方。
+		   ⚠️ 必须加 !important —— expressive-code 自带一条
+		      `.expressive-code :not(:is(svg, svg *)) { cursor: revert }`（特异性 0,1,1 > 0,0,1），
+		      会把 pre 的 cursor 回滚成「继承」，于是代码块里继承到 body 的黄箭头。
+		      revert 是非 important 声明，这里加 !important 才压得住；
+		      pre / code 定住之后，内部那些同样 `revert` 的后代会顺着一路继承下来。
+		      expressive-code 的复制按钮在 <figcaption> 里、不在 pre 内，不会被这条误伤。 */
+		pre,
+		code,
+		kbd,
+		samp,
+		pre *,
+		code * {
+			cursor: text !important;
+		}
+
+		/* 不可用：粉色禁止符 */
+		:disabled,
+		button:disabled,
+		input:disabled,
+		[aria-disabled="true"],
+		.is-disabled,
+		[data-cursor="unavailable"] {
+			cursor: url("/images/cursors/unavailable-32.png") 16 16, not-allowed !important;
+			cursor: -webkit-image-set(url("/images/cursors/unavailable-32.png") 1x, url("/images/cursors/unavailable-64.png") 2x) 16 16, not-allowed !important;
+			cursor: image-set(url("/images/cursors/unavailable-32.png") 1x, url("/images/cursors/unavailable-64.png") 2x) 16 16, not-allowed !important;
+		}
+
+		/* 帮助：问号（本站没有天然触发点，opt-in） */
+		abbr[title],
+		[data-cursor="help"] {
+			cursor: url("/images/cursors/help-32.png") 16 16, help;
+			cursor: -webkit-image-set(url("/images/cursors/help-32.png") 1x, url("/images/cursors/help-64.png") 2x) 16 16, help;
+			cursor: image-set(url("/images/cursors/help-32.png") 1x, url("/images/cursors/help-64.png") 2x) 16 16, help;
+		}
+
+		/* 后台/忙碌：加 html.ff-busy 即全站生效（异步操作时可以手动挂） */
+		html.ff-busy,
+		html.ff-busy *,
+		[data-cursor="busy"] {
+			cursor: url("/images/cursors/busy-32.png") 16 16, progress !important;
+			cursor: -webkit-image-set(url("/images/cursors/busy-32.png") 1x, url("/images/cursors/busy-64.png") 2x) 16 16, progress !important;
+			cursor: image-set(url("/images/cursors/busy-32.png") 1x, url("/images/cursors/busy-64.png") 2x) 16 16, progress !important;
 		}
 	}
 </style>
