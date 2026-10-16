@@ -299,6 +299,13 @@ html.dark .ff-wx-pinned-tag {
 	display: none;
 }
 
+/* 评论按钮左对齐到卡片。
+   上游给 .page-inline-comments 留了 3.75rem 的左边距（跟头像对齐那套缩进），
+   但正文的缩进前面已经被我们取消了，这里留着就只剩按钮孤零零地缩进去。 */
+.page-inline-comments {
+	margin-left: 0;
+}
+
 /* ===== 卡片本体 ===== */
 
 /* 上游 .page-entry 是 overflow: visible，竖条要贴边得先裁住 */
