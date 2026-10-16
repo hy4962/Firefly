@@ -42,8 +42,27 @@
 		copy.removeAttribute("id");
 		copy.hidden = false;
 		host.insertBefore(copy, anchor);
+		randomizeCover(copy);
 		mountActions(copy);
 		fillPinned(copy);
+	}
+
+	// 封面图：从 data-covers 里随机挑一张（跟桌面壁纸同一批图）。
+	// 站长要的是「每次进来随机一张、但不轮播」，所以只在挂载时挑一次，
+	// 页面内不再定时换 —— 切进切出算「一次进来」，会重新挑。
+	// ⚠️ 图片地址写在 FooterConfig.html 那个壳的 data-covers 上，不在这里硬编码；
+	//    只配一个的话就不随机，固定成那张。
+	function randomizeCover(hero) {
+		var img = hero.querySelector(".ff-wx-cover-img");
+		if (!img) return;
+		var list = (img.dataset.covers || "")
+			.split(",")
+			.map(function (s) {
+				return s.trim();
+			})
+			.filter(Boolean);
+		if (list.length < 2) return;
+		img.src = list[Math.floor(Math.random() * list.length)];
 	}
 
 	// 「写说说」并进页面头部右侧那一排（跟「订阅RSS」「N 动态」排一起）。

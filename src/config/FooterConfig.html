@@ -397,7 +397,7 @@
 				// 不然 swup 切一次页搬过去的节点就没了。
 				path: /^\/dynamic\/?$/,
 				id: "ff-dynamic-hero-js",
-				src: "/assets/js/dynamic-hero.js?v=2",
+				src: "/assets/js/dynamic-hero.js?v=3",
 			},
 		];
 
@@ -454,7 +454,16 @@
 <div id="ff-wx-hero" hidden>
 	<div class="ff-wx-cover">
 		<div class="ff-wx-cover-img-box">
-			<img class="ff-wx-cover-img" src="/gallery/desktop-wallpaper/sunset-1.jpg" alt="" />
+			<!-- 封面图：从 data-covers 里随机挑一张（跟桌面壁纸同一批图，见
+			     src/config/backgroundWallpaper.ts 的 desktop 数组）。
+			     ⚠️ 壁纸数组里的 cover.webp 是「暂无封面」那张占位图，这里没收进来。
+			     ⚠️ 用的是 public 里的轻量 webp 副本（单张 160~290KB）；
+			        public/gallery/desktop-wallpaper/ 那份是相册原图（1.4~2.4MB），别拿来当封面。
+			     要换池子就改 data-covers，逗号分隔；只留一个就固定成那张。 -->
+			<img class="ff-wx-cover-img"
+				src="/images/desktop-wallpaper/sunset-1.webp"
+				data-covers="/images/desktop-wallpaper/three.webp,/images/desktop-wallpaper/shana-1.webp,/images/desktop-wallpaper/sunset-1.webp,/images/desktop-wallpaper/kuroneko-summer.webp"
+				alt="" />
 		</div>
 		<div class="ff-wx-info-bar">
 			<div class="ff-wx-avatar-box">
