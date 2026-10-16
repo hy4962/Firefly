@@ -106,6 +106,15 @@ export const galleryConfig: GalleryConfig = {
 			tags: ["统计页", "插画", "存档"],
 			cover: "/gallery/analytics/02-push-rhythm.webp",
 		},
+		{
+			id: "oreimo-cursor",
+			name: "俺妹指针主题",
+			description:
+				"《我的妹妹哪有这么可爱！》鼠标指针主题的两张预览总览：高坂桐乃（对应站点亮色主题）与五更琉璃·黑猫（对应深色主题），每张 28 枚指针。原图零压缩存档；站点实际加载的是据此切出的 public/images/cursors/。",
+			location: "我的妹妹哪有这么可爱！",
+			date: "2026-10-16",
+			tags: ["俺妹", "高坂桐乃", "五更琉璃", "鼠标指针"],
+		},
 		// {
 		// 	id: "firefly-2026",
 		// 	name: "可爱流萤",

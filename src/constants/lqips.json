@@ -860,5 +860,7 @@
   "src:content/posts/blog/SteamLibrary/originals/image-001.png": "73675f60504c1f1913",
   "src:content/posts/blog/SteamLibrary/originals/cover.png": "c39993d7bdbef4f0ea",
   "src:content/posts/blog/SteamLibrary/images/image-001.webp": "73675f60504c1f1914",
-  "src:content/posts/blog/SteamLibrary/images/cover.webp": "d3b9abe4d0cff5f4ee"
+  "src:content/posts/blog/SteamLibrary/images/cover.webp": "d3b9abe4d0cff5f4ee",
+  "public:gallery/oreimo-cursor/01-kirino.png": "f4f5f6f3eee9f8f7f6",
+  "public:gallery/oreimo-cursor/02-kuroneko.png": "f0f1f1dbd9e0f2f1f3"
 }
