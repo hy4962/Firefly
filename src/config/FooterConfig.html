@@ -127,6 +127,10 @@
 		var API_BASE = "https://umami.49o.pw";
 		var SHARE_ID = "Z4DD4Y3q9CTFpBeM";
 
+		// 缓存 tag 里带上 API_BASE：换 Umami 实例（域名变了）时，本地缓存的
+		// 旧分享令牌和旧数据自动作废，不会拿着 A 站签的令牌去问 B 站要数据。
+		var CACHE_SCOPE = API_BASE + "|" + SHARE_ID;
+
 		var KEY_SHARE = "ff:umami:share";
 		var KEY_STATS = "ff:umami:stats";
 		var TTL_SHARE = 86400000; // 分享令牌缓存 24 小时
@@ -166,6 +170,14 @@
 				);
 			} catch (error) {
 				// 写入失败不影响本次渲染。
+			}
+		}
+
+		function clearCache(key) {
+			try {
+				localStorage.removeItem(key);
+			} catch (error) {
+				// 清不掉也不影响：后面的 force 请求本来就会绕过缓存。
 			}
 		}
 
@@ -211,28 +223,29 @@
 			root.hidden = false;
 		}
 
-		function fetchShare() {
-			var cached = readCache(KEY_SHARE, SHARE_ID, TTL_SHARE);
+		function fetchShare(force) {
+			var cached = force ? null : readCache(KEY_SHARE, CACHE_SCOPE, TTL_SHARE);
 			if (cached) return Promise.resolve(cached);
 			return fetch(API_BASE + "/api/share/" + encodeURIComponent(SHARE_ID), {
 				cache: "no-store",
 			})
 				.then(function (response) {
-					if (!response.ok) throw new Error("share " + response.status);
+					if (!response.ok) throw httpError("share", response.status);
 					return response.json();
 				})
 				.then(function (data) {
 					if (!data || !data.websiteId || !data.token) {
 						throw new Error("invalid share payload");
 					}
-					writeCache(KEY_SHARE, SHARE_ID, data);
+					writeCache(KEY_SHARE, CACHE_SCOPE, data);
 					return data;
 				});
 		}
 
 		function fetchStats(share, startAt, scope, ttl, force) {
 			var key = KEY_STATS + ":" + scope;
-			var cached = force ? null : readCache(key, share.websiteId, ttl);
+			var tag = CACHE_SCOPE + "|" + share.websiteId;
+			var cached = force ? null : readCache(key, tag, ttl);
 			if (cached) return Promise.resolve(cached);
 
 			var url =
@@ -251,13 +264,31 @@
 				},
 			})
 				.then(function (response) {
-					if (!response.ok) throw new Error("stats " + response.status);
+					if (!response.ok) throw httpError("stats", response.status);
 					return response.json();
 				})
 				.then(function (data) {
-					writeCache(key, share.websiteId, data);
+					writeCache(key, tag, data);
 					return data;
 				});
+		}
+
+		// 401/403 单独标出来：只有鉴权失败才值得丢掉令牌重取一次，
+		// 网络超时、5xx 重取令牌也是白搭。
+		function httpError(label, status) {
+			var error = new Error(label + " " + status);
+			error.auth = status === 401 || status === 403;
+			return error;
+		}
+
+		function loadStats(share, force) {
+			var dayStart = new Date();
+			dayStart.setHours(0, 0, 0, 0);
+			var todayStart = dayStart.getTime();
+			return Promise.all([
+				fetchStats(share, todayStart, "today:" + todayStart, TTL_TODAY, force),
+				fetchStats(share, 0, "all", TTL_ALL, force),
+			]);
 		}
 
 		var running = false;
@@ -269,16 +300,19 @@
 			running = true;
 			lastRefreshAt = Date.now();
 
-			var dayStart = new Date();
-			dayStart.setHours(0, 0, 0, 0);
-			var todayStart = dayStart.getTime();
-
+			// 分享令牌走 24 小时缓存，轮询只强刷 stats，不多打 share 接口。
 			fetchShare()
 				.then(function (share) {
-					return Promise.all([
-						fetchStats(share, todayStart, "today:" + todayStart, TTL_TODAY, force),
-						fetchStats(share, 0, "all", TTL_ALL, force),
-					]);
+					return loadStats(share, force);
+				})
+				.catch(function (error) {
+					// 缓存里的令牌可能挂在旧实例上（换域名后 24 小时内仍会命中），
+					// 表现就是 401 + 页脚整行消失。这里丢掉令牌重取一次，整条链路只重试这一回。
+					if (!error || error.auth !== true) throw error;
+					clearCache(KEY_SHARE);
+					return fetchShare(true).then(function (share) {
+						return loadStats(share, true);
+					});
 				})
 				.then(function (results) {
 					var today = results[0] || {};
