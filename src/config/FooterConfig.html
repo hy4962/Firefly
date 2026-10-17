@@ -404,7 +404,7 @@
 				// IP 定位），桌面挂右栏、移动端挂底部栏，挂载与渲染逻辑都在 js 里。
 				path: /.*/,
 				id: "ff-weather-js",
-				src: "/assets/js/weather-card.js?v=1",
+				src: "/assets/js/weather-card.js?v=2",
 			},
 		];
 
@@ -2133,6 +2133,11 @@
 	.ff-w-toggle-box {
 		padding: 0 1rem;
 		margin-bottom: -0.5rem;
+	}
+
+	/* 加载态 / 错误态没有可折叠的内容，按钮由 js 加 hidden 关掉 */
+	#ff-weather .ff-w-toggle-box[hidden] {
+		display: none !important;
 	}
 
 	.ff-w-toggle {

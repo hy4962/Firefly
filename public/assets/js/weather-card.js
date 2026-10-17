@@ -21,8 +21,8 @@
  *
  * 关于折叠：上游 WidgetLayout.astro 那套 <widget-layout> 折叠靠自定义元素的
  * constructor 取子节点，动态插入时构造时机不可控，所以这里自己实现（就一个 class
- * 切换）。默认**展开**，与站长截的参考站展开态一致；点击后收起并记在 sessionStorage，
- * 同一次会话里切页保持收起状态。
+ * 切换）。默认**收起**（只露地点 + 大号温度 + 高低温，右侧栏不被天气卡片占满），
+ * 点击后展开并记在 sessionStorage，同一次会话里切页保持展开状态。
  */
 (function () {
 	"use strict";
@@ -40,18 +40,15 @@
 	var CACHE_KEY = "ff:weather:data:v1";
 	var CACHE_TTL = 30 * 60 * 1000;
 
-	// 折叠状态（会话级，关掉标签页就回到默认展开）
+	// 折叠状态（会话级，关掉标签页就回到默认收起）
 	var VIEW_KEY = "ff:weather:collapsed:v1";
-	var DEFAULT_COLLAPSED = false;
+	var DEFAULT_COLLAPSED = true;
 
 	// 移动端断点与主题布局保持一致（layout-base.css：≤767px 隐藏左右侧栏、启用底部栏）
 	var MOBILE_QUERY = "(max-width: 767px)";
 
 	// 英文站不挂（卡片文案是中文）
 	var SKIP_PATH = /^\/en(\/|$)/;
-
-	// 收起时露出的高度：标题 + 地点 + 大号温度 + 高低温，正好到温区那儿
-	var COLLAPSED_HEIGHT = "12rem";
 
 	// ===================== 图标（material-symbols，内联 path）=====================
 	// 数据来自 iconify 的 material-symbols 集合，直接内联成字符串 —— 不依赖页面上的
@@ -388,6 +385,7 @@
 	var loadingEl = null;
 	var errorEl = null;
 	var retryBtn = null;
+	var toggleBox = null;
 	var collapsed = DEFAULT_COLLAPSED;
 
 	function showState(kind, message) {
@@ -395,6 +393,7 @@
 		if (errorEl) errorEl.hidden = kind !== "error";
 		if (contentEl) contentEl.hidden = kind !== "content";
 		if (kind === "error") text(root, "[data-error-text]", message);
+		syncCollapseClass();
 	}
 
 	function setAqi(root, data) {
@@ -490,10 +489,20 @@
 
 	// ===================== 折叠 =====================
 
+	// 只有「用户选了收起」且「正式内容已经渲染」时才真的截断高度。
+	// 加载态 / 错误态一律完整显示，折叠按钮也一并藏起来 —— 否则默认收起时
+	// 错误态里的「重试」按钮会被切掉，按钮文案还会和实际状态对不上。
+	function syncCollapseClass() {
+		if (!root) return;
+		var contentVisible = !!(contentEl && !contentEl.hidden);
+		root.classList.toggle("is-collapsed", collapsed && contentVisible);
+		if (toggleBox) toggleBox.hidden = !contentVisible;
+	}
+
 	function applyCollapsed(next) {
 		collapsed = next;
 		if (!root) return;
-		root.classList.toggle("is-collapsed", collapsed);
+		syncCollapseClass();
 		var btn = root.querySelector("[data-toggle]");
 		var label = root.querySelector("[data-toggle-text]");
 		if (btn) {
@@ -607,10 +616,12 @@
 		loadingEl = root.querySelector('[data-state="loading"]');
 		errorEl = root.querySelector('[data-state="error"]');
 		retryBtn = root.querySelector("[data-retry]");
+		toggleBox = root.querySelector(".ff-w-toggle-box");
 		if (!contentEl || !loadingEl || !errorEl) return;
 
-		// 折叠态：会话级记忆
-		applyCollapsed(safeGet(window.sessionStorage, VIEW_KEY) === "1");
+		// 折叠态：没记过就按 DEFAULT_COLLAPSED（收起），记过就照记录来（会话级）
+		var savedView = safeGet(window.sessionStorage, VIEW_KEY);
+		applyCollapsed(savedView === null ? DEFAULT_COLLAPSED : savedView === "1");
 
 		if (retryBtn) {
 			retryBtn.addEventListener("click", function () {
