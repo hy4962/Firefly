@@ -41,7 +41,7 @@
 	"use strict";
 
 	// Waline 后端地址（评论数计数接口用）。换后端只改这一行。
-	var WALINE = "https://waline.9ll.uk";
+	var WALINE = "https://waline.49o.pw";
 
 	// 父文档里要搬进 iframe 的样式块，以及要补进 iframe 的脚本。
 	// 版本号与 FooterConfig.html 的 PAGE_SCRIPTS 保持一致。

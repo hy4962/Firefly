@@ -115,7 +115,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 本站评论
 			{
 				name: "本站评论",
-				url: "https://waline.9ll.uk/",
+				url: "https://waline.49o.pw/",
 				external: true,
 				icon: "material-symbols:chat",
 			},
@@ -163,7 +163,7 @@ url: "https://kuma.9ll.uk/status/9ll",
 			// 站点统计
 			{
 				name: "站点统计",
-				url: "https://umami.9ll.uk/share/Z4DD4Y3q9CTFpBeM",
+				url: "https://umami.49o.pw/share/Z4DD4Y3q9CTFpBeM",
 				external: true,
 				icon: "material-symbols:analytics",
 			},

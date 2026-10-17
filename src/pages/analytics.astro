@@ -460,7 +460,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 					</div>
 					<footer class="analytics-region-card__footer">
 						<span data-region-status>按近 30 天国内访客统计</span>
-						<a href="https://cloud.umami.is/share/T1uusJRzfxbuxBLK" target="_blank" rel="noopener noreferrer" aria-label="在 Umami 中查看完整访客地域统计">查看数据 <Icon is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" /></a>
+						<a href={publicShareUrl} target="_blank" rel="noopener noreferrer" aria-label="在 Umami 中查看完整访客地域统计">查看数据 <Icon is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" /></a>
 					</footer>
 				</section>
 
@@ -483,7 +483,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 							))}
 						</ol>
 					</div>
-					<a class="analytics-sources__link" href="https://cloud.umami.is/share/T1uusJRzfxbuxBLK" target="_blank" rel="noopener noreferrer" aria-label="在 Umami 中查看详细来源">
+					<a class="analytics-sources__link" href={publicShareUrl} target="_blank" rel="noopener noreferrer" aria-label="在 Umami 中查看详细来源">
 						<span>查看详细来源</span>
 						<Icon is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" />
 					</a>

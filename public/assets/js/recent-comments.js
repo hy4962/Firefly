@@ -2,7 +2,7 @@
  * 「最近评论」组件（桌面右栏 / 移动端底部栏）—— **只在博客首页显示**。
  *
  * 数据源是本站 Waline 后端的公开接口：
- *   GET https://waline.9ll.uk/api/comment?type=recent&count=8
+ *   GET https://waline.49o.pw/api/comment?type=recent&count=8
  * 返回 { errno: 0, data: Comment[] }，字段含 nick / avatar / orig / comment /
  * url（评论所在页面路径）/ time（毫秒时间戳）/ status。
  * 该接口已放开 CORS（Access-Control-Allow-Origin: *），前端直连无需代理。
@@ -24,7 +24,7 @@
 
 	// ===== 配置 =====
 	// 换 Waline 地址或显示条数只改这一行
-	var API_URL = "https://waline.9ll.uk/api/comment?type=recent&count=8";
+	var API_URL = "https://waline.49o.pw/api/comment?type=recent&count=8";
 
 	// 移动端断点与主题布局保持一致（layout-base.css：≤767px 隐藏左右侧栏、启用底部栏）
 	var MOBILE_QUERY = "(max-width: 767px)";

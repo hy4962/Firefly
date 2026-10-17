@@ -123,8 +123,8 @@
 
 		// ===== 访问统计 =====
 		// 换 Umami 站点或分享链接时，只改下面两行即可。
-		// SHARE_ID 取分享链接 https://umami.9ll.uk/share/XXXXXXXX 的最后一段。
-		var API_BASE = "https://umami.9ll.uk";
+		// SHARE_ID 取分享链接 https://umami.49o.pw/share/XXXXXXXX 的最后一段。
+		var API_BASE = "https://umami.49o.pw";
 		var SHARE_ID = "Z4DD4Y3q9CTFpBeM";
 
 		var KEY_SHARE = "ff:umami:share";
@@ -359,7 +359,7 @@
 				// 「最近评论」：全站加载 —— 桌面挂右栏、移动端挂底部栏，挂载逻辑在 js 里
 				path: /.*/,
 				id: "ff-recent-comments-js",
-				src: "/assets/js/recent-comments.js?v=5",
+				src: "/assets/js/recent-comments.js?v=6",
 			},
 			{
 				// 搜索预热：全站加载 —— 空转时就起 pagefind 的 worker/wasm/索引，
@@ -389,7 +389,7 @@
 				// 回复就成了全站唯一「不折叠、无引用」的评论区。
 				path: /^\/dynamic\/?$/,
 				id: "ff-dynamic-comment-enhance-js",
-				src: "/assets/js/dynamic-comment-enhance.js?v=7",
+				src: "/assets/js/dynamic-comment-enhance.js?v=8",
 			},
 			{
 				// 动态页封面区：把页脚那个 #ff-wx-hero 壳子搬进正文顶部（版式照
