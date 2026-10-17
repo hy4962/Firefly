@@ -12,16 +12,16 @@ export const analyticsConfig: AnalyticsConfig = {
 		// Umami 公开分享 ID：分享链接 /share/XXXXXXXX 的最后一段
 		shareId: "Z4DD4Y3q9CTFpBeM",
 		// Umami 实例地址
-		shareApiBase: "https://umami.9ll.uk",
+		shareApiBase: "https://umami.49o.pw",
 		// 迁移前的历史累计（本站没有迁移过，保持 0）
 		historicalStats: {
 			visitors: 0,
 			pageviews: 0,
 		},
 		// Umami JS地址，支持使用自建
-		scriptUrl: "https://umami.9ll.uk/script.js",
+		scriptUrl: "https://umami.49o.pw/script.js",
 		// Umami 会话回放脚本地址，支持使用自建
-		replaysScriptUrl: "https://umami.9ll.uk/recorder.js",
+		replaysScriptUrl: "https://umami.49o.pw/recorder.js",
 		// 是否追踪出站链接
 		trackOutboundLinks: true,
 		// 是否收集浏览器性能指标
