@@ -5,7 +5,7 @@ export const announcementConfig: AnnouncementConfig = {
 	title: "",
 
 	// 公告内容
-	content: "迷茫....",
+	content: "迷茫.... 为了访问速度，本站将会在11月上旬至中旬迁移到0dm.cn并完成备案",
 
 	// 是否允许用户关闭公告
 	closable: true,
