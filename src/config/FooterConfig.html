@@ -28,6 +28,37 @@
 		line-height: 1.7;
 		text-align: center;
 	}
+	/* 整块统计可点击，跳 Umami 公开看板 */
+	.ff-us-link {
+		display: inline-block;
+		padding: 2px 8px;
+		border-radius: 999px;
+		color: inherit;
+		text-decoration: none;
+		transition:
+			color 0.2s ease,
+			background-color 0.2s ease;
+	}
+	.ff-us-link:hover,
+	.ff-us-link:focus-visible {
+		color: var(--primary);
+		background: rgba(128, 128, 128, 0.14);
+		outline: none;
+	}
+	.ff-us-link-arrow {
+		display: inline-block;
+		margin-left: 4px;
+		font-size: 11px;
+		opacity: 0.5;
+		transition:
+			opacity 0.2s ease,
+			transform 0.2s ease;
+	}
+	.ff-us-link:hover .ff-us-link-arrow,
+	.ff-us-link:focus-visible .ff-us-link-arrow {
+		opacity: 1;
+		transform: translate(1px, -1px);
+	}
 	.ff-us-i {
 		white-space: nowrap;
 	}
@@ -55,7 +86,9 @@
 		opacity: 0.3;
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.ff-us b {
+		.ff-us b,
+		.ff-us-link,
+		.ff-us-link-arrow {
 			transition: none;
 		}
 	}
@@ -64,10 +97,20 @@
 <div id="ff-uptime" class="ff-uptime">本站已运行 <b data-ff-up="d">0</b> 天 <b data-ff-up="h">0</b> 小时 <b data-ff-up="m">0</b> 分 <b data-ff-up="s">0</b> 秒</div>
 
 <div id="ff-us" class="ff-us" hidden>
-	<span class="ff-us-i">今日访客：<b data-ff-us="todayVisitors">0</b></span>
-	<span class="ff-us-i">今日访问：<b data-ff-us="todayPageviews">0</b></span>
-	<span class="ff-us-i">本站访客：<b data-ff-us="visitors">0</b></span>
-	<span class="ff-us-i">本站访问：<b data-ff-us="pageviews">0</b></span>
+	<a
+		class="ff-us-link"
+		href="https://umami.49o.pw/share/Z4DD4Y3q9CTFpBeM"
+		target="_blank"
+		rel="noopener noreferrer"
+		title="查看完整访问统计（Umami 公开看板）"
+		aria-label="查看完整访问统计"
+	>
+		<span class="ff-us-i">今日访客：<b data-ff-us="todayVisitors">0</b></span>
+		<span class="ff-us-i">今日访问：<b data-ff-us="todayPageviews">0</b></span>
+		<span class="ff-us-i">本站访客：<b data-ff-us="visitors">0</b></span>
+		<span class="ff-us-i">本站访问：<b data-ff-us="pageviews">0</b></span>
+		<span class="ff-us-link-arrow" aria-hidden="true">↗</span>
+	</a>
 </div>
 
 <script>
