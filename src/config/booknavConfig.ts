@@ -182,7 +182,7 @@ export const booknavConfig: BooknavGroup[] = [
 			},
 			{
 				title: "网站监控",
-				url: "https://kuma.9ll.uk/status/9ll",
+				url: "https://kuma.49o.pw/status/9ll",
 				desc: "站点可用性监控面板",
 				weight: 7,
 			},

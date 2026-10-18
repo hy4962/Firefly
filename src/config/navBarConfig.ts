@@ -155,9 +155,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 网站监控
 			{
 				name: "网站监控",
-url: "https://kuma.9ll.uk/status/9ll",
-			external: true,
-			icon: "material-symbols:monitoring",
+				url: "https://kuma.49o.pw/status/9ll",
+				external: true,
+				icon: "material-symbols:monitoring",
 			},
 
 			// 站点统计
