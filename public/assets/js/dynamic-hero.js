@@ -19,13 +19,35 @@
 	"use strict";
 
 	var HERO_ID = "ff-wx-hero";
+	var COPY_FLAG = "data-ff-hero-copy";
 	var MAX_PINNED = 3; // 置顶条最多预览几条
 	var POLL_MS = 1200;
 	var POLL_MAX = 12;
 
+	// ⚠️ 线上只有动态页（/dynamic/）该有封面区，**必须按路径拦住**：
+	//    项目页 /projects/ 同样用了 .page-header / .page-count 这两个类名，
+	//    早期版本没判断路径 → 项目页顶部被塞进动态页的封面图（壁纸）+ 头像卡，
+	//    正文被推下去一千多像素，看起来就像「项目页和动态页共用一个页面」。
+	function isDynamicPage() {
+		var path = window.location.pathname || "/";
+		return /^\/dynamic\/?$/.test(path) || /^\/dynamic\/index\.html$/.test(path);
+	}
+
+	function clearCopies() {
+		var stale = document.querySelectorAll("[" + COPY_FLAG + "]");
+		for (var i = 0; i < stale.length; i++) {
+			if (stale[i].parentNode) stale[i].parentNode.removeChild(stale[i]);
+		}
+	}
+
 	function mount() {
 		var shell = document.getElementById(HERO_ID);
 		if (!shell) return;
+		if (!isDynamicPage()) {
+			// 从动态页切走时副本一般会被 swup 整块替换掉；万一没换掉就自己收尸
+			clearCopies();
+			return;
+		}
 		var anchor = document.querySelector(".page-header");
 		if (!anchor || !anchor.parentElement) return;
 
@@ -40,6 +62,7 @@
 		var host = anchor.parentElement;
 		var copy = shell.cloneNode(true);
 		copy.removeAttribute("id");
+		copy.setAttribute(COPY_FLAG, "1");
 		copy.hidden = false;
 		host.insertBefore(copy, anchor);
 		randomizeCover(copy);
