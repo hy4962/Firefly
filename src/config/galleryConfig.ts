@@ -61,17 +61,17 @@ export const galleryConfig: GalleryConfig = {
 			id: "stickers",
 			name: "首页贴纸原图",
 			description:
-				"首页场景贴纸的原始画稿存档：全分辨率真原图，未经任何压缩与处理（保留画师签名与白底）。前三张素材年代较早，只有 192px 的版本；2026-10 起新增一批挂件九宫格切图与单张高清稿，同款重复的已清掉，只留最清晰的一份。",
+				"首页场景贴纸的画稿合集：1600 长边 webp，画师签名与白底原样保留。前三张素材年代较早，只有 192px 的版本；2026-10 起新增一批挂件九宫格切图与单张高清稿，同款重复的已清掉，只留最清晰的一份。未压缩原图归档在仓库 gallery-originals/stickers/。",
 			location: "Firefly 博客",
 			date: "2026-09-26",
 			tags: ["贴纸", "原图", "存档"],
-			cover: "/gallery/stickers/kirino-cheer.png",
+			cover: "/gallery/stickers/kirino-cheer.webp",
 		},
 		{
 			id: "shana-emotes",
 			name: "夏娜表情",
 			description:
-				"灼眼的夏娜表情包合集：发怒、叹气、大哭、慌乱、懵圈、挥手、星星眼、脸红、蜜瓜包。原图画稿存档，未压缩。",
+				"灼眼的夏娜表情包合集：发怒、叹气、大哭、慌乱、懵圈、挥手、星星眼、脸红、蜜瓜包。1600 长边 webp，原图画稿归档在仓库 gallery-originals/shana-emotes/。",
 			location: "灼眼的夏娜",
 			date: "2026-09-28",
 			tags: ["灼眼的夏娜", "表情包", "存档"],
@@ -80,7 +80,7 @@ export const galleryConfig: GalleryConfig = {
 			id: "shana-pc",
 			name: "夏娜壁纸·电脑",
 			description:
-				"《灼眼的夏娜》桌面壁纸合集：31 张，4K–8K 原图压制的 2560 长边 webp，横竖混排。原图归档在仓库 gallery-originals/shana-pc/。",
+				"《灼眼的夏娜》桌面壁纸合集：31 张，4K–8K 原图压制的 1600 长边 webp，横竖混排。原图归档在仓库 gallery-originals/shana-pc/。",
 			location: "灼眼的夏娜",
 			date: "2026-09-28",
 			tags: ["灼眼的夏娜", "壁纸", "桌面"],
@@ -90,7 +90,7 @@ export const galleryConfig: GalleryConfig = {
 			id: "shana-phone",
 			name: "夏娜壁纸·手机",
 			description:
-				"《灼眼的夏娜》手机壁纸合集：29 张，以竖构图为主，2560 长边 webp。原图归档在仓库 gallery-originals/shana-phone/。",
+				"《灼眼的夏娜》手机壁纸合集：29 张，以竖构图为主，1600 长边 webp。原图归档在仓库 gallery-originals/shana-phone/。",
 			location: "灼眼的夏娜",
 			date: "2026-09-28",
 			tags: ["灼眼的夏娜", "壁纸", "手机"],
