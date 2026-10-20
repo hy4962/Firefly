@@ -8,7 +8,8 @@
  *
  * 分页（V1.6）：本组件是纯展示组件，分页数据由路由层 src/pages/blog-changelog/[...page].astro
  * 用 getStaticPaths() 生成真实静态路由后传入，详见该文件的注释。
- * 详情的默认展开态由 JS 处理（见文件末尾脚本）——仅最新一期展开，其余收起。
+ * 折叠默认态：全部收起，只留版本徽章 + 标题（2026-10-20 站长要求）。
+ * <details> 不带 open 天然就是收起，脚本只负责 Swup 换页后清掉遗留的 open 态。
  */
 import type { ChangelogEntry } from "@/config/blogChangelogConfig";
 
@@ -258,50 +259,21 @@ const kindVariant = (index: number) =>
 
 <script>
     /**
-     * 详情块的默认展开态：只有「最新一期」默认展开，其余收起。
-     * 不写成服务端 open 属性，是因为要跟随当前页自适应：
-     * 第 1 页展开最新一期，翻到第 2 页就展开当页第一个，不会出现整页全展开。
+     * 折叠默认态：所有记录一律收起（2026-10-20 站长要求「默认不展开」）。
+     * <details> 不写 open 属性即默认收起，所以首屏不需要任何脚本干预；
+     * 这里只负责 Swup 换页后把上一页可能残留的 open 态清掉（含用户手动展开过的）。
      */
-    const openLatest = () => {
-        const all = document.querySelectorAll<HTMLDetailsElement>(
-            ".blog-changelog-details[data-changelog-details]",
-        );
-        all.forEach((el, i) => {
-            el.open = i === 0;
-        });
-    };
-
-    // 用 sessionStorage 记住用户在本页手动展开过，Swup 返回时不要清掉
-    const STORAGE_KEY = "blog-changelog-manual-open";
-
-    const run = () => {
-        const manuallyOpened =
-            sessionStorage.getItem(STORAGE_KEY) === "1";
-        if (!manuallyOpened) openLatest();
-
+    const closeAll = () => {
         document
             .querySelectorAll<HTMLDetailsElement>(
                 ".blog-changelog-details[data-changelog-details]",
             )
             .forEach((el) => {
-                el.addEventListener("toggle", () => {
-                    // 忽略脚本首次设定的那次
-                    if (el.dataset.initialized === "1") {
-                        sessionStorage.setItem(STORAGE_KEY, "1");
-                    } else {
-                        el.dataset.initialized = "1";
-                    }
-                });
+                el.open = false;
             });
     };
 
-    run();
-
-    // Swup 换页后重新执行（普通跳转时无副作用）
-    document.addEventListener("swup:page:view", () => {
-        sessionStorage.removeItem(STORAGE_KEY);
-        run();
-    });
+    document.addEventListener("swup:page:view", closeAll);
 </script>
 
 <style is:global>
