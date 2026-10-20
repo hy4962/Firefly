@@ -108,6 +108,8 @@ export const friendsConfig: FriendLink[] = [
 		imgurl: "/assets/images/friends/blogsclub-favicon.png",
 		desc: "BlogsClub是一个互联网独立博客俱乐部。",
 		siteurl: "https://www.blogsclub.org/",
+		// 聚合站更新量大，会霸占朋友圈时间线前排；友链保留，但不进 /moments/
+		// 排除名单在 src/config/momentsConfig.ts 的 excludedSites（2026-10-20）
 		tags: ["博客社区"],
 		weight: 6,
 		enabled: true,

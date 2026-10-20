@@ -29,4 +29,8 @@ export const momentsFeedConfig: MomentsFeedConfig = {
 	//           更新频繁的聚合站（博友圈等）会继续霸占靠前的位置
 	// shuffle：完全随机打乱 → 比例对，但时间线没有时间感
 	layout: "balanced",
+
+	// 朋友圈时间线不收录的站点（只影响 /moments/，友链页照常展示）
+	// BlogsClub 是聚合站，更新频率高、量大，会长期霸占时间线靠前的位置（2026-10-20 站长要求）
+	excludedSites: ["blogsclub.org"],
 };

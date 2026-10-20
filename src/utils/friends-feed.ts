@@ -94,6 +94,42 @@ function normalizeSiteUrl(url: string): string {
 		.toLowerCase();
 }
 
+/**
+ * 取站点 host（去协议、去 www、去路径）用于黑名单比对。
+ * 友链的 siteurl 有的带路径（如 https://example.com/home），
+ * 不能直接拿 normalizeSiteUrl 的结果去比。
+ */
+function siteHost(url: string): string {
+	try {
+		return new URL(url).hostname.replace(/^www\./i, "").toLowerCase();
+	} catch {
+		return normalizeSiteUrl(url).split("/")[0] ?? "";
+	}
+}
+
+/** 配置里允许写域名或完整 URL，统一压成 host */
+function normalizeExcludedHost(value: string): string {
+	return (
+		value
+			.trim()
+			.toLowerCase()
+			.replace(/^https?:\/\//i, "")
+			.replace(/^www\./i, "")
+			.split("/")[0] ?? ""
+	);
+}
+
+/**
+ * 朋友圈时间线黑名单（来自 momentsConfig.excludedSites）。
+ * 只影响 /moments/：被排除的站点既不抓 feed，也不回落到 snapshot 旧数据，
+ * 但友链页照常展示。
+ */
+const EXCLUDED_HOSTS = new Set(
+	(momentsFeedConfig.excludedSites ?? [])
+		.map(normalizeExcludedHost)
+		.filter(Boolean),
+);
+
 function decodeXmlEntities(value: string): string {
 	const namedEntities: Record<string, string> = {
 		amp: "&",
@@ -441,8 +477,12 @@ export async function loadFriendsFeed(
 	friends: FriendLink[],
 ): Promise<FriendsFeedSnapshot> {
 	const previousSnapshot = await readFriendsFeedSnapshot();
+	// 先剔除朋友圈黑名单里的站点，后面的抓取与 stale 兜底都不会再碰到它们
+	const eligibleFriends = friends.filter(
+		(friend) => !EXCLUDED_HOSTS.has(siteHost(friend.siteurl)),
+	);
 	const records = await mapWithConcurrency<FriendLink, FeedRecord>(
-		friends,
+		eligibleFriends,
 		5,
 		async (friend) => {
 			const result = await discoverFriendFeed(friend);
@@ -514,7 +554,7 @@ export async function loadFriendsFeed(
 	return {
 		items,
 		sources,
-		checkedCount: friends.length,
+		checkedCount: eligibleFriends.length,
 		freshSources: sources.filter((source) => !source.stale).length,
 		staleSources: sources.filter((source) => source.stale).length,
 	};

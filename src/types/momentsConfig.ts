@@ -32,4 +32,9 @@ export type MomentsFeedConfig = {
 	mix: MomentsMixRule[];
 	/** 时间线排列方式，见 `MomentsLayout` */
 	layout: MomentsLayout;
+	/**
+	 * 朋友圈时间线不收录的站点（按域名匹配，`www.` 前缀会被忽略）。
+	 * 只影响 `/moments/` 的抓取与聚合，友链页照常展示这些站点。
+	 */
+	excludedSites?: string[];
 };
