@@ -18,6 +18,27 @@
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
 
+# ── HTML 页面：边缘缓存 5 分钟 + 后台重新验证 ──
+# 不设这一条时，HTML 走 Cloudflare 默认的 max-age=0, must-revalidate（无 s-maxage），
+# 边缘每次都要回源校验。
+#
+# 为什么不用 /*：_headers 的多条规则是「累加」而不是「覆盖」，同名 header 会以逗号
+# 合并成 "Cache-Control: a, b"。浏览器/中间层遇到重复指令取第一个，所以 /* 一旦设了
+# Cache-Control，就会把下面 /_astro/* 的 immutable 顶掉。
+#
+# 为什么是 /*/：本站 astro.config 里 trailingSlash: "always"，所有页面 URL 都以 / 结尾
+# （/about/、/posts/blog/foo/），而静态资源都是点号结尾（/_astro/x.js、/images/x.webp），
+# 天然不会命中。splat 贪婪匹配，多级路径也能覆盖。
+#
+# s-maxage=300 而不是更长：部署后边缘最多滞后 5 分钟，且有访问就会触发后台刷新；
+# stale-while-revalidate 保证这 5 分钟之外仍能先返回旧页、再异步回源，不阻塞首字节。
+/*/
+  Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=86400
+
+# 根路径单独写绝对 URL：避免 "/" 被当成前缀通配匹配到 /_astro/ 等资源。
+https://www.9ll.uk/
+  Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=86400
+
 # ── Astro 构建产物：文件名带内容哈希，可长期强缓存 ──
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
