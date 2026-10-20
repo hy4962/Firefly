@@ -3,7 +3,7 @@ import { Icon } from "astro-icon/components";
 import { getEnabledFriends, siteConfig } from "@/config";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
-import { loadFriendsFeed } from "@/utils/friends-feed";
+import { isMomentsExcludedSite, loadFriendsFeed } from "@/utils/friends-feed";
 import { buildMomentsTimeline } from "@/utils/moments-timeline";
 
 const friends = getEnabledFriends();
@@ -32,7 +32,11 @@ const subscribedFriendUrls = new Set(
 	feed.sources.map((source) => normalizeFriendUrl(source.friendUrl)),
 );
 const unsubscribedFriends = friends.filter(
-	(friend) => !subscribedFriendUrls.has(normalizeFriendUrl(friend.siteurl)),
+	(friend) =>
+		!subscribedFriendUrls.has(normalizeFriendUrl(friend.siteurl)) &&
+		// 主动排除的站点（momentsConfig.excludedSites）不算「未订阅」，
+		// 否则页面会提示访客「请站长添加 RSS」，而事实是站长主动不收
+		!isMomentsExcludedSite(friend.siteurl),
 );
 const randomArticleItems = JSON.stringify(
 	momentsItems.map((item) => {

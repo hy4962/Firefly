@@ -130,6 +130,16 @@ const EXCLUDED_HOSTS = new Set(
 		.filter(Boolean),
 );
 
+/**
+ * 该友链是否被朋友圈时间线排除。
+ * 页面上用来把「主动不收」和「真的抓不到 feed」区分开 ——
+ * 被排除的站点不该出现在「未订阅的站点」提示里。
+ */
+export function isMomentsExcludedSite(url: string | undefined | null): boolean {
+	if (!url) return false;
+	return EXCLUDED_HOSTS.has(siteHost(url));
+}
+
 function decodeXmlEntities(value: string): string {
 	const namedEntities: Record<string, string> = {
 		amp: "&",
