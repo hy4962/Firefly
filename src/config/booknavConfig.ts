@@ -279,6 +279,27 @@ export const booknavConfig: BooknavGroup[] = [
 		],
 	},
 	{
+		id: "android",
+		name: "安卓玩机",
+		icon: "material-symbols:android",
+		desc: "Root、模块与刷机资源",
+		weight: 99,
+		items: [
+			{
+				title: "LSPosed Modules",
+				url: "https://modules.lsposed.org/",
+				desc: "LSPosed 模块仓库，可按系统版本筛选",
+				weight: 10,
+			},
+			{
+				title: "SukiSU Ultra",
+				url: "https://sukisu.org/zh/",
+				desc: "基于 KernelSU 的内核级 Root 方案",
+				weight: 9,
+			},
+		],
+	},
+	{
 		id: "resources",
 		name: "资源",
 		icon: "material-symbols:auto-stories-outline-rounded",
