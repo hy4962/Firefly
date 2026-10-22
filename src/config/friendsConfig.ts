@@ -23,6 +23,17 @@ export const friendsPageConfig: FriendsPageConfig = {
 // 友链配置
 export const friendsConfig: FriendLink[] = [
 	{
+		title: "冷汐的杂货铺",
+		imgurl: "https://weavatar.com/avatar/20ac1fc492bcd37c6f1e6435250a00a490403efd468f632c11fcbe87c1c3287b?s=256",
+		desc: "你好谢谢小笼包再见",
+		siteurl: "https://lengxiqwq.com",
+		rss: "https://lengxiqwq.com/rss.xml",
+		homepage: "https://lengxiqwq.com/assets/images/screenshot.png",
+		tags: ["Blog"],
+		weight: 10,
+		enabled: true,
+	},
+	{
 		title: "折腾进行时",
 		imgurl: "https://www.9ll.uk/assets/images/avatar.avif",
 		desc: "生命不息，折腾不止！",
