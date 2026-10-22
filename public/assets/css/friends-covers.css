@@ -34,9 +34,11 @@
 		margin-bottom 0.32s ease;
 }
 
-.friends-grid .friend-card:hover > .ff-friend-cover,
-.friends-grid .friend-card:focus-visible > .ff-friend-cover,
-.friends-grid .friend-card:focus-within > .ff-friend-cover {
+/* 展开态只认 JS 打的 .is-preview-open —— 不用 :hover 是因为浏览器偶尔漏发
+   mouseleave，纯 :hover 一漏就把封面永久卡在展开态；键盘焦点则交给
+   :focus-visible（鼠标点击不会命中，不会出现「点一下永久展开」）。 */
+.friends-grid .friend-card.is-preview-open > .ff-friend-cover,
+.friends-grid .friend-card:focus-visible > .ff-friend-cover {
 	height: 7rem;
 	margin-bottom: 0.625rem;
 	opacity: 1;

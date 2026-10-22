@@ -7,6 +7,15 @@
  *   2. 给命中的卡片头部插一层 .ff-friend-cover，悬停时展开；
  *   3. 图片首屏不加载，真悬停/聚焦过才赋值 src —— 平时对 /friends/ 零额外流量。
  *
+ * ⚠️ 展开态刻意不用 CSS :hover 控制，改由 JS 加 .is-preview-open、并用
+ * elementFromPoint 对账「指针是不是真的还压在这张卡片上」。
+ * 原因：纯 :hover 会卡住不收，实测能复现的三种触发方式——
+ *   ① 指针快速移出窗口 / 切标签页 / 切应用，浏览器漏发 mouseleave；
+ *   ② 悬停把卡片撑高、整行重排，Chrome 漏一次 hover 重算；
+ *   ③ 鼠标点击卡片后链接拿到焦点，:focus-within 一直命中（这条最常见）。
+ * 卡住后只能等下一次进页面才好，所以状态必须握在自己手里。
+ * 现在任何一次指针移动或滚动都会重新对账，跟浏览器那套 hover 记账彻底解耦。
+ *
  * 没有封面数据的友链，卡片保持主题原样，不会留破图。
  *
  * 本文件在页脚被全站引入（见 src/config/FooterConfig.html），
@@ -16,11 +25,19 @@
 	"use strict";
 
 	var API_URL = "/api/friends-covers.json";
-	var CSS_URL = "/assets/css/friends-covers.css";
+	var CSS_URL = "/assets/css/friends-covers.css?v=2";
 	var FRIENDS_PATH = /^\/friends\/?$/;
+	var OPEN_CLASS = "is-preview-open";
 
 	var cssInjected = false;
 	var mapRequest = null;
+
+	// 当前展开的那一张（同一时刻只留一张，免得滚动后堆出一片）
+	var activeCard = null;
+	// 最后一次指针位置，用来在没收到新事件时（比如滚动）重新对账
+	var lastPoint = null;
+	var frameQueued = false;
+	var guardsInstalled = false;
 
 	var normalizeUrl = function (value) {
 		return String(value || "")
@@ -66,6 +83,102 @@
 		return mapRequest;
 	};
 
+	var setOpen = function (card, open) {
+		if (!card) return;
+		if (open) {
+			if (activeCard && activeCard !== card) setOpen(activeCard, false);
+			activeCard = card;
+			card.classList.add(OPEN_CLASS);
+			return;
+		}
+		card.classList.remove(OPEN_CLASS);
+		if (activeCard === card) activeCard = null;
+	};
+
+	var closeActive = function () {
+		if (activeCard) setOpen(activeCard, false);
+	};
+
+	/**
+	 * 指针此刻真正压着的是不是这张卡片？
+	 * elementFromPoint 走的是浏览器真实的命中测试，跟内部 hover 状态无关，
+	 * 所以哪怕 mouseleave 漏发了，这里照样能算出正确答案。
+	 */
+	var pointerOver = function (card, point) {
+		if (!card || !point) return false;
+		var hit = document.elementFromPoint(point.x, point.y);
+		return !!(hit && card.contains(hit));
+	};
+
+	var reconcile = function () {
+		frameQueued = false;
+		if (!activeCard) return;
+		if (!pointerOver(activeCard, lastPoint)) closeActive();
+	};
+
+	var scheduleReconcile = function () {
+		if (frameQueued || !activeCard) return;
+		frameQueued = true;
+		if (window.requestAnimationFrame) {
+			window.requestAnimationFrame(reconcile);
+		} else {
+			setTimeout(reconcile, 16);
+		}
+	};
+
+	var rememberPoint = function (event) {
+		if (!event) return;
+		if (typeof event.clientX !== "number") return;
+		lastPoint = { x: event.clientX, y: event.clientY };
+	};
+
+	/**
+	 * 全局兜底，只装一次。
+	 * 这几条覆盖的全是「浏览器不会补发 mouseleave」的场景：
+	 * 指针移出文档 / 滚轮把卡片滚走 / 切标签 / 切应用 / 点空白处 / Esc。
+	 */
+	var installGuards = function () {
+		if (guardsInstalled) return;
+		guardsInstalled = true;
+
+		document.addEventListener(
+			"pointermove",
+			function (event) {
+				rememberPoint(event);
+				scheduleReconcile();
+			},
+			{ passive: true },
+		);
+
+		// 滚动时指针不动、卡片却在动，用旧坐标重新对账一次
+		document.addEventListener(
+			"scroll",
+			function () {
+				scheduleReconcile();
+			},
+			{ passive: true, capture: true },
+		);
+
+		document.addEventListener(
+			"pointerdown",
+			function (event) {
+				rememberPoint(event);
+				if (activeCard && !activeCard.contains(event.target)) closeActive();
+			},
+			{ passive: true, capture: true },
+		);
+
+		document.addEventListener("mouseleave", closeActive);
+		document.documentElement.addEventListener("mouseleave", closeActive);
+		window.addEventListener("blur", closeActive);
+		document.addEventListener("visibilitychange", function () {
+			if (document.hidden) closeActive();
+		});
+		document.addEventListener("keydown", function (event) {
+			if (event.key === "Escape") closeActive();
+		});
+	};
+
 	var attach = function (card, coverUrl) {
 		if (card.dataset.ffCoverReady === "1") return;
 		card.dataset.ffCoverReady = "1";
@@ -97,11 +210,35 @@
 		img.addEventListener("error", function () {
 			wrap.classList.remove("is-loading");
 			wrap.classList.add("is-error");
+			// 图挂了就别再撑开空盒子，直接退出预览
+			setOpen(card, false);
+			card.dataset.ffCoverDead = "1";
 		});
 
-		["mouseenter", "focusin", "pointerdown", "touchstart"].forEach(function (name) {
-			card.addEventListener(name, reveal, { once: true, passive: true });
-		});
+		var open = function () {
+			if (card.dataset.ffCoverDead === "1") return;
+			reveal();
+			setOpen(card, true);
+		};
+
+		var close = function () {
+			setOpen(card, false);
+		};
+
+		// 触摸屏没有「悬停」这回事：点一下只预热图片，不撑开，
+		// 否则会在页面里留下一个收不回去的封面（点完后浏览器还会模拟 mouseenter）。
+		card.addEventListener("pointerdown", reveal, { passive: true });
+
+		if (window.PointerEvent) {
+			card.addEventListener("pointerenter", function (event) {
+				if (event.pointerType === "touch") return;
+				open();
+			});
+			card.addEventListener("pointerleave", close);
+		} else {
+			card.addEventListener("mouseenter", open);
+			card.addEventListener("mouseleave", close);
+		}
 	};
 
 	var enhance = function () {
@@ -111,6 +248,7 @@
 		if (!cards.length) return;
 
 		injectCss();
+		installGuards();
 
 		loadMap().then(function (map) {
 			if (!map) return;
