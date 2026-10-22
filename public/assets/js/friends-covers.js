@@ -34,8 +34,11 @@
 
 	// 当前展开的那一张（同一时刻只留一张，免得滚动后堆出一片）
 	var activeCard = null;
-	// 最后一次指针位置，用来在没收到新事件时（比如滚动）重新对账
-	var lastPoint = null;
+	// 最后一次指针位置，用来在没收到新事件时（比如滚动）重新对账。
+	// 故意拆成两个数字而不是一个对象：pointermove 每秒能来上百次，
+	// 每次新建对象纯属给 GC 添堵，两个数字赋值是零分配。
+	var lastX = null;
+	var lastY = null;
 	var frameQueued = false;
 	var guardsInstalled = false;
 
@@ -104,16 +107,16 @@
 	 * elementFromPoint 走的是浏览器真实的命中测试，跟内部 hover 状态无关，
 	 * 所以哪怕 mouseleave 漏发了，这里照样能算出正确答案。
 	 */
-	var pointerOver = function (card, point) {
-		if (!card || !point) return false;
-		var hit = document.elementFromPoint(point.x, point.y);
+	var pointerOver = function (card) {
+		if (!card || lastX === null) return false;
+		var hit = document.elementFromPoint(lastX, lastY);
 		return !!(hit && card.contains(hit));
 	};
 
 	var reconcile = function () {
 		frameQueued = false;
 		if (!activeCard) return;
-		if (!pointerOver(activeCard, lastPoint)) closeActive();
+		if (!pointerOver(activeCard)) closeActive();
 	};
 
 	var scheduleReconcile = function () {
@@ -129,7 +132,8 @@
 	var rememberPoint = function (event) {
 		if (!event) return;
 		if (typeof event.clientX !== "number") return;
-		lastPoint = { x: event.clientX, y: event.clientY };
+		lastX = event.clientX;
+		lastY = event.clientY;
 	};
 
 	/**
@@ -177,6 +181,22 @@
 		document.addEventListener("keydown", function (event) {
 			if (event.key === "Escape") closeActive();
 		});
+
+		// 键盘走位的两条：焦点挪出卡片、或者开始打字（搜索框）。
+		// 这两条还有个副作用是必须的 —— 键盘输入会把卡片 display:none 掉，
+		// 若不收起，等筛选清空、卡片重新显示时就会带着展开态蹦出来。
+		document.addEventListener(
+			"focusin",
+			function (event) {
+				if (activeCard && !activeCard.contains(event.target)) closeActive();
+			},
+			{ capture: true },
+		);
+		document.addEventListener("input", closeActive, { capture: true, passive: true });
+
+		// swup 换页前先收起来，别让 activeCard 指着一个马上要被丢掉的节点
+		document.addEventListener("astro:before-swap", closeActive);
+		document.addEventListener("swup:page:leave", closeActive);
 	};
 
 	var attach = function (card, coverUrl) {
@@ -228,6 +248,9 @@
 		// 触摸屏没有「悬停」这回事：点一下只预热图片，不撑开，
 		// 否则会在页面里留下一个收不回去的封面（点完后浏览器还会模拟 mouseenter）。
 		card.addEventListener("pointerdown", reveal, { passive: true });
+		// 键盘 Tab 进来时 CSS 的 :focus-visible 会撑开 7rem，图片得提前备好，
+		// 不然键盘用户看到的是一个空盒子。focusin 只负责预热，不管展开态。
+		card.addEventListener("focusin", reveal);
 
 		if (window.PointerEvent) {
 			card.addEventListener("pointerenter", function (event) {

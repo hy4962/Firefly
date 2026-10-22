@@ -102,6 +102,28 @@
 		});
 	};
 
+	/**
+	 * 补上搜索框的 input 监听。
+	 *
+	 * 主题的 friend-filter 在 connectedCallback 里写的是
+	 *   const input = this.querySelector("[data-search]"); input.addEventListener("input", ...)
+	 * 但这个自定义元素是**解析器创建**的：元素被挂进 DOM 的那一刻它的子节点还没解析出来，
+	 * this.querySelector 拿到的是 null，于是搜索框从来没接过任何事件（DOMDebugger 实测
+	 * `[data-search]` 上的监听器列表为空）。标签筛选走的是元素自身的 click 委托，所以一直正常。
+	 *
+	 * 这里只补一条 input → applyFilters()，用存在性判断兜住上游改实现的情况。
+	 */
+	var bindSearch = function (container) {
+		var filter = container.querySelector("friend-filter");
+		if (!filter) return;
+		var input = filter.querySelector("[data-search]");
+		if (!input || input.dataset.ffSearchBound === "1") return;
+		input.dataset.ffSearchBound = "1";
+		input.addEventListener("input", function () {
+			if (typeof filter.applyFilters === "function") filter.applyFilters();
+		});
+	};
+
 	var enhance = function () {
 		if (!FRIENDS_PATH.test(window.location.pathname)) return;
 
@@ -152,6 +174,7 @@
 		if (mainGrid.parentNode) mainGrid.parentNode.removeChild(mainGrid);
 
 		syncVisibility(sections);
+		bindSearch(container);
 
 		if (observer) observer.disconnect();
 		var pending = false;
@@ -166,7 +189,11 @@
 		observer.observe(container, {
 			subtree: true,
 			attributes: true,
-			attributeFilter: ["style", "class", "hidden"],
+			// 只盯 style / hidden：主题的筛选是靠 inline display 和 hidden 属性开关的
+			// （applyFilters 同时改 style.display 和 animate-fade-in-up，style 已经覆盖）。
+			// 不盯 class 是故意的 —— 友链封面预览每次悬停都在卡片上加减 class，
+			// 盯了就等于鼠标动一下就把整片卡片全扫一遍。
+			attributeFilter: ["style", "hidden"],
 		});
 	};
 
