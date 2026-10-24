@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-10T01:24:39.619Z",
+  "updatedAt": "2026-10-24T00:25:04.519Z",
   "partial": false,
   "profile": {
     "steamId": "76561199212880612",
@@ -14,23 +14,23 @@
   },
   "stats": {
     "gameCount": 86,
-    "totalMinutes": 202172,
-    "recentMinutes": 3495
+    "totalMinutes": 202185,
+    "recentMinutes": 13
   },
   "games": [
     {
       "appid": 730,
       "name": "Counter-Strike 2",
-      "minutes": 135901,
-      "recentMinutes": 431,
-      "lastPlayed": 1790854392,
+      "minutes": 135914,
+      "recentMinutes": 13,
+      "lastPlayed": 1792550603,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg"
     },
     {
       "appid": 431960,
       "name": "Wallpaper Engine",
       "minutes": 17711,
-      "recentMinutes": 1,
+      "recentMinutes": 0,
       "lastPlayed": 1791183515,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/431960/header.jpg"
     },
@@ -78,7 +78,7 @@
       "appid": 3678970,
       "name": "TBH: Task Bar Hero",
       "minutes": 3063,
-      "recentMinutes": 3063,
+      "recentMinutes": 0,
       "lastPlayed": 1791519304,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3678970/header.jpg"
     },
