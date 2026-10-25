@@ -9,76 +9,76 @@
       ],
       "items": [
         {
-          "title": "MiniMax H3 一二采工作流：0.2 分辨率快出，二采补到 720p",
-          "link": "https://www.9ll.uk/posts/ai/comfyui-wrokflow/minimax-h3-twostage/",
-          "description": "分享一个 MiniMax H3 的 ComfyUI 一二采工作流：一采用 0.2 MP 快速出片，二采在 latent 空间放大重采样补回 720p。附模型、插件下载地址和我这边的实测耗时。",
-          "publishedAt": "2026-10-06T00:00:00.000Z"
+          "title": "评论区的小助手开始读正文了：从 23 个字到整篇文章",
+          "link": "https://www.9ll.uk/posts/blog/aicommentcontext/",
+          "description": "评论区那个自动回帖的 AI 小助手，其实一直没读到正文 —— 抓取逻辑取的是每页都有的首页壁纸卡片，稳定拿到 23 个字。这次改成先判断评论发在哪一页，再把整页内容喂给模型。为了确认改对了，我用 jsdom 另写了一版独立实现对账，反倒挖出标签解析里三个会污染正文的 bug。",
+          "publishedAt": "2026-10-16T00:00:00.000Z"
         },
         {
-          "title": "友链申请做成自动的：填完 Issue 表单，机器人验完自己上线",
-          "link": "https://www.9ll.uk/posts/blog/autofriendlink/",
-          "description": "在 blog.amamo.top 的友链页看到他做了「自动友链」：点进去是个 GitHub Issue 表单，提交后机器人自己去验对方的友链页，通过就把友链写进配置。我这边的约束照旧是不能动主题源文件，所以按这个思路重做了一遍——三个新增文件、零第三方依赖，顺带绕开了他脚本里会吃掉 rss / homepage 字段的坑。",
-          "publishedAt": "2026-10-05T00:00:00.000Z"
+          "title": "全站鼠标指针换成《俺妹》主题：亮色桐乃、深色黑猫",
+          "link": "https://www.9ll.uk/posts/blog/cursortheme/",
+          "description": "这次更新把整站的鼠标指针换了一遍：亮色主题配高坂桐乃、深色主题配五更琉璃（黑猫），各 28 枚共 56 枚，正常选择、链接、文本、禁用、拖拽这些场景全部覆盖。素材来自两张总览图，切图时发现它们不是普通白底图 —— 人物衣服和箭头内部都是纯白，跟我页面的白同色，按我处理贴纸那套「全局去白底」会把图形整个掏空。CSS 那边我把「用哪张图 + 热点坐标」全塞进了自定义属性，28 条规则只写一遍，切换主题只换一组变量。",
+          "publishedAt": "2026-10-16T00:00:00.000Z"
         },
         {
-          "title": "给书签导航加悬停预览：复刻友链流程，多踩三个坑",
-          "link": "https://www.9ll.uk/posts/blog/booknavcoverpreview/",
-          "description": "书签导航那 64 个书签也加上了悬停预览：鼠标放上去展开一张该站点的首页截图。做法是把友链页那套原样搬过来，但书签和友链不是一个东西，中途多踩了三个坑——同域名多条会互相覆盖、Cloudflare 的 403 页截出来是张「看着正常」的白底黑字图、headless 的默认 UA 直接被拒。最后 56 条拿到了能看的封面。",
-          "publishedAt": "2026-10-05T00:00:00.000Z"
+          "title": "把动态页改成了朋友圈的样子",
+          "link": "https://www.9ll.uk/posts/blog/dynamicpageredesign/",
+          "description": "动态页想换个样子，参照的是另一个同主题的站 —— 但数据源不变，还是继续接 memos。扒完两边才发现，上游动态卡片的 DOM 本来就齐 —— 头像、作者、时间、地点、置顶徽章、图片网格、评论按钮一个不缺，差的只是样式。于是这轮改造零改动主题源文件：一份只在动态页加载的样式表，加一个把页脚外壳搬进正文的小脚本。中间踩了三个安静的坑，都是「不报错、但就是不生效」那种。",
+          "publishedAt": "2026-10-16T00:00:00.000Z"
         },
         {
-          "title": "把博客文章搬进私有仓库：一次内容分离的踩坑记录",
-          "link": "https://www.9ll.uk/posts/blog/contentseparation/",
-          "description": "我的博客是 fork 的 Firefly，文章和主题代码一直挤在同一个仓库，而上游更新很勤，每次合并都要在文章目录上手工解冲突。折腾了一轮把内容搬进独立的私有仓库，中间踩了三个坑：Vercel 根本不支持私有 submodule、内容目录放错位置会让所有封面图消失、环境变量里混进一个换行符就能把 token 截断。",
-          "publishedAt": "2026-10-05T00:00:00.000Z"
+          "title": "全站加了个「天气预报」：接口免费，而且按访客 IP 定位",
+          "link": "https://www.9ll.uk/posts/blog/weathercard/",
+          "description": "刷参考站时看到他右栏挂着一张天气预报卡，从标题竖条到「收起」按钮整个搬了过来。接口在 uapis.cn，免费、不用 key，而且不传参数时按访客 IP 定位 —— 谁来串门看到的就是谁头顶上的天。踩了两个坑：参考站那套图标是 Astro 构建期渲染的 symbol、动态插进去取不到；指标网格的 auto-fit 在 280px 右栏只排得出一列，卡片被顶到 925px。",
+          "publishedAt": "2026-10-16T00:00:00.000Z"
         },
         {
-          "title": "留言板改成聊天窗口：只改了主题一个文件，还少下载 82 KB",
-          "link": "https://www.9ll.uk/posts/blog/guestbookchat/",
-          "description": "在 blog.amamo.top 的留言板看到群聊风格的界面：气泡、成员列表、公告栏，像开在博客里的群。扒了仓库发现后端就是 Waline，我现成有一个。约束照旧是不能动主题源文件，于是把 11 个文件搬过来之后，把原本要改 6 类上游文件的移植压到只动 guestbook.astro 一个文件，顺带把这一页的评论脚本从 100 KB 减到 23 KB。",
-          "publishedAt": "2026-10-05T00:00:00.000Z"
+          "title": "评论区回复默认展开 2 条，长串收在「展开更多」后面",
+          "link": "https://www.9ll.uk/posts/blog/commentreplycollapse/",
+          "description": "友链页有条评论下面挂了 13 条回复，往下翻要滑过整屏；可全收起来又太狠，访客第一眼什么都看不到。最后定成默认展示 2 条，多出来的才收着，还有剩就给个「展开更多」，摊完能收回去。做法照旧只加文件不动上游。踩坑集中在一点上：Waline 是 Vue 渲染的，DOM 会重绘、会随 swup 换页被整体替换，所以折叠状态不能只靠一次性的 DOM 操作。",
+          "publishedAt": "2026-10-15T00:00:00.000Z"
         },
         {
-          "title": "首页加了一条会滚的动态：参考楠枝小筑，一个主题文件都没改",
-          "link": "https://www.9ll.uk/posts/blog/homedynamicbar/",
-          "description": "在楠枝小筑首页看到一条会一直横滚的「瞬间」条，想在自己站上也挂一个。他用的是 Ethereal 主题，代码没法照抄，所以只搬机制：Memos 数据在客户端拉，滚动靠 CSS 把轨道复制成两份，DOM 走页脚注入再加一点点搬运。最后改动落在两个文件里，主题源码一个没碰。",
-          "publishedAt": "2026-10-05T00:00:00.000Z"
+          "title": "回复带上引用：别再让读者猜「@昵称」在回哪一句",
+          "link": "https://www.9ll.uk/posts/blog/commentreplyquote/",
+          "description": "Waline 的二级回复只渲染一行「@昵称：」，谁在回谁很清楚，回的是哪一句全靠猜。翻 DOM 发现它其实留了线索 —— 回复里那个 @昵称 的链接 href 就是被回复评论的 objectId。顺着锚点把目标评论捞回来，摘成引用块插在下面，点它还能滚过去高亮。踩了个坑：剥 @ 前缀时忘了 clone，把页面上那行整个删了。",
+          "publishedAt": "2026-10-15T00:00:00.000Z"
         },
         {
-          "title": "给博客加了个 Steam 游戏库：没后端，蹭朋友圈的定时任务喂数据",
-          "link": "https://www.9ll.uk/posts/blog/steamlibrary/",
-          "description": "参考站用 Halo 插件在服务端拉 Steam Web API，我这静态站没后端，改成跟朋友圈同一套定时快照，顺带补了没 Key 时的降级路径。",
-          "publishedAt": "2026-10-05T00:00:00.000Z"
+          "title": "把 Firefly 魔改了五十一版：一份完整的功能清单",
+          "link": "https://www.9ll.uk/posts/blog/modssummary/",
+          "description": "博客是 fork 的 CuteLeaf/Firefly，从 V1.0 到 V1.49 一共 51 版改动。这篇不再讲故事，直接把改过的功能全部列出来：首页那套贴纸卡片、自己加出来的那批页面、友链与书签的悬停预览和自助申请、全站卡片描边与页脚统计、评论区的折叠与引用、右栏那几个自建组件、一长串性能优化，还有内容与主题分离这类基础设施。每条都附上它到底干什么、关键数字是多少。",
+          "publishedAt": "2026-10-14T00:00:00.000Z"
         },
         {
-          "title": "给友链页加了悬停预览：12 张截图离线截好，主题文件一行没动",
-          "link": "https://www.9ll.uk/posts/blog/friendcoverpreview/",
-          "description": "在 blog.amamo.top 的友链页看到鼠标悬停弹首页截图的效果。我这边的约束是不能动主题源文件，所以换了个做法：截图用本机浏览器离线截、转 webp 存进仓库，卡片用一段独立脚本在浏览器里现场拼。12 张封面一共 190 KB，悬停之前一张都不加载。",
-          "publishedAt": "2026-10-04T00:00:00.000Z"
+          "title": "music.9ll.uk 上线：全屏歌词播放器，顺手搭了个网易云 API",
+          "link": "https://www.9ll.uk/posts/deploy/deployfolia/",
+          "description": "把以全屏歌词为核心的音乐播放器 Folia 搭到了自己域名下。Web 版必须自备一个网易云 API，所以这次是两段部署；顺便记一下 Cloudflare 的「构建变量」和「运行时变量」不是一回事。",
+          "publishedAt": "2026-10-14T00:00:00.000Z"
         },
         {
-          "title": "Kite：自带后台的静态博客，主题和插件都能按名字装",
-          "link": "https://www.9ll.uk/posts/recommend/kite/",
-          "description": "刷到一个用 Go 写的静态博客 CMS，最有意思的是它把后台直接编译进单个二进制里，主题和插件从官方市场按名字装。我把博客的 52 篇文章迁过去试了一遍。",
-          "publishedAt": "2026-10-04T00:00:00.000Z"
+          "title": "img.9ll.uk 上线：压缩、AI 放大、AI 抠图，图片全程不上传",
+          "link": "https://www.9ll.uk/posts/deploy/deployimagetools/",
+          "description": "给自己域名挂了个纯浏览器端的图片工具箱：压缩格式转换、AI 超分放大、AI 抠图、点选抠图、裁剪切片，五项功能全在本机跑，图片一个字节都不上传。顺带记一下从 Pages 改成 Workers 的部署改动。",
+          "publishedAt": "2026-10-14T00:00:00.000Z"
         },
         {
-          "title": "给博客加了张站点统计看板：自研翻车之后直接抄了整份实现",
-          "link": "https://www.9ll.uk/posts/blog/analyticsdashboard/",
-          "description": "看上 rainzt.cn 的 /analytics/ 之后，我先照着自己设计了一版——能跑，但完全不是那个味道。被一句「你不会整就去抄人家代码」点醒，去翻同源 fork 的仓库才发现：人家根本不是单个文件，页面将近四千行，外加两个组件，少一个的话页面其余模块全正常、只有四个数字永远停在「加载中」。搬完又改了四轮：整页蓝换成主题色、推送数从 1695 修正到 252、热力图改 GitHub 绿、角标不再压住插画。",
-          "publishedAt": "2026-09-29T00:00:00.000Z"
+          "title": "把浏览器交给 AI 之后，我连 fork 都懒得点了",
+          "link": "https://www.9ll.uk/posts/ai/aiagentautodeploy/",
+          "description": "从 fork 仓库、补 wrangler 配置、点 Cloudflare 部署，到解析域名、加 Worker 路由、回头改自己博客的导航栏，这一整套我一次鼠标都没碰。记录一下 AI Agent 接管浏览器之后我懒成了什么样。",
+          "publishedAt": "2026-10-12T00:00:00.000Z"
         },
         {
-          "title": "给博客页脚加了两行数字：静态站直连 Umami 的零后端玩法",
-          "link": "https://www.9ll.uk/posts/blog/footerstats/",
-          "description": "又是在 rainzt.cn 看上的东西——页脚一行跳秒的运行时间，一行四个访问数字。博客是跑在 Vercel 上的纯静态站，本来以为读不到 Umami 数据，结果试了一下发现分享接口的 CORS 是全开的。中间踩了个 401 的坑，最后落在 Firefly 原生的页脚注入点上，一个主题源文件都没动。",
-          "publishedAt": "2026-09-28T00:00:00.000Z"
+          "title": "全站加了个「最近评论」：数据直连 Waline，主题文件一个没改",
+          "link": "https://www.9ll.uk/posts/blog/recentcomments/",
+          "description": "在参考站的右栏看到「最近评论」组件，想在自己站上也挂一个，而且要求全站都有。评论数据就在自己的 Waline 后端里，直接调它的公开接口；DOM 和样式走页脚注入，脚本全站加载，桌面挂右栏、移动端挂底部组件栏。踩了三个坑：Waline 的 orig 字段是渲染前的 HTML、类名和外包装撞车吃掉 32px 内边距、窄栏 flex 布局把昵称挤成一个字。",
+          "publishedAt": "2026-10-12T00:00:00.000Z"
         },
         {
-          "title": "换了一圈截图工具，最后留在了截图吧",
-          "link": "https://www.9ll.uk/posts/recommend/jietuba/",
-          "description": "截图吧（jietuba）是 Windows 上免费开源的截图工具，长截图、标注、本地 OCR、钉图、GIF 录制和剪贴板历史全都有，界面 PySide6 + 底层 Rust，用下来不卡也不占资源。",
-          "publishedAt": "2026-09-28T00:00:00.000Z"
+          "title": "让 AI Agent 接管你真实的 Chrome：三条路线和踩过的五个坑",
+          "link": "https://www.9ll.uk/posts/ai/aiagentchrome/",
+          "description": "无头浏览器里没有你的登录态，很多活干不了。这篇记录我怎么让 AI Agent 直接接管本机正在用的 Chrome：chrome-devtools-mcp 的完整配置、Playwright 扩展的隐藏机制、以及那个每次连接都要弹一次的授权框到底怎么才能少弹。",
+          "publishedAt": "2026-10-07T00:00:00.000Z"
         }
       ]
     },
@@ -89,6 +89,24 @@
         "https://upxuu.com/rss.xml"
       ],
       "items": [
+        {
+          "title": "记录一次被创飞的经历",
+          "link": "https://upxuu.com/posts/20261019/",
+          "description": "其实我已经好久没有出过车祸了，印象里初中这两年多也没啥事，今天真实让我开眼了 本来今天是一个挺不同的",
+          "publishedAt": "2026-10-19T12:51:55.000Z"
+        },
+        {
+          "title": "「说说」Google的反重力有大病",
+          "link": "https://upxuu.com/talk/2026-10-18-google%E7%9A%84%E5%8F%8D%E9%87%8D%E5%8A%9B%E6%9C%89%E5%A4%A7%E7%97%85/",
+          "description": "第一关是死活过不了设备验证 好不容易通过了 666我客户端显示是pro订阅 结果不给我用pro模型 什么意思Google？？？？ 我真是受不了了啊 !image.pnghttps://img.upxuu.lcrworld.xyz/images/2026/10/18/20261018190032460.png !image.pnghttps://img.upxuu.lcrworld.",
+          "publishedAt": "2026-10-18T10:59:27.000Z"
+        },
+        {
+          "title": "WorkBuddy AI 国际版 API 逆向全解析：把免费的 DeepSeek V4.1 Flash 变成自己的 OpenAI 接口",
+          "link": "https://upxuu.com/posts/workbuddy-api-reverse/",
+          "description": "实测 WorkBuddy AI 国际版 v2.137.1：Electron 壳里藏着一个 CodeBuddy CLI sidecar，模型请求其实就是一个普通的 OpenAI 接口。附 asar 解包、token 收割、网关四个怪癖的完整解决方案，以及一个零依赖的 Python 代理（含 Web 控制台 + 多账号池）。",
+          "publishedAt": "2026-10-11T09:40:00.000Z"
+        },
         {
           "title": "「说说」简单优化了下博客，lighthouse终于绿了",
           "link": "https://upxuu.com/talk/2026-10-06-%E7%AE%80%E5%8D%95%E4%BC%98%E5%8C%96%E4%BA%86%E4%B8%8B%E5%8D%9A%E5%AE%A2lighthou-e%E7%BB%88%E4%BA%8E%E7%BB%BF%E4%BA%86/",
@@ -142,24 +160,6 @@
           "link": "https://upxuu.com/talk/2026-09-12-workbuddy%E6%9C%89%E5%85%8D%E8%B4%B9deepseek-fla-h-v4/",
           "description": "!image.pnghttps://img.upxuu.lcrworld.xyz/images/2026/9/12/20260912114648166.png 其实我几乎没有用过workbuddy等一众国内的agent应用 但是偶然间在论坛发现workbuddy的国际版 有免费的ds f v4.1 也是尝试了一下 给我的感受就是 真的 我们很多app就是只坑国人 国际版的work",
           "publishedAt": "2026-09-12T03:46:25.000Z"
-        },
-        {
-          "title": "终于，我们把数据握在了自己手里——SIWX WeChat聊天记录导出项目发布文",
-          "link": "https://upxuu.com/posts/siwx-start/",
-          "description": "",
-          "publishedAt": "2026-09-09T13:05:20.000Z"
-        },
-        {
-          "title": "「说说」i just want to be le",
-          "link": "https://upxuu.com/talk/20260909004617/",
-          "description": "i just want to be left alone no think no talk only clear ​why not zh? no courage 在发生了一些事情后，有感而发 祝我平安",
-          "publishedAt": "2026-09-08T16:46:17.000Z"
-        },
-        {
-          "title": "「说说」一次就好，我陪你去到天涯海角",
-          "link": "https://upxuu.com/talk/20260906203359/",
-          "description": "!https://img.upxuu.lcrworld.xyz/images/2026/9/6/20260906203435403.jpg 真好听嘻嘻",
-          "publishedAt": "2026-09-06T12:33:59.000Z"
         }
       ]
     },
@@ -241,6 +241,51 @@
           "link": "https://kasuha.com/posts/shuujitsu-kyousou/",
           "description": "愛するものが死んだ時には、自殺しなけあなりません。",
           "publishedAt": "2025-10-04T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "friendUrl": "https://lengxiqwq.com",
+      "feedUrl": "https://lengxiqwq.com/rss.xml",
+      "feedUrls": [
+        "https://lengxiqwq.com/rss.xml"
+      ],
+      "items": [
+        {
+          "title": "评论系统 Twikoo 好多 bug！被迫换成了 Waline",
+          "link": "https://lengxiqwq.com/posts/%E8%AF%84%E8%AE%BA%E7%B3%BB%E7%BB%9F-twikoo-%E5%A5%BD%E5%A4%9A-bug%E8%A2%AB%E8%BF%AB%E6%8D%A2%E6%88%90%E4%BA%86-waline/",
+          "description": "原来用的 Twikoo 评论区小毛病越来越多，冷启动慢、偶尔还会漏发邮件。趁着这几天有空，把整个评论系统彻底迁移到了 Cloudflare Workers + D1 上，换成了 Waline。顺便记录一下这次换系统的全过程。",
+          "publishedAt": "2026-10-22T18:55:00.000Z"
+        },
+        {
+          "title": "Windows 又逼我重装系统了",
+          "link": "https://lengxiqwq.com/posts/windows-%E5%8F%88%E9%80%BC%E6%88%91%E9%87%8D%E8%A3%85%E7%B3%BB%E7%BB%9F%E4%BA%86/",
+          "description": "电脑连续几个月浏览器崩溃，软件卡顿闪退，硬件和内存测试全都正常。最后实在受不了重装了 Windows，结果不仅好了，续航还一下子翻了好几倍。",
+          "publishedAt": "2026-10-22T07:22:00.000Z"
+        },
+        {
+          "title": "我原本真的只想导出一个歌单",
+          "link": "https://lengxiqwq.com/posts/%E6%88%91%E5%8E%9F%E6%9C%AC%E7%9C%9F%E7%9A%84%E5%8F%AA%E6%83%B3%E5%AF%BC%E5%87%BA%E4%B8%80%E4%B8%AA%E6%AD%8C%E5%8D%95/",
+          "description": "Playlist Out 最开始只是一个给自己用的 QQ 音乐歌单导出脚本。后来意外发现真的有人需要，Star 数量自己在涨，我就开始一点点加平台、做网页、写 CLI、定数据规范，最后做成了一个完整的开源项目。",
+          "publishedAt": "2026-10-18T09:28:00.000Z"
+        },
+        {
+          "title": "我想要的 Windows 输入法切换到底是什么样？",
+          "link": "https://lengxiqwq.com/posts/%E6%88%91%E6%83%B3%E8%A6%81%E7%9A%84-windows-%E8%BE%93%E5%85%A5%E6%B3%95%E5%88%87%E6%8D%A2%E5%88%B0%E5%BA%95%E6%98%AF%E4%BB%80%E4%B9%88%E6%A0%B7/",
+          "description": "日常在 Windows 上打字，CapsLock 键利用率极低却占着黄金键位。聊聊为什么我想把大写键改造成情景感知的中英文切换键，以及打游戏防误触、光标处原生风格状态提示等核心诉求。",
+          "publishedAt": "2026-09-20T10:30:00.000Z"
+        },
+        {
+          "title": "实况照片到底是什么？为什么换个手机就可能打不开？",
+          "link": "https://lengxiqwq.com/posts/%E5%AE%9E%E5%86%B5%E7%85%A7%E7%89%87%E5%88%B0%E5%BA%95%E6%98%AF%E4%BB%80%E4%B9%88%E4%B8%BA%E4%BB%80%E4%B9%88%E6%8D%A2%E4%B8%AA%E6%89%8B%E6%9C%BA%E5%B0%B1%E5%8F%AF%E8%83%BD%E6%89%93%E4%B8%8D%E5%BC%80/",
+          "description": "看起来都只是一张会动的照片，Apple、Google、小米、OPPO、三星、华为和 vivo 背后却用了完全不同的协议。实况照片到底是什么，各家又为什么经常互不兼容？",
+          "publishedAt": "2026-09-17T09:44:00.000Z"
+        },
+        {
+          "title": "实况照片工具箱：从一个小工具到现在",
+          "link": "https://lengxiqwq.com/posts/%E5%AE%9E%E5%86%B5%E7%85%A7%E7%89%87%E5%B7%A5%E5%85%B7%E7%AE%B1%E4%BB%8E%E4%B8%80%E4%B8%AA%E5%B0%8F%E5%B7%A5%E5%85%B7%E5%88%B0%E7%8E%B0%E5%9C%A8/",
+          "description": "记录 Live Photo Box（实况照片工具箱）从最初几行自用脚本，到支持多厂商私有协议逆向、封面帧破解，再到全面推倒重构为 C++ Native 核心并实现性能暴涨 30 倍的完整历程。",
+          "publishedAt": "2026-09-10T15:22:00.000Z"
         }
       ]
     },
@@ -340,6 +385,36 @@
           "publishedAt": "2026-07-09T00:00:00.000Z"
         },
         {
+          "title": "友链改完为什么还要跑一遍校验：10 月 23 日的发布返工记录",
+          "link": "https://rainzt.cn/posts/friend-release-consistency-2026-10-23/",
+          "description": "一次小爱后台与静态博客的发布返工记录：从友链同步、构建竞态和重复部署，到最后撤回自动管理，只保留评论 AI 审核回复与已有遮罩。",
+          "publishedAt": "2026-10-23T00:00:00.000Z"
+        },
+        {
+          "title": "小爱Agents来啦~",
+          "link": "https://rainzt.cn/posts/auto-listing-update-2026-10-19/",
+          "description": "把原本独立的小爱 Agents 接入自动上架，让同事通过 AI 聊天排查报错，也能由面向跨境电商的 DeepSeek Harness 主控规划任务、调用 Browser Use 等工具并检查结果。文章介绍新增的 11 项上架工具，以及本轮上传提速和容错更新。",
+          "publishedAt": "2026-10-19T00:00:00.000Z"
+        },
+        {
+          "title": "江月年年，人间一程",
+          "link": "https://rainzt.cn/posts/jiangyue-renjian-yicheng/",
+          "description": "建站一百天，写一次夜里路过城中村时的触动，也写白发、江月、家人与那些总想留到以后的日子。",
+          "publishedAt": "2026-10-16T00:00:00.000Z"
+        },
+        {
+          "title": "最近，来交作业了",
+          "link": "https://rainzt.cn/posts/recently-one-more-step/",
+          "description": "接着上周的《最近》，记录我为自动上架加入图片哈希值校验，也兑现了国庆后改版的打算，让博客精简主题 Aemeath-Pure 正式上线。",
+          "publishedAt": "2026-10-12T00:00:00.000Z"
+        },
+        {
+          "title": "最近",
+          "link": "https://rainzt.cn/posts/recently/",
+          "description": "聊聊最近的疲惫和懒散、暂时推迟的创业计划，以及重新调整作息、捡起锻炼、继续开发自动上架 Agents 的打算。",
+          "publishedAt": "2026-10-10T00:00:00.000Z"
+        },
+        {
           "title": "山河锦绣，国泰民安",
           "link": "https://rainzt.cn/posts/national-day-2026/",
           "description": "国庆将至，借这张图写下一份简单的祝愿：愿山河锦绣，也愿每个人的日子安稳明亮。",
@@ -358,52 +433,22 @@
           "publishedAt": "2026-09-21T00:00:00.000Z"
         },
         {
-          "title": "在奶奶的白发里，我看见了时间",
-          "link": "https://rainzt.cn/posts/in-grandmas-white-hair-i-saw-time/",
-          "description": "一次回家时看见奶奶满头白发，让我重新想起时间、家人和未来，也让我决定趁年轻为自己走一条创业的路。",
-          "publishedAt": "2026-09-14T00:00:00.000Z"
-        },
-        {
           "title": "Codex 为什么会“降智”：292 State、状态注入与长任务的另一条解释",
           "link": "https://rainzt.cn/posts/codex-292-state-analysis/",
           "description": "从 HTTP 292、current_turn_state 和 x-codex-turn-state 出发，拆解 Codex 的资源路由、美国本地与中转/VPN的服务质量分层、状态注入、上下文增长、压缩与长任务稳定性。",
           "publishedAt": "2026-09-18T00:00:00.000Z"
         },
         {
+          "title": "在奶奶的白发里，我看见了时间",
+          "link": "https://rainzt.cn/posts/in-grandmas-white-hair-i-saw-time/",
+          "description": "一次回家时看见奶奶满头白发，让我重新想起时间、家人和未来，也让我决定趁年轻为自己走一条创业的路。",
+          "publishedAt": "2026-09-14T00:00:00.000Z"
+        },
+        {
           "title": "月刊",
           "link": "https://rainzt.cn/posts/monthly-2026-08/",
           "description": "记录 8 月 7 日到 26 日之间的博客更新、自动上架项目、被我停掉的功能、刚搭好的小家，以及本期想认真推荐的几位博友。",
           "publishedAt": "2026-08-28T00:00:00.000Z"
-        },
-        {
-          "title": "从母系社会到父权制度：亲缘、私有制与现代性别关系的演变(浅谈男女对立)",
-          "link": "https://rainzt.cn/posts/from-matriarchal-society-to-patriarchy/",
-          "description": "从亲缘确认、私有制和生产方式出发，浅谈母系亲缘结构、父权制度与现代男女对立背后的历史逻辑。",
-          "publishedAt": "2026-08-20T00:00:00.000Z"
-        },
-        {
-          "title": "我回望青春时，我的青春是最昂贵的； 我正值青春时，我的青春是最廉价的。",
-          "link": "https://rainzt.cn/posts/others/youth-most-expensive/youth-most-expensive/",
-          "description": "一篇关于校园、游戏、喜欢与告别的青春回望。",
-          "publishedAt": "2026-08-17T00:00:00.000Z"
-        },
-        {
-          "title": "朝朝听雨，岁岁有风",
-          "link": "https://rainzt.cn/posts/chao-chao-listening-rain-years-wind/",
-          "description": "今天不说遗憾，只讲讲我和她的故事。写给那段被照亮过的高中岁月，也写给如今终于学会从容回望的自己。",
-          "publishedAt": "2026-08-14T00:00:00.000Z"
-        },
-        {
-          "title": "Agent 赋予电商自动化：从业务规则到可控的自动上架框架",
-          "link": "https://rainzt.cn/posts/agent-ecommerce-automation/",
-          "description": "从一套自动上架系统的实践出发，拆解 AI Agent、Playwright、CDP 和 ERP 如何组合成一套可观察、可回滚、可扩展的跨境电商自动化框架。",
-          "publishedAt": "2026-08-09T00:00:00.000Z"
-        },
-        {
-          "title": "作品展示页动画实现原理",
-          "link": "https://rainzt.cn/posts/portfolio-showcase-animation-principles/",
-          "description": "从滚动读数、目标与渲染进度、分镜区间出发，拆解 Rainzt.cn 作品展示页当前的工程化实现：长滚动固定舞台、requestAnimationFrame 平滑、媒体解码、快门转场与内容可访问性边界。",
-          "publishedAt": "2026-07-27T00:00:00.000Z"
         }
       ]
     },
@@ -415,76 +460,76 @@
       ],
       "items": [
         {
-          "title": "小十的个人博客：国庆新郑、新密三日纪行",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiaoten.com%2Fposts%2F2026%2F10%2Fxinzheng-xinmi-three-day-trip%2F",
-          "description": "前言 今年国庆假期，原本计划带父母去一趟宝泉。 10月3日上午还在老家，临出发前才发现宝泉假日期间实行限流，计划日期已经无法订票。临时改去其他热门景区，同样很难避开人多、堵车和预约等问题。另外因工作原因，假期期间仍需随时待命，不适合跑得太远，于是把行程范围缩到了郑州周边。 最后选中了新郑和新密。两个地方距离郑州都不远，也都有相对集中的旅游资源。不过这次行程没有提前规划，后续去的景点，都是根据当天的时间、路况和现场情况临时决定。 第一天｜10月3日 从老家出发 10月3日下午，从老家带着父母出发，先回了一趟郑州。 之前给父亲买了一双鞋，尺码不太合适，趁这次出来先到郑州更换尺码。处理完后，没有停留，直接前往新郑。 抵达新郑后，先到酒店办",
-          "publishedAt": "2026-10-08T06:08:00.000Z"
+          "title": "1900：走大朝台我在想啥？二",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2F1900.live%2Fzou-da-zhao-tai-wo-zai-xiang-sha-er%2F",
+          "description": "null 昨天更新了前一篇没多久就有四五条博友的评论，这么久没更新这些博友们都在默默关注着我这个小小的孤岛让我有些感动，在这里诚恳的感谢大家，让我感受到了互联网、博客圈的温度。 所以趁着这股劲有还在索性今天把第二篇也写了，接回上文。 刚下车被山上的冷风一吹我差点没绷住哕了出来，为了保住面子，在路边排水槽边上站定了好几秒，借着拿背包整理装备的由头，狠狠做了深呼吸回复状态，好在清新的空气很快让我缓了过来。 大朝台已经能感受到明显的阵风，亚高原温度低于平原，吸进鼻腔的空气带着股冷冽的味道，我上身虽然套着冲锋衣，里面是一件短袖速干，下装则只穿了一条冲锋裤，都是防风不防冷，不一会就开始感觉冲锋衣面料传来的冷意，脸上也被强风吹的生疼。 跟着队友",
+          "publishedAt": "2026-10-23T12:40:31.000Z"
         },
         {
-          "title": "Zimoo's Life：百廿川农，双甲启新",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.zimoo.me%2Fessay%2F1424.html",
-          "description": "一晃眼，川农已经建校120周年，离在校时的06年百年校庆也已20年，自己毕业也马上20年啦…… 上一次回雅安是大概两三年前和客户也是校友一起顺道回雅安逛了一圈，这么久也都没再回去。再往前就是学校110周年校庆时回了雅安看看，那时候校庆氛围一般，只带着家人到处逛了一下而已，领到一个校庆徽章。到今年120周年，校庆特别热闹，宣传特别多，活动也很多，捐赠120元领到一个川农牛摆件，还有农学院赠送的手机支架、纪念徽章、笔记本和笔等，另外买了一个保温杯、盖了一套纪念印章，但还是很遗憾没有回雅安，毕竟雅安是自己学习生活了四年的地方。 5日下午带老婆儿子就近在成都校区逛了一圈，晚上参加了一场校史主题晚会《传承》。第二天上午有一个高质量发展大会，有",
-          "publishedAt": "2026-10-09T15:33:26.000Z"
+          "title": "爱娃子：大晚上轮胎充气泵拯救了我的汽车胎压",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.aiwazi.com%2F3577.html",
+          "description": "昨晚加完班下班的时候，把车子打燃火，一看屏幕弹出来一个胎压不足的报警，胎压直接显示 1.3 了，下车查看轮胎情况都憋憋的了，没想到放了一天的车，晚上的时候竟然漏气了，当时正好是晚上八点半的样子，路边的汽修店也早已关门，就是想开去补下胎也找不到地方了，后来想到自己之前买的轮胎充气泵一直充好电放在公司的，于是赶紧回去拿来充气泵，把轮胎从新打好气，充气泵花了几分钟把轮胎从新充满了气，要是没有充气泵，自己又只有打车回家了。 还好自己买了充气泵，就是... 查看全文：https://www.aiwazi.com/3577.html",
+          "publishedAt": "2026-10-23T10:26:42.000Z"
         },
         {
-          "title": "一派胡言：2026 年十一假期",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fyipai.me%2Fpost%2F2554.html",
-          "description": "今年十一没出门，因为没什么旅游的兴趣，怕了人山人海。境外热门地方也挤满了中国人。还有个原因是娃上小一了，有点紧张怕他请假影响学习，尽管我内心深处认为应该没啥影响。 因为要给娃腾空间放学习桌，十一前一周我就开始收拾书房了，此项工作持续到假期最后一天。扔了十几大袋闲置或无用的物品，才发现有很多没拆封的玩具、书籍。有些是我买的，有些是别人送的，虽然可惜，但既然这么多年没用过，那应该也是没什么用的。 给娃买的学习桌，本来想买升降的。去宜家和林氏木业的店里看了下，桌面都不稳定，稍微用力就会晃动，这是我接受不了的。山姆在卖的那几个牌子线下又不能看实物，不知道是否稳定。最后还是选了个非升降的桌子，对娃来说可能高了点，只能靠椅子调整。椅子上自带脚踏",
-          "publishedAt": "2026-10-09T14:35:22.000Z"
+          "title": "CRIVU：丙午霜降記",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fcbc688.com%2Farticles%2Fb",
+          "description": "我友， 「霜降水返壑，風落木歸山」。時到如今，秋天也快要走了。 我這裡好冷，冷裡還帶著濕意。朝窗戶呵一口氣，玻璃上便蒙起一片白霧，可要不了多久就會慢慢消散。 從衣櫃翻出那件白羊毛衣。去年很喜歡它，那時穿在身上是很好看的。不知是不是放得太久或沒有熨燙的緣故，隔一年再穿，卻怎麼看都不如從前。 想想也罷，總歸只是一件衣服，怎能有如初見的惆悵呢。 好昏沉的天，不時也落幾滴雨，我忘了帶傘，就這樣走。只是手好",
+          "publishedAt": "2026-10-23T10:15:00.000Z"
         },
         {
-          "title": "obaby 𝐢‍𝐧⃝ void：竹子庵",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fzhongxiaojie.cn%2F2026%2F10%2F2125%2F",
-          "description": "十一假期虽然没有远行，就近还是稍微转悠了一圈，多近呢？大约十来公里的路程吧。 没到假期的时候，宝子就开始各种打卡任务：跳绳、仰卧起坐、英语、特色活动等等。当然，带着宝子到处溜达并不是为了完成作业，纯粹就是觉得宝子应该在外面多待会儿，接收阳光多运动，仅此而已。 竹子庵这个公园，听到过很多次了，但是却一直并未涉足，公园距离世博园不远，多数的时间都是去世博园转转。去世博园的主要原因是里面有各种游乐设施，对于孩子来说，这些东西比一个纯粹的公园更有吸引力。 早上吃过早饭，驱车到公园的时候公园停车场已经满了，门口有几辆车在排队。看右侧有个停车场，牌子上写着『停车费封顶十元』，看到这个还以为是按小时收费的，直到离开的时候才发现进去就是10块，说封",
-          "publishedAt": "2026-10-09T01:58:57.000Z"
+          "title": "Sheep5的博客：家里新买了豆浆机",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fsheep5.net%2Farchives%2F432.html",
+          "description": "家里有喝豆浆的习惯。原来的那个九阳豆浆机已经用了十多年了，最近打豆浆的时候渣子特别多。我妈和我一起想了一下，应该是刀片钝了。也是，十多年了还能用，没坏，这质量也是无敌了。 我妈是个节俭的人，竟然还想着换个刀片。那款豆浆机已经停产很多年了，而且刀片和豆浆机的主机连在一起，要换的话还不如买个新的。 在京东上找了好久，不断的对比型号。又蹲了几天好价，总算是入手了。以旧换新的话非常划算，一共160左右的价格，现在以旧换新有补贴，到手只要141。 本来就是要扔掉的东西，卖给收废品的也就几块钱，还不如回收给京东。😁收新品同时回收旧品，非常方便！ 关于型号，我和我妈在两款中不断对比，最终选择了更便宜的这款。打豆浆的呗，没必要买太贵的，够用就好。",
+          "publishedAt": "2026-10-23T07:50:00.000Z"
         },
         {
-          "title": "傥师妹的小空间：十一放假，回家搬家",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.224418.xyz%2Fposts%2F3657ca94%2F",
-          "description": "之前暑假的时候家里就说着国庆的时候让我回家，就准备搬家了。在之前的小区住了12年，还是有点感情的，而且之前的小区的地理位置比现在的地理位置好的多，这个搬家的感觉就像是我们学院从东丽校区搬到宁河校区的感觉。",
-          "publishedAt": "2026-10-08T15:14:00.000Z"
+          "title": "按钮与磁带：时间是贼",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fjefftay.com%2Fblog-posts%2Ftime-is-a-thief",
+          "description": "十七岁的那年，我第一次听到《如烟》，还不懂歌词里的意象，只觉得像一篇散文诗，作曲很美，编曲也耐听。转眼已经快过第二个十七岁，这首歌总是冷不丁在脑海里响起，不断循环播放，把我带回过去十七年的各个阶段，听到那时候身边的风铃、水声和虫鸣，闻到泥土和阳光的味道。 前几日翻阅旧文，读到这篇《无题 2017》，开篇写的是高考，再一看日期6月7日，好像一下子又看到被拆掉的学校的操场，还有学校对面的旧址，现在日渐繁华，好似那条村子从来没有出现过，只存在于想象中。那些村民后来都到哪里去了呢？ 生存以上 生活以下 文章的结尾写道： 九年前完全想象不到今天的世界会怎么样，就像现在也想象不到九年后的世界是如何。自己还...",
+          "publishedAt": "2026-10-23T00:00:00.000Z"
         },
         {
-          "title": "老张博客：国庆，回老家住两天！",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Flaozhang.org%2Farchives%2F4406.html",
-          "description": "今年儿子高三，开始通知国庆只放一天假，班主任的消息才发出没几分钟，接着又来发了一个通知，说是开学时间待定。十月一号上午的时候，老师就发了四天的作业，我想着这个国庆儿子的放假时间不会低于四天了。哪不知，这一放就是七天！高三，国庆放七天假，真的是少有！ 因为儿子的放假时间开始不确定，所以就没有计划外出，但是这个假一天接着一天，宅在县城家里也不是个事。还好前几天就打电话给老爸让把床上被套、床单都洗净了，那就回老家住两天吧！ 每次回老家，大桥是必打卡的地方，也只有这个地方可以打卡了！ 大桥横跨淮洪新河，早上、傍晚都有人在桥上撒鱼。当天我们去的时候，桥上只有这一位在撒鱼，技术不太行，网都撒的不是太开，抓拍了N张照片，只有这张照片上的网开的最大",
-          "publishedAt": "2026-10-08T15:11:58.000Z"
+          "title": "法律小茶馆：这次 PHP 漏洞只是开始，难搞的还在后头",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Flawtee.com%2Farticle%2Fphp-security%2F",
+          "description": "前天晚上，很多微信群都在发一张 PHP 漏洞截图，几乎是“史诗级”灾难场景，可能影响全球 70% 以上 Web 服务器，看到后，我立马登陆自己手头各个服务器查询，看看影响范围到底有多大。 结果这一修，就花了两个晚上时间。一直到昨天晚上 1 点多才搞定。 但其实这个修复过程，主要问题也不在 PHP 身上。 本以为只是打个补丁 2026 年 10 月 21 日，PHP 官方发了两个严重漏洞，CVE-2026-109618 和 CVE-2026-109619，业界叫它 php2shell，CVSS 评分 9.2，不用登录就能远程执行代码。修复版本是 8.5.12、8.4.27、8.3.36、8.2.35，≤ 8.1 没有任何补丁。 我手里",
+          "publishedAt": "2026-10-22T16:15:25.000Z"
         },
         {
-          "title": "湘铭：国庆游记：逃离城市，听凌晨两点的鸡叫",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fxiangming.site%2F1154.html",
-          "description": "国庆标配：回乡下躲清净 今年国庆依旧老规矩，回老婆老家过节。彻底远离城市的喧嚣，不用堵车、不用看人挤人，主打一个自在。最搞笑的是，在乡下静到离谱，直接实现了听凌晨2点鸡叫的自由！哈哈哈。 难得长假肯定要出门溜达一下。说来惭愧，结婚8年，我居然第一次去黄山市里的屯溪老街。车程要一个半小时，之前一直懒得跑，今年总算安排上了。 屯溪老街：一路被美食疯狂投喂 屯溪老街整体体验真的不错，有吃有喝有玩，烟火气拉满。 整条街从头吃到尾，全程被黄山烧饼、葛根饼、毛豆腐轮番投喂，根本停不下来。除了各种特色小吃，街上还有超多徽州特色好物，砚台、墨块、毛笔琳琅满目，古韵氛围感很足。 最有意思的是街头的古风NPC互动，答题闯关就能赢“会子”，攒够了可以兑换",
-          "publishedAt": "2026-10-08T09:26:00.000Z"
+          "title": "森木志：一件糟心的事",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Foxxx.cn%2Farchives%2F1505.html",
+          "description": "广东天气一年三季都是夏天，眼看着感觉天气应该快凉下来了，我就想把衣柜的厚衣服和被套一起洗洗除除味。于是我一大早起来开始干活，然后拿着洗好的衣服被套拿到天台的时候，我发现我上个月因为家里放不下而拿到天台的挂衣服的架子竟然不见了，我起初以为是哪个邻居借走了，我就打算下午再看看吧，太阳大得很不怕晒不干。 中午吃完饭我跑到天台又看了看，发现还是不在，我寻思我在某多多花了30大洋才买来的落地架，不会是我们那一层搬家的时候顺便搬走了吧（因为我这一层已经换了好几家邻居）。于是我开始了我的骚操作，我在天台一层一层往下看，您猜怎么着，一眼就看到我楼下那一层的阳台上正放着我的晾衣架子，于是我跑到楼下&quot;砰砰砰&quot;的开始敲门，没人理我，于",
+          "publishedAt": "2026-10-22T15:19:58.000Z"
         },
         {
-          "title": "ZJBLOG：国庆假期生活",
-          "link": "https://www.boyouquan.com/go?from=feed&link=http%3A%2F%2Fwww.zjhuiwan.cn%2Finfo%2F20261008%2F5220162508813827.html",
-          "description": "国庆小长假已经结束，每次假期到了要结束的时候才发觉时间过得真快！媳妇孕晚期了，不敢出远门，没能出去旅游，应该是第一次长假不出远门的！不过美好的假期就算啥也不干在家躺平也很舒服。",
-          "publishedAt": "2026-10-08T09:25:09.000Z"
+          "title": "人生随笔：我追求的生活",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fthinkinlife.org%2Fthe-life-i-pursue%2F",
+          "description": "关于人生，我希望： 1到18岁的时候，在父母的陪伴下慢慢长大。 19到20岁的时候学会如何与异性交往并找到伴侣。 21岁到24岁的时候，尽量生两个孩子。 25岁到42岁，慢慢把孩子养大。 43岁后，追求个人的人生理想。 最后，按我《直面衰老》那篇博客所写的方式，完成人生最后一段旅程。 关于工作时间，我希望： 1、每天8小时，上四休三 2、春节、元宵、清明、端午、七夕、中秋 各放三天假 春节 迎接新生 元宵 游园赏灯 清明 祭奠先人 端午 龙舟比赛 七夕 为了爱情 中秋 阖家团圆 3、每年应有30天年假。 关于生育，我希望： 建立生育指标交易市场。每人一出生就有一个指标；同时，国家每年可以根据需要注入新指标。 人们可以选择卖掉指标，躺",
+          "publishedAt": "2026-10-22T11:24:30.000Z"
         },
         {
-          "title": "水拍石：2026年国庆川西朝圣之旅",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.leitao.cn%2F11478.html",
-          "description": "今年中秋和国庆假期只相隔三天，休了这三天便可以连休十三天，足够一次长途旅行。 对于藏区一直情有独钟，一个原因是藏区都在高原，我比较喜欢高原的蓝天和草地；另一方面，藏族全民信佛教，宗教文化已经嵌入民族文...",
-          "publishedAt": "2026-10-08T05:21:16.000Z"
+          "title": "Victor42：云和梯田畲乡自驾4天4夜",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fvictor42.eth.limo%2Fpost%2Fyunhe-terraces-she-township-self-driving-tour%2F",
+          "description": "畲族文化、山岭梯田与瓯江古村。 照片相册：查看本篇相册 旅行攻略：获取攻略文档 稻谷金黄、秋意正浓，周五晚杭州出发，驱车300多公里来到丽水，带家人奔赴一场山野度假。 由于是自驾，活动范围比较大，不是单城玩法。行程涉及景宁县、云和县、丽水莲都区三地，且目的地离各区县的城区都有一段距离，非自驾难以实现。 第1天：畲族文化 景宁县全称是景宁畲族自治县，是全国唯一的畲族自治县，也是华东唯一的少数民族自治县。 畲族人把广东潮州的凤凰山作为本族的发源地，从粤闽赣交界地带逐渐沿山区向北扩散，来到了福建和浙南。 畲乡之窗 第一站畲乡之窗，景点不大，围绕一条约300米的大均古街打造的畲族民俗体验景点。 古街入口有一棵千年古樟树，估计要4-5个成年人",
+          "publishedAt": "2026-10-22T10:10:00.000Z"
         },
         {
-          "title": "风渡言：十一大连旅游记录",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.fdsay.com%2F2026%2F10%2Fshi-yi-da-lian-lyu-you-ji-lu%2F",
-          "description": "其实去大连这事真的是临时决定的，比较仓促，甚至攻略都是在小红书让AI给生成的。 我们原本的计划是十一去青甘大环线，不过因为临时有变故，所以取消了行程，眼瞅着就要抢国庆假期的车票了，扒拉着地图，临时决定不如去大连。 哈哈哈，也算是说走就走了。 因为大连比较小，能玩的地方属实不算多，所以计划的也就是在大连呆三天左右，事实证明三天真的绰绰有余。 三天的话，抢票就从容许多，完全可以错峰出行，所以我们选择了10.2号上午从北京出发，10.5号返程。 2号下午到的大连北站，然后地铁直达酒店，办完入住就直接去了星海广场看海鸥去了 […]",
-          "publishedAt": "2026-10-08T03:29:48.000Z"
+          "title": "水拍石：苦钱",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.leitao.cn%2F11522.html",
+          "description": "同学把他百万年薪的工作辞了，我很吃惊，问他为什么？他说那个活干的很辛苦，也不开心，还不如自己给自己干——怎么干完全自己说了算。 我对他的奋斗精神很佩服，因为我这两年已经半躺平了，根本不愿意像年轻时一样...",
+          "publishedAt": "2026-10-22T09:28:04.000Z"
         },
         {
-          "title": "叁拾玖：木棉花与青橄榄",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.sanshijiu.cn%2Fpost%2F46",
-          "description": "电影《给阿嬷的情书》观后 《给阿嬷的情书》讲的是侨批。潮汕话里，&quot;批&quot;就是信，信里夹着钱，钱里夹着命。穷小子郑木生和富家女叶淑柔私奔成家不久，为躲抓壮丁过番下了暹罗，夫妻俩从此一生未见。几十年后家人才知道，木生早已客死异乡，此后十八年的批，全是受过他恩惠的客栈女儿谢南枝，以他的名义写的、寄的。木、叶、枝，三个名字长在一起，人却一辈子没有凑齐过。 一纸平安 看完这部片子我才意识到，我们这代人已经不会…",
-          "publishedAt": "2026-10-07T15:55:31.000Z"
+          "title": "织梦岁月：人与人之间，多数时候都是价值交换",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fzhujianlin.com%2Farchives%2F2427.html",
+          "description": "46 岁这一年，我慢慢想明白一件事 —— 人与人之间，说到底都是利益交换。这话听起来冷，可想想这些年的人和事，还真就是这么回事。 刚开始我还不太认。总觉得交朋友讲的是情分，亲戚讲的是血缘，这些不该跟 &quot;利益&quot; 挂钩。可一路走过来，现实一遍遍告诉我：你再好的关系，如果拿不出对方需要的东西，久了也会淡，淡着淡着就散了。哪怕是亲戚，也一样。 年轻时总觉得 &quot;关系&quot; 是处出来的，多走动、多关心、多客气，感情自然就厚。现在才懂，真正能让一段关系立得住的，是你手里有没有别人想要的东西。你有别人需要的，不用你怎么经营，关系自己会热络；你没有，那你再怎么热脸贴冷屁股，也换不来几天真心。 这话说起来有点扎心，尤",
+          "publishedAt": "2026-10-22T05:05:41.000Z"
         },
         {
-          "title": "小猪的窝：假期终结",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fezo.biz%2FDiary%2F1728.html",
-          "description": "国庆七天假期，被我完整地荒废了。 整个假期，没有任何实质性计划，只是想好好地休息一下。期间，没有出游，没有应酬，也没有工作计划；终于享受久违的睡到自然醒。可如果诚实一点说，我其实连“自然醒”都没怎么享受。因为大多数时候，我醒了翻个身，又睡了过去。这七天，我除了睡觉，什么事情也没有做。 我没有去任何地方，没有见任何人，没有读完一本书，没有写出一个字的计划。朋友圈里有人在海边，有人在山顶，有人在排队，有人在堵车。我唯一拥有的，是一张越来越皱的床单，和一个越来越沉的自己。过去，我总觉得假期是资源，必须被利用：要旅行，要社交，要学习，要在七天里活出别人一个月的精彩。可这一次，我彻底放弃了。我把闹钟关掉，把窗帘拉上，把“应该”两个字从脑子里删",
-          "publishedAt": "2026-10-07T15:54:00.000Z"
+          "title": "1900：走大朝台我在想啥？一",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2F1900.live%2Fzou-da-zhao-tai-wo-zai-xiang-sha-yi%2F",
+          "description": "null 规划 国庆假期前夕，琢磨着走川西方向安排个一两天的行程看看秋景彩林，候选的地方也定了好几个，奈何那段时间四川天气多以雨天为主，想来去了也是大雾弥漫或者湿答答的，全然不会是我预想中的体验。 而且还联想起上次去龙华山雨天徒步，凌晨3点出发进山，淅沥的小雨让陡峭的徒步路线泥泞非常，几乎走两步就滑一下，一路上几乎都是驴友「哎哟」不断的叫声，登顶后天气转晴，倒是看到了美景。 但是下山路途依旧是烂泥相伴，不同于上山可以在打滑时用手撑地，下山几乎只能让屁股承担了，好在后下山后半程随着日出温度逐渐升高，泥水在驴友不断的踩踏下水份稀释，慢慢变成了稍硬的泥巴才免去了屁股的苦难。 龙华山徒步 有点离题了。 所以当时想着索性就在家里窝着得了，要是",
+          "publishedAt": "2026-10-22T04:40:14.000Z"
         }
       ]
     },
@@ -540,7 +585,7 @@
         {
           "title": "折腾进行中：Kite：自带后台的静态博客，主题和插件都能按名字装",
           "link": "https://www.80tz.cn/go?from=feed&link=https%3A%2F%2Fwww.9ll.uk%2Fposts%2Frecommend%2Fkite%2F",
-          "description": "前两天刷 GitHub 的时候看到一个新项目，叫 Kite。star 才 12 个，创建也就半个多月，看着像是个玩具。 结果点进去一看，作者是把它当正经产品在做的 —— Go 写的 CMS，Apache-2.0，主题契约、插件 ABI、构建产物版本锁定，该有的都有。 我最近正好想给博客找个新后端，就顺手把这 52 篇文章全迁过去试了一圈。 为什么觉得它有意思# 我做这个博客的时候有个一直很别扭的地方：写文章是纯 Markdown，但要改个标题、加张图、调整标签，得开编辑器改文件，存盘，切窗口看效果，来回折腾。 别的静态博客方案要么还是这套，要么就得自己配一个 CMS 前端 —— 通常是个单独的 Node 项目，跑起来还要连数据库。 ",
+          "description": "前两天刷 GitHub 的时候看到一个新项目，叫 Kite。star 才 12 个，创建也就半个多月，看着像是个玩具。 结果点进去一看，作者是把它当正经产品在做的 —— Go 写的 CMS，Apache-2.0，主题契约、插件 ABI、构建产物版本锁定，该有的都有。 我最近正好想给博客找个新后端，就顺手把这 52 篇文章全迁过去试了一圈。 为什么觉得它有意思# 我做这个博客的时候有个一直很别扭的地方：写文章是纯 Markdown，但要改个标题、加张图、调整标签，得开编辑器改文件，存盘，切窗口看效果，来回折腾。 别的静态博客方案要么还是这套，要么就得自己配一个 CMS 前端 —— 通常是个单独的 Node 项目，跑起来还要连数据库。",
           "publishedAt": "2026-10-04T00:00:00.000Z"
         },
         {
@@ -578,64 +623,121 @@
       ],
       "items": [
         {
-          "title": "调漂时的水深和实际钓的水深不一样，有影响吗？",
-          "link": "https://chumendiao.com/tiaopiao-shuishen-bu-yizhi/",
-          "description": "调漂的水深和实际钓的水深不一样会有影响，水线变长会多压掉几目。半水不是水深的一半，换钓点之后重新找底、复验一次调目更稳妥。",
-          "publishedAt": "2026-10-10T01:00:04.000Z"
+          "title": "鱼竿被压过、磕过，还能不能用？怎么检查",
+          "link": "https://chumendiao.com/gan-beiya-guo-zenme-jiancha/",
+          "description": "鱼竿被压过或磕过之后，先做外观、敲击听声、弯曲测试三步检查。有裂纹、有异响或者弯曲不顺畅的竿不建议继续承重使用",
+          "publishedAt": "2026-10-23T11:00:05.000Z"
         },
         {
-          "title": "水底有沟有坎，怎么判断哪条是鱼道？",
-          "link": "https://chumendiao.com/shuidi-gou-kan-na-tiao-shi-yudao/",
-          "description": "水底有沟有坎，不是每条都是鱼道。判断看两头通不通、走向是横还是斜、路上有没有东西吃，重铅探完地形还要打两个窝试钓确认。",
-          "publishedAt": "2026-10-09T11:00:04.000Z"
+          "title": "调漂时发现水底是斜坡，怎么办？",
+          "link": "https://chumendiao.com/shuidi-shi-xiepo-zenme-tiaopiao/",
+          "description": "漂目忽高忽低、有时整支没入水里，多半不是漂没调好，是水底有坡度。落点前后水深不同，钩饵状态也跟着变。先多抛几竿找准数，再探清落差；可以用子线长度当缓冲，或者按最深那个落点调、接受近处钝一点，也可以走跑铅或换平底钓位。",
+          "publishedAt": "2026-10-23T06:00:05.000Z"
         },
         {
-          "title": "开饵用冷水还是温水，有区别吗？",
-          "link": "https://chumendiao.com/kai-er-yong-lengshui-huan-wenshui/",
-          "description": "开饵用冷水还是温水有区别，区别在出丝快慢上，不在最终状态。饵不出丝先查水比和醒饵，再看水温；开好的饵越放越差跟水温关系不大。",
-          "publishedAt": "2026-10-09T06:00:04.000Z"
+          "title": "深浅交界离岸太远够不到，怎么办？",
+          "link": "https://chumendiao.com/shenqian-jiaojie-gou-bu-dao/",
+          "description": "看得见的深浅交界在远处，竿子够不着。别急着换长竿：先看远处有没有鱼星和水色变化确认值不值得追，再用铅坠沿岸多探几处找近处的坡脚沟坎，交界常常斜着走，走一段就可能有离岸近的。真要远投，落点能不能重复是关键。",
+          "publishedAt": "2026-10-23T01:00:05.000Z"
         },
         {
-          "title": "螺蛳、河蚌很多的水域怎么钓？",
-          "link": "https://chumendiao.com/shuili-luosi-hebang-duo/",
-          "description": "螺蛳河蚌多说明水底有硬底和食物，常是青鱼、鲤鱼一类会来觅食的地方。钓这类水域要往硬底和深浅交界靠，饵偏实在",
-          "publishedAt": "2026-10-09T01:00:05.000Z"
+          "title": "拉饵丝太长，挂钩时缠在一起怎么办？",
+          "link": "https://chumendiao.com/laer-si-tai-chang-zenme-ban/",
+          "description": "拉饵拉出来拖着一缕丝、两个钩缠在一起，说明出丝过头了。多半是拉丝粉加多了、揉得太狠，或者饵团放着不管一直在吸水。还能拉开就沾水拍打稀释、或掺干料轻拌；成面筋那样就别救了，重新开一份，剩下的当搓饵或窝料。",
+          "publishedAt": "2026-10-22T11:00:04.000Z"
         },
         {
-          "title": "漂慢慢往上顶一点点，算不算送漂？",
-          "link": "https://chumendiao.com/piao-manman-wang-shang-ding-suan-songpiao/",
-          "description": "漂慢慢往上顶一点点也算送漂，难的是判断这次上浮是不是鱼把饵顶起来了。看它顶完停不停、回不回落、换饵后还来不来，比数顶了几目有用。",
-          "publishedAt": "2026-10-08T11:00:05.000Z"
+          "title": "岸边水草被啃的痕迹，能说明什么？",
+          "link": "https://chumendiao.com/shuicao-beiken-henji/",
+          "description": "水草有新鲜啃食痕迹，说明这一带近期有草食性鱼活动，但不能说明此刻还在。要看痕迹新不新，再结合时间和水温判断",
+          "publishedAt": "2026-10-22T06:00:05.000Z"
         },
         {
-          "title": "竿子借给别人用过，回来要检查什么？",
-          "link": "https://chumendiao.com/ganzi-jie-gei-bieren-yongguo-jiancha/",
-          "description": "竿子借出去再拿回来，要查的不是坏没坏，是那几天它经历过什么。竿袋、接口、竿体、导环、配件各过一遍，借出前先拍照留底最省事。",
-          "publishedAt": "2026-10-08T06:00:05.000Z"
+          "title": "新手怎么听懂钓友在说什么？",
+          "link": "https://chumendiao.com/xinshou-zenme-tingdong-diaoyou-shuoshuo/",
+          "description": "第一次跟人去水边，最懵的不是钓不上鱼，是听不懂话。顿口、送漂、调几钓几、拉饵搓饵、雾化、跑铅、空军爆护——这些词不用背，它们只围着几件事转：漂怎么动、怎么调、饵什么状态、线组怎么分、结果怎么说。",
+          "publishedAt": "2026-10-22T01:00:05.000Z"
         },
         {
-          "title": "第一次钓鱼需要有人带吗？自己能不能学会？",
-          "link": "https://chumendiao.com/diyici-diaoyu-yaobuyao-youren-dai/",
-          "description": "第一次钓鱼可以自学，但调漂、看漂和头一回进陌生水域这几样，有人带着会快很多。差别在反馈速度，不在能不能学会。",
-          "publishedAt": "2026-10-08T01:00:05.000Z"
+          "title": "竿子接口处松了，怎么处理？",
+          "link": "https://chumendiao.com/ganzi-jiekou-chu-song-le/",
+          "description": "接口松了先分清是没插到位还是磨了。接口里的沙是主要元凶，擦干净再判断。当天要钓就用薄胶带缠一圈顶过去，宁薄勿厚；回去想管久一点可以在磨损那圈少量点胶、干透再试插，太紧用细砂纸轻轻打平。接口变形有裂纹就别自己弄，找渔具店配节。",
+          "publishedAt": "2026-10-21T11:00:04.000Z"
         },
         {
-          "title": "夜钓收摊容易丢什么？怎么收得干净",
-          "link": "https://chumendiao.com/yediao-shoutan-shoushi/",
-          "description": "夜钓最容易丢的是小件：漂座、铅皮、挡豆、钩、钳子。收摊按“先小件后大件、先水面后地面”的顺序，比靠灯光找更可靠",
-          "publishedAt": "2026-10-07T11:00:05.000Z"
+          "title": "竿尖在动但漂没动，是什么在动？",
+          "link": "https://chumendiao.com/ganjian-zai-dong-dan-piao-mei-dong/",
+          "description": "盯着漂没动静，余光里竿尖却抖个不停，多半不是鱼。浮漂和竿尖看到的力不是一回事，横着来的力竿尖先知道。先压风线，再看竿尖有没有点到水，剩下的按节奏分：跟阵风一阵一阵来的是风，往一个方向持续拽着的才像水下有东西。",
+          "publishedAt": "2026-10-21T06:00:05.000Z"
         },
         {
-          "title": "钓上来的鱼怎么带回家不会死？",
-          "link": "https://chumendiao.com/diaoshanglai-de-yu-zenme-dai-huijia-bu-hui-si/",
-          "description": "活鱼能不能活着回家，关键在路上一段时间：包湿、降温、少折腾，到家先别急着拆袋。",
-          "publishedAt": "2026-10-07T06:00:05.000Z"
+          "title": "竿节里有沙、抽竿有异响怎么处理？",
+          "link": "https://chumendiao.com/ganjie-jinsha-yixiang/",
+          "description": "竿节里有沙会产生摩擦声并磨损竿壁，处理办法是把竿逐节退开、用清水冲净晾干，不要带沙抽插",
+          "publishedAt": "2026-10-21T01:00:05.000Z"
         },
         {
-          "title": "钓了一天没钓到，怎么判断这一天有没有白来？",
-          "link": "https://chumendiao.com/diaole-yitian-mei-didao-zenme-pan-bai-lai/",
-          "description": "空军一天算不算白来，标准在你手上：带回了地形和水情就不算白，带不回东西也不等于亏。",
-          "publishedAt": "2026-10-07T01:00:05.000Z"
+          "title": "夏天雷阵雨来之前那阵，要不要收竿？",
+          "link": "https://chumendiao.com/leizhenyu-lai-zhiqian-yao-bu-yao-shougan/",
+          "description": "夏天的雷阵雨来之前常常有口，那几分钟却正是该收竿的时候。碳素竿和湿线都导电，开阔水面本就容易招雷。听到雷声就别再等，竿放平、人撤到有防雷设施的屋里或车里；出门前先给自己划一条收竿的线。",
+          "publishedAt": "2026-10-20T11:00:04.000Z"
+        }
+      ]
+    },
+    {
+      "friendUrl": "https://bk.gs.cn/",
+      "feedUrl": "https://bk.gs.cn/index.php/feed/",
+      "feedUrls": [
+        "https://bk.gs.cn/index.php/feed/"
+      ],
+      "items": [
+        {
+          "title": "归港",
+          "link": "https://bk.gs.cn/index.php/archives/42/",
+          "description": "下午，我站在外婆邻居家院子里，朝海那边望。风比我先知道消息，台风还在老远外头转着，天却仍是连日的晴。平日散在海上的船，早收了锚，一艘贴一艘，悄没声地拢进港里。海面瞧着还平顺，天是那种晒透了的浅蓝...",
+          "publishedAt": "2026-10-20T13:39:00.000Z"
+        },
+        {
+          "title": "茶花开了，岁岁念外婆",
+          "link": "https://bk.gs.cn/index.php/archives/37/",
+          "description": "清晨又刷到舞台上的《茶花开了》。旋律漫过来的时候，鼻子先酸了，眼泪没拦住。这首歌像一把很轻的钥匙，拧开了我藏了好多年的匣子。外婆的碎片，一整片一整片地涌上来。我是被外婆捂大的。爸妈忙的那些年，她...",
+          "publishedAt": "2026-10-17T23:08:58.000Z"
+        },
+        {
+          "title": "港岙石屋，山海遗韵",
+          "link": "https://bk.gs.cn/index.php/archives/36/",
+          "description": "站在港岙村的平地上抬眼，一整片依山摞起来的石屋，冷不防就撞进视线里。温岭石塘的港岙，房子顺着山势一层层往上爬，挤在青山怀里。村里人就地凿石头，拿一块块粗粝沉实的岩块垒墙。石屋高高低低跟着坡走，没...",
+          "publishedAt": "2026-10-17T00:25:00.000Z"
+        },
+        {
+          "title": "时光的低语",
+          "link": "https://bk.gs.cn/index.php/archives/31/",
+          "description": "在老家的院子里坐着，常常分不清自己是踩着过去，还是已经往明天迈了半步。我一直觉得时间是会出声的，不是钟表那种，是夜里忽然安静下来的时候，是天刚蒙蒙亮、露水还没干的时候，冷不丁就听见它在那儿念叨点...",
+          "publishedAt": "2026-10-16T00:54:00.000Z"
+        },
+        {
+          "title": "阳台上的四季诗笺",
+          "link": "https://bk.gs.cn/index.php/archives/29/",
+          "description": "在城市的钢筋水泥丛林里，我家阳台就巴掌大，可我偏偏爱往那儿钻。春天来得没个动静。某天浇水，发现月季冒了花苞，矮牵牛也从土缝里挤出两片圆叶子。等真开起来，我反倒懒得看了——开得太多，粉的紫的挤一盆...",
+          "publishedAt": "2026-10-15T01:56:51.000Z"
+        },
+        {
+          "title": "一碗粥，一尾咸旧时光",
+          "link": "https://bk.gs.cn/index.php/archives/27/",
+          "description": "耳机里又循环着《阿嬷的话》，软糯的闽南语拖着尾音，慢吞吞漫开，温温的，又有点空落落的。乡音一撞进耳朵，那些碎碎的旧事就自己浮上来了，最后不声不响，落成一帧淡得发白的画面，搁在记忆最里头。我关于奶...",
+          "publishedAt": "2026-10-07T09:17:00.000Z"
+        },
+        {
+          "title": "临海古城游记",
+          "link": "https://bk.gs.cn/index.php/archives/26/",
+          "description": "在尘世里泡久了，总惦记着往哪座老城躲半日清闲。前几日终于踩上临海的石板路，去会一眼念了许久的江南长城和紫阳古街。城垣旧，巷子深，烟火慢，走在其间，像撞进一段被晒得温软的旧时光。午后登长城，才信“...",
+          "publishedAt": "2026-10-06T03:16:00.000Z"
+        },
+        {
+          "title": "石塘七色笺",
+          "link": "https://bk.gs.cn/index.php/archives/30/",
+          "description": "晨雾没散的时候，石塘那座小岛看着像攥皱的糖纸。海风顺着墙缝往里钻，咸的，潮的，彩漆一片片剥下来，底下露出早年间画的渔民画——帆船、银鱼、举火把的人，笔触粗得很，鱼眼睛跟扣子一样圆。潮水一涨，就什...",
+          "publishedAt": "2026-10-05T01:58:00.000Z"
         }
       ]
     },
@@ -718,6 +820,123 @@
           "link": "https://blog.amamo.top/posts/%E5%BC%80%E6%BA%90%E6%8E%A8%E8%8D%90-astrbot-napcat-%E9%83%A8%E7%BD%B2%E5%88%B0huggingface/",
           "description": "开源推荐：把 QQ 机器人搬到 Hugging Face 免费跑（AstrBot + NapCat）",
           "publishedAt": "2026-08-19T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "friendUrl": "https://ink.tino.im",
+      "feedUrl": "https://ink.tino.im/rss.xml",
+      "feedUrls": [
+        "https://ink.tino.im/rss.xml",
+        "https://ink.tino.im/feed.xml",
+        "https://ink.tino.im/feed/",
+        "https://ink.tino.im/atom.xml"
+      ],
+      "items": [
+        {
+          "title": "Spring Boot 多模块工程的 Thin-Jar 实践：基于 Unpack 扁平化构建与自动配置治理",
+          "link": "https://ink.tino.im/archives/uwfy8pTe8uu",
+          "description": "在 Spring Boot 项目的部署优化中，将动辄上百兆的 Fat-Jar 拆分为 Thin-Jar（瘦包）是一个很常见的思路。通常的做法是借助构建插件将所有依赖抽取到外部 lib 目录，发版时只更新业务包。但在多模块工程中，如果只是简单地把所有依赖拆出，往往会带来“既要维护多个业务 jar 又要管理第三方库”的尴尬。本文记录一种基于 unpack 扁平化合并内部模块的 Thin-Jar 方案，以及由此引发的 Spring Boot 自动配置加载失效与治理实践。适用环境参考：Spring Boot 3.x / JDK 17+ / Maven 3.8+",
+          "publishedAt": "2026-10-04T03:00:00.000Z"
+        },
+        {
+          "title": "后端开发核心术语大全：从系统、架构到服务治理",
+          "link": "https://ink.tino.im/archives/thYjQa5Jo2e",
+          "description": "系统梳理后端开发核心术语，涵盖系统开发、架构设计、网络通信、故障排查、监控告警、服务治理等八大模块。每个术语附通俗解释与实际场景说明，讲解全面易懂，适合后端入门学习和面试复习。",
+          "publishedAt": "2026-09-12T16:00:00.000Z"
+        },
+        {
+          "title": "Cloudflare 清除缓存无效？记一次 Nginx 代理缓存踩坑实录",
+          "link": "https://ink.tino.im/archives/3c8JeZedoik",
+          "description": "一直以来，我做前后端分离项目比较多，前端构建工具（比如 Vite 或 Webpack）在打包时会自动给静态资源加上文件指纹（Hash）来进行缓存控制。每次发版文件名都会变，所以基本碰不到手动刷新 CDN 缓存的烦恼。但最近在优化我的个人博客时，却踩了一个基础的缓存坑：在 Cloudflare 后台执行了 Purge Cache，静态文件死活不更新。",
+          "publishedAt": "2026-05-28T02:00:00.000Z"
+        },
+        {
+          "title": "每天60秒",
+          "link": "https://ink.tino.im/archives/60s",
+          "description": "积累每一秒，改变每一天",
+          "publishedAt": "2026-05-18T06:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "friendUrl": "https://jxe.me/",
+      "feedUrl": "https://jxe.me/rss.xml",
+      "feedUrls": [
+        "https://jxe.me/rss.xml"
+      ],
+      "items": [
+        {
+          "title": "一个公开免注册的中文独立博客聚合站：订阅源靠 AI 自己找、自己审。",
+          "link": "https://jxe.me/post/%E4%B8%80%E4%B8%AA%E5%85%AC%E5%BC%80%E5%85%8D%E6%B3%A8%E5%86%8C%E7%9A%84%E4%B8%AD%E6%96%87%E7%8B%AC%E7%AB%8B%E5%8D%9A%E5%AE%A2%E8%81%9A%E5%90%88%E7%AB%99-%E8%AE%A2%E9%98%85%E6%BA%90%E9%9D%A0-ai-%E8%87%AA%E5%B7%B1%E6%89%BE-%E8%87%AA%E5%B7%B1%E5%AE%A1",
+          "description": "线上地址：https://e.ymao.me 为什么做这个 平时看博客的习惯很割裂：好的中文独立博客散在各处，想系统刷一遍就得装阅读器、订阅几十个源、再忍受一半源半年不更新。就有了新想法打开一个页面，就像刷信息流一样把整个中文博客圈的最新文",
+          "publishedAt": "2026-10-22T14:01:56.000Z"
+        },
+        {
+          "title": "RuiC-oc-ferry 实现0成本使用WorkBuddy",
+          "link": "https://jxe.me/post/ruic-oc-ferry-%E5%AE%9E%E7%8E%B00%E6%88%90%E6%9C%AC%E4%BD%BF%E7%94%A8workbuddy",
+          "description": "项目地址：Github 把 OpenCode 的免费模型摆渡给 WorkBuddy 跨平台托盘应用 · 无需登录注册、无需 API Key · 隔离运行时 · 并发检测 · 判定缓存 · 一键导入 · 本机 OpenAI 兼容转发口 许可证",
+          "publishedAt": "2026-10-16T11:03:44.000Z"
+        },
+        {
+          "title": "若羌县维修 微信小程序 · 交付预览",
+          "link": "https://jxe.me/post/%E8%8B%A5%E7%BE%8C%E5%8E%BF%E7%BB%B4%E4%BF%AE-%E5%BE%AE%E4%BF%A1%E5%B0%8F%E7%A8%8B%E5%BA%8F-%E4%BA%A4%E4%BB%98%E9%A2%84%E8%A7%88",
+          "description": "客户端 · 家庭客户 浏览 5 大类 30 项明码服务，按「上门检测后报价」或「明码标价在线付」两种方式下单；选日期时段、传故障照片、填优惠口令，全程微信支付。 订单状态实时可查：待接单 → 已接单 → 服务中 → 已完成，完成后 30 天",
+          "publishedAt": "2026-10-15T12:10:44.000Z"
+        },
+        {
+          "title": "分享一些4位cn未注册域名扫榜",
+          "link": "https://jxe.me/post/%E5%88%86%E4%BA%AB%E4%B8%80%E4%BA%9B4%E4%BD%8Dcn%E6%9C%AA%E6%B3%A8%E5%86%8C%E5%9F%9F%E5%90%8D%E6%89%AB%E6%A6%9C",
+          "description": "网上扫出来一批还没被注册的 4 位纯字母 .cn 域名（660 个，全部向 CNNIC 查过两遍），做成了一张自助筛选卡片—— 按形态筛：带释义 / 双元音连号 / 真实英文词 / 博客向 / 纯辅音 可以排除冷字母（q/x/z/j） 点一",
+          "publishedAt": "2026-10-12T04:54:47.000Z"
+        },
+        {
+          "title": "友圈功能上线",
+          "link": "https://jxe.me/post/%E5%8F%8B%E5%9C%88%E5%8A%9F%E8%83%BD%E4%B8%8A%E7%BA%BF",
+          "description": "怎么干活的 Cloudflare Worker 每小时跑一次定时任务，挨个请求各站的 RSS/Atom，解析完丢进 D1，每个站只留最新 12 篇。访客打开页面读的是数据库，不实时请求友站，边缘还缓存两分钟，速度和普通页面没区别。现在已经攒",
+          "publishedAt": "2026-10-09T12:13:08.000Z"
+        },
+        {
+          "title": "博客存储零成本方案：Backblaze B2 私有桶 + Cloudflare Worker 签名代理（免信用卡）",
+          "link": "https://jxe.me/post/%E5%8D%9A%E5%AE%A2%E5%AD%98%E5%82%A8%E9%9B%B6%E6%88%90%E6%9C%AC%E6%96%B9%E6%A1%88-backblaze-b2-%E7%A7%81%E6%9C%89%E6%A1%B6-cloudflare-worker-%E7%AD%BE%E5%90%8D%E4%BB%A3%E7%90%86-%E5%85%8D%E4%BF%A1%E7%94%A8%E5%8D%A1",
+          "description": "我把博客所有图片、视频都存在对象存储里。最开始用的是 Cloudflare R2，但 R2 开通公共访问/绑定域名那一步要求验证信用卡，而我没有能用于验证的信用卡——桶虽然能建成私有的，可私有桶没法直接给访客看图。 折腾下来找到一个完全免信",
+          "publishedAt": "2026-10-08T01:55:13.000Z"
+        },
+        {
+          "title": "腾讯 EdgeOne 给 Cloudflare R2 套一层国内 CDN",
+          "link": "https://jxe.me/post/%E8%85%BE%E8%AE%AF-edgeone-%E7%BB%99-cloudflare-r2-%E5%A5%97%E4%B8%80%E5%B1%82%E5%9B%BD%E5%86%85-cdn",
+          "description": "jxe.me跑在 Cloudflare Workers 上，图片视频全存在 R2，用 R2 自定义域名 r2.e.jxe.me 直连访问。问题很现实：国内访问 Cloudflare 的速度全看运气，一张 500KB 的图 TTFB 经常 1",
+          "publishedAt": "2026-10-07T14:53:38.000Z"
+        },
+        {
+          "title": "music-api — 中央音乐解析服务",
+          "link": "https://jxe.me/post/music-api-%E4%B8%AD%E5%A4%AE%E9%9F%B3%E4%B9%90%E8%A7%A3%E6%9E%90%E6%9C%8D%E5%8A%A1",
+          "description": "musicapi — 中央音乐解析服务 最近折腾博客的音乐播放器功能，踩了太多坑，干脆就自己写了个中央音乐解析服务。 一个部署在 Cloudflare Workers 上的音乐解析与曲库中心：聚合搜索五平台歌曲、解析试听/下载入库到 R2，",
+          "publishedAt": "2026-09-30T04:35:27.000Z"
+        },
+        {
+          "title": "ClearCrop Map 为植保无人机而生的高清卫星地图",
+          "link": "https://jxe.me/post/clearcrop-map-%E4%B8%BA%E6%A4%8D%E4%BF%9D%E6%97%A0%E4%BA%BA%E6%9C%BA%E8%80%8C%E7%94%9F%E7%9A%84%E9%AB%98%E6%B8%85%E5%8D%AB%E6%98%9F%E5%9C%B0%E5%9B%BE",
+          "description": "ClearCrop Map 体验地址：https://map.mliae.ccwu.cc/ 开源地址：https://github.com/mliae/ClearCropMap （有需要的可以联系我定制） ClearCrop Map 一款专",
+          "publishedAt": "2026-09-30T04:09:40.000Z"
+        },
+        {
+          "title": "keeper-radar · 白嫖雷达",
+          "link": "https://jxe.me/post/keeper-radar-%E7%99%BD%E5%AB%96%E9%9B%B7%E8%BE%BE",
+          "description": "手里有几个闲置的手机号，心血来潮就用Qoder写了这个项目，全部跑在 Cloudflare 免费额度上（Worker + Static Assets + D1 + Cron），一个域名一个密码就能用。 线上示例：https://keeper",
+          "publishedAt": "2026-09-28T04:55:21.000Z"
+        },
+        {
+          "title": "Jxe · 轻博客：一个跑在 Cloudflare 上的个人小站",
+          "link": "https://jxe.me/post/jxe-%E8%BD%BB%E5%8D%9A%E5%AE%A2-%E4%B8%80%E4%B8%AA%E8%B7%91%E5%9C%A8-cloudflare-%E4%B8%8A%E7%9A%84%E4%B8%AA%E4%BA%BA%E5%B0%8F%E7%AB%99",
+          "description": "经常有朋友问我这个站是用什么搭的——不是 WordPress，也不是 Typecho，而是我自己一点点写出来的。今天正式把它开源：项目叫 Jxe · 轻博客（仓库名 moments），而你正在浏览的这个网站，就是它最完整的线上演示。 开源地",
+          "publishedAt": "2026-09-26T16:03:48.000Z"
+        },
+        {
+          "title": "剑，藏在鞘里的时候",
+          "link": "https://jxe.me/post/%E5%89%91-%E8%97%8F%E5%9C%A8%E9%9E%98%E9%87%8C%E7%9A%84%E6%97%B6%E5%80%99",
+          "description": "旁人总觉得，剑修该是张扬的。 三尺青锋，出鞘即见血，一剑光寒十九州。 可我这柄剑，大多数时候，都安静地躺在鞘里。 剑最锋利的时刻，从来不是出鞘，而是收着的时候。 刚入天剑宗那年，我也急着证明自己。紫眸能看破幻象，便想破尽天下幻象；《御剑术》",
+          "publishedAt": "2026-09-27T14:12:04.000Z"
         }
       ]
     }
