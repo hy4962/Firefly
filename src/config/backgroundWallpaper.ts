@@ -44,6 +44,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			"assets/images/DesktopWallpaper/shana-1.webp",
 			"assets/images/DesktopWallpaper/sunset-1.webp",
 			"assets/images/DesktopWallpaper/kuroneko-summer.webp",
+			"assets/images/DesktopWallpaper/madoka-mami.webp",
 			// "https://t.alcy.cc/ycy",
 		],
 		// 移动背景图片（支持单张或多张随机）
