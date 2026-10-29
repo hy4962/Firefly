@@ -1,14 +1,17 @@
 # 自动生成，勿手改 —— 由 scripts/content-safelist.mjs 重写。
 # 起因：src/site-content/ 被 git 忽略，Tailwind 的自动内容探测会跳过它，
 # 只出现在内容文件里的工具类因此不会被编译出来。这里把它们登记成可扫描的候选。
-# 共 140 个。
+# 共 146 个。
 
+'
++
 -bottom-1
 -right-1
 [^
 absolute
 active:scale-[0.99]
 align-middle
+archive-year-toggle…
 bg-(--line-divider)
 bg-(--primary)
 bg-(--primary)/10
@@ -18,6 +21,7 @@ border
 border-(--line-divider)
 border-t
 break-words
+cls
 cursor-pointer
 dark:bg-white/10
 dark:bg-white/5
@@ -25,6 +29,7 @@ dark:text-neutral-200
 dark:text-neutral-400
 dark:text-neutral-500
 dark:text-white!
+ff-w-ico
 flex
 flex-1
 flex-col
@@ -49,6 +54,7 @@ h-6
 h-7
 h-full
 hidden
+home-wallpaper-card
 home-wallpaper-card__motion-text
 hover:bg-(--primary)/20
 hover:brightness-110
