@@ -471,6 +471,407 @@ dynamic-entry .page-gallery > .page-gallery-grid[data-layout="single"] img {
 	max-height: min(24rem, 60vh);
 }
 
+/* ===== 内嵌评论预览 =====
+   DOM 全部由 public/assets/js/dynamic-comment-enhance.js 生成（上游的
+   DynamicInlineComments.astro 没动），类名统一带 dyn-cmt- 前缀，避免跟 Waline
+   自带样式（wl-*）和上游 .page-comment-* 撞车。
+
+   版面照 lengxiqwq.com/dynamic/：一块细边框的盒子，标题行「N 条评论 + 写评论」，
+   最多 3 条评论，底部「展开更多 / 打开完整评论区」。上游那个折叠按钮由
+   [data-dyn-preview] 门控藏掉 —— 脚本要是挂了，按钮还在，功能不丢。 */
+
+dynamic-entry .page-inline-comments[data-dyn-preview="1"] {
+	border-top: 0;
+	margin-top: 0.875rem;
+	padding-top: 0;
+}
+
+/* 上游那个「评论 3 ∨」折叠按钮：预览出现之后它就没用了，藏掉。
+   只按 data-dyn-preview 门控 —— 脚本没跑起来时按钮还在，可降级。 */
+dynamic-entry .page-inline-comments[data-dyn-preview="1"] > .page-comment-toggle {
+	display: none;
+}
+
+.dyn-cmt-collapse-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	margin-top: 0.35rem;
+}
+
+/* 面板摊开时把预览收掉 —— 同一批评论没必要并排摆两份 */
+dynamic-entry .page-inline-comments[data-dyn-open="1"] > [data-dyn-box] {
+	display: none;
+}
+
+dynamic-entry .page-inline-comments[data-dyn-open="1"] > .page-comment-panel {
+	margin-top: 0;
+}
+
+.dyn-cmt-box {
+	overflow: hidden;
+	border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+	border-radius: var(--radius);
+	background: color-mix(in srgb, var(--btn-regular-bg) 55%, transparent);
+}
+
+.dyn-cmt-box svg {
+	width: 1em;
+	height: 1em;
+	flex: 0 0 auto;
+}
+
+/* ---- 顶部标题行 ---- */
+
+.dyn-cmt-head {
+	display: flex;
+	min-height: 2.4rem;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding: 0.4rem 0.75rem;
+	border-bottom: 1px dashed color-mix(in srgb, var(--content-meta) 22%, transparent);
+}
+
+.dyn-cmt-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	color: var(--content-meta);
+	font-size: 0.8125rem;
+	line-height: 1.4;
+}
+
+.dyn-cmt-label svg {
+	font-size: 1rem;
+}
+
+.dyn-cmt-count {
+	color: var(--text-color);
+	font-weight: 600;
+}
+
+.dyn-cmt-action {
+	display: inline-flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.3rem;
+	white-space: nowrap;
+	padding: 0.15rem 0.35rem;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: var(--primary);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	line-height: 1.5;
+	cursor: pointer;
+	transition: background 160ms ease;
+}
+
+.dyn-cmt-action:hover,
+.dyn-cmt-action:focus-visible {
+	background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* ---- 评论列表 ---- */
+
+.dyn-cmt-list {
+	padding: 0.125rem 0.75rem 0.375rem;
+}
+
+.dyn-cmt-row {
+	display: flex;
+	gap: 0.55rem;
+	padding: 0.45rem 0;
+}
+
+.dyn-cmt-avatar {
+	width: 1.75rem;
+	height: 1.75rem;
+	flex: 0 0 1.75rem;
+	border-radius: 9999px;
+	background: var(--btn-regular-bg);
+	object-fit: cover;
+}
+
+.dyn-cmt-main {
+	min-width: 0;
+	flex: 1;
+}
+
+.dyn-cmt-meta {
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+	min-width: 0;
+}
+
+.dyn-cmt-nick {
+	overflow: hidden;
+	max-width: 11rem;
+	color: var(--text-color);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	line-height: 1.5;
+	text-decoration: none;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+a.dyn-cmt-nick:hover {
+	color: var(--primary);
+}
+
+.dyn-cmt-badge {
+	flex: 0 0 auto;
+	padding: 0 0.3rem;
+	border-radius: 0.25rem;
+	background: color-mix(in srgb, var(--primary) 16%, transparent);
+	color: var(--primary);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.dyn-cmt-replyto {
+	overflow: hidden;
+	color: var(--content-meta);
+	font-size: 0.6875rem;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dyn-cmt-time {
+	margin-left: auto;
+	flex: 0 0 auto;
+	color: var(--content-meta);
+	font-size: 0.6875rem;
+	line-height: 1.5;
+}
+
+/* ---- 评论正文 ---- */
+
+.dyn-cmt-body {
+	margin-top: 0.15rem;
+	color: color-mix(in srgb, var(--text-color) 92%, transparent);
+	font-size: 0.8125rem;
+	line-height: 1.62;
+	overflow-wrap: anywhere;
+}
+
+.dyn-cmt-body p {
+	margin: 0 0 0.25rem;
+}
+
+.dyn-cmt-body > :last-child {
+	margin-bottom: 0;
+}
+
+.dyn-cmt-body a {
+	color: var(--primary);
+	text-decoration: underline;
+	text-decoration-color: color-mix(in srgb, var(--primary) 42%, transparent);
+	text-underline-offset: 3px;
+}
+
+.dyn-cmt-body a:hover {
+	text-decoration-color: currentcolor;
+}
+
+.dyn-cmt-body img {
+	max-width: 100%;
+	max-height: 14rem;
+	margin: 0.2rem 0;
+	border-radius: var(--radius);
+}
+
+/* 表情是 <img class="wl-emoji">，别被上面那条 max-height 拉成方块 */
+.dyn-cmt-body img.wl-emoji {
+	display: inline-block;
+	width: auto;
+	height: 1.3em;
+	max-height: none;
+	margin: 0 0.1em;
+	border-radius: 0;
+	vertical-align: -0.25em;
+}
+
+.dyn-cmt-body .wl-badge {
+	display: inline-block;
+	margin-right: 0.25rem;
+	padding: 0 0.3rem;
+	border-radius: 0.25rem;
+	background: color-mix(in srgb, var(--primary) 16%, transparent);
+	color: var(--primary);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	line-height: 1.5;
+	vertical-align: 0.05em;
+}
+
+/* AI 回复末尾那行小字 */
+.dyn-cmt-body small {
+	display: block;
+	margin-top: 0.25rem;
+	color: var(--content-meta);
+	font-size: 0.6875rem;
+	line-height: 1.5;
+}
+
+.dyn-cmt-body blockquote {
+	margin: 0.25rem 0;
+	padding-left: 0.6rem;
+	border-left: 2px solid var(--border);
+	color: var(--content-meta);
+}
+
+.dyn-cmt-body code {
+	padding: 0.05rem 0.25rem;
+	border-radius: 0.25rem;
+	background: var(--btn-regular-bg);
+	font-size: 0.75rem;
+}
+
+.dyn-cmt-body pre {
+	margin: 0.35rem 0;
+	padding: 0.5rem 0.6rem;
+	overflow: auto;
+	border-radius: var(--radius);
+	background: var(--btn-regular-bg);
+	font-size: 0.75rem;
+}
+
+.dyn-cmt-body pre code {
+	padding: 0;
+	background: transparent;
+}
+
+/* 长评论折 4 行，下面挂一个「展开 / 收起」 */
+.dyn-cmt-body.is-clamped {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 4;
+}
+
+.dyn-cmt-body.is-clamped.is-open {
+	display: block;
+	overflow: visible;
+	-webkit-line-clamp: unset;
+}
+
+.dyn-cmt-fold {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--primary);
+	font-family: inherit;
+	font-size: 0.6875rem;
+	line-height: 1.6;
+	cursor: pointer;
+}
+
+.dyn-cmt-fold:hover {
+	text-decoration: underline;
+}
+
+/* ---- 底部一行 ---- */
+
+.dyn-cmt-foot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding: 0.35rem 0.75rem 0.45rem;
+	border-top: 1px dashed color-mix(in srgb, var(--content-meta) 22%, transparent);
+}
+
+.dyn-cmt-foot .dyn-cmt-action {
+	font-size: 0.75rem;
+}
+
+.dyn-cmt-foot-hint {
+	flex: 1;
+}
+
+.dyn-cmt-btn-icon {
+	display: inline-flex;
+	transition: transform 160ms ease;
+}
+
+.dyn-cmt-open:hover .dyn-cmt-btn-icon {
+	transform: translateX(2px);
+}
+
+/* ---- 空态 / 加载态 ---- */
+
+.dyn-cmt-empty {
+	display: flex;
+	min-height: 2.6rem;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding: 0.4rem 0.75rem;
+}
+
+.dyn-cmt-hint {
+	display: inline-flex;
+	min-width: 0;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--content-meta);
+	font-family: inherit;
+	font-size: 0.8125rem;
+	line-height: 1.5;
+	cursor: pointer;
+	transition: color 160ms ease;
+}
+
+.dyn-cmt-hint:hover {
+	color: var(--primary);
+}
+
+.dyn-cmt-hint-text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dyn-cmt-loading {
+	display: flex;
+	min-height: 2.6rem;
+	align-items: center;
+	padding: 0.4rem 0.75rem;
+}
+
+.dyn-cmt-skeleton {
+	color: var(--content-meta);
+	font-size: 0.8125rem;
+	animation: dyn-cmt-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes dyn-cmt-pulse {
+	0%,
+	100% {
+		opacity: 0.35;
+	}
+
+	50% {
+		opacity: 0.85;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dyn-cmt-skeleton {
+		animation: none;
+		opacity: 0.6;
+	}
+}
+
 /* ===== 窄屏：网格自适应，不再固定 100px ===== */
 
 @media (max-width: 480px) {
