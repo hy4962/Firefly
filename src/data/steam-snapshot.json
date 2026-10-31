@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-24T00:25:04.519Z",
+  "updatedAt": "2026-10-31T01:28:46.884Z",
   "partial": false,
   "profile": {
     "steamId": "76561199212880612",
@@ -14,8 +14,8 @@
   },
   "stats": {
     "gameCount": 86,
-    "totalMinutes": 202185,
-    "recentMinutes": 13
+    "totalMinutes": 202195,
+    "recentMinutes": 23
   },
   "games": [
     {
@@ -77,9 +77,9 @@
     {
       "appid": 3678970,
       "name": "TBH: Task Bar Hero",
-      "minutes": 3063,
-      "recentMinutes": 0,
-      "lastPlayed": 1791519304,
+      "minutes": 3073,
+      "recentMinutes": 10,
+      "lastPlayed": 1793247735,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3678970/header.jpg"
     },
     {
