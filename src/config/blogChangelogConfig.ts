@@ -30,6 +30,46 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.51",
+		title: "动态页重排",
+		date: "2026-10-31",
+		summary:
+			"参考站的动态页把评论直接铺在卡片里，我照着做了一遍：不点开也知道有没有人聊；顺手把顶上那张半屏封面撤了，正文直接顶到第一屏",
+		description:
+			"动态页的评论一直是「点开才看」的老路子：每条动态底下挂一个折叠按钮，点开才现场拉一个 iframe，把整个 Waline 前端（几百 KB 的 JS、表情包配置、头像）全套加载一遍。一页二十条动态，谁也不会一条条点，结果就是「不知道有没有人聊」和「点开等半天」两件事同时成立。这次照 lengxiqwq.com 的做法重写：评论走 Waline 的 REST 接口（/api/comment?path=…&pageSize=30）拿回计数和列表，直接在卡片正文下面铺一块预览 —— 标题行「N 条评论 + 写评论」，最多三条，每条带头像、昵称、博主徽章、「回复 @某某」和相对时间；超过三条给「展开更多评论 (N)」；长评论折四行加一个「展开」；一条都没有就是单行「暂无评论，来抢个沙发吧」。真正的输入框还是复用原来那个 iframe，但改成按需创建：点「写评论」才拉起来，并直接把光标塞进 textarea，面板摊开时预览自动收起，底下留一个「收起评论区」。取数也做了克制：IntersectionObserver 300px 提前量，只拉快进视口的那几条，结果在 sessionStorage 里存 5 分钟；请求失败就把预览整个摘掉，把上游那个折叠按钮还回去，功能不会因为多试一招而丢。落地上一个主题文件都没碰 —— DynamicInlineComments.astro、dynamic-inline-comments.ts、dynamic.css 全是原样，新东西全塞进 public/assets/js/dynamic-comment-enhance.js 和 public/assets/css/dynamic-card.css，靠页脚注入的 ?v= 换版本。顺手把顶部那块「半屏封面 + 头像 / 昵称 / 签名」整块撤了：它除了把正文往下推 380px 什么也没干，撤完标题直接顶到第一屏。壳一撤，页面头部那行字就裸在那儿，看着比原来更难看，所以又把上游 .card-base 的圆角、底色、描边加回来，只把内边距从 1.5rem 2rem 收成 1.125rem 1.375rem —— 那套留白是配着左边大图标算的，图标早撤了。",
+		items: [
+			{
+				category: "功能",
+				text: "动态卡片内联评论预览：标题行「N 条评论 + 写评论」，最多铺 3 条，每条带头像、昵称、博主徽章、「回复 @某某」与相对时间；超过 3 条给「展开更多评论 (N)」，长评论折 4 行加「展开」",
+			},
+			{
+				category: "交互",
+				text: "「写评论 / 打开完整评论区」才按需创建原来的 Waline iframe（表单、表情、登录、回复链照旧），并自动把光标放进输入框；面板摊开时预览自动收起，下方给「收起评论区」，空态也有出口",
+			},
+			{
+				category: "视觉",
+				text: "一条评论都没有时不再是空面板，而是一行「暂无评论，来抢个沙发吧 ＋ 写评论」；有评论则按卡片内的细边框盒子铺开，跟正文之间用虚线分隔",
+			},
+			{
+				category: "性能",
+				text: "取数从「拉整个 Waline 前端」改成一次 REST 请求：IntersectionObserver 300px 提前量只拉快进视口的卡片，结果在 sessionStorage 缓存 5 分钟；请求失败自动摘掉预览、把上游折叠按钮还回去",
+			},
+			{
+				category: "视觉",
+				text: "撤掉动态页顶部的「半屏封面图 + 头像 / 昵称 / 签名」，正文不再被推下去 380px，标题直接顶到第一屏；「写说说」按钮与置顶动态快捷条保留",
+			},
+			{
+				category: "视觉",
+				text: "页面头部（站长动态 / 写说说 / 订阅 RSS / 动态计数 / 搜索 / 年份筛选）恢复上游 .card-base 的卡片壳，内边距按「左侧大图标已撤」收成 1.125rem 1.375rem 1.25rem",
+			},
+			{
+				category: "维护",
+				text: "改动只落在 public/assets/js/dynamic-comment-enhance.js、public/assets/js/dynamic-hero.js、public/assets/css/dynamic-card.css 与页脚注入的 ?v=，上游 components / styles 一个字没改",
+			},
+		],
+		tags: ["动态", "Waline", "评论", "视觉"],
+	},
+	{
 		version: "V1.50",
 		title: "AI 小助手读懂页面",
 		date: "2026-10-16",
