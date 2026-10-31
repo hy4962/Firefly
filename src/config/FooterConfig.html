@@ -474,7 +474,7 @@
 				// 不然 swup 切一次页搬过去的节点就没了。
 				path: /^\/dynamic\/?$/,
 				id: "ff-dynamic-hero-js",
-				src: "/assets/js/dynamic-hero.js?v=4",
+				src: "/assets/js/dynamic-hero.js?v=5",
 			},
 			{
 				// 「天气预报」卡片：全站加载 —— 数据来自 uapis.cn（免费无 key，按访客
@@ -492,7 +492,7 @@
 				// 动态页卡片改版：左侧主题色竖条、圆形头像描边、固定尺寸的图片方块网格
 				path: /^\/dynamic\/?$/,
 				id: "ff-dynamic-card-css",
-				href: "/assets/css/dynamic-card.css?v=2",
+				href: "/assets/css/dynamic-card.css?v=3",
 			},
 		];
 
@@ -531,32 +531,14 @@
 	})();
 </script>
 
-<!-- ===== 动态页封面区（仿朋友圈个人主页头部）=====
+<!-- ===== 动态页顶部挂件（写说说 + 置顶条）=====
      只在 /dynamic/ 显示：DOM 先挂在页脚这儿（swup 容器之外，切页不丢），
      由 dynamic-hero.js 搬进正文顶部；没搬走之前一直 hidden，不会露在页脚位置。
-     ⚠️ 封面图、昵称、签名、两个按钮的链接都是写死的，想换直接改这一段就行。 -->
+     原来那块「封面图 + 头像 / 昵称 / 签名」已经整块撤掉了 —— 顶上那半屏图除了把
+     正文推下去没干别的（2026-10-31 站长要求删）。现在只剩两件事：
+       · .ff-wx-actions 的「写说说」被脚本并进页面头部右侧那一排（跟订阅RSS、N 动态并排）
+       · .ff-wx-pinned 是置顶动态的快捷入口，没有置顶时保持 hidden，不留空框 -->
 <div id="ff-wx-hero" hidden>
-	<div class="ff-wx-cover">
-		<div class="ff-wx-cover-img-box">
-			<!-- 封面图：从 data-covers 里随机挑一张（跟桌面壁纸同一批图，见
-			     src/config/backgroundWallpaper.ts 的 desktop 数组）。
-			     ⚠️ 壁纸数组里的 cover.webp 是「暂无封面」那张占位图，这里没收进来。
-			     ⚠️ 用的是 public 里的轻量 webp 副本（单张 160~290KB）；
-			        public/gallery/desktop-wallpaper/ 那份是相册原图（1.4~2.4MB），别拿来当封面。
-			     要换池子就改 data-covers，逗号分隔；只留一个就固定成那张。 -->
-			<img class="ff-wx-cover-img"
-				src="/images/desktop-wallpaper/sunset-1.webp"
-				data-covers="/images/desktop-wallpaper/three.webp,/images/desktop-wallpaper/shana-1.webp,/images/desktop-wallpaper/sunset-1.webp,/images/desktop-wallpaper/kuroneko-summer.webp"
-				alt="" />
-		</div>
-		<div class="ff-wx-info-bar">
-			<div class="ff-wx-avatar-box">
-				<img class="ff-wx-avatar" src="/gallery/blog/avatar.avif" alt="HY" />
-			</div>
-			<div class="ff-wx-name">HY</div>
-			<div class="ff-wx-bio">记录一些生活，爱好技术和相关的东西</div>
-		</div>
-	</div>
 	<div class="ff-wx-actions">
 		<a class="ff-wx-action-btn ff-wx-action-primary" href="https://memos.49o.pw" target="_blank" rel="noopener noreferrer">
 			<span>写说说</span>

@@ -1,10 +1,10 @@
 /**
- * 动态页封面区（只在 /dynamic/ 跑）—— 把页脚那个 #ff-wx-hero 壳子搬到正文顶部。
+ * 动态页顶部挂件（只在 /dynamic/ 跑）—— 把页脚那个 #ff-wx-hero 壳子搬到正文顶部。
  *
- * 壳子（封面图 / 头像 / 昵称 / 签名 / 两个按钮）写在 src/config/FooterConfig.html 里，
- * 版式照 blog.huchao.vip/moments/ 的 wx-cover。之所以先挂页脚再搬：
- * 上游的 src/pages/dynamic/index.astro 是主题文件，动不得；而页脚在 swup 容器之外、
- * 全站都在，是现成的注入点。
+ * 壳子现在只剩两件东西：「写说说」按钮和置顶条。原先那块「封面图 + 头像 / 昵称 /
+ * 签名」已经撤掉了（2026-10-31 站长要求删，半屏封面只是把正文往下推）。
+ * 之所以先挂页脚再搬：上游的 src/pages/dynamic/index.astro 是主题文件，动不得；
+ * 而页脚在 swup 容器之外、全站都在，是现成的注入点。
  *
  * ⚠️ 搬的时候用 cloneNode，**不搬原壳** —— 正文整个在 swup 的替换范围里，切一次页
  *    搬过去的节点就没了，原壳留在页脚才能保证下次切回来还在。
@@ -24,9 +24,9 @@
 	var POLL_MS = 1200;
 	var POLL_MAX = 12;
 
-	// ⚠️ 线上只有动态页（/dynamic/）该有封面区，**必须按路径拦住**：
+	// ⚠️ 线上只有动态页（/dynamic/）该挂这块，**必须按路径拦住**：
 	//    项目页 /projects/ 同样用了 .page-header / .page-count 这两个类名，
-	//    早期版本没判断路径 → 项目页顶部被塞进动态页的封面图（壁纸）+ 头像卡，
+	//    早期版本没判断路径 → 项目页顶部被塞进动态页的挂件（当时还是整块封面），
 	//    正文被推下去一千多像素，看起来就像「项目页和动态页共用一个页面」。
 	function isDynamicPage() {
 		var path = window.location.pathname || "/";
@@ -52,7 +52,7 @@
 		if (!anchor || !anchor.parentElement) return;
 
 		// 同一个页面可能被 astro:page-load 与 swup:page:view 各触发一次，插之前先认门。
-		// ⚠️ 别用 `host.querySelector(":scope > .ff-wx-cover")` 判 —— 实测在这儿不生效，
+		// ⚠️ 别用 `host.querySelector(":scope > .ff-wx-pinned")` 判 —— 实测在这儿不生效，
 		//    连触发三次事件就插出三份封面。锚点上的 dataset 标记最靠谱：
 		//    swup 换页时 .page-header 是新元素（没有标记）会重新插，同一份 DOM 反复触发
 		//    也不会重复。
@@ -65,27 +65,8 @@
 		copy.setAttribute(COPY_FLAG, "1");
 		copy.hidden = false;
 		host.insertBefore(copy, anchor);
-		randomizeCover(copy);
 		mountActions(copy);
 		fillPinned(copy);
-	}
-
-	// 封面图：从 data-covers 里随机挑一张（跟桌面壁纸同一批图）。
-	// 站长要的是「每次进来随机一张、但不轮播」，所以只在挂载时挑一次，
-	// 页面内不再定时换 —— 切进切出算「一次进来」，会重新挑。
-	// ⚠️ 图片地址写在 FooterConfig.html 那个壳的 data-covers 上，不在这里硬编码；
-	//    只配一个的话就不随机，固定成那张。
-	function randomizeCover(hero) {
-		var img = hero.querySelector(".ff-wx-cover-img");
-		if (!img) return;
-		var list = (img.dataset.covers || "")
-			.split(",")
-			.map(function (s) {
-				return s.trim();
-			})
-			.filter(Boolean);
-		if (list.length < 2) return;
-		img.src = list[Math.floor(Math.random() * list.length)];
 	}
 
 	// 「写说说」并进页面头部右侧那一排（跟「订阅RSS」「N 动态」排一起）。
