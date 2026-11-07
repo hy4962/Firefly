@@ -101,8 +101,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		{
 			// 组件类型：最新动态组件
 			type: "dynamic",
-			// 是否启用该组件
-			enable: true,
+			// 是否启用该组件（备案审核期间暂停展示，代码全保留，恢复改回 true）
+			enable: false,
 			// 组件位置
 			position: "top",
 			// 是否在文章详情页显示
@@ -279,10 +279,10 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			},
 		},
 		{
-			// 组件类型：最新动态组件
+			// 组件类型：最新动态组件（备案审核期间暂停展示，恢复改回 true）
 			type: "dynamic",
 			// 是否启用该组件
-			enable: true,
+			enable: false,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
 			// 组件专属配置

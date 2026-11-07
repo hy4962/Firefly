@@ -440,12 +440,15 @@
 				id: "ff-booknav-covers-js",
 				src: "/assets/js/booknav-covers.js",
 			},
-			{
-				// 「最近评论」：全站加载 —— 桌面挂右栏、移动端挂底部栏，挂载逻辑在 js 里
-				path: /.*/,
-				id: "ff-recent-comments-js",
-				src: "/assets/js/recent-comments.js?v=6",
-			},
+			// 「最近评论」：备案审核期间暂停挂载（2026-11-08）—— 外壳 #ff-rc 留在页脚保持
+			// hidden，样式与 HTML 全部保留；文章页评论区与留言板不受影响。恢复时取消
+			// 下面整段注释即可，外壳与挂载逻辑都在 js 与模板里，无需其它改动。
+			// {
+			// 	// 「最近评论」：全站加载 —— 桌面挂右栏、移动端挂底部栏，挂载逻辑在 js 里
+			// 	path: /.*/,
+			// 	id: "ff-recent-comments-js",
+			// 	src: "/assets/js/recent-comments.js?v=6",
+			// },
 			{
 				// 搜索预热：全站加载 —— 空转时就起 pagefind 的 worker/wasm/索引，
 				// 顺带把「回车 = 进第一条结果」补上（上游搜索框没有 Enter 处理）
