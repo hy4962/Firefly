@@ -191,6 +191,19 @@ export const friendsConfig: FriendLink[] = [
 		weight: 0,
 		enabled: true,
 	},
+	{
+		title: "爱酷语",
+		imgurl: "https://oss.ikuyu.com/site/avatars/biming.png",
+		desc: "一份记录惊喜、进步与遗憾的生活札记",
+		siteurl: "https://www.ikuyu.com/",
+		// 2026-11-07 核查：Halo + halo-theme-ethereal 的个人博客，生活札记与技术排障混排，
+		// RSS 5 篇（最新 10-25），节奏正常非批量内容站，robots 允许索引、无 noindex。
+		// 对方 /links 唯一分组「默认」共 11 条，我方 https://www.9ll.uk/ 已在第 7 条＝已完成回链；
+		// 全页 33 条外链统一 rel="noopener noreferrer"（dofollow，无 nofollow/ugc）。不填 rss。
+		tags: ["Blog"],
+		weight: -1,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
