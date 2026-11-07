@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-31T01:28:46.884Z",
+  "updatedAt": "2026-11-07T01:44:23.945Z",
   "partial": false,
   "profile": {
     "steamId": "76561199212880612",
@@ -15,14 +15,14 @@
   "stats": {
     "gameCount": 86,
     "totalMinutes": 202195,
-    "recentMinutes": 23
+    "recentMinutes": 10
   },
   "games": [
     {
       "appid": 730,
       "name": "Counter-Strike 2",
       "minutes": 135914,
-      "recentMinutes": 13,
+      "recentMinutes": 0,
       "lastPlayed": 1792550603,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg"
     },
