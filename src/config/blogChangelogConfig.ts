@@ -30,6 +30,30 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.52",
+		title: "ICP 备案号上墙",
+		date: "2026-11-08",
+		summary:
+			"正式的 ICP 备案号挂到页脚了，前面配一枚蓝底白字的盾形标识，跟原来的萌 ICP 备案并排；点备案号直接跳工信部备案管理系统",
+		description:
+			"《非经营性互联网信息服务备案管理办法》要求备案号放在主页底部中央，并链接到工信部备案管理系统供公众核验。我把页脚注入里原来孤零零的「萌ICP备」扩成一行两个备案号：正式备案号排在前面，指向 https://beian.miit.gov.cn/，萌 ICP 备案保留在后面。图标没有热链外部站点 —— 工信部官网有反爬，而且现在也不提供电子标识下载，所以按官方蓝底白字的规范自绘了一枚自托管 SVG，盾形构图和旁边那枚粉色萌 ICP 对齐，16px 下不糊、亮暗色都清楚。整块用 flex + flex-wrap，窄屏自动换行，不会挤成一团。改动只落在 src/config/FooterConfig.html 和新增的 public/assets/images/miit-icp.svg，上游 Footer.astro 一个字没改。",
+		items: [
+			{
+				category: "合规",
+				text: "页脚新增「粤ICP备2026130309号-2」，链接工信部 ICP/IP 地址/域名信息备案管理系统 https://beian.miit.gov.cn/，新标签页打开",
+			},
+			{
+				category: "视觉",
+				text: "备案号前置 16px 蓝底白字盾形 ICP 标识（自托管 SVG，构图与同排萌 ICP 图标一致），亮暗色主题下都清晰",
+			},
+			{
+				category: "维护",
+				text: "两个备案号用 flex 并排、窄屏自动换行；图标自托管不外链，避免第三方站点不可用时页脚留白；只动页脚注入与新增图标文件",
+			},
+		],
+		tags: ["页脚", "ICP 备案", "合规"],
+	},
+	{
 		version: "V1.51",
 		title: "动态页重排",
 		date: "2026-10-31",
