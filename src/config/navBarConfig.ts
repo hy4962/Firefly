@@ -115,7 +115,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 本站评论
 			{
 				name: "本站评论",
-				url: "https://waline.49o.pw/",
+				url: "https://waline.0dm.cn/",
 				external: true,
 				icon: "material-symbols:chat",
 			},
@@ -155,7 +155,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 网站监控
 			{
 				name: "网站监控",
-				url: "https://kuma.49o.pw/status/9ll",
+				url: "https://kuma.0dm.cn/status/9ll",
 				external: true,
 				icon: "material-symbols:monitoring",
 			},
@@ -163,7 +163,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 站点统计
 			{
 				name: "站点统计",
-				url: "https://umami.49o.pw/share/Z4DD4Y3q9CTFpBeM",
+				url: "https://umami.0dm.cn/share/Z4DD4Y3q9CTFpBeM",
 				external: true,
 				icon: "material-symbols:analytics",
 			},

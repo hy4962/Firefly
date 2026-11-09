@@ -20,7 +20,7 @@
 	"use strict";
 
 	// ===== 数据源：与 src/config/dynamicConfig.ts 的 memos 段保持一致 =====
-	var MEMOS_API = "https://memos.49o.pw";
+	var MEMOS_API = "https://memos.0dm.cn";
 	var MEMOS_USER = "users/hy4962";
 	var DETAIL_PATH = "/dynamic/";
 

@@ -34,7 +34,7 @@
 	"use strict";
 
 	// Waline 后端地址（评论列表 / 计数接口用）。换后端只改这一行。
-	var WALINE = "https://waline.49o.pw";
+	var WALINE = "https://waline.0dm.cn";
 
 	// 预览里最多铺几条。参考站是 4，我们卡片更窄，3 条刚好不把正文压到下一屏。
 	var MAX_SHOWN = 3;

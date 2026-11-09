@@ -143,7 +143,7 @@ export const booknavConfig: BooknavGroup[] = [
 		items: [
 			{
 				title: "评论系统",
-				url: "https://waline.49o.pw/",
+				url: "https://waline.0dm.cn/",
 				desc: "基于 Waline 的站内评论系统",
 				weight: 10,
 			},
@@ -182,13 +182,13 @@ export const booknavConfig: BooknavGroup[] = [
 			},
 			{
 				title: "网站监控",
-				url: "https://kuma.49o.pw/status/9ll",
+				url: "https://kuma.0dm.cn/status/9ll",
 				desc: "站点可用性监控面板",
 				weight: 7,
 			},
 			{
 				title: "站点统计",
-				url: "https://umami.49o.pw/share/Z4DD4Y3q9CTFpBeM",
+				url: "https://umami.0dm.cn/share/Z4DD4Y3q9CTFpBeM",
 				desc: "基于 Umami 的流量统计",
 				weight: 6,
 			},

@@ -107,7 +107,7 @@
 <div id="ff-us" class="ff-us" hidden>
 	<a
 		class="ff-us-link"
-		href="https://umami.49o.pw/share/Z4DD4Y3q9CTFpBeM"
+		href="https://umami.0dm.cn/share/Z4DD4Y3q9CTFpBeM"
 		target="_blank"
 		rel="noopener noreferrer"
 		title="查看完整访问统计（Umami 公开看板）"
@@ -174,8 +174,8 @@
 
 		// ===== 访问统计 =====
 		// 换 Umami 站点或分享链接时，只改下面两行即可。
-		// SHARE_ID 取分享链接 https://umami.49o.pw/share/XXXXXXXX 的最后一段。
-		var API_BASE = "https://umami.49o.pw";
+		// SHARE_ID 取分享链接 https://umami.0dm.cn/share/XXXXXXXX 的最后一段。
+		var API_BASE = "https://umami.0dm.cn";
 		var SHARE_ID = "Z4DD4Y3q9CTFpBeM";
 
 		// 缓存 tag 里带上 API_BASE：换 Umami 实例（域名变了）时，本地缓存的
@@ -477,7 +477,7 @@
 				// 回复就成了全站唯一「不折叠、无引用」的评论区。
 				path: /^\/dynamic\/?$/,
 				id: "ff-dynamic-comment-enhance-js",
-				src: "/assets/js/dynamic-comment-enhance.js?v=9",
+				src: "/assets/js/dynamic-comment-enhance.js?v=10",
 			},
 			{
 				// 动态页封面区：把页脚那个 #ff-wx-hero 壳子搬进正文顶部（版式照
@@ -551,7 +551,7 @@
        · .ff-wx-pinned 是置顶动态的快捷入口，没有置顶时保持 hidden，不留空框 -->
 <div id="ff-wx-hero" hidden>
 	<div class="ff-wx-actions">
-		<a class="ff-wx-action-btn ff-wx-action-primary" href="https://memos.49o.pw" target="_blank" rel="noopener noreferrer">
+		<a class="ff-wx-action-btn ff-wx-action-primary" href="https://memos.0dm.cn" target="_blank" rel="noopener noreferrer">
 			<span>写说说</span>
 		</a>
 	</div>
@@ -738,7 +738,7 @@
 			if (document.getElementById("ff-dynbar-js")) return;
 			var script = document.createElement("script");
 			script.id = "ff-dynbar-js";
-			script.src = "/assets/js/home-dynamic-bar.js?v=1";
+			script.src = "/assets/js/home-dynamic-bar.js?v=2";
 			script.async = true;
 			document.head.appendChild(script);
 		}

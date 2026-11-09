@@ -767,7 +767,8 @@ async function sendMessage(
 			token: authUser?.token,
 			comment: {
 				nick: authUser?.display_name || profile.nick.trim(),
-				mail: authUser?.email || profile.mail.trim() || undefined,
+				// 空邮箱必须传空串：mail=NULL 会让 Waline 1.43.4 渲染评论时抛 undefined.replace，整页留言板 500
+				mail: authUser?.email || profile.mail.trim() || "",
 				link: authUser?.url || profile.link.trim() || undefined,
 				comment: buildGuestbookMessageBody(content, target),
 				ua: navigator.userAgent,
