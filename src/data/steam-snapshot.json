@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-07T01:44:23.945Z",
+  "updatedAt": "2026-11-14T02:07:07.415Z",
   "partial": false,
   "profile": {
     "steamId": "76561199212880612",
@@ -14,16 +14,16 @@
   },
   "stats": {
     "gameCount": 86,
-    "totalMinutes": 202195,
-    "recentMinutes": 10
+    "totalMinutes": 202290,
+    "recentMinutes": 94
   },
   "games": [
     {
       "appid": 730,
       "name": "Counter-Strike 2",
-      "minutes": 135914,
-      "recentMinutes": 0,
-      "lastPlayed": 1792550603,
+      "minutes": 136009,
+      "recentMinutes": 94,
+      "lastPlayed": 1794467907,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg"
     },
     {
@@ -78,7 +78,7 @@
       "appid": 3678970,
       "name": "TBH: Task Bar Hero",
       "minutes": 3073,
-      "recentMinutes": 10,
+      "recentMinutes": 0,
       "lastPlayed": 1793247735,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3678970/header.jpg"
     },
