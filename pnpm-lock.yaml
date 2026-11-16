@@ -145,7 +145,7 @@ importers:
         version: 0.1.2
       lucide-svelte:
         specifier: ^0.468.0
-        version: 0.468.0(svelte@5.57.0)
+        version: 0.468.0(svelte@5.57.2)
       marked:
         specifier: ^18.1.1
         version: 18.1.1
@@ -11260,9 +11260,9 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-svelte@0.468.0(svelte@5.57.0):
+  lucide-svelte@0.468.0(svelte@5.57.2):
     dependencies:
-      svelte: 5.57.0
+      svelte: 5.57.2
 
   magic-string@0.25.9:
     dependencies:
