@@ -249,7 +249,7 @@ favicon: [
 
 **结论：保留，不建议关。** 理由和它的实际代价说清楚：
 
-`analyticsConfig.umamiAnalytics.replays.enabled: true` 会加载 `https://umami.9ll.uk/recorder.js`。实测：
+`analyticsConfig.umamiAnalytics.replays.enabled: true` 会加载 `https://umami.0dm.cn/recorder.js`。实测：
 
 - 移动端 45,440 B，其中 **40,236 B 未被使用**（`unused-javascript` 唯一点名的就是它）
 - `legacy-javascript` 也只点名了它（含 `Array.from` 等旧语法，8 KB）
@@ -266,7 +266,7 @@ favicon: [
 
 1. **加 preconnect**（省约 105 ms 的连接建立时间）：
    ```html
-   <link rel="preconnect" href="https://umami.9ll.uk" crossorigin />
+   <link rel="preconnect" href="https://umami.0dm.cn" crossorigin />
    ```
    位置需要在 `<head>`，也就是 `Layout.astro`（你已重度分叉的文件）——105 ms 收益配这个风险，不值，先记着。
 2. **自建并把 recorder.js 放到同源**（例如 `/assets/umami/recorder.js`）：省掉一次 DNS + TLS 握手，还能被同一个 CDN 缓存和压缩。文件体积不变，但延迟代价基本归零。

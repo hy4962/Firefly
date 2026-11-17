@@ -45,7 +45,7 @@ export const siteConfig: SiteConfig = {
 	title: "折腾进行时",
 
 	// 站点副标题
-	subtitle: "9LL.UK",
+	subtitle: "0DM.CN",
 
 	// 站点 URL
 	site_url: "https://www.9ll.uk",
