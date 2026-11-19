@@ -31,20 +31,36 @@ type MinimalEntry = {
 /**
  * 构建机能不能碰到 Memos？
  *
- * Memos 实例（`dynamicConfig.memos.apiUrl`）解析到的是国内 IP，Vercel / Cloudflare
- * 的构建机在海外，直连基本必然 ConnectTimeout。这里先花最多 4s 探一次：连不上就
- * 根本不调 `fetchMemos`，直接走本地内容回退。**只要拿到任何 HTTP 响应就算通**，
- * 不要求 2xx——网络可达与否才是这里要判断的事。
+ * Memos 实例（`dynamicConfig.memos.apiUrl`）解析到的是国内 IP，Vercel 的构建机在
+ * 海外，直连基本必然 ConnectTimeout。这里先花最多 4s 探一次：连不上就根本不调
+ * `fetchMemos`，直接走本地内容回退。
+ *
+ * ⚠️ 必须要求 2xx：阿里云 ESA 等国内构建机能「拿到 HTTP 响应」，但 CF 回源失败时
+ * 返回的是 522 错误页。旧逻辑只要拿到响应就算通，于是继续调 fetchMemos → adapter
+ * 抛 `Memos API error: 522` → unhandledRejection 干掉 Node 24，整个构建失败
+ * （2026-11-18 ESA 构建现场）。所以 4xx/5xx 一律视为不可达，走回退。
+ *
+ * 探针也换成真正要用的 `/api/v1/memos?pageSize=1`：本机实测 `/api/v1/workspace/profile`
+ * 在这套 Memos 上返回 404，拿它探测会误判。
  */
 async function isMemosReachable(
 	apiUrl: string,
 	timeoutMs = 4000,
 ): Promise<boolean> {
 	try {
-		await fetch(new URL("/api/v1/workspace/profile", apiUrl), {
-			headers: { Accept: "application/json" },
-			signal: AbortSignal.timeout(timeoutMs),
-		});
+		const response = await fetch(
+			new URL("/api/v1/memos?pageSize=1", apiUrl),
+			{
+				headers: { Accept: "application/json" },
+				signal: AbortSignal.timeout(timeoutMs),
+			},
+		);
+		if (!response.ok) {
+			console.warn(
+				`[dynamic/rss] Memos 探测返回 HTTP ${response.status}，回退本地内容`,
+			);
+			return false;
+		}
 		return true;
 	} catch {
 		return false;
@@ -60,7 +76,8 @@ async function isMemosReachable(
  * `--unhandled-rejections=throw`，会直接把整个构建进程干掉（日志里的
  * `triggerUncaughtException(err, true /* fromPromise *∕)` 就是这个）。调用方 catch 拦不住它。
  *
- * 所以这里在调用前挂一个极窄的监听：只吞 fetch 超时/连接失败，其它拒绝照旧抛出。
+ * 所以这里在调用前挂一个极窄的监听：只吞 Memos 请求类失败（含 adapter 抛出的
+ * `Memos API error: 5xx`——ESA 构建机拿到 CF 522 时就是这条），其它拒绝照旧抛出。
  */
 const ignoreMemosFetchFailure = (reason: unknown): void => {
 	const message =
@@ -68,7 +85,9 @@ const ignoreMemosFetchFailure = (reason: unknown): void => {
 			? `${reason.name}: ${reason.message}`
 			: String(reason);
 	if (
-		/fetch failed|Connect Timeout|UND_ERR|ECONNRESET|ETIMEDOUT/i.test(message)
+		/Memos API error: [45]\d\d|fetch failed|Connect Timeout|UND_ERR|ECONNRESET|ETIMEDOUT/i.test(
+			message,
+		)
 	) {
 		console.warn(
 			`[dynamic/rss] Memos 请求失败，已忽略并回退本地内容：${message}`,
