@@ -185,6 +185,15 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		icon: "material-symbols:analytics",
 	});
 
+	// sukiai.cn：自建 API 站（New API），顶级外链入口
+	// 标签用「API」而不是域名：实测 1024px 下「sukiai.cn」会把顶栏挤到竖排
+	links.push({
+		name: "API",
+		url: "https://sukiai.cn/",
+		external: true,
+		icon: "material-symbols:api",
+	});
+
 	// 开往（Travellings）：友链接力项目。官方要求外链必须放在「打开网站就能看到的地方」
 	// （顶栏 / 侧栏），所以给它一个顶级入口，而不是塞进「关于」子菜单。
 	// 图标用列车（对应徽标里的车头造型），与其他顶级项一样走 material-symbols，风格统一。

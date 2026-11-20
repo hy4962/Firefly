@@ -30,6 +30,25 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.55",
+		title: "API 站入口",
+		date: "2026-11-20",
+		summary: "顶栏新增「API」跳转入口，新标签页打开 sukiai.cn 自建 New API 站",
+		description:
+			"我那个自建的 API 站之前在导航栏里没有入口，想用得另外记域名。这次直接在顶栏给了一个独立项，点一下新标签页打开，和「开往」那类外链一样的处理。标签用「API」而不是完整域名：实测写成 sukiai.cn 会把 1024px 下的顶栏挤到竖排，缩成两个字母后余量回到 64px、全程无换行。配置只动 src/config/navBarConfig.ts，主题组件不碰。",
+		items: [
+			{
+				category: "导航",
+				text: "顶栏新增「API」外链入口，指向 https://sukiai.cn/（自建 New API 面板），material-symbols:api 图标，新标签页打开",
+			},
+			{
+				category: "维护",
+				text: "改动只在配置层，上游导航组件零改动",
+			},
+		],
+		tags: ["导航", "外链", "API"],
+	},
+	{
 		version: "V1.54",
 		title: "社交导航归位",
 		date: "2026-11-20",
