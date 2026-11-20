@@ -186,9 +186,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	});
 
 	// sukiai.cn：自建 API 站（New API），顶级外链入口
-	// 标签用「API」而不是域名：实测 1024px 下「sukiai.cn」会把顶栏挤到竖排
+	// 标签用「sukiai」：比完整域名短（1024px 不换行），又比「API」好认
 	links.push({
-		name: "API",
+		name: "sukiai",
 		url: "https://sukiai.cn/",
 		external: true,
 		icon: "material-symbols:api",

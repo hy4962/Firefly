@@ -193,8 +193,9 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		position: "center",
 		// 全屏壁纸模式的导航栏配置
 		navbar: {
-			// 导航栏透明模式："semi" 半透明，"semifull" 动态透明（仅首页顶部透明、下滑玻璃化；非首页均跟卡片半透明）
-			transparentMode: "semifull",
+			// 导航栏透明模式："semi" 半透明（全站一直玻璃态），"semifull" 动态透明（仅首页顶部透明、下滑玻璃化）
+			// 用 semi：首页顶部不再全透明压在壁纸上，导航文字始终清晰、sukiai 入口也更显眼
+			transparentMode: "semi",
 			// 导航栏毛玻璃模糊度，0 即关闭（玻璃态生效）
 			blur: 12,
 		},

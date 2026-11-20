@@ -999,6 +999,34 @@
 </style>
 
 <style>
+	/* ===== sukiai 入口视觉强调 =====
+	   顶栏那个外链按钮用 href 定位（导航配置层没有 class 字段，不能给单项挂类），
+	   做成青蓝渐变胶囊 + 白色描边，压在玻璃态顶栏上一眼能看到。
+	   只用背景/颜色/阴影，不加 border/padding，1024px 顶栏余量不受影响。 */
+	#navbar .dropdown-container > a[href="https://sukiai.cn/"] {
+		background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%) !important;
+		color: #fff !important;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), 0 2px 10px rgba(59, 130, 246, 0.35) !important;
+	}
+	#navbar .dropdown-container > a[href="https://sukiai.cn/"]:hover {
+		filter: brightness(1.08);
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 3px 14px rgba(59, 130, 246, 0.5) !important;
+	}
+	/* 外链角标原本是 text-black/20，在渐变底上几乎看不见，统一改白 */
+	#navbar .dropdown-container > a[href="https://sukiai.cn/"] svg {
+		color: rgba(255, 255, 255, 0.85) !important;
+	}
+	/* 移动端抽屉里的同一条也强调 */
+	#nav-menu-panel a.mobile-menu-item[href="https://sukiai.cn/"] {
+		background: color-mix(in oklch, #3b82f6 16%, transparent) !important;
+		color: #3b82f6 !important;
+	}
+	#nav-menu-panel a.mobile-menu-item[href="https://sukiai.cn/"] .mobile-menu-item-external {
+		color: #3b82f6 !important;
+	}
+</style>
+
+<style>
 	/* ===== 「最近评论」（只在博客首页：桌面右栏 / 移动端底部栏）=====
 	   外壳默认藏在页脚（hidden），recent-comments.js 全站加载但只在首页挂载：
 	   ≥768px 插到右栏「最新动态」之后，<768px 搬进移动端底部组件栏，再填数据
