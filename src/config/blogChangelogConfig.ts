@@ -30,6 +30,26 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.54",
+		title: "社交导航归位",
+		date: "2026-11-20",
+		summary:
+			"朋友圈、友链、留言三个一级入口收进「社交」下拉，顶栏从九项回到七项，窄屏余量更宽松",
+		description:
+			"这三个入口最早就挂在「社交」子菜单里，后来朋友圈上线时被拆成三个一级项。现在顶栏一级项越堆越多，把它们收回去更合理：点「社交」一次就能看到三个互动入口，不用在顶栏上分散占位。配置只动了 src/config/navBarConfig.ts，三个子项的图标和链接沿用原值，没有改上游组件。",
+		items: [
+			{
+				category: "导航",
+				text: "新增「社交」一级下拉（material-symbols:group），朋友圈、友链、留言按原顺序作为子项移入，链接与图标不变",
+			},
+			{
+				category: "视觉",
+				text: "顶栏一级项由九项减到七项，1024–1280px 紧凑模式余量更宽松；改动只在配置层，主题组件零改动",
+			},
+		],
+		tags: ["导航", "顶栏", "调整"],
+	},
+	{
 		version: "V1.53",
 		title: "公安备案上墙",
 		date: "2026-11-17",
