@@ -1001,7 +1001,8 @@
 <style>
 	/* ===== sukiai 入口视觉强调 =====
 	   顶栏那个外链按钮用 href 定位（导航配置层没有 class 字段，不能给单项挂类），
-	   做成青蓝渐变胶囊 + 白色描边，压在玻璃态顶栏上一眼能看到。
+	   配色跟主题色走：底色取 --primary（oklch 明度 0.70/0.75，黄橙系），
+	   文字用同色系压深的颜色而不是白色 —— 主题色本身够亮，白字在上面对比度只有 2:1 左右。
 	   只用背景/颜色/阴影，不改 padding，1024px 顶栏余量不受影响。
 
 	   ⚠️ 必须同时压掉 `.scale-animation`（expand-animation）的 ::before：
@@ -1009,9 +1010,14 @@
 	   盖在渐变上就是「白底白字、什么都看不见」；`isolation: isolate` 让按钮
 	   自己成为层叠上下文，负 z-index 的伪元素彻底留在按钮内部。 */
 	#navbar .dropdown-container > a[href="https://sukiai.cn/"] {
-		background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%) !important;
-		color: #fff !important;
-		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), 0 2px 10px rgba(59, 130, 246, 0.35) !important;
+		background: linear-gradient(
+			135deg,
+			color-mix(in oklch, var(--primary) 86%, white) 0%,
+			var(--primary) 100%
+		) !important;
+		color: color-mix(in oklch, var(--primary) 22%, black) !important;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+			0 2px 10px color-mix(in oklch, var(--primary) 45%, transparent) !important;
 		isolation: isolate;
 	}
 	/* 主题的 hover / active / focus 底色全部关掉，别让它盖掉渐变 */
@@ -1021,23 +1027,28 @@
 	#navbar .dropdown-container > a[href="https://sukiai.cn/"]:hover,
 	#navbar .dropdown-container > a[href="https://sukiai.cn/"]:active,
 	#navbar .dropdown-container > a[href="https://sukiai.cn/"]:focus-visible {
-		background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%) !important;
-		color: #fff !important;
+		background: linear-gradient(
+			135deg,
+			color-mix(in oklch, var(--primary) 86%, white) 0%,
+			var(--primary) 100%
+		) !important;
+		color: color-mix(in oklch, var(--primary) 22%, black) !important;
 	}
 	#navbar .dropdown-container > a[href="https://sukiai.cn/"]:hover {
-		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65), 0 3px 14px rgba(59, 130, 246, 0.5) !important;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+			0 3px 14px color-mix(in oklch, var(--primary) 60%, transparent) !important;
 	}
-	/* 外链角标原本是 text-black/20，在渐变底上几乎看不见，统一改白 */
+	/* 外链角标原本是 text-black/20，在色块上几乎看不见，统一压成同色系深色 */
 	#navbar .dropdown-container > a[href="https://sukiai.cn/"] svg {
-		color: rgba(255, 255, 255, 0.85) !important;
+		color: color-mix(in oklch, var(--primary) 55%, black) !important;
 	}
 	/* 移动端抽屉里的同一条也强调 */
 	#nav-menu-panel a.mobile-menu-item[href="https://sukiai.cn/"] {
-		background: color-mix(in oklch, #3b82f6 16%, transparent) !important;
-		color: #3b82f6 !important;
+		background: color-mix(in oklch, var(--primary) 16%, transparent) !important;
+		color: color-mix(in oklch, var(--primary) 60%, black) !important;
 	}
 	#nav-menu-panel a.mobile-menu-item[href="https://sukiai.cn/"] .mobile-menu-item-external {
-		color: #3b82f6 !important;
+		color: color-mix(in oklch, var(--primary) 60%, black) !important;
 	}
 </style>
 
