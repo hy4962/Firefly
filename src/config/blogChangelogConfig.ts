@@ -34,9 +34,9 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		title: "顶栏玻璃态",
 		date: "2026-11-20",
 		summary:
-			"顶栏不再在首页顶部全透明了 —— 全站任何位置都保持半透明毛玻璃，壁纸透出来但被模糊，导航文字始终看得清；sukiai 入口做成青蓝胶囊，一眼就能定位",
+			"顶栏不再在首页顶部全透明了 —— 全站任何位置都保持半透明毛玻璃，壁纸透出来但被模糊，导航文字始终看得清；「低价米饭」入口做成青蓝胶囊，hover 也不会白底白字了",
 		description:
-			"之前全屏壁纸模式用的是「动态透明」：首页顶部导航栏整条透明，文字直接压在壁纸上，赶上浅色壁纸就糊成一片，sukiai 那个入口更是完全看不出来。这次改成一直半透明玻璃态：底色走卡片的半透明色（45% 不透明），叠 12px 背景模糊，壁纸还在底下但被揉开，亮色暗色主题下文字都清楚。sukiai 入口再单独强调 —— 顶栏那颗按钮换成青蓝渐变胶囊、白字白描边、外链角标也跟着变白，移动端抽屉里同一条用浅蓝底＋蓝字，两个主题都不刺眼。实现全在配置层：透明模式改 backgroundWallpaper.ts 的 fullscreen.navbar（semifull → semi），高亮写在页脚注入的 CSS 里、靠 href 定位那颗按钮（导航配置没有单项 class 字段），主题组件一个字没动。实测 1024px 余量 +45px、全宽度无换行，亮暗两套截图都核过。",
+			"之前全屏壁纸模式用的是「动态透明」：首页顶部导航栏整条透明，文字直接压在壁纸上，赶上浅色壁纸就糊成一片，「低价米饭」那个入口更是完全看不出来。这次改成一直半透明玻璃态：底色走卡片的半透明色（45% 不透明），叠 12px 背景模糊，壁纸还在底下但被揉开，亮色暗色主题下文字都清楚。入口再单独强调 —— 顶栏那颗按钮换成青蓝渐变胶囊、白字白描边、外链角标也跟着变白，移动端抽屉里同一条用浅蓝底＋蓝字，两个主题都不刺眼。中间踩了一个坑：主题的 .scale-animation 在 hover / active 时会往按钮的 ::before 里填一层接近白色的底，正好盖在渐变上，变成白底白字什么都看不见；修法是把这层伪元素背景压成透明，再给按钮加 isolation: isolate 让它自己成为层叠上下文。实现全在配置层：透明模式改 backgroundWallpaper.ts 的 fullscreen.navbar（semifull → semi），高亮写在页脚注入的 CSS 里、靠 href 定位那颗按钮（导航配置没有单项 class 字段），主题组件一个字没动。实测 1024px 余量 +28px、全宽度无换行，亮暗两套截图都核过。",
 		items: [
 			{
 				category: "视觉",
@@ -44,7 +44,11 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "视觉",
-				text: "sukiai 入口做成青蓝渐变胶囊：白字、白色内描边、柔和投影，外链角标同步改白；移动端抽屉里对应项用浅蓝底＋蓝字，亮暗主题都清晰",
+				text: "「低价米饭」入口做成青蓝渐变胶囊：白字、白色内描边、柔和投影，外链角标同步改白；移动端抽屉里对应项用浅蓝底＋蓝字，亮暗主题都清晰",
+			},
+			{
+				category: "修复",
+				text: "hover / 按下时不再变成白底白字：主题 .scale-animation 会给按钮 ::before 填 --btn-plain-bg-hover（近白色）盖住渐变，改为把该伪元素背景压成透明，并给按钮加 isolation: isolate 隔离层叠上下文",
 			},
 			{
 				category: "维护",
@@ -52,7 +56,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "验证",
-				text: "亮暗两套主题截图核对；1024–1920 全宽度顶栏余量实测最小 +45px、无换行",
+				text: "亮暗两套主题 + hover + 移动端抽屉截图核对；1024–1920 全宽度顶栏余量实测最小 +28px、无换行",
 			},
 		],
 		tags: ["导航", "毛玻璃", "视觉", "顶栏"],
@@ -61,13 +65,13 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		version: "V1.55",
 		title: "API 站入口",
 		date: "2026-11-20",
-		summary: "顶栏新增「sukiai」跳转入口，新标签页打开 sukiai.cn 自建 New API 站",
+		summary: "顶栏新增「低价米饭」跳转入口，新标签页打开 sukiai.cn 自建 New API 站",
 		description:
-			"我那个自建的 API 站之前在导航栏里没有入口，想用得另外记域名。这次直接在顶栏给了一个独立项，点一下新标签页打开，和「开往」那类外链一样的处理。标签用「sukiai」而不是完整域名：实测写成 sukiai.cn 会把 1024px 下的顶栏挤到竖排，缩到 6 个字母后余量回到 45px、全程无换行。配置只动 src/config/navBarConfig.ts，主题组件不碰。",
+			"我那个自建的 API 站之前在导航栏里没有入口，想用得另外记域名。这次直接在顶栏给了一个独立项，点一下新标签页打开，和「开往」那类外链一样的处理。顶栏不写裸域名，标签用「低价米饭」—— 第一次写完整域名 sukiai.cn 时，1024px 下的顶栏被挤到竖排，所以换了短标签，余量 28px、全程无换行。配置只动 src/config/navBarConfig.ts，主题组件不碰。",
 		items: [
 			{
 				category: "导航",
-				text: "顶栏新增「sukiai」外链入口，指向 https://sukiai.cn/（自建 New API 面板），material-symbols:api 图标，新标签页打开",
+				text: "顶栏新增「低价米饭」外链入口，指向 https://sukiai.cn/（自建 New API 面板），material-symbols:api 图标，新标签页打开",
 			},
 			{
 				category: "维护",

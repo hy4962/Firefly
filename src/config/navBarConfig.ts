@@ -186,9 +186,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	});
 
 	// sukiai.cn：自建 API 站（New API），顶级外链入口
-	// 标签用「sukiai」：比完整域名短（1024px 不换行），又比「API」好认
+	// 标签用「低价米饭」而不是域名，顶栏不出现裸域名
 	links.push({
-		name: "sukiai",
+		name: "低价米饭",
 		url: "https://sukiai.cn/",
 		external: true,
 		icon: "material-symbols:api",
