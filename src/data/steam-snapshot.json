@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-14T02:07:07.415Z",
+  "updatedAt": "2026-11-21T03:03:06.300Z",
   "partial": false,
   "profile": {
     "steamId": "76561199212880612",
@@ -14,16 +14,16 @@
   },
   "stats": {
     "gameCount": 86,
-    "totalMinutes": 202290,
-    "recentMinutes": 94
+    "totalMinutes": 202826,
+    "recentMinutes": 628
   },
   "games": [
     {
       "appid": 730,
       "name": "Counter-Strike 2",
-      "minutes": 136009,
-      "recentMinutes": 94,
-      "lastPlayed": 1794467907,
+      "minutes": 136316,
+      "recentMinutes": 401,
+      "lastPlayed": 1794678173,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg"
     },
     {
@@ -83,20 +83,20 @@
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/3678970/header.jpg"
     },
     {
+      "appid": 578080,
+      "name": "PUBG: BATTLEGROUNDS",
+      "minutes": 2726,
+      "recentMinutes": 226,
+      "lastPlayed": 1794697653,
+      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/578080/header.jpg"
+    },
+    {
       "appid": 394360,
       "name": "Hearts of Iron IV",
       "minutes": 2534,
       "recentMinutes": 0,
       "lastPlayed": 1764489753,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/394360/header.jpg"
-    },
-    {
-      "appid": 578080,
-      "name": "PUBG: BATTLEGROUNDS",
-      "minutes": 2499,
-      "recentMinutes": 0,
-      "lastPlayed": 1738065666,
-      "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/578080/header.jpg"
     },
     {
       "appid": 1366540,
@@ -125,9 +125,9 @@
     {
       "appid": 1172470,
       "name": "Apex Legends",
-      "minutes": 1014,
-      "recentMinutes": 0,
-      "lastPlayed": 1788253112,
+      "minutes": 1016,
+      "recentMinutes": 1,
+      "lastPlayed": 1794680287,
       "header": "https://cdn.cloudflare.steamstatic.com/steam/apps/1172470/header.jpg"
     },
     {

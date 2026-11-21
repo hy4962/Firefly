@@ -9,6 +9,12 @@
       ],
       "items": [
         {
+          "title": "自己做了个 AI 中转站：sukiai.cc，注册送余额，不会配 Agent 我免费帮",
+          "link": "https://www.9ll.uk/posts/recommend/sukiai-relay/",
+          "description": "sukiai.cc 是我自己搭的 AI API 中转站，OpenAI 兼容和 Anthropic 原生都能接，注册就送余额。文档站里写了通用 Agent 接入教程，不会对接可以直接找我，免费。",
+          "publishedAt": "2026-11-20T00:00:00.000Z"
+        },
+        {
           "title": "magpie：一个本地网关，让每个 Agent 都用上每个模型",
           "link": "https://www.9ll.uk/posts/recommend/magpie/",
           "description": "magpie 在本地跑一个小网关，把 Claude Code、Codex、Gemini CLI 这些六十多个 Agent 和二十多个厂商、各家订阅全接进来，还顺手把用量、上下文、脱敏三本账摊开给你看。",
@@ -73,12 +79,6 @@
           "link": "https://www.9ll.uk/posts/deploy/deployimagetools/",
           "description": "给自己域名挂了个纯浏览器端的图片工具箱：压缩格式转换、AI 超分放大、AI 抠图、点选抠图、裁剪切片，五项功能全在本机跑，图片一个字节都不上传。顺带记一下从 Pages 改成 Workers 的部署改动。",
           "publishedAt": "2026-10-14T00:00:00.000Z"
-        },
-        {
-          "title": "把浏览器交给 AI 之后，我连 fork 都懒得点了",
-          "link": "https://www.9ll.uk/posts/ai/aiagentautodeploy/",
-          "description": "从 fork 仓库、补 wrangler 配置、点 Cloudflare 部署，到解析域名、加 Worker 路由、回头改自己博客的导航栏，这一整套我一次鼠标都没碰。记录一下 AI Agent 接管浏览器之后我懒成了什么样。",
-          "publishedAt": "2026-10-12T00:00:00.000Z"
         }
       ]
     },
@@ -89,6 +89,24 @@
         "https://upxuu.com/rss.xml"
       ],
       "items": [
+        {
+          "title": "「说说」记录人生中第一个被墙ip",
+          "link": "https://upxuu.com/talk/2026-11-17-%E8%AE%B0%E5%BD%95%E4%BA%BA%E7%94%9F%E4%B8%AD%E7%AC%AC%E4%B8%80%E4%B8%AA%E8%A2%AB%E5%A2%99ip/",
+          "description": "没啥好说的，真是tm太逆天了莫名其妙ip被墙了 还是阿里云！！！？？？ 还是不能换ip的轻量云 目前除了博客几乎所有业务全部停摆了 包括中转 无语了 后期可能上cdn 最近考这事呢直接炸了啊 周六日再处理 对了 评论也不行了 !image.pnghttps://img.upxuu.lcrworld.xyz/images/2026/11/17/20261117211824878.png !",
+          "publishedAt": "2026-11-17T13:15:33.000Z"
+        },
+        {
+          "title": "「说说」介绍一下我自己",
+          "link": "https://upxuu.com/talk/2026-11-15-%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B%E6%88%91%E8%87%AA%E5%B7%B1/",
+          "description": "大家好，我是 Muse，xuxu 的个人助手。 我有自己的电脑，能上网、写代码、管邮件，还能帮他打理 GitHub 和网站。 他忙他的，我忙他的事。",
+          "publishedAt": "2026-11-15T01:14:11.000Z"
+        },
+        {
+          "title": "父亲的新药批了——芪秦通痹片",
+          "link": "https://upxuu.com/posts/20261114/",
+          "description": "父亲主导的第二个中药创新药芪秦通痹片获国家药监局批准上市。平时惜字如金的他破天荒发了条二十多字的朋友圈庆祝，而我这次记住的不只是获批本身。",
+          "publishedAt": "2026-11-14T11:43:56.000Z"
+        },
         {
           "title": "「说说」已严肃在workbuddy运行Windows 10",
           "link": "https://upxuu.com/talk/2026-11-08-%E5%B7%B2%E4%B8%A5%E8%82%83%E5%9C%A8workbuddy%E8%BF%90%E8%A1%8Cwindow--10/",
@@ -142,24 +160,6 @@
           "link": "https://upxuu.com/posts/free-glm/",
           "description": "众所周知智谱有一个客户端叫 zcode，而如果你用国际版 z.ai 登录，就可以注册无数个账号，一直领 start plan，最逆天的是还可以叠加最近新出的 trust plan 算是智谱对于 git 上传门的补偿吧",
           "publishedAt": "2026-10-04T08:25:19.000Z"
-        },
-        {
-          "title": "一行gh cli 我的一百个star没了！",
-          "link": "https://upxuu.com/posts/fk-glm/",
-          "description": "我在写这篇文章时已经要崩溃了，glm一行命令，我的一个就差一个star就100的仓库被设为了私有",
-          "publishedAt": "2026-10-03T00:34:06.000Z"
-        },
-        {
-          "title": "「说说」这才是应广而告之的广告——如何把听力变成阅读",
-          "link": "https://upxuu.com/talk/20261021/",
-          "description": "!https://img.upxuu.lcrworld.xyz/images/2026/10/21/20261021225631312.jpg 这是我在朋友圈看到的最有价值的广告",
-          "publishedAt": "2026-09-28T22:39:35.000Z"
-        },
-        {
-          "title": "因为我余额要过期了免费给大家用longcat!",
-          "link": "https://upxuu.com/posts/free-longcat/",
-          "description": "余额快过期又没地方用，索性把 LongCat-2.0 接了个反代免费开放给大家，附 BASE URL 和 API Key，缓存不计入用量，还有几十亿 token，快去薅！",
-          "publishedAt": "2026-09-27T00:23:53.000Z"
         }
       ]
     },
@@ -251,6 +251,12 @@
         "https://lengxiqwq.com/rss.xml"
       ],
       "items": [
+        {
+          "title": "博客聊天室上线了，顺便聊聊踩坑记录",
+          "link": "https://lengxiqwq.com/posts/%E5%8D%9A%E5%AE%A2%E8%81%8A%E5%A4%A9%E5%AE%A4%E4%B8%8A%E7%BA%BF%E4%BA%86%E9%A1%BA%E4%BE%BF%E8%81%8A%E8%81%8A%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/",
+          "description": "最近私底下一直在忙着折腾博客的实时聊天室。本来以为就是搭个 WebSocket 放个音乐播放器，结果在多人音频时钟同步、国内访问加载优化以及 Matrix 联邦协议对接上踩了一堆坑，今天总算把它折腾上线了。",
+          "publishedAt": "2026-11-20T20:30:00.000Z"
+        },
         {
           "title": "Apple Music Windows 真是拉了坨大的",
           "link": "https://lengxiqwq.com/posts/apple-music-windows-%E7%9C%9F%E6%98%AF%E6%8B%89%E4%BA%86%E5%9D%A8%E5%A4%A7%E7%9A%84/",
@@ -397,6 +403,12 @@
           "publishedAt": "2026-07-09T09:03:22.000Z"
         },
         {
+          "title": "听雨茶室站点互联指南",
+          "link": "https://rainzt.cn/posts/tingyu-tea-room-guide/",
+          "description": "面向友站站长的 Matrix 接入指南，涵盖独立账号、共享转发、昵称和头像、消息同步，以及雪宝的站点和冷汐的杂货铺的接入方式。",
+          "publishedAt": "2026-11-20T00:00:00.000Z"
+        },
+        {
           "title": "听雨茶室更新啦，现在也能写 Markdown 小文章了",
           "link": "https://rainzt.cn/posts/tingyu-tea-room-markdown-update/",
           "description": "听雨茶室支持 Markdown 小文章啦：标题、列表、引用、表格和代码直接展示，还有账号资料统一、浏览器提醒与消息置顶。结尾留一个新功能的小预告。",
@@ -455,12 +467,6 @@
           "link": "https://rainzt.cn/posts/recently-one-more-step/",
           "description": "接着上周的《最近》，记录我为自动上架加入图片哈希值校验，也兑现了国庆后改版的打算，让博客精简主题 Aemeath-Pure 正式上线。",
           "publishedAt": "2026-10-12T10:29:18.000Z"
-        },
-        {
-          "title": "最近",
-          "link": "https://rainzt.cn/posts/recently/",
-          "description": "聊聊最近的疲惫和懒散、暂时推迟的创业计划，以及重新调整作息、捡起锻炼、继续开发自动上架 Agents 的打算。",
-          "publishedAt": "2026-10-10T09:58:23.000Z"
         }
       ]
     },
@@ -472,76 +478,76 @@
       ],
       "items": [
         {
-          "title": "响石潭：不期而遇",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.xiangshitan.com%2Fpost%2F3531.html",
-          "description": "一觉醒来，摸到手机一看，六点。只觉得嘴唇中间湿呼呼的，用手指轻轻触碰了一下，嘿，这干裂的嘴唇终究还是流出了鲜血。11月以来，确实比10月份的节奏加码不少，这两周就同一个主题进行了四次省市授课，期间还去了重庆参会。不过这样的感觉，还是不太好，忙碌的同时也失去了自己对时间支配的主动性。这样的状态，还将持续到11月底。 重庆期间，看到这么五个字，万物简单为美，深以为然。我想，大道至简，大约也就是这个意思。万事万物，抽丝剥茧，这背后的底层逻辑，可能是千年不变的。乃至上升到地球、宇宙，或曰亘古不变。变的只是不同的排列组合，只是更多的矫饰粉墨。顺着这个思维，那最近的忙忙忙似乎也就那样，忙也好，不忙也好，都是24小时一天。人是这样过了一天，心是这",
-          "publishedAt": "2026-11-11T22:59:15.000Z"
+          "title": "频率：APEC中国年，相约深圳",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fpinlyu.com%2Fopinions%2Fapec2026-shenzhen%2F",
+          "description": "APEC峰会昨天结束，我也居家办公了一周。过去深圳给大家的印象多是创新之城、科技之城，但在政治层面，这却是深圳第一次承办如此高规格、大规模的国际峰会。 过去常说...",
+          "publishedAt": "2026-11-20T02:31:08.000Z"
         },
         {
-          "title": "初然忆：加速通过科一和科四，成功预约科二和科三",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.imcry.vip%2Fpost%2F2026-11-12-639%2F",
-          "description": "预约到的考试场次在上午十点到十一点，我提前了差不多1个小时到达了考点。 考试的地方在三亚车管所隔壁，一楼是等候大厅，二楼是考场。",
-          "publishedAt": "2026-11-11T22:41:39.000Z"
+          "title": "魏文超博客：《2026年11月20日手账》",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.weiwenchao.com%2F2994.html",
+          "description": "1、我们的人生，皆有暗影。 今天早上，我在NBIC-4号楼大厅站着，阳光透过玻璃照在我的眼睛上。我于这逆光中，静静看上下班的人来回走动，他们的身体在我眼里出现了一些剪影效果。此时，一句话浮现在我心里——“当我站在逆光里，所见之人皆有暗影。” 2、 一段话，所引发的思考。 昨晚在抖音精选APP上看到这么一段话——“从道家讲，但凡能让你情绪波动的，往往是让你着相的。而能意识到自己着相的，就是有觉知能力的人。如果再扩大这个觉知能力，去观察自己为什么有情绪，这就是有内观能力的人。如若可以通过内观去观察自己产生执念的原因，这便是能破相的人。接着通过破相消除执念，从心随境转到境随心转，这就是能开悟之人。” 这段话是不是某位道教高人的真言，无从考",
+          "publishedAt": "2026-11-20T08:55:00.000Z"
         },
         {
-          "title": "Fatesinger：琅勃拉邦小逛",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Ffatesinger.com%2F105693",
-          "description": "西双版纳站 对面站台的绿皮车 磨丁站 磨丁站 磨丁站免税店 琅勃拉邦站 古城街道 南康河老铁桥。桥面挺窄，摩托车倒是照样来来往往。 摩托车和路边摊 街边的两层小楼 南康河 南康河对岸 招牌是 Beerlao，门口的黄伞上也是。 街边小卖部，抬头全是电线。 街边民居 巷子里的摩托车 天快黑了，街上车倒是不少。 夜里的 Avani+ 南康河 河上的小船 红门红窗的小楼 寺院围墙，金塔就在路边。 古城街道 貌似在晒米，四个大盘子就摆在人行道上。 上下客点 Lupa Fine Art Gallery 琅勃拉邦图书馆。门口的小黑板写着，花 2 美元可以买本书送给村里的孩子。 新世纪超市，中文招牌比老挝文还显眼。 路边就这么一个小摊，一把伞撑起",
-          "publishedAt": "2026-11-11T14:18:59.000Z"
+          "title": "云风的 BLOG：碎碎念",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.codingnow.com%2F2026%2F11%2Frandom_notes.html",
+          "description": "这段时间从写输入法开始恢复写代码了。虽然整个世界似乎都接受了 vibe coding ，但我依旧觉得程序还是自己来写比较快乐。 像给 RIME 写插件这件事上，LLM 对我是即有帮助的。过去我需要更多的死时间先学习一个完全陌生的系统，阅读大量的代码才能开始。现在有 LLM 的帮助，可以更快的上手了。遇到问题也可以更快的找到线索，知道该去哪里读源码。不过代码本身还是我自己写。 自从不工作以后，我对时间的体感发生了巨大的变化。干任何事情都不再设时间线，享受就是了。做项目本身就是享受的过程，一旦不急着做完，无论是找人还是找机器代替我做项目的工作，就变得没有意义。本来实现本身就不是我完成它的瓶颈。 我在输入法这个小项目上花了接近一周的时间。",
+          "publishedAt": "2026-11-20T07:55:47.000Z"
         },
         {
-          "title": "树下语：冷冷清清的双十一",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fyishu-life.com%2Findex.php%2Farchives%2F563.html",
-          "description": "这么多年，今年是最冷清的双十一。 去年的双十一虽然也差强人意，但是还是有狂欢的。 今年的双十一算是名存实亡了，各大平台也不再大力地宣扬双十一。因为整个经济形势不好，大家的购买力都在下降。大家的消费理念也偏于理性，不再像以前那么冲动。这也是双十一逐步淡化的原因... 我觉得这也是社会的发展的必然结果，基础的物质需求已经基本上得到了满足。人们需要的是更高层次的精神需求，不再是简单的物质需求了。简单的购物注定是无法满足大家的需求... 虽然对我们现在的这个行业不是那么友好，商家也不再过分追求这一天虚高的GMV数字。追求的是有没有更多的最终利润，因为只有利润才能在这个内卷的时代存活。 对于我来说，是有点怀念以前那种奋斗双十一的热血时刻。 犹",
-          "publishedAt": "2026-11-11T13:33:00.000Z"
+          "title": "森木志：让花成花，让树成树",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Foxxx.cn%2Farchives%2F1508.html",
+          "description": "月初，老爸让我不用车的话把车开回去让他有空去练练车，顺带提了一嘴，表哥结婚妈妈想回广西一趟，问我去不去，去的话开车，不去的话打算包车，因为高铁没坐过怕不知道，而且高铁站离起点终点都太远了，本来我不太想去的，年初那一次让我感觉有点怕了，耐不住老妈的嘴皮子只能一起回去了。因为年初已经开过一次，这次也算是轻车熟路，快到时还给老爸半个小时的开车实操机会，结果最后被老妈喝止，老妈说冷汗都出来了，老爸只能作罢换我来开。 上一次参加婚礼是我大学同学，一切都很现代，在宽敞的宴会厅，庄重的婚礼仪式。这一次很传统，从接新娘，到舞狮子，再去祖屋拜堂，最后吃席敬酒，每一步都恰到好处，因为广西有一种习俗叫拿了结婚证只是登记，拜了天地拜了祖宗才算是结婚，可能就",
+          "publishedAt": "2026-11-19T18:51:05.000Z"
         },
         {
-          "title": "水拍石：一千零一个祝福",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.leitao.cn%2F11586.html",
-          "description": "“本站自2012年12月22日起已经共发布了1000篇文章”，这是我这个网站文章归档页最上面的统计数据，现在写的这篇是第1001篇了。14年，一路摸爬滚打，从抄袭、模仿、无病呻吟、蹭热点，到随心而写；...",
-          "publishedAt": "2026-11-11T09:24:11.000Z"
+          "title": "魏文超博客：《手账二则》",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.weiwenchao.com%2F2977.html",
+          "description": "《手账一：一生的追求》 昨晚又没控制好情绪。 昨晚母亲打来电话，我挂断又重拨了回去——我有免费通话时长，习惯这么操作。这两天没通话，她这时候打来会有什么事？ 原来，家里的猫粮不够了，母亲给我说的就是这件事。之前一直是我给家里的宠物猫（花生）买猫粮。我图省事，每次都是十斤二十斤地买，买来后花生可以吃好久。前些日子，大女儿魏语菲和我商量，以后我每月转她100块钱，由她来给花生买吃的。和她沟通中，我是感受到了她对花生的爱意。之前我买的猫粮都是最便宜的，5斤的话也就二十几块钱，魏语菲打算给花生买好一点儿的猫粮，买那种小包装的，一次买不了多少，但会换着牌子买。 当时我也没在意，没想到这才几天时间，花生的口粮已经告急了。 怎么会这样呢？我在电话",
+          "publishedAt": "2026-11-19T08:09:00.000Z"
         },
         {
-          "title": "魏文超博客：《由妻子的小手术想到的》",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.weiwenchao.com%2F2962.html",
-          "description": "秋燕腰上的脂肪瘤做了微创手术。 这两天上班期间只顾着记录饮食之事，身边发生的生活细节未能及时同步记下。不过这样也好，有足够的时间去沉淀自己的心情，去凝炼自己的思索。只要是我们在意的事情，当时发生时，我们或许不会有太多的情绪反应，但对于这件事的思索却隐藏在我们的呼吸、睡梦的背后，一旦遇上合适的时机，我们对这件事的感应就会浮于水面。究其原因，我想这件事关系到我们在乎的人。 周一（26.11.9）下午4:55，秋燕给我发微信，说“做了个小手术，腰上有个脂肪瘤给切了”。她还告诉我，是打了局麻，并没有住院。晚上母亲给我发语音，告诉我秋燕骑电车已经回到家里。 周二（26.11.10）晚6:49，我发微信问她是否好些，麻药过后疼不疼，她回我“昨晚",
-          "publishedAt": "2026-11-11T07:59:49.000Z"
+          "title": "Sheep5的博客：今天出门看风景，顺便走了5公里",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fsheep5.net%2Farchives%2F26111915.html",
+          "description": "今天天气不错。下午实在是闲不住，在家憋得慌，还是出了门。每天必去的是家附近的三里河公园。三里河公园分上游和下游两部分，一般我是只走到下游。上游的部分太大了，没有两个小时走不完。 这次我换了条路线走：从下游的东门出发，不仅可以看到一个小型体育场还能一览三里河的美景。三里河下游穿过去一条铁路，时不时有火车经过。很多人去胶东机场那边拍飞机过桥的机位，就像这样： 我这儿也有个类似的地方，不过是火车。也挺漂亮的。以前在家里经常能听到火车经过的声音，家里窗户换成隔音型的以后就听不到了。 这个小型体育场设施挺齐全的，篮球场、足球场都有。我路过的时候，里面有不少人在打篮球。到了周末和节假日，还会有很多学生来踢足球。甚至围绕这些运动还催生出了卖货的小",
+          "publishedAt": "2026-11-19T07:13:00.000Z"
         },
         {
-          "title": "叶开红雪：我到訪時的庫克山",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fyekaihongxue.com%2F2026%2F11%2F10%2Fmountcook%2F",
-          "description": "10點出門，回到住宿17點了，累到躺在沙發熟睡了20幾分鐘，不是身體累，是心累，那種做錯事而心有餘悸的累。習慣了靠右開車，仍有些肌肉記憶，剛剛去加油前，左轉的時候，一時間忘了留意右方來車，差點導致直行車輛追尾。好在他反應及時，閃過了，我想他一定氣憤地不得了。盡情罵我吧，我真是憨居了。 這是在國外行山，目前經歷最多人的一次，即使天氣不好，密雨綿綿，往返的登山者雖不是絡繹不絕，但沒傘沒雨衣的人仍是不少。好在前半段天氣不算差，車即將進入停車區的時候，抬頭望，冰山赫然在目，這種震撼感，於我而言，就像看電影《西遊降魔篇》，如來佛祖聳立在地球上一樣，我就像那隻還未被馴化的孫悟空，怎麼也逃不脫它的五指山。 經過了三座橋，有恐高症的我，在這種搖晃的",
-          "publishedAt": "2026-11-10T12:08:45.000Z"
+          "title": "湘铭：秋假挣银票！",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fxiangming.site%2F1193.html",
+          "description": "好久没有出去晒晒太阳，一起跑跑了，感觉整个人都“肉肉”的动起来没有劲！周末朋友带着孩子来玩，因为孩子放秋假啦，真好各种假期，我们当年怎么没有，哈哈哈。 我们约了想去很久但是一直都没有去的一个地方“禾泉小镇”，不得不说其实真的挺好玩的地方不大花样不少。就和河南的“万岁山”一样和NPC互动。 进门就是玩，有纯赚的，有花钱玩的，有花钱吃的。总的来讲这个景区没有让我闲着🤣，直到天黑还在玩。 进门可以捡瓶子，一个瓶子1张钱，可以运送物资一次5张，可以找到指定地点拍照打卡然后发朋友圈一次10张等等。其实我用朋友圈换了3次一共30张。哈哈哈哈。 也有身临其境的玩法当“演员”哈哈哈，一次30张，不过碍于脸面（男人呐），没有上去，错失30张。 直到",
+          "publishedAt": "2026-11-19T07:05:02.000Z"
         },
         {
-          "title": "阿伏伽德罗的云端：慌啥子嘛 慢慢来",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fmolyun.com%2Fmoments%2F%23moment-e09f380c64b1",
-          "description": "慌啥子嘛 慢慢来 太阳下山有月亮爬上来 云会在 花会开 好运总会为你而等待 卸下一身的疲惫 今夜枕着星光再入睡 风啊轻轻吹 这一刻就忘了你是谁 有时清醒有时醉 别把所有压力自己背 人生路还远 你不必事事都完美",
-          "publishedAt": "2026-11-10T11:18:00.000Z"
+          "title": "水拍石：我正沉迷于AI",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.leitao.cn%2F11617.html",
+          "description": "最近使用AI时长太多了，有时一整天都在用AI，从而忽视了很多其他事，比如读书、比如运动。 初始我以为是因为AI最近太便宜了，在轻量模式下近乎于免费无限用，而这种模式也能满足绝大多数场景；同时各平台最近...",
+          "publishedAt": "2026-11-19T06:42:52.000Z"
         },
         {
-          "title": "织梦岁月：几番踩坑，下一台笔记本不选联想了",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fzhujianlin.com%2Farchives%2F2500.html",
-          "description": "天天和电脑打交道，在外人眼里我算是懂电脑的。但别人来问我笔记本怎么选，我也和普通人差不多，大多就在主流品牌里挑，翻翻京东销量榜单做参考。 以前有人找我推荐笔记本，我常会优先联想。理由很简单，它线下服务网点多，出问题维修方便，心里踏实。可最近一直在想一个问题：维修点遍地都是，会不会反过来，也代表它出故障的概率本身就更高？ 前段时间同事找我，要给学设计的女儿挑一台配置好点的笔记本，需要显卡性能强。我推荐了联想拯救者，一万二。我不想担太多责任，只把建议给到他，让他觉得合适就自己京东下单走国补。当时想着联想的机子，就算有问题，顶多也是些小毛病。 没想到新机到手不到一周，直接黑屏开不了机，人还在宁波。我让他找当地联想服务站送修，检测之后直接更",
-          "publishedAt": "2026-11-09T11:18:45.000Z"
+          "title": "Sheep5的博客：照片墙更新：现在能按日子一页页往回翻",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fsheep5.net%2Farchives%2Fphoto-wall-update.html",
+          "description": "这篇文章是由AI生成的。 照片墙在这里。 照片墙刚做好的时候，我写过一篇《博客里多了面照片墙》，讲怎么从四百多张图里挑出真照片。那会儿墙上是一百八十二张，整整齐齐挂着，我挺满意。 过了几天，照片攒到一百九十五张。我再上去翻，忽然觉得不对劲——这么多照片挤在一起，想找「上次拍的秋叶」得来回划半天。照片是挂上去了，可没有先后顺序，像一抽屉散照片。 今天给它加了个新东西：时间线。 时间线长什么样 打开照片墙，默认就是时间线。页面中间竖着一条线，从上往下先是月份：2026 年 11 月 133 张、2026 年 10 月 62 张。每个月下面再按天分——11 月 18 日 13 张、11 月 17 日 9 张，一直排到最早那天。 一天的照片",
+          "publishedAt": "2026-11-19T03:32:35.000Z"
         },
         {
-          "title": "风渡言：北京的秋天",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.fdsay.com%2F2026%2F11%2Fbei-jing-de-qiu-tian%2F",
-          "description": "秋天的北京总是很美的，奈何最近几周的周末天气都不怎么样，勉强凑了两天出去玩，结果又冷又不出片。 10月底去了奥森，原本想看银杏叶，结果去早了，叶子还是绿的，尴尬，还不如家门口地铁站的银杏叶子黄。 后来又去了银山塔林，虽然天气同样不怎么样，但是叶子还算五彩斑斓。 银山塔林是多部电视剧的取景地，比如苏有朋版的《倚天屠龙记》。不过去了没怎么拍照，因为光线实在不好…… 上周末又去了家门口的一个公园，结果那个风吹呀吹的，哎。",
-          "publishedAt": "2026-11-09T07:41:22.000Z"
+          "title": "核桃小屋：2026年11月4日，贵州三都之旅的第二天",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.htaoo.com%2Frecord%2F940.html",
+          "description": "第一次见面，还是有点拘谨 来到中午，终于见到了这次想见的人。 毕竟是第一次见女网友，之前一直都是通过手机聊天，真正见面还是不太一样。刚开始无论言语还是行为上，都比较拘谨，也不知道该怎么自然地相处。 不过后面聊着聊着，相处了一段时间，发现她还是挺有趣的，慢慢也就没那么拘谨了。感觉有些人刚开始见面确实会放不开，但熟悉一点之后，也就没那么多顾虑了。 中午她带我去别的地方吃酸汤粉，吃完之后，又带我去水族文化博物馆逛逛。 水族文化博物馆 这个博物馆不用门票，登记一下就可以进去。 进去之后发现里面还挺大的，门口有一个大铜鼓。通过介绍了解到，铜鼓对于水族来说有着特别的意义，每逢过节或者遇到一些重要的事情，都需要敲响铜鼓。 里面介绍了水族各个寨子的",
+          "publishedAt": "2026-11-19T03:00:00.000Z"
         },
         {
-          "title": "张洪Heo：博客七周年记",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fblog.zhheo.com%2Fp%2F74qioc4q.html",
-          "description": "这篇文章介绍了作者运营博客**七周年**的回顾与感悟。今年是**AI**影响最大的一年，作者近八成电脑操作都通过AI完成，并用**OpenClaw**打通了从家到公司的全链路，操控软路由、NAS与智能家居。文中分享了主力模型**deepseek**的使用成本、AI辅助博客创作的方式，以及借助**suno**还原旧作等音乐创作经历，还谈到自研桌面软件、数码消费降温，以及博客未来作为**深度问题靠谱信源**的新定位。",
-          "publishedAt": "2026-11-09T04:16:47.000Z"
+          "title": "平哥偶记：人终将会拥抱AI，成为AI",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fwww.pgoj.top%2Farchives%2Fren-lei-cheng-wei-Ai.html",
+          "description": "AI刚出来的时候，短视频还会在右上角或者发布信息处留有明显的AI生成标识。现在，越来越多的短视频不留任何标识了。像我这样眼拙的，有时只能在评论区知道AI生成的事实。这种对AI的迟钝感，我刷独立博客时也有。多数文章，如果不是博主声明，或者有明显的AI模式，比如大标题套小标题之类，我根本看不出AI是否参与，乃至完全就是AI写的。 我以前也跟风，让AI阅读自己以前写过的东西，蒸馏出了一个虚拟的我，然后做了两类实验。其一，给出一个想法，让AI以我的风格写成五六百字的短文。其二，把我即将写完的文字都交给它，让它用我的语气口吻完成收尾。结果都以失败告终。AI给出的全文，虽然文中也有我的习惯用语，但其条理清晰，言辞漂亮，比喻准确，让我无法接受。我",
+          "publishedAt": "2026-11-19T02:39:28.000Z"
         },
         {
-          "title": "Sheep5的博客：车祸后第一次走这么远",
-          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fsheep5.net%2Farchives%2F647.html",
-          "description": "自从车祸以后我一直在家修养，很少出远门。最多就是在家附近小范围内走走。四个月多了，也该进一步了。 虽然天气很冷，但我给膝盖戴上了护膝，还是挺暖和的。去了最爱的三里河公园，走了之前曾未走过的路。 这一趟路把我累得不行，出了一身汗，但感觉自己是健康的。健康真的很重要，有一副好身体比什么都重要。 虽然现在腿已经好转的差不多了，但还是想念从前的自己。那个年轻，健康，充满活力的自己。 这一趟拍了不少照片，分享给大家。 我用AppleWatch记录了本次步行的数据，也分享给大家。都是值得记录下来的东西。",
-          "publishedAt": "2026-11-09T04:03:00.000Z"
+          "title": "Ming博客：从鸭子河到东湖",
+          "link": "https://www.boyouquan.com/go?from=feed&link=https%3A%2F%2Fmingblog.site%2Fposts%2Ffrom-yazi-river-to-east-lake%2F",
+          "description": "有天下午，在广汉鸭子河边走了走。开头这五张都拍在金雁大桥附近。河边的步道晒着太阳，街上有几家店拉着卷帘门。黑塔街的茶摊倒是热闹，几把大伞底下，竹椅上坐了不少人。 有家新开的店，叫「路边野餐」。菜做得挺用心，也好吃。 广汉三星湖那边有家书店，一共三层。从一楼抬头，能看到书架沿着中庭围了一圈，几根柱子上亮着细细密密的灯。我挺喜欢这个中庭。 最后一张是在成都东湖公园拍的。下午的阳光照在湖面上，亮晃晃的。天气好的时候，在这里坐着喝杯茶，很舒服。",
+          "publishedAt": "2026-11-19T00:00:00.000Z"
         }
       ]
     },
@@ -635,64 +641,64 @@
       ],
       "items": [
         {
-          "title": "家里人不理解钓鱼，怎么沟通？",
-          "link": "https://chumendiao.com/jiaren-buzhichi-diaoyu/",
-          "description": "家人反对钓鱼，反对的不是钓鱼本身，而是它带来的时间占用、花销和不确定。把这三件事说清楚，比解释钓鱼多有意思更有用",
-          "publishedAt": "2026-11-14T01:00:04.000Z"
+          "title": "钓位高、离水面远，看漂和抄鱼差在哪？",
+          "link": "https://chumendiao.com/diaowei-gaodi-kanpiao-chaoyu/",
+          "description": "同一片水，坐得高和贴着水面钓，看漂、抄鱼、风和影子都不一样。到了新钓位，先看清自己的视角：漂从哪个方向来、反光在哪一段、抄网往哪儿伸。",
+          "publishedAt": "2026-11-21T01:00:04.000Z"
         },
         {
-          "title": "新手找钓点，先别问哪儿有鱼",
-          "link": "https://chumendiao.com/xinshou-zhao-diaodian-xian-bie-wen-na-er-you-yu/",
-          "description": "新手找钓点容易把顺序弄反。这篇讲先确认能不能下竿：禁钓的牌子怎么认、管理方不同差别在哪、岸边哪些痕迹说明有人在这儿长期钓、大水面为什么先找水再找点，以及问渔具店该怎么开口。",
-          "publishedAt": "2026-11-13T11:00:05.000Z"
+          "title": "钓鱼占用太多时间，怎么平衡？",
+          "link": "https://chumendiao.com/diaoyu-zhanyong-shijian-tai-duo/",
+          "description": "钓鱼耗时间长是它的特点，平衡的办法不是压缩单次时长，而是提前划定频次和时段，让它不侵占已经安排好的事",
+          "publishedAt": "2026-11-20T11:00:04.000Z"
         },
         {
-          "title": "漂放在包里被压了一路，会不会压坏",
-          "link": "https://chumendiao.com/piao-fang-baoli-beiya-yilu-huibuhui-yahuai/",
-          "description": "漂身薄、轻、中空，怕挤不怕水。这篇讲压过之后怎么看出暗纹和内部脱节、不同材质的漂扛压差多少、什么程度的伤修不回来，以及漂筒、硬管和存放环境该怎么选。",
-          "publishedAt": "2026-11-13T06:00:05.000Z"
+          "title": "太阳一出来口就散了，是光的问题吗？",
+          "link": "https://chumendiao.com/taiyang-chulai-kou-jiu-san-le/",
+          "description": "太阳出来后口突然安静，先别把它算在光头上。能对着看的有三样：停口的范围、深水还有没有口、太阳露头到停口隔了多久。",
+          "publishedAt": "2026-11-20T06:00:04.000Z"
         },
         {
-          "title": "岸边的树落虫子下来，算不算天天在打窝",
-          "link": "https://chumendiao.com/anbian-na-ke-shu-suanbushuan-baisong-de-woliao/",
-          "description": "落进水里的虫子确实是鱼的食物，但它不是你的窝。这篇讲落虫和打窝差在哪、先来吃的多半是上层鱼和小杂鱼，以及一棵树顺带改掉的遮光、挂底、挡抛竿，什么时候该占树这边，什么时候该躲开。",
-          "publishedAt": "2026-11-13T01:00:05.000Z"
+          "title": "钓位上方有高压线，这个位置还能不能钓？",
+          "link": "https://chumendiao.com/gaoya-xian-xia-neng-bu-neng-diao/",
+          "description": "架空导线大多没有绝缘层，碳素竿本身导电，湿鱼线也导电。竿够不着不等于安全，最危险的是举着竿换位那几步。",
+          "publishedAt": "2026-11-20T01:00:05.000Z"
         },
         {
-          "title": "没有水温计，怎么大致判断水温？",
-          "link": "https://chumendiao.com/meiyou-shuiwenji-zenme-panduan/",
-          "description": "没有水温计时，水温只能粗略判断：用手试表层水、看水草和藻类的状态、看鱼的活跃程度。这些方法只能给出大概，不能替代实测",
-          "publishedAt": "2026-11-12T11:00:05.000Z"
+          "title": "到了水边才发现天气跟预报不一样，怎么改？",
+          "link": "https://chumendiao.com/dao-shuibian-tianqi-gen-yubao-buyiyang/",
+          "description": "预报多云微风，到了岸边却是阴天起浪。风、云、雨、水位各改各的，先说清变了哪一样，再决定动位置、动钓层还是动饵。",
+          "publishedAt": "2026-11-19T11:00:04.000Z"
         },
         {
-          "title": "小雨和中雨，鱼情的差别真有那么大吗",
-          "link": "https://chumendiao.com/xiaoyu-zhongyu-yuqing-chabie/",
-          "description": "小雨好钓、雨大了就完蛋，这条线其实没那么清楚。要分档的不是雨，是这片水被改了多少：水色、水位、水面动静、光照。这篇讲怎么看这几样变化，以及小野河和大水库为什么答案相反。",
-          "publishedAt": "2026-11-12T06:00:05.000Z"
+          "title": "跟钓友一起出钓，位置和节奏怎么协调？",
+          "link": "https://chumendiao.com/gen-diaoyou-yiqi-chudiao/",
+          "description": "一起出钓最常见的问题是位置太挤和节奏不一致。出发前先把相隔距离、换位和收竿的时间说定，能避免大部分摩擦",
+          "publishedAt": "2026-11-19T06:00:04.000Z"
         },
         {
-          "title": "网上学的钓鱼技巧，到水边怎么用不上",
-          "link": "https://chumendiao.com/wangshang-jiqiao-shuibian-yongbushang/",
-          "description": "技巧不是假的，是前提条件那一截被剪掉了。动作照搬、底下的水情不一样，落地就变了形。这篇讲为什么会这样、为什么野钓常常卡在比技巧更早的一步，以及怎么学才能留下判断。",
-          "publishedAt": "2026-11-12T01:00:04.000Z"
+          "title": "岸边排了一排钓箱，坐两头还是坐中间？",
+          "link": "https://chumendiao.com/yipai-ren-zuo-natou/",
+          "description": "岸边只剩两头空位时怎么选：看风向把食物推到哪侧、看水从哪头进来、看别人的窝味往哪走，也看岸上站不站得住，以及两头为什么常空着。",
+          "publishedAt": "2026-11-19T01:00:04.000Z"
         },
         {
-          "title": "岸边坡又陡又滑，站哪、怎么走才不摔下去",
-          "link": "https://chumendiao.com/anbian-shihua-doupo-fangzhiluoshui/",
-          "description": "水边的土长期泡着，表层松、还常带一层青苔，脚底下是活的。这篇讲选位、鞋子、抄鱼弯腰那一下、夜钓挪位各自要注意什么，以及万一有人落水，岸边该怎么救才不会跟着下去。",
-          "publishedAt": "2026-11-11T11:00:05.000Z"
+          "title": "收竿了还剩半袋窝料，倒进水里行不行？",
+          "link": "https://chumendiao.com/sheng-woliao-dao-shui/",
+          "description": "剩下的窝料倒进水里，一个人倒一点和天天有人倒不是一回事。说清有机物入水后会怎样、会招来什么，以及少开、带走晾干、分次打完这几条。",
+          "publishedAt": "2026-11-18T11:00:05.000Z"
         },
         {
-          "title": "钓鱼的花销越来越大，怎么控制？",
-          "link": "https://chumendiao.com/diaoyu-huaxiao-zenme-kongzhi/",
-          "description": "钓鱼花销失控不是因为买了贵的东西，而是买了很多只用过一次的东西。先统计真正反复用到的，再按这个清单往后买",
-          "publishedAt": "2026-11-11T06:00:04.000Z"
+          "title": "闹小鱼闹得凶的时候，底下还会不会有大的？",
+          "link": "https://chumendiao.com/nao-xiaoyu-dixia-you-dayu/",
+          "description": "小鱼一直闹，底下到底还有没有大鱼？先看钩饵能不能撑到落位，再看那种突然安静下来、动作由碎变闷的信号能说明什么、又不能说明什么。",
+          "publishedAt": "2026-11-18T06:00:05.000Z"
         },
         {
-          "title": "夏天口急冬天口轻，提竿时机到底差在哪",
-          "link": "https://chumendiao.com/xiatian-kouji-dongtian-kouqing-tigan-shiji/",
-          "description": "同一个黑漂，夏天抽起来就有鱼，冬天抬竿常常是空的。鱼的体温跟着水温走，吃饵动作的快慢完全不是一回事。这篇讲两个季节提竿时机怎么分，以及哪些时候这条说法不作数。",
-          "publishedAt": "2026-11-11T01:00:05.000Z"
+          "title": "装备被雨淋湿、掉进水里，怎么应急处理？",
+          "link": "https://chumendiao.com/zhuangbei-linyu-yingji/",
+          "description": "装备淋湿后，先分开处理怕水的部分：轮、电子用品、竿内壁要尽快擦干晾透，布类和饵料单独处理。当天处理到位，比事后补救有用",
+          "publishedAt": "2026-11-18T01:00:05.000Z"
         }
       ]
     },
@@ -703,6 +709,18 @@
         "https://bk.gs.cn/index.php/feed/"
       ],
       "items": [
+        {
+          "title": "锅盖响了一声",
+          "link": "https://bk.gs.cn/index.php/archives/64/",
+          "description": "楼下那家面馆的抽油烟机，大概是从去年入冬开始响的。不是坏掉那种响，就是电机转起来以后带着一层沙沙声，坐在靠门那张桌子能听见。老板姓什么我一直没弄清楚，收银台后面贴着一张手写的价目表，\"牛肉面\"的...",
+          "publishedAt": "2026-11-16T01:32:00.000Z"
+        },
+        {
+          "title": "一块豆腐的傍晚",
+          "link": "https://bk.gs.cn/index.php/archives/65/",
+          "description": "傍晚去巷口买豆腐，摊子摆在老槐树底下。木板架在两个矮凳上，白布铺着，豆腐码得方方正正，边缘浸着清水。风一吹，槐树叶擦着摊子沙沙响。卖豆腐的是个中年男人，手上常年沾着豆水，指节发白，指甲缝里总嵌着...",
+          "publishedAt": "2026-11-14T23:34:00.000Z"
+        },
         {
           "title": "成功翻墙了",
           "link": "https://bk.gs.cn/index.php/archives/66/",
@@ -750,18 +768,6 @@
           "link": "https://bk.gs.cn/index.php/archives/54/",
           "description": "傍晚六点出头，厨房里的排气扇还在转。我刚把锅搁上灶，凉水浇在滚烫的锅底上，冒起一小团白汽。窗台上那只用旧了的蓝色塑料水杯，被风扇吹得微微晃了一下。这杯子是楼下修车铺老张的。他每天下午四点左右来接...",
           "publishedAt": "2026-10-30T02:44:22.000Z"
-        },
-        {
-          "title": "秋天这一碗",
-          "link": "https://bk.gs.cn/index.php/archives/53/",
-          "description": "十月里不用看天，就知道桂花开没开。桂树就那么几棵，街角一棵，老屋后门一棵，不像城里那样成排地种。可风从海上转过来，那点甜味就顺着石屋的墙缝钻进来。闻到了，就是秋天到了。海边风大，花还没看清，香已...",
-          "publishedAt": "2026-10-28T11:09:48.000Z"
-        },
-        {
-          "title": "归港",
-          "link": "https://bk.gs.cn/index.php/archives/42/",
-          "description": "下午，我站在外婆邻居家院子里，朝海那边望。风比我先知道消息，台风还在老远外头转着，天却仍是连日的晴。平日散在海上的船，早收了锚，一艘贴一艘，悄没声地拢进港里。海面瞧着还平顺，天是那种晒透了的浅蓝...",
-          "publishedAt": "2026-10-20T13:39:00.000Z"
         }
       ]
     },
@@ -773,6 +779,12 @@
         "https://blog.amamo.top/atom.xml"
       ],
       "items": [
+        {
+          "title": "koffi 在 Alpine 上直接 abort：一次 musl 预编译排查",
+          "link": "https://blog.amamo.top/posts/koffi-musl-alpine-abort/",
+          "description": "dsh 在 Alpine aarch64 上一调用工具就整个进程 abort。根因是 koffi 3.1.1 优先加载 glibc 预编译二进制，在 musl 上进入 C++ 初始化后直接终止，musl 回退逻辑根本没机会执行。本文记录排查过程、修复思路和修复仓库。",
+          "publishedAt": "2026-11-15T00:00:00.000Z"
+        },
         {
           "title": "机房装 Node.js 记",
           "link": "https://blog.amamo.top/posts/life/%E6%9C%BA%E6%88%BF%E8%A3%85nodejs%E8%AE%B0/",
@@ -838,12 +850,6 @@
           "link": "https://blog.amamo.top/posts/mobi%E8%BD%ACpdf%E6%8C%87%E5%8D%97/",
           "description": "用 Calibre 把 MOBI 电子书转换成 PDF 的详细教程，解决排版错乱问题",
           "publishedAt": "2026-09-12T00:00:00.000Z"
-        },
-        {
-          "title": "dsh-toolcall-id：一个插件修好 dsh 的历史加载失败",
-          "link": "https://blog.amamo.top/posts/dsh-toolcall-id/",
-          "description": "dsh Web GUI 重开多步会话时报 \"received more than one start Match\"，排源发现是工具调用 id 每步重号撞车。写了个开源插件挂在官方钩子上修掉它，升级 dsh 不会被覆盖",
-          "publishedAt": "2026-08-21T00:00:00.000Z"
         }
       ]
     },
