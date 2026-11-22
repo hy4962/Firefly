@@ -2390,7 +2390,7 @@
 		content: none !important;
 	}
 
-	html body #navbar[data-transparent-mode] > div:first-of-type > div {
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child {
 		/* 中间列必须可压缩：三列按 auto / 1fr / auto 分配，否则 1024–1440px
 		   下菜单的 max-content 会把左右两块挤到重叠（实测 1024px 重叠 163px） */
 		grid-template-columns: auto minmax(0, 1fr) auto !important;
@@ -2402,7 +2402,7 @@
 	}
 
 	/* 左侧站点名胶囊 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child {
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child {
 		display: inline-flex !important;
 		align-items: center;
 		justify-self: start;
@@ -2421,18 +2421,18 @@
 		transition: background-color 0.2s, border-color 0.2s, transform 0.18s;
 	}
 
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child::after {
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child::after {
 		content: none !important;
 	}
 
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child > div {
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child > div {
 		gap: 0.4rem;
 		font-size: 1.05rem;
 	}
 
 	/* 右侧操作簇：搜索框 + 各功能按钮都做成独立圆形胶囊 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) {
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) {
 		display: flex !important;
 		align-items: center;
 		justify-self: end;
@@ -2440,8 +2440,8 @@
 		min-width: 0;
 	}
 
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > div > button {
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button {
 		display: inline-flex !important;
 		align-items: center;
 		justify-content: center;
@@ -2459,10 +2459,10 @@
 		transition: color 0.18s, background-color 0.18s, border-color 0.18s;
 	}
 
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button::after,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > div > button::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > div > button::after {
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button::after,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button::after {
 		content: none !important;
 	}
 
@@ -2490,7 +2490,7 @@
 
 	/* 桌面菜单：外层玻璃胶囊 + 内层小胶囊。窄屏沿用上游隐藏逻辑，不走这里 */
 	@media (min-width: 1024px) {
-		html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(2) {
+		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) {
 			display: flex !important;
 			align-items: center;
 			justify-self: center;
@@ -2617,14 +2617,14 @@
 			padding: 0.4rem 0.75rem !important;
 		}
 
-		html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child {
+		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child {
 			height: 40px !important;
 			min-height: 40px !important;
 			padding: 0 0.75rem !important;
 			font-size: 0.95rem;
 		}
 
-		html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button {
+		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button {
 			flex-basis: 38px;
 			width: 38px !important;
 			height: 38px !important;
@@ -2632,8 +2632,8 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child,
-		html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button {
+		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child,
+		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button {
 			transition: none;
 		}
 	}
