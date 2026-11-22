@@ -2346,3 +2346,342 @@
 		}
 	}
 </style>
+
+<style>
+	/* ===== 胶囊玻璃导航栏（视觉抄自 rainzt.cn，实现只走配置层） =====
+	   参考站的顶栏是由三块独立玻璃胶囊组成：左边站点名、中间菜单、右边操作簇，
+	   每块都有自己的半透明底 + 背景模糊 + 细描边 + 柔光投影；菜单项再套一层小胶囊，
+	   当前项用主题色淡底。这里不改上游 Navbar.astro / DropdownMenu.astro / navbar.css，
+	   全部靠页脚注入的未分层 CSS 覆盖；DOM 结构用 #navbar 的直接层级定位，
+	   避免依赖参考站那些本地不存在的 class（firefly-nav-shell / nav-brand 等）。 */
+	html body #navbar {
+		--ff-np-bg: color-mix(in oklch, var(--card-bg) 42%, transparent);
+		--ff-np-border: color-mix(in oklch, var(--primary) 18%, transparent);
+		--ff-np-shadow: 0 6px 18px rgba(15, 35, 60, 0.08);
+		--ff-np-fg: var(--deep-text);
+		--ff-np-muted: color-mix(in oklch, var(--deep-text) 84%, transparent);
+		--ff-np-active-bg: color-mix(in oklch, var(--primary) 16%, var(--card-bg));
+	}
+
+	html.dark body #navbar {
+		--ff-np-bg: color-mix(in oklch, var(--card-bg) 34%, transparent);
+		--ff-np-border: color-mix(in oklch, var(--primary) 22%, transparent);
+		--ff-np-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+		/* 主题的 --deep-text 在暗色下仍是深色，直接拿来当导航文字会糊成一片 */
+		--ff-np-fg: oklch(0.95 0.01 var(--hue));
+		--ff-np-muted: color-mix(in oklch, var(--ff-np-fg) 82%, transparent);
+		--ff-np-active-bg: color-mix(in oklch, var(--primary) 24%, var(--card-bg));
+	}
+
+	/* 外壳整条透明，玻璃感交给下面三块模块；顺手关掉主题自带的 ::before 模糊层 */
+	html body #navbar[data-transparent-mode] > div:first-of-type {
+		height: auto !important;
+		min-height: 0 !important;
+		padding: 0.5rem 1rem !important;
+		background: transparent !important;
+		border: 0 !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type::before {
+		content: none !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div {
+		/* 中间列必须可压缩：三列按 auto / 1fr / auto 分配，否则 1024–1440px
+		   下菜单的 max-content 会把左右两块挤到重叠（实测 1024px 重叠 163px） */
+		grid-template-columns: auto minmax(0, 1fr) auto !important;
+		gap: clamp(0.25rem, 0.8vw, 0.75rem);
+		width: 100% !important;
+		max-width: none !important;
+		height: auto !important;
+		padding-inline: 0 !important;
+	}
+
+	/* 左侧站点名胶囊 */
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child {
+		display: inline-flex !important;
+		align-items: center;
+		justify-self: start;
+		height: 48px !important;
+		min-height: 48px !important;
+		padding: 0 1rem !important;
+		border: 1px solid var(--ff-np-border) !important;
+		border-radius: 9999px !important;
+		background: var(--ff-np-bg) !important;
+		box-shadow: var(--ff-np-shadow) !important;
+		color: var(--ff-np-fg) !important;
+		font-weight: 750;
+		white-space: nowrap;
+		backdrop-filter: blur(24px) saturate(1.25);
+		-webkit-backdrop-filter: blur(24px) saturate(1.25);
+		transition: background-color 0.2s, border-color 0.2s, transform 0.18s;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child::after {
+		content: none !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child > div {
+		gap: 0.4rem;
+		font-size: 1.05rem;
+	}
+
+	/* 右侧操作簇：搜索框 + 各功能按钮都做成独立圆形胶囊 */
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) {
+		display: flex !important;
+		align-items: center;
+		justify-self: end;
+		gap: 0.4rem;
+		min-width: 0;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > div > button {
+		display: inline-flex !important;
+		align-items: center;
+		justify-content: center;
+		flex: 0 0 44px;
+		width: 44px !important;
+		height: 44px !important;
+		padding: 0 !important;
+		border: 1px solid var(--ff-np-border) !important;
+		border-radius: 9999px !important;
+		background: var(--ff-np-bg) !important;
+		box-shadow: var(--ff-np-shadow) !important;
+		color: var(--ff-np-fg) !important;
+		backdrop-filter: blur(14px) saturate(1.12);
+		-webkit-backdrop-filter: blur(14px) saturate(1.12);
+		transition: color 0.18s, background-color 0.18s, border-color 0.18s;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button::after,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > div > button::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > div > button::after {
+		content: none !important;
+	}
+
+	html body #navbar #search-bar {
+		width: auto !important;
+		height: 44px !important;
+		margin-right: 0 !important;
+		padding-right: 0.5rem;
+		border: 1px solid var(--ff-np-border) !important;
+		border-radius: 9999px !important;
+		background: var(--ff-np-bg) !important;
+		box-shadow: var(--ff-np-shadow) !important;
+		backdrop-filter: blur(14px) saturate(1.12);
+		-webkit-backdrop-filter: blur(14px) saturate(1.12);
+	}
+
+	html body #navbar #search-input-desktop {
+		width: 7.5rem !important;
+		color: var(--ff-np-muted) !important;
+	}
+
+	html body #navbar #search-input-desktop:focus {
+		width: 10rem !important;
+	}
+
+	/* 桌面菜单：外层玻璃胶囊 + 内层小胶囊。窄屏沿用上游隐藏逻辑，不走这里 */
+	@media (min-width: 1024px) {
+		html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(2) {
+			display: flex !important;
+			align-items: center;
+			justify-self: center;
+			gap: 0.125rem;
+			min-width: 0;
+			max-width: 100%;
+			height: 50px;
+			padding: 0.25rem !important;
+			border: 1px solid var(--ff-np-border) !important;
+			border-radius: 9999px !important;
+			background: var(--ff-np-bg) !important;
+			box-shadow: var(--ff-np-shadow) !important;
+			backdrop-filter: blur(24px) saturate(1.25);
+			-webkit-backdrop-filter: blur(24px) saturate(1.25);
+			overflow: visible !important;
+		}
+
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
+			display: inline-flex !important;
+			align-items: center;
+			justify-content: center;
+			height: 40px !important;
+			min-height: 40px !important;
+			padding: 0 0.68rem !important;
+			border: 1px solid transparent !important;
+			border-radius: 9999px !important;
+			background: color-mix(in oklch, var(--card-bg) 16%, transparent) !important;
+			box-shadow: none !important;
+			color: var(--ff-np-muted) !important;
+			font-size: 0.95rem;
+			font-weight: 600;
+			white-space: nowrap;
+			backdrop-filter: blur(18px) saturate(1.2);
+			-webkit-backdrop-filter: blur(18px) saturate(1.2);
+			transition: color 0.18s, background-color 0.18s, border-color 0.18s;
+		}
+
+		/* 上游下拉箭头绝对定位在右侧，触发按钮要留出位置 */
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
+			padding-right: 1.85rem !important;
+		}
+
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a::before,
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a::after,
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button::before,
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button::after {
+			content: none !important;
+		}
+
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a > div,
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button > div {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.3rem;
+			white-space: nowrap;
+		}
+
+		/* 参考站菜单项带图标；本站顶级项更多，1600px 以下放不下，
+		   所以只在宽屏把图标放回来，窄屏沿用上游隐藏逻辑（下拉面板里的图标不受影响） */
+		@media (min-width: 1600px) {
+			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a > div > .navbar-icon,
+			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button > div > .navbar-icon {
+				display: inline-flex !important;
+				flex: none;
+				margin-right: 0 !important;
+				font-size: 1.02rem;
+				opacity: 0.82;
+			}
+		}
+
+		@media (max-width: 1599px) {
+			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
+			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
+				padding-inline: 0.5rem !important;
+				font-size: 0.9rem;
+			}
+
+			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
+				padding-right: 1.6rem !important;
+			}
+		}
+
+		@media (max-width: 1279px) {
+			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
+			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
+				padding-inline: 0.38rem !important;
+				font-size: 0.85rem;
+			}
+
+			html body #navbar #search-input-desktop {
+				width: 6rem !important;
+			}
+
+			html body #navbar #search-input-desktop:focus {
+				width: 8rem !important;
+			}
+		}
+
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a:hover:not(.ff-np-active),
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button:hover:not(.ff-np-active) {
+			border-color: color-mix(in oklch, var(--primary) 24%, transparent) !important;
+			background: color-mix(in oklch, var(--primary) 12%, var(--card-bg)) !important;
+			color: var(--primary) !important;
+		}
+
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a.ff-np-active,
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button.ff-np-active {
+			border-color: color-mix(in oklch, var(--primary) 22%, transparent) !important;
+			background: var(--ff-np-active-bg) !important;
+			color: var(--primary) !important;
+			font-weight: 700;
+		}
+
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a.ff-np-active .navbar-icon,
+		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button.ff-np-active .navbar-icon {
+			opacity: 1;
+		}
+	}
+
+	/* 窄屏只留站点名 + 操作簇，胶囊高度收一档 */
+	@media (max-width: 1023px) {
+		html body #navbar[data-transparent-mode] > div:first-of-type {
+			padding: 0.4rem 0.75rem !important;
+		}
+
+		html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child {
+			height: 40px !important;
+			min-height: 40px !important;
+			padding: 0 0.75rem !important;
+			font-size: 0.95rem;
+		}
+
+		html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button {
+			flex-basis: 38px;
+			width: 38px !important;
+			height: 38px !important;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		html body #navbar[data-transparent-mode] > div:first-of-type > div > a:first-child,
+		html body #navbar[data-transparent-mode] > div:first-of-type > div > div:nth-child(3) > button {
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	/* 胶囊导航的当前项：上游 DropdownMenu 不输出 active/aria-current，
+	   这里按当前路径给顶级项和含命中子项的下拉按钮补 .ff-np-active。
+	   页脚在 swup 容器外，切页后要重新挂一次。 */
+	(function () {
+		function norm(path) {
+			if (!path || path === "#") return "";
+			try {
+				var u = new URL(path, location.href);
+				if (u.origin !== location.origin) return "";
+				return u.pathname.replace(/\/+$/, "") || "/";
+			} catch (_) {
+				return "";
+			}
+		}
+
+		function apply() {
+			var navbar = document.getElementById("navbar");
+			if (!navbar) return;
+			var current = norm(location.pathname);
+			var items = navbar.querySelectorAll(
+				":scope > div > div .dropdown-container > a, :scope > div > div .dropdown-container > button",
+			);
+			items.forEach(function (item) {
+				var self = norm(item.getAttribute("href") || "");
+				var active = !!self && (self === current || (self !== "/" && current.indexOf(self + "/") === 0));
+				if (!active && item.hasAttribute("data-dropdown-trigger")) {
+					var children = item.parentElement.querySelectorAll(".dropdown-menu a[href]");
+					for (var i = 0; i < children.length; i++) {
+						var child = norm(children[i].getAttribute("href") || "");
+						if (child && (child === current || (child !== "/" && current.indexOf(child + "/") === 0))) {
+							active = true;
+							break;
+						}
+					}
+				}
+				item.classList.toggle("ff-np-active", active);
+			});
+		}
+
+		apply();
+		document.addEventListener("swup:page:view", function () {
+			requestAnimationFrame(apply);
+		});
+	})();
+</script>
