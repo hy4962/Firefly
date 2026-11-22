@@ -1,0 +1,294 @@
+---
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const title = "茶室";
+const description = "一个连着 Matrix 大厅的公开聊天室，消息会同步到互联站点。";
+const MATRIX_HOMESERVER = "https://matrix.0dm.cn";
+const MATRIX_ROOM_ID = "!CKQYQ95MT69FlskJmkcEbSmkd72I6CTgnf_nITckm4I";
+const MATRIX_ROOM_ALIAS = "#lobby:detached.online";
+---
+
+<MainGridLayout title={title} description={description}>
+	<section class="chat-shell card-base z-10 relative w-full" data-tea-room aria-labelledby="chat-title">
+		<header class="chat-hero">
+			<div class="chat-hero__kicker"><span class="chat-hero__dot"></span>OPEN MATRIX LOBBY</div>
+			<h1 id="chat-title">茶室</h1>
+			<p class="chat-hero__lead">坐下来，聊几句。这里连着 Matrix 公共大厅，消息会同步到已接入的友站。</p>
+			<div class="chat-hero__meta">
+				<span><Icon is:inline name="material-symbols:public" /> 公开大厅</span>
+				<span><Icon is:inline name="material-symbols:link" /> {MATRIX_ROOM_ALIAS}</span>
+			</div>
+		</header>
+
+		<div class="chat-notice" data-chat-notice>
+			<Icon is:inline name="material-symbols:info-outline-rounded" />
+			<span>这里的公开消息会同步到 Matrix 及其他互联站点，请不要发布私密内容。</span>
+		</div>
+
+		<div class="chat-login card-base" data-chat-login>
+			<div class="chat-login__head">
+				<h2>进入茶室</h2>
+				<p>使用你自己的 Matrix 账号登录；没有账号可先看大厅消息。</p>
+			</div>
+			<form data-chat-form autocomplete="off">
+				<label>
+					<span>服务器</span>
+					<input type="url" name="homeserver" value={MATRIX_HOMESERVER} readonly />
+				</label>
+				<label>
+					<span>用户名</span>
+					<input type="text" name="username" placeholder="regenbogen" required />
+				</label>
+				<label>
+					<span>密码</span>
+					<input type="password" name="password" placeholder="Matrix 账号密码" required />
+				</label>
+				<div class="chat-login__actions">
+					<button type="submit" data-chat-submit><Icon is:inline name="material-symbols:login-rounded" /> 登录并进入</button>
+					<button type="button" class="chat-ghost" data-chat-readonly><Icon is:inline name="material-symbols:visibility-rounded" /> 只读看看</button>
+				</div>
+				<p class="chat-login__error" data-chat-error hidden></p>
+			</form>
+		</div>
+
+		<div class="chat-room" data-chat-room hidden>
+			<div class="chat-room__bar">
+				<div class="chat-room__status">
+					<span class="chat-room__live" data-chat-live></span>
+					<span data-chat-identity>未连接</span>
+				</div>
+				<div class="chat-room__actions">
+					<button type="button" data-chat-refresh title="重新连接"><Icon is:inline name="material-symbols:refresh-rounded" /></button>
+					<button type="button" data-chat-logout title="退出"><Icon is:inline name="material-symbols:logout-rounded" /></button>
+				</div>
+			</div>
+			<div class="chat-room__messages" data-chat-messages aria-live="polite"></div>
+			<form class="chat-room__composer" data-chat-composer hidden>
+				<input type="text" name="message" placeholder="说点什么……" maxlength="2000" required />
+				<button type="submit" title="发送"><Icon is:inline name="material-symbols:send-rounded" /></button>
+			</form>
+			<div class="chat-room__hint" data-chat-hint>登录后可发言。公开消息会同步到互联站点。</div>
+		</div>
+	</section>
+
+	<script is:inline define:vars={{ homeserver: MATRIX_HOMESERVER, roomId: MATRIX_ROOM_ID }}>
+		(() => {
+			const KEY = "__teaRoomChatRuntime";
+			const rt = window[KEY] || (window[KEY] = { bound: false, controller: null, since: null, timer: null, token: "", user: "", name: "" });
+
+			const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+			const q = (sel, root = document) => root.querySelector(sel);
+
+			const api = async (path, opts = {}) => {
+				const headers = { ...(opts.headers || {}) };
+				if (rt.token) headers.Authorization = `Bearer ${rt.token}`;
+				if (opts.body) headers["Content-Type"] = "application/json";
+				const res = await fetch(homeserver + path, { ...opts, headers });
+				let data = {};
+				try { data = await res.json(); } catch (_) {}
+				return { ok: res.ok, status: res.status, data };
+			};
+
+			const showError = (msg) => {
+				const box = q("[data-chat-error]");
+				if (!box) return;
+				box.textContent = msg;
+				box.hidden = false;
+			};
+
+			const renderMessage = (ev) => {
+				const list = q("[data-chat-messages]");
+				if (!list) return;
+				const content = ev.content || {};
+				const sender = ev.sender || "";
+				const body = typeof content.body === "string" ? content.body : "";
+				const ts = ev.origin_server_ts ? new Date(ev.origin_server_ts) : new Date();
+				const time = ts.toLocaleString("zh-CN", { hour12: false, month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+				const isMine = sender === rt.user;
+				const row = document.createElement("div");
+				row.className = "chat-msg" + (isMine ? " chat-msg--mine" : "");
+				row.innerHTML = `<div class="chat-msg__head"><span class="chat-msg__who">${esc(sender.split(":")[0].replace(/^@/, ""))}</span><time>${esc(time)}</time></div><div class="chat-msg__body">${esc(body)}</div>`;
+				list.appendChild(row);
+				list.scrollTop = list.scrollHeight;
+			};
+
+			const stopSync = () => {
+				if (rt.timer) { clearTimeout(rt.timer); rt.timer = null; }
+				if (rt.controller) { try { rt.controller.abort(); } catch (_) {} rt.controller = null; }
+			};
+
+			const sync = async () => {
+				if (!q("[data-chat-room]") || q("[data-chat-room]").hidden) return;
+				rt.controller = new AbortController();
+				const params = new URLSearchParams({ timeout: "25000" });
+				if (rt.since) params.set("since", rt.since);
+				try {
+					const res = await fetch(homeserver + "/_matrix/client/v3/sync?" + params.toString(), {
+						headers: rt.token ? { Authorization: `Bearer ${rt.token}` } : {},
+						signal: rt.controller.signal,
+					});
+					if (!res.ok) throw new Error("SYNC_" + res.status);
+					const data = await res.json();
+					rt.since = data.next_batch || rt.since;
+					const timeline = data.rooms?.join?.[roomId]?.timeline?.events || [];
+					for (const ev of timeline) {
+						if (ev.type === "m.room.message" && ev.content?.msgtype === "m.text") renderMessage(ev);
+					}
+					setLive(true);
+				} catch (e) {
+					if (e.name !== "AbortError") setLive(false);
+				} finally {
+					rt.controller = null;
+					if (q("[data-chat-room]") && !q("[data-chat-room]").hidden) rt.timer = setTimeout(sync, 1200);
+				}
+			};
+
+			const setLive = (on) => {
+				const dot = q("[data-chat-live]");
+				const label = q("[data-chat-identity]");
+				if (dot) dot.classList.toggle("is-live", !!on);
+				if (label) label.textContent = (on ? "已连接 · " : "连接中断 · ") + (rt.user || "只读访客");
+			};
+
+			const enterRoom = (canSpeak) => {
+				const login = q("[data-chat-login]");
+				const room = q("[data-chat-room]");
+				if (login) login.hidden = true;
+				if (room) room.hidden = false;
+				const composer = q("[data-chat-composer]");
+				if (composer) composer.hidden = !canSpeak;
+				const hint = q("[data-chat-hint]");
+				if (hint) hint.textContent = canSpeak ? "公开消息会同步到 Matrix 及互联站点。" : "登录后可发言。公开消息会同步到互联站点。";
+				stopSync();
+				sync();
+			};
+
+			const onLogin = async (e) => {
+				e.preventDefault();
+				const form = e.currentTarget;
+				const btn = q("[data-chat-submit]");
+				const err = q("[data-chat-error]");
+				if (err) err.hidden = true;
+				if (btn) btn.disabled = true;
+				const username = (form.elements.username.value || "").trim().replace(/^@/, "");
+				const password = form.elements.password.value || "";
+				try {
+					const r = await api("/_matrix/client/v3/login", {
+						method: "POST",
+						body: JSON.stringify({ type: "m.login.password", identifier: { type: "m.id.user", user: username }, password }),
+					});
+					if (!r.ok || !r.data.access_token) throw new Error(r.data.error || "登录失败，请检查用户名密码");
+					rt.token = r.data.access_token;
+					rt.user = r.data.user_id || `@${username}:matrix.0dm.cn`;
+					rt.name = username;
+					rt.since = null;
+					enterRoom(true);
+				} catch (err2) {
+					showError(err2.message || "登录失败");
+				} finally {
+					if (btn) btn.disabled = false;
+				}
+			};
+
+			const onSend = async (e) => {
+				e.preventDefault();
+				const form = e.currentTarget;
+				const input = form.elements.message;
+				const text = (input.value || "").trim();
+				if (!text) return;
+				if (!rt.token) { showError("请先登录"); return; }
+				const txn = "web-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+				input.value = "";
+				const r = await api(`/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/send/m.room.message/${txn}`, {
+					method: "PUT",
+					body: JSON.stringify({ msgtype: "m.text", body: `${rt.name} · 折腾进行时\n${text}` }),
+				});
+				if (!r.ok) { showError(r.data.error || "发送失败"); input.value = text; }
+			};
+
+			const setup = () => {
+				const shell = q("[data-tea-room]");
+				if (!shell || shell.dataset.chatReady === "1") return;
+				shell.dataset.chatReady = "1";
+				const form = q("[data-chat-form]");
+				const composer = q("[data-chat-composer]");
+				if (form) form.addEventListener("submit", onLogin);
+				if (composer) composer.addEventListener("submit", onSend);
+				const readonlyBtn = q("[data-chat-readonly]");
+				if (readonlyBtn) readonlyBtn.addEventListener("click", () => enterRoom(false));
+				const refreshBtn = q("[data-chat-refresh]");
+				if (refreshBtn) refreshBtn.addEventListener("click", () => { rt.since = null; stopSync(); sync(); });
+				const logoutBtn = q("[data-chat-logout]");
+				if (logoutBtn) logoutBtn.addEventListener("click", () => {
+					stopSync();
+					rt.token = ""; rt.user = ""; rt.name = ""; rt.since = null;
+					const login = q("[data-chat-login]"); if (login) login.hidden = false;
+					const room = q("[data-chat-room]"); if (room) room.hidden = true;
+					const list = q("[data-chat-messages]"); if (list) list.innerHTML = "";
+				});
+			};
+
+			if (!rt.bound) {
+				for (const name of ["astro:page-load", "astro:after-swap", "swup:contentReplaced", "swup:page:view"]) {
+					document.addEventListener(name, setup);
+				}
+				rt.bound = true;
+			}
+			setup();
+		})();
+	</script>
+</MainGridLayout>
+
+<style>
+	.chat-shell { padding: 2rem 2.25rem 2.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+	.chat-hero__kicker { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.68rem; letter-spacing: 0.16em; opacity: 0.7; }
+	.chat-hero__dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--primary); }
+	.chat-hero h1 { font-size: 1.9rem; font-weight: 600; margin: 0.35rem 0 0.4rem; }
+	.chat-hero__lead { margin: 0; opacity: 0.78; font-size: 0.92rem; line-height: 1.7; }
+	.chat-hero__meta { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.85rem; font-size: 0.78rem; opacity: 0.72; }
+	.chat-hero__meta span { display: inline-flex; align-items: center; gap: 0.35rem; }
+	.chat-hero__meta svg { width: 1rem; height: 1rem; }
+	.chat-notice { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.7rem 0.85rem; border-radius: 0.6rem; background: color-mix(in srgb, var(--primary) 8%, transparent); font-size: 0.82rem; line-height: 1.6; }
+	.chat-notice svg { width: 1.1rem; height: 1.1rem; flex: none; margin-top: 0.1rem; }
+	.chat-login { padding: 1.4rem; display: grid; gap: 1rem; }
+	.chat-login__head h2 { margin: 0 0 0.3rem; font-size: 1.05rem; }
+	.chat-login__head p { margin: 0; font-size: 0.82rem; opacity: 0.7; }
+	.chat-login form { display: grid; gap: 0.8rem; }
+	.chat-login label { display: grid; gap: 0.35rem; }
+	.chat-login label span { font-size: 0.76rem; opacity: 0.75; }
+	.chat-login input { width: 100%; padding: 0.6rem 0.75rem; border-radius: 0.55rem; border: 1px solid var(--line-color, rgba(128,128,128,0.3)); background: transparent; color: inherit; font: inherit; font-size: 0.88rem; }
+	.chat-login input[readonly] { opacity: 0.6; }
+	.chat-login__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.3rem; }
+	.chat-login__actions button { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 0.55rem; border: 1px solid transparent; background: var(--primary); color: var(--primary-bg, #fff); cursor: pointer; font-size: 0.86rem; }
+	.chat-login__actions button:disabled { opacity: 0.5; cursor: wait; }
+	.chat-login__actions button svg { width: 1.05rem; height: 1.05rem; }
+	.chat-login__actions .chat-ghost { background: transparent; border-color: var(--line-color, rgba(128,128,128,0.3)); color: inherit; }
+	.chat-login__error { margin: 0; color: #c0392b; font-size: 0.82rem; }
+	.chat-room { display: grid; gap: 0.75rem; }
+	.chat-room__bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--line-color, rgba(128,128,128,0.2)); }
+	.chat-room__status { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; opacity: 0.8; }
+	.chat-room__live { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #999; }
+	.chat-room__live.is-live { background: #2e9e6b; }
+	.chat-room__actions { display: inline-flex; gap: 0.4rem; }
+	.chat-room__actions button { display: inline-flex; padding: 0.35rem; border: 0; border-radius: 0.5rem; background: transparent; color: inherit; cursor: pointer; opacity: 0.7; }
+	.chat-room__actions button:hover { opacity: 1; background: rgba(128,128,128,0.12); }
+	.chat-room__actions svg { width: 1.15rem; height: 1.15rem; }
+	.chat-room__messages { min-height: 16rem; max-height: 28rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.4rem 0.2rem; }
+	.chat-msg { padding: 0.55rem 0.7rem; border-radius: 0.6rem; background: rgba(128,128,128,0.08); }
+	.chat-msg--mine { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+	.chat-msg__head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.7rem; margin-bottom: 0.3rem; }
+	.chat-msg__who { font-size: 0.8rem; font-weight: 600; }
+	.chat-msg__head time { font-size: 0.68rem; opacity: 0.6; }
+	.chat-msg__body { font-size: 0.88rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+	.chat-room__composer { display: flex; gap: 0.55rem; }
+	.chat-room__composer input { flex: 1; padding: 0.6rem 0.75rem; border-radius: 0.55rem; border: 1px solid var(--line-color, rgba(128,128,128,0.3)); background: transparent; color: inherit; font: inherit; font-size: 0.88rem; }
+	.chat-room__composer button { display: inline-flex; align-items: center; justify-content: center; width: 2.6rem; border: 0; border-radius: 0.55rem; background: var(--primary); color: var(--primary-bg, #fff); cursor: pointer; }
+	.chat-room__composer svg { width: 1.15rem; height: 1.15rem; }
+	.chat-room__hint { font-size: 0.74rem; opacity: 0.6; }
+
+	@media (max-width: 720px) {
+		.chat-shell { padding: 1.4rem 1.2rem 1.8rem; }
+		.chat-hero h1 { font-size: 1.6rem; }
+	}
+</style>

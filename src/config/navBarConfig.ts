@@ -42,6 +42,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		url: "#",
 		icon: "material-symbols:group",
 		children: [
+			// 茶室（Matrix 互联公开聊天室）
+			{
+				name: "茶室",
+				url: "/chat/",
+				icon: "material-symbols:forum-rounded",
+			},
+
 			// 朋友圈（友链 RSS 聚合时间线）
 			{
 				name: "朋友圈",
