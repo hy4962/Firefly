@@ -2685,3 +2685,49 @@
 		});
 	})();
 </script>
+
+<style>
+	/* ===== 「低价米饭」主题色高光 =====
+	   页脚早先有一条按 href 定位的强调规则，但胶囊导航那段的层级更深，
+	   把它的主题色渐变盖掉了。这里用同样的层级 + href 再压回来，
+	   亮色暗色都用主题色渐变底 + 同色系压深文字，外链角标同步压深。 */
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"] {
+		background: linear-gradient(
+			135deg,
+			color-mix(in oklch, var(--primary) 88%, white) 0%,
+			var(--primary) 100%
+		) !important;
+		border-color: color-mix(in oklch, var(--primary) 58%, transparent) !important;
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+			0 3px 12px color-mix(in oklch, var(--primary) 42%, transparent) !important;
+		color: color-mix(in oklch, var(--primary) 22%, black) !important;
+		font-weight: 700 !important;
+		isolation: isolate;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]::after {
+		content: none !important;
+		background: transparent !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]:hover,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]:active,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]:focus-visible {
+		background: linear-gradient(
+			135deg,
+			color-mix(in oklch, var(--primary) 94%, white) 0%,
+			color-mix(in oklch, var(--primary) 92%, black) 100%
+		) !important;
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+			0 4px 16px color-mix(in oklch, var(--primary) 62%, transparent) !important;
+		color: color-mix(in oklch, var(--primary) 16%, black) !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"] svg {
+		color: color-mix(in oklch, var(--primary) 55%, black) !important;
+		opacity: 1 !important;
+	}
+</style>
