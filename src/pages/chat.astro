@@ -432,12 +432,15 @@ const peers = [
 		gap: 0.75rem;
 		min-height: 0;
 		overflow-y: auto;
-		scrollbar-width: none;
+		scrollbar-width: thin;
 		padding-right: 2px;
 	}
 	.tea-side::-webkit-scrollbar {
-		width: 0;
-		height: 0;
+		width: 4px;
+	}
+	.tea-side::-webkit-scrollbar-thumb {
+		background: color-mix(in oklch, currentColor 18%, transparent);
+		border-radius: 999px;
 	}
 
 	/* 名片 */
@@ -605,10 +608,10 @@ const peers = [
 
 	/* 在线列表 */
 	.tea-roster {
-		flex: 1 1 auto;
+		flex: 1 0 auto;
 		display: flex;
 		flex-direction: column;
-		min-height: 8rem;
+		min-height: 9rem;
 	}
 	.tea-roster__count {
 		display: inline-flex;
@@ -2250,7 +2253,7 @@ const peers = [
 				return;
 			}
 
-			const LIMIT = 8;
+			const LIMIT = 6;
 			const shown = rt.rosterAll ? members : members.slice(0, LIMIT);
 			list.innerHTML = shown
 				.map((m) => {
