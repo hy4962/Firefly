@@ -4915,10 +4915,21 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 
 		// ── 数据 ─────────────────────────────────────────────────
 		const api = async (path, opts = {}) => {
-			const headers = { ...(opts.headers || {}) };
+			const { timeout = 20_000, ...fetchOpts } = opts;
+			const headers = { ...(fetchOpts.headers || {}) };
 			if (rt.visitor && rt.visitor.token) headers.Authorization = `Bearer ${rt.visitor.token}`;
-			if (typeof opts.body === "string" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
-			const res = await fetch(api0.replace(/\/$/, "") + path, { ...opts, headers });
+			if (typeof fetchOpts.body === "string" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+			const ctrl = new AbortController();
+			const timer = setTimeout(() => ctrl.abort(), timeout);
+			let res;
+			try {
+				res = await fetch(api0.replace(/\/$/, "") + path, { ...fetchOpts, headers, signal: ctrl.signal });
+			} catch (e) {
+				if (e?.name === "AbortError") throw new Error("请求超时，请检查网络后重试");
+				throw e;
+			} finally {
+				clearTimeout(timer);
+			}
 			let data = {};
 			try {
 				data = await res.json();
@@ -5175,7 +5186,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			const target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
 			try {
 				const fd = await blob.arrayBuffer();
-				const up = await api(`/api/upload`, { method: "POST", body: fd, headers: { "Content-Type": blob.type || "image/png" } });
+				const up = await api(`/api/upload`, { method: "POST", body: fd, headers: { "Content-Type": blob.type || "image/png" }, timeout: 60_000 });
 				// 发一条带图片的消息：后端 send 目前只发 text，这里用 body 携带 mxc
 				const res = await api(`/api/send?room=${rt.room}`, {
 					method: "POST",
