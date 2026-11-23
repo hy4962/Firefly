@@ -2836,3 +2836,161 @@
 		background: url("/assets/images/room-lobby.webp") center / cover no-repeat;
 	}
 </style>
+
+<svg id="ff-lg-defs" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+	<defs>
+		<filter id="navbar-glass-distortion" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+			<feTurbulence type="fractalNoise" baseFrequency="0.0100 0.0100" numOctaves="1" seed="5" result="noise" />
+			<feGaussianBlur in="noise" stdDeviation="3" result="soft-noise" />
+			<feComponentTransfer in="soft-noise" result="displacement-map">
+				<feFuncR type="linear" slope="3.5" intercept="-1.25" />
+				<feFuncG type="linear" slope="3.5" intercept="-1.25" />
+			</feComponentTransfer>
+			<feDisplacementMap in="SourceGraphic" in2="displacement-map" scale="120" xChannelSelector="R" yChannelSelector="G" />
+		</filter>
+	</defs>
+</svg>
+
+<style>
+	/* ===== Apple Liquid Glass 折射层 =====
+	   原理：backdrop-filter 先把岛背后的壁纸磨砂，filter:url(#...) 再把这张磨砂结果
+	   按噪声位移。两层都挂在 ::before 上，本体只留底色/描边/投影，文字始终锐利，
+	   也避免本体成为 backdrop root 把面板里的毛玻璃吃掉。
+	   参数：--ff-lg-blur / --ff-lg-panel-blur 由页脚脚本按 localStorage 写入。 */
+	:root {
+		--ff-lg-blur: 10px;
+		--ff-lg-panel-blur: 16px;
+	}
+
+	/* 本体撤掉原来的 backdrop-filter，避免和 ::before 叠成双层模糊 */
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2),
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button,
+	html body #navbar #search-bar,
+	html body .banner-link {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+	}
+
+	/* ::before 需要定位包含块；面板本身已是 absolute，不能改 position */
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2),
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button,
+	html body #navbar #search-bar,
+	html body .banner-link {
+		position: relative !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2)::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button::before,
+	html body #navbar #search-bar::before {
+		content: "" !important;
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		border-radius: inherit;
+		pointer-events: none;
+		backdrop-filter: blur(var(--ff-lg-blur)) saturate(1.6);
+		-webkit-backdrop-filter: blur(var(--ff-lg-blur)) saturate(1.6);
+		clip-path: inset(0 round 9999px);
+		will-change: backdrop-filter;
+	}
+
+	/* 下拉与浮动面板：面板本体撤掉模糊，磨砂/折射下沉到 ::before。
+	   纯色壁纸模式下没有可采样背景，但仍从滚动内容掠过，所以不排除。 */
+	html body #navbar :is(.dropdown-content, .float-panel) {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+	}
+
+	html body #navbar :is(.dropdown-content, .float-panel)::before,
+	html body .banner-link::before {
+		content: "" !important;
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		border-radius: inherit;
+		pointer-events: none;
+		backdrop-filter: blur(var(--ff-lg-panel-blur)) saturate(1.5);
+		-webkit-backdrop-filter: blur(var(--ff-lg-panel-blur)) saturate(1.5);
+		clip-path: inset(0 round var(--radius-large, 12px));
+		will-change: backdrop-filter;
+	}
+
+	html body .banner-link::before {
+		backdrop-filter: blur(8px) saturate(1.4);
+		-webkit-backdrop-filter: blur(8px) saturate(1.4);
+		clip-path: inset(0 round 9999px);
+	}
+
+	/* 折射总开关：blur 或 scale 为 0 时只留普通毛玻璃 */
+	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child::before,
+	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2)::before,
+	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button::before,
+	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button::before,
+	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a::before,
+	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button::before,
+	html[data-glass-distortion="on"] body #navbar #search-bar::before,
+	html[data-glass-distortion="on"] body #navbar :is(.dropdown-content, .float-panel)::before,
+	html[data-glass-distortion="on"] body .banner-link::before {
+		filter: url(#navbar-glass-distortion);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		html body #navbar::before,
+		html body #navbar *::before {
+			will-change: auto;
+		}
+	}
+</style>
+
+<script>
+	(function () {
+		/* 和上游文章同一套 localStorage 键，方便按实测微调：
+		   navbarGlassBlur 0–30、navbarGlassScale 0–200、navbarGlassFrequency 0.002–0.03 */
+		var root = document.documentElement;
+		var clamp = function (v, min, max) { return Math.min(max, Math.max(min, v)); };
+		var read = function (key, fallback, min, max) {
+			try {
+				var v = parseFloat(localStorage.getItem(key));
+				return isFinite(v) ? clamp(v, min, max) : fallback;
+			} catch (_) { return fallback; }
+		};
+
+		var blur = read("navbarGlassBlur", 10, 0, 30);
+		var scale = read("navbarGlassScale", 120, 0, 200);
+		var freq = read("navbarGlassFrequency", 0.01, 0.002, 0.03);
+
+		function apply() {
+			root.style.setProperty("--ff-lg-blur", blur + "px");
+			/* 面板文字多，模糊留 16px 下限，避免壁纸把字吃掉 */
+			root.style.setProperty("--ff-lg-panel-blur", Math.max(blur, 16) + "px");
+
+			var turbulence = document.querySelector("#navbar-glass-distortion feTurbulence");
+			if (turbulence) {
+				turbulence.setAttribute("baseFrequency", freq.toFixed(4) + " " + freq.toFixed(4));
+			}
+			var displacement = document.querySelector("#navbar-glass-distortion feDisplacementMap");
+			if (displacement) {
+				displacement.setAttribute("scale", String(Math.round(scale)));
+			}
+
+			root.setAttribute("data-glass-distortion", blur > 0 && scale > 0 ? "on" : "off");
+			var navbar = document.getElementById("navbar");
+			if (navbar) navbar.setAttribute("data-glass", blur > 0 ? "on" : "off");
+		}
+
+		apply();
+		document.addEventListener("swup:page:view", apply);
+	})();
+</script>
