@@ -1129,6 +1129,88 @@ async function handleMedia(c, url) {
 	return new Response(upstream.body, { status: 200, headers });
 }
 
+// ── 个人资料：显示名/头像走 Matrix profile，扩展字段存 account_data ──
+async function handleProfile(c, request, token) {
+	if (!token) return fail(401, "先入座，再改资料");
+	const who = await mxJson(c, "/_matrix/client/v3/account/whoami", { token });
+	if (!who.ok || !who.data.user_id) return fail(401, "登录状态失效了，重新入座试试");
+	const uid = who.data.user_id;
+	const dataPath = `/_matrix/client/v3/user/${enc(uid)}/account_data/uk.9ll.profile`;
+
+	if (request.method === "GET") {
+		const { ok, data } = await mxJson(c, dataPath, { token });
+		return json(200, { ok: true, profile: ok && data && typeof data === "object" ? data : {} });
+	}
+
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const nick = clean(body.nick, 20);
+	if (!nick) return fail(400, "昵称不能为空");
+	const signature = clean(body.signature, 80);
+	const website = clean(body.website, 120);
+	const avatarUrl = clean(body.avatarUrl, 600);
+	const status = clean(body.status, 40);
+	const emailNotify = body.emailNotify === true;
+	const push = body.push === true;
+
+	const displayname = `${nick} · ${c.siteName}`;
+	const nameRes = await mx(c, `/_matrix/client/v3/profile/${enc(uid)}/displayname`, {
+		token,
+		method: "PUT",
+		body: { displayname },
+	});
+	if (!nameRes.ok) {
+		const err = await nameRes.json().catch(() => ({}));
+		return fail(502, err.error || "改昵称失败");
+	}
+
+	let avatarMxc = "";
+	if (/^https?:\/\//i.test(avatarUrl)) {
+		try {
+			const img = await fetch(avatarUrl, { redirect: "follow" });
+			const type = (img.headers.get("content-type") || "").split(";")[0].trim();
+			if (img.ok && /^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(type)) {
+				const buf = await img.arrayBuffer();
+				if (buf.byteLength <= 2 * 1024 * 1024) {
+					const up = await mx(c, `/_matrix/media/v3/upload?filename=avatar`, {
+						token,
+						method: "POST",
+						raw: buf,
+						headers: { "Content-Type": type },
+					});
+					const upData = await up.json().catch(() => ({}));
+					if (up.ok && upData.content_uri) {
+						avatarMxc = upData.content_uri;
+						await mx(c, `/_matrix/client/v3/profile/${enc(uid)}/avatar_url`, {
+							token,
+							method: "PUT",
+							body: { avatar_url: avatarMxc },
+						});
+					}
+				}
+			}
+		} catch (_) {}
+	}
+
+	const profile = { nick, signature, website, avatarUrl, status, emailNotify, push, updatedAt: Date.now() };
+	await mx(c, dataPath, { token, method: "PUT", body: profile });
+	memberCache.at = 0;
+	return json(200, {
+		ok: true,
+		user: {
+			id: uid,
+			nick,
+			status,
+			avatar: avatarMxc ? `${new URL(request.url).origin}/api/media?u=${enc(avatarMxc)}` : "",
+		},
+		profile,
+	});
+}
+
 // ── 点歌台：队列存在 Matrix 房间状态事件里 ──────────────────────────
 // 不分 isolate 内存、重启不丢；写入需要访客 token，读取公开。
 const JUKE_STATE_TYPE = "uk.9ll.juke.state";
@@ -1306,6 +1388,8 @@ export async function handleRequest(request, env = {}) {
 			out = await handleTyping(c, request, visitorToken, roomOf(c, url));
 		} else if (path === "/api/reaction" && request.method === "POST") {
 			out = await handleReaction(c, request, visitorToken, roomOf(c, url));
+		} else if (path === "/api/profile" && (request.method === "GET" || request.method === "POST")) {
+			out = await handleProfile(c, request, visitorToken);
 		} else if (path === "/api/juke/state" && request.method === "GET") {
 			out = await handleJukeState(c, url, roomOf(c, url));
 		} else if (path === "/api/juke/action" && request.method === "POST") {

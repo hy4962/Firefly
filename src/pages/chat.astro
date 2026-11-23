@@ -33,23 +33,24 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		<!-- ── 左栏 ───────────────────────────────────────────── -->
 		<aside class="tea-side" data-tea-side>
 			<div class="tea-card tea-me" data-tea-me>
-				<div class="tea-me__cover" aria-hidden="true">
-					<span class="tea-me__glow"></span>
-					<span class="tea-me__glow tea-me__glow--b"></span>
-				</div>
-				<div class="tea-me__body">
-					<div class="tea-me__avatar" data-tea-me-avatar aria-hidden="true">?</div>
-					<div class="tea-me__name" data-tea-me-name>还没入座</div>
-					<p class="tea-me__meta" data-tea-me-meta>填个昵称，就能在这儿坐下。</p>
-					<div class="tea-me__stats">
-						<span><b data-tea-me-count>0</b> 发言</span>
-						<span class="tea-me__dot"></span>
-						<span data-tea-me-since>今天刚到</span>
-					</div>
-					<button type="button" class="tea-btn tea-btn--ghost tea-me__act" data-tea-enter>
-						<Icon is:inline name="material-symbols:login-rounded" /> 入座
-					</button>
-				</div>
+				<button type="button" class="tea-me__main" data-tea-profile-open aria-label="编辑个人资料">
+					<span class="tea-me__avatar" data-tea-me-avatar aria-hidden="true">?</span>
+					<span class="tea-me__copy">
+						<span class="tea-me__nameline">
+							<b data-tea-me-name>还没入座</b>
+							<em class="tea-me__badge" data-tea-me-badge hidden>已入座</em>
+						</span>
+						<span class="tea-me__status" data-tea-me-status>点击设置状态…</span>
+						<span class="tea-me__stats" hidden><b data-tea-me-count>0</b><span data-tea-me-since></span></span>
+					</span>
+				</button>
+				<button type="button" class="tea-icon-btn tea-me__bell" data-tea-notify-toggle aria-label="通知" title="通知">
+					<Icon is:inline name="material-symbols:notifications-outline-rounded" />
+					<span class="tea-me__dot" data-tea-notify-dot hidden></span>
+				</button>
+				<button type="button" class="tea-btn tea-btn--ghost tea-me__act" data-tea-enter>
+					<Icon is:inline name="material-symbols:login-rounded" /> 入座
+				</button>
 			</div>
 
 			<div class="tea-card tea-rooms">
@@ -369,6 +370,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		<div class="tea-scrim" data-tea-scrim hidden></div>
 		<div class="tea-scrim" data-juke-scrim hidden></div>
 		<div class="tea-msg-menu" data-tea-msg-menu hidden></div>
+		<div class="tea-notify" data-tea-notify hidden>
+			<header class="tea-notify__head">
+				<b>通知</b>
+				<button type="button" data-tea-notify-read>全部已读</button>
+			</header>
+			<div class="tea-notify__list" data-tea-notify-list></div>
+		</div>
 	</section>
 
 	<!-- ── 身份弹窗 ─────────────────────────────────────────── -->
@@ -482,6 +490,95 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			<button type="button" class="tea-dialog__back" data-tea-matrix-back>
 				<Icon is:inline name="material-symbols:arrow-back-rounded" /> 返回其他方式
 			</button>
+		</form>
+	</dialog>
+
+	<!-- ── 个人资料 ─────────────────────────────────────────── -->
+	<dialog class="tea-dialog tea-profile" data-tea-profile-dialog aria-labelledby="tea-profile-title">
+		<form method="dialog" class="tea-dialog__inner tea-profile__inner" data-tea-profile-form>
+			<header class="tea-dialog__head">
+				<div>
+					<h3 id="tea-profile-title">个人资料</h3>
+					<p class="tea-dialog__desc">修改后实时同步至在线成员列表与后续消息。</p>
+				</div>
+				<button type="button" class="tea-icon-btn tea-dialog__close" data-tea-profile-close aria-label="关闭">
+					<Icon is:inline name="material-symbols:close-rounded" />
+				</button>
+			</header>
+
+			<div class="tea-profile__preview">
+				<div class="tea-dialog__avatar" data-tea-profile-avatar>?</div>
+				<div class="tea-profile__preview-copy">
+					<b data-tea-profile-name>HY</b>
+					<span data-tea-profile-status>在线</span>
+				</div>
+				<span class="tea-profile__online">在线</span>
+			</div>
+
+			<div class="tea-profile__grid">
+				<section class="tea-profile__section">
+					<h4>基本资料</h4>
+					<label class="tea-field">
+						<span>展示昵称</span>
+						<input type="text" name="nick" maxlength="20" placeholder="你的昵称" required />
+					</label>
+					<label class="tea-field">
+						<span>个性签名 <em>最多 80 字</em></span>
+						<input type="text" name="signature" maxlength="80" placeholder="写一句简短介绍" />
+					</label>
+					<label class="tea-field">
+						<span>个人主页 <em>选填</em></span>
+						<input type="text" name="website" maxlength="120" placeholder="https://你的博客" />
+					</label>
+				</section>
+
+				<section class="tea-profile__section">
+					<h4>主页与头像</h4>
+					<label class="tea-field">
+						<span>自定义头像链接 <em>图片直链</em></span>
+						<input type="url" name="avatar" maxlength="500" placeholder="https://example.com/avatar.png" />
+					</label>
+					<p class="tea-profile__hint">支持 https 图片直链，保存时会自动上传成 Matrix 头像。</p>
+				</section>
+
+				<section class="tea-profile__section">
+					<h4>个性状态</h4>
+					<div class="tea-status-grid" data-tea-status-grid>
+						{["听歌中","摸鱼中","写代码","改Bug中","学习中","工作中","忙碌中","开会中","码字中","思考中","游戏中","看番中"].map((s) => (
+							<button type="button" data-tea-status={s}>{s}</button>
+						))}
+					</div>
+					<label class="tea-field">
+						<span>自定义状态 <em>最多 40 字</em></span>
+						<input type="text" name="status" maxlength="40" placeholder="点击上面的状态，或自己写" />
+					</label>
+				</section>
+
+				<section class="tea-profile__section">
+					<h4>个人设置</h4>
+					<label class="tea-switch">
+						<span><b>离线 @ 与回复提醒</b><small>有人提到你时记录到通知中心</small></span>
+						<input type="checkbox" name="emailNotify" checked />
+						<i></i>
+					</label>
+					<label class="tea-switch">
+						<span><b>浏览器推送</b><small>页面在后台时也能收到提醒</small></span>
+						<input type="checkbox" name="push" />
+						<i></i>
+					</label>
+				</section>
+			</div>
+
+			<footer class="tea-profile__foot">
+				<button type="button" class="tea-btn tea-btn--ghost tea-profile__logout" data-tea-profile-logout>
+					<Icon is:inline name="material-symbols:logout-rounded" /> 退出登录
+				</button>
+				<a class="tea-btn tea-btn--ghost" href="/guestbook/" target="_blank" rel="noopener">Waline 个人中心 ↗</a>
+				<span class="tea-profile__spacer"></span>
+				<button type="button" class="tea-btn tea-btn--ghost" data-tea-profile-cancel>取消</button>
+				<button type="button" class="tea-btn tea-btn--primary" data-tea-profile-save>保存资料</button>
+			</footer>
+			<p class="tea-dialog__error" data-tea-profile-error hidden></p>
 		</form>
 	</dialog>
 
@@ -730,9 +827,234 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		opacity: 0.35;
 	}
 	.tea-me__act {
-		margin-top: 0.35rem;
-		font-size: 0.75rem;
-		padding: 0.35rem 0.9rem;
+		flex: none;
+		margin: 0;
+		font-size: 0.66rem;
+		padding: 0.28rem 0.55rem;
+	}
+	.tea-me {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0.55rem 0.6rem;
+	}
+	.tea-me__main {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		padding: 0;
+		cursor: pointer;
+	}
+	.tea-me__avatar {
+		width: 2.35rem;
+		height: 2.35rem;
+		margin: 0;
+		flex: none;
+		font-size: 0.82rem;
+		border-width: 2px;
+	}
+	.tea-me__copy {
+		min-width: 0;
+		display: grid;
+		gap: 0.08rem;
+	}
+	.tea-me__nameline {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		min-width: 0;
+	}
+	.tea-me__nameline b {
+		font-size: 0.84rem;
+		line-height: 1.3;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tea-me__badge {
+		font-style: normal;
+		font-size: 0.56rem;
+		line-height: 1;
+		padding: 0.16rem 0.3rem;
+		border-radius: 0.3rem;
+		background: color-mix(in oklch, var(--primary) 16%, transparent);
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		flex: none;
+	}
+	.tea-me__status {
+		font-size: 0.65rem;
+		color: var(--tea-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tea-me__stats { display: none !important; }
+	.tea-me__bell {
+		position: relative;
+		flex: none;
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+	.tea-me__dot {
+		position: absolute;
+		top: 0.18rem;
+		right: 0.18rem;
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 50%;
+		background: #e5484d;
+		border: 1px solid var(--tea-surface, #fff);
+		opacity: 1;
+	}
+
+	/* ── 通知中心 ─────────────────────────────────────────── */
+	.tea-notify {
+		position: fixed;
+		z-index: 150;
+		width: min(20rem, calc(100vw - 1.5rem));
+		max-height: min(24rem, 62vh);
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.9rem;
+		background: var(--card-bg, #fff);
+		box-shadow: 0 16px 44px rgba(0, 0, 0, 0.16);
+		overflow: hidden;
+	}
+	.tea-notify[hidden] { display: none; }
+	.tea-notify__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.55rem 0.7rem;
+		border-bottom: 1px solid var(--tea-line);
+		font-size: 0.76rem;
+	}
+	.tea-notify__head button {
+		border: 0;
+		background: none;
+		color: color-mix(in oklch, var(--primary) 70%, currentColor);
+		font-size: 0.68rem;
+		cursor: pointer;
+	}
+	.tea-notify__list { overflow-y: auto; padding: 0.3rem; display: grid; gap: 0.15rem; }
+	.tea-notify__item {
+		display: grid;
+		gap: 0.12rem;
+		padding: 0.45rem 0.5rem;
+		border-radius: 0.55rem;
+		cursor: pointer;
+	}
+	.tea-notify__item:hover { background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08)); }
+	.tea-notify__item.is-unread { background: color-mix(in oklch, var(--primary) 8%, transparent); }
+	.tea-notify__item b { font-size: 0.72rem; }
+	.tea-notify__item span { font-size: 0.68rem; color: var(--tea-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.tea-notify__item time { font-size: 0.6rem; color: var(--tea-muted-soft); }
+	.tea-notify__empty { padding: 1rem 0.6rem; text-align: center; font-size: 0.72rem; color: var(--tea-muted); }
+
+	/* ── 个人资料弹窗 ─────────────────────────────────────── */
+	.tea-dialog.tea-profile { width: min(44rem, calc(100vw - 2rem)); }
+	.tea-profile__inner { max-height: calc(100dvh - 3rem); overflow-y: auto; }
+	.tea-profile__preview {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		padding: 0.6rem 0.7rem;
+		border-radius: 0.8rem;
+		background: color-mix(in oklch, var(--primary) 5%, transparent);
+		border: 1px solid var(--tea-line);
+	}
+	.tea-profile__preview-copy { flex: 1; min-width: 0; display: grid; gap: 0.1rem; }
+	.tea-profile__preview-copy b { font-size: 0.86rem; }
+	.tea-profile__preview-copy span { font-size: 0.68rem; color: var(--tea-muted); }
+	.tea-profile__online { font-size: 0.64rem; color: #2f9e6b; }
+	.tea-profile__grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.7rem;
+	}
+	.tea-profile__section {
+		display: grid;
+		gap: 0.5rem;
+		padding: 0.7rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.8rem;
+		align-content: start;
+	}
+	.tea-profile__section h4 {
+		margin: 0;
+		font-size: 0.76rem;
+		font-weight: 600;
+	}
+	.tea-profile__hint { margin: 0; font-size: 0.64rem; color: var(--tea-muted); line-height: 1.5; }
+	.tea-status-grid { display: flex; flex-wrap: wrap; gap: 0.28rem; }
+	.tea-status-grid button {
+		border: 1px solid var(--tea-line);
+		border-radius: 0.45rem;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.06));
+		color: var(--tea-muted);
+		font: inherit;
+		font-size: 0.68rem;
+		padding: 0.28rem 0.45rem;
+		cursor: pointer;
+	}
+	.tea-status-grid button.is-active {
+		background: color-mix(in oklch, var(--primary) 16%, transparent);
+		border-color: color-mix(in oklch, var(--primary) 36%, transparent);
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+	}
+	.tea-switch {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		cursor: pointer;
+	}
+	.tea-switch > span { flex: 1; display: grid; gap: 0.1rem; }
+	.tea-switch b { font-size: 0.72rem; font-weight: 500; }
+	.tea-switch small { font-size: 0.62rem; color: var(--tea-muted); }
+	.tea-switch input { position: absolute; opacity: 0; pointer-events: none; }
+	.tea-switch i {
+		position: relative;
+		width: 2.1rem;
+		height: 1.15rem;
+		border-radius: 999px;
+		background: rgba(128, 128, 128, 0.25);
+		flex: none;
+		transition: background 0.15s;
+	}
+	.tea-switch i::after {
+		content: "";
+		position: absolute;
+		top: 0.14rem;
+		left: 0.14rem;
+		width: 0.87rem;
+		height: 0.87rem;
+		border-radius: 50%;
+		background: #fff;
+		transition: transform 0.15s;
+	}
+	.tea-switch input:checked + i { background: color-mix(in oklch, var(--primary) 70%, #2f6b4f); }
+	.tea-switch input:checked + i::after { transform: translateX(0.95rem); }
+	.tea-profile__foot {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		padding-top: 0.2rem;
+	}
+	.tea-profile__foot .tea-btn { font-size: 0.72rem; padding: 0.38rem 0.7rem; }
+	.tea-profile__logout { color: #c0563f; }
+	.tea-profile__spacer { flex: 1; }
+	@media (max-width: 720px) {
+		.tea-profile__grid { grid-template-columns: 1fr; }
 	}
 
 	/* 房间列表 */
@@ -3974,7 +4296,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			const v = rt.visitor;
 			const av = q("[data-tea-me-avatar]");
 			const name = q("[data-tea-me-name]");
-			const meta = q("[data-tea-me-meta]");
+			const status = q("[data-tea-me-status]");
+			const badge = q("[data-tea-me-badge]");
 			const count = q("[data-tea-me-count]");
 			const act = q("[data-tea-enter]");
 			if (!av || !name) return;
@@ -3987,14 +4310,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					av.setAttribute("style", avatarStyle(v.nick, SITE_NAME));
 				}
 				name.textContent = v.nick;
-				if (meta) meta.textContent = `来自 ${SITE_NAME}`;
+				if (badge) badge.hidden = false;
+				if (status) status.textContent = v.status || "点击设置状态…";
 				if (count) count.textContent = String(store.count);
-				if (act) act.textContent = "换个身份";
+				if (act) act.textContent = "换身份";
 			} else {
 				av.textContent = "?";
 				av.removeAttribute("style");
 				name.textContent = "还没入座";
-				if (meta) meta.textContent = "填个昵称，就能在这儿坐下。";
+				if (badge) badge.hidden = true;
+				if (status) status.textContent = "填个昵称就能坐下";
 				if (count) count.textContent = "0";
 				if (act) act.textContent = "入座";
 			}
@@ -4002,6 +4327,216 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			if (since) since.textContent = v ? "已入座" : "今天刚到";
 			updatePlaceholder();
 		};
+
+		// ── 个人资料 ─────────────────────────────────────────────
+		const profileDialog = document.querySelector("[data-tea-profile-dialog]");
+		const profileForm = document.querySelector("[data-tea-profile-form]");
+		const profilePaint = () => {
+			if (!profileForm) return;
+			const nick = profileForm.elements.nick.value.trim() || "还没填昵称";
+			const status = profileForm.elements.status.value.trim() || "在线";
+			const avatar = profileForm.elements.avatar.value.trim();
+			const av = document.querySelector("[data-tea-profile-avatar]");
+			const name = document.querySelector("[data-tea-profile-name]");
+			const st = document.querySelector("[data-tea-profile-status]");
+			if (av) {
+				if (avatar) {
+					av.textContent = "";
+					av.setAttribute("style", `background-image:url('${avatar}')`);
+				} else {
+					av.textContent = initials(nick);
+					av.setAttribute("style", avatarStyle(nick, SITE_NAME));
+				}
+			}
+			if (name) name.textContent = nick;
+			if (st) st.textContent = status;
+		};
+		const openProfile = async () => {
+			if (!rt.visitor) {
+				openDialog();
+				return;
+			}
+			if (!profileForm || !profileDialog) return;
+			const v = rt.visitor;
+			profileForm.elements.nick.value = v.nick || "";
+			profileForm.elements.signature.value = v.signature || "";
+			profileForm.elements.website.value = v.website || "";
+			profileForm.elements.avatar.value = v.avatar || "";
+			profileForm.elements.status.value = v.status || "";
+			profileForm.elements.emailNotify.checked = v.emailNotify !== false;
+			profileForm.elements.push.checked = v.push === true;
+			profilePaint();
+			if (typeof profileDialog.showModal === "function") profileDialog.showModal();
+		};
+		const closeProfile = () => profileDialog && profileDialog.close();
+		if (profileForm) {
+			for (const name of ["nick", "status", "avatar"]) {
+				profileForm.elements[name]?.addEventListener("input", profilePaint);
+			}
+			const grid = document.querySelector("[data-tea-status-grid]");
+			if (grid) {
+				grid.addEventListener("click", (e) => {
+					const b = e.target.closest("[data-tea-status]");
+					if (!b) return;
+					profileForm.elements.status.value = b.dataset.teaStatus;
+					for (const x of grid.querySelectorAll("[data-tea-status]")) x.classList.toggle("is-active", x === b);
+					profilePaint();
+				});
+			}
+			profileForm.elements.push?.addEventListener("change", async (e) => {
+				if (!e.target.checked) return;
+				if (!("Notification" in window)) {
+					e.target.checked = false;
+					return;
+				}
+				const p = await Notification.requestPermission();
+				if (p !== "granted") e.target.checked = false;
+			});
+			document.querySelector("[data-tea-profile-close]")?.addEventListener("click", closeProfile);
+			document.querySelector("[data-tea-profile-cancel]")?.addEventListener("click", closeProfile);
+			document.querySelector("[data-tea-profile-logout]")?.addEventListener("click", () => {
+				store.identity = null;
+				location.reload();
+			});
+			document.querySelector("[data-tea-profile-save]")?.addEventListener("click", async (ev) => {
+				const btn = ev.currentTarget;
+				const err = document.querySelector("[data-tea-profile-error]");
+				if (err) err.hidden = true;
+				btn.disabled = true;
+				try {
+					const body = {
+						nick: profileForm.elements.nick.value.trim(),
+						signature: profileForm.elements.signature.value.trim(),
+						website: profileForm.elements.website.value.trim(),
+						avatarUrl: profileForm.elements.avatar.value.trim(),
+						status: profileForm.elements.status.value.trim(),
+						emailNotify: profileForm.elements.emailNotify.checked,
+						push: profileForm.elements.push.checked,
+					};
+					if (!body.nick) throw new Error("昵称不能为空");
+					const data = await api("/api/profile", { method: "POST", body: JSON.stringify(body) });
+					const v = rt.visitor || {};
+					Object.assign(v, {
+						nick: body.nick,
+						signature: body.signature,
+						website: body.website,
+						status: body.status,
+						emailNotify: body.emailNotify,
+						push: body.push,
+					});
+					if (data.user?.avatar) v.avatar = data.user.avatar;
+					rt.visitor = v;
+					store.identity = v;
+					renderSelf();
+					closeProfile();
+					loadRoom();
+				} catch (e2) {
+					if (err) {
+						err.textContent = e2.message || "保存失败";
+						err.hidden = false;
+					}
+				} finally {
+					btn.disabled = false;
+				}
+			});
+		}
+
+		// ── 通知中心 ─────────────────────────────────────────────
+		const NOTICE_KEY = "tea.notices.v1";
+		const readNotices = () => {
+			try {
+				const v = JSON.parse(localStorage.getItem(NOTICE_KEY) || "[]");
+				return Array.isArray(v) ? v : [];
+			} catch {
+				return [];
+			}
+		};
+		let notices = readNotices();
+		const saveNotices = () => {
+			try { localStorage.setItem(NOTICE_KEY, JSON.stringify(notices.slice(0, 30))); } catch (_) {}
+		};
+		const renderNotices = () => {
+			const pop = q("[data-tea-notify]");
+			const list = q("[data-tea-notify-list]");
+			const dot = q("[data-tea-notify-dot]");
+			const unread = notices.filter((n) => !n.read).length;
+			if (dot) dot.hidden = unread === 0;
+			if (!list) return;
+			list.innerHTML = notices.length
+				? notices
+						.map((n) => `<div class="tea-notify__item${n.read ? "" : " is-unread"}" data-notice-id="${esc(n.id)}">
+							<b>${esc(n.nick || "茶友")}${n.room === "chat" ? " · 闲聊" : " · 互联茶室"}</b>
+							<span>${esc(n.text || "")}</span>
+							<time>${esc(fmtTime(n.ts))}</time>
+						</div>`)
+						.join("")
+				: `<p class="tea-notify__empty">还没有新的提醒。</p>`;
+			if (pop && !pop.hidden) positionNotices();
+		};
+		const positionNotices = () => {
+			const pop = q("[data-tea-notify]");
+			const bell = q("[data-tea-notify-toggle]");
+			if (!pop || !bell) return;
+			const r = bell.getBoundingClientRect();
+			const w = pop.offsetWidth || 300;
+			pop.style.top = r.bottom + 8 + "px";
+			pop.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + "px";
+		};
+		const noteIncoming = (m) => {
+			const v = rt.visitor;
+			if (!v || !m || !m.id || m.sender === v.id) return;
+			const text = String(m.text || "");
+			const hit = (v.nick && text.includes("@" + v.nick)) || (m.reply && m.reply.who === v.nick);
+			if (!hit) return;
+			if (notices.some((n) => n.id === m.id)) return;
+			notices.unshift({ id: m.id, nick: m.nick || "茶友", text: text.slice(0, 100), ts: m.ts || Date.now(), room: rt.room, read: false });
+			notices = notices.slice(0, 30);
+			saveNotices();
+			renderNotices();
+			if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+				try { new Notification(`${m.nick || "茶友"} 提到了你`, { body: text.slice(0, 100) }); } catch (_) {}
+			}
+		};
+		const notifyBell = q("[data-tea-notify-toggle]");
+		const notifyPop = q("[data-tea-notify]");
+		if (notifyBell && notifyPop) {
+			notifyBell.addEventListener("click", (e) => {
+				e.stopPropagation();
+				notifyPop.hidden = !notifyPop.hidden;
+				if (!notifyPop.hidden) {
+					renderNotices();
+					positionNotices();
+				}
+			});
+			notifyPop.addEventListener("click", (e) => {
+				e.stopPropagation();
+				const item = e.target.closest("[data-notice-id]");
+				if (!item) return;
+				const n = notices.find((x) => x.id === item.dataset.noticeId);
+				if (n) n.read = true;
+				saveNotices();
+				renderNotices();
+				notifyPop.hidden = true;
+				if (n && n.room !== rt.room && typeof rt.switchRoom === "function") rt.switchRoom(n.room);
+				setTimeout(() => {
+					const el = feedEl()?.querySelector(`.tea-msg[data-id="${CSS.escape(item.dataset.noticeId)}"]`);
+					if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+				}, n && n.room !== rt.room ? 900 : 60);
+			});
+			q("[data-tea-notify-read]")?.addEventListener("click", (e) => {
+				e.stopPropagation();
+				notices = notices.map((n) => ({ ...n, read: true }));
+				saveNotices();
+				renderNotices();
+			});
+			document.addEventListener("click", (e) => {
+				if (notifyPop.hidden) return;
+				if (e.target.closest("[data-tea-notify]") || e.target.closest("[data-tea-notify-toggle]")) return;
+				notifyPop.hidden = true;
+			});
+			window.addEventListener("scroll", () => { if (!notifyPop.hidden) positionNotices(); }, { passive: true });
+			renderNotices();
+		}
 
 		const setGate = (entered) => {
 			const gate = q("[data-tea-gate]");
@@ -4146,7 +4681,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				if (list.length || (data.redactions || []).length) {
 					const stick = atBottom();
 					rt.messages = (rt.messages || []).concat(list).slice(-120);
-					for (const m of list) renderMessage({ ...m, scroll: false });
+					for (const m of list) {
+						renderMessage({ ...m, scroll: false });
+						noteIncoming(m);
+					}
 					applyRedactions(data.redactions || []);
 					if (stick) scrollBottom(true);
 					else {
@@ -4954,6 +5492,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			loadHistory();
 			startLoop();
 		};
+		rt.switchRoom = switchRoom;
 
 		const openZoom = (src) => {
 			const box = q("[data-tea-zoom]");
@@ -5012,6 +5551,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			window.addEventListener("resize", measure);
 
 			renderSelf();
+			if (rt.visitor && rt.visitor.token) {
+				api("/api/profile").then((d) => {
+					if (d && d.profile) {
+						Object.assign(rt.visitor, d.profile);
+						if (!rt.visitor.avatar && d.profile.avatarUrl) rt.visitor.avatar = d.profile.avatarUrl;
+						store.identity = rt.visitor;
+						renderSelf();
+					}
+				}).catch(() => {});
+			}
 			setGate(!!rt.visitor);
 			killChrome();
 			setTimeout(killChrome, 300);
@@ -5356,6 +5905,12 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			// 身份弹窗
 			for (const el of document.querySelectorAll("[data-tea-enter]")) {
 				el.addEventListener("click", openDialog);
+			}
+			for (const el of document.querySelectorAll("[data-tea-profile-open]")) {
+				el.addEventListener("click", (e) => {
+					e.preventDefault();
+					openProfile();
+				});
 			}
 			const form = document.querySelector("[data-tea-identity]");
 			if (form) {
