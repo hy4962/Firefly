@@ -2730,4 +2730,82 @@
 		color: color-mix(in oklch, var(--primary) 55%, black) !important;
 		opacity: 1 !important;
 	}
+
+	/* ===== 「聊天茶室」主题色高光（与「低价米饭」同一套视觉） ===== */
+	#navbar .dropdown-container > a[href="/chat/"] {
+		background: linear-gradient(
+			135deg,
+			color-mix(in oklch, var(--primary) 86%, white) 0%,
+			var(--primary) 100%
+		) !important;
+		border-color: color-mix(in oklch, var(--primary) 58%, transparent) !important;
+		color: color-mix(in oklch, var(--primary) 22%, black) !important;
+		font-weight: 700 !important;
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+			0 3px 12px color-mix(in oklch, var(--primary) 42%, transparent) !important;
+		isolation: isolate;
+	}
+	#navbar .dropdown-container > a[href="/chat/"]::before,
+	#navbar .dropdown-container > a[href="/chat/"]::after {
+		content: none !important;
+		background: transparent !important;
+	}
+	#navbar .dropdown-container > a[href="/chat/"]:hover,
+	#navbar .dropdown-container > a[href="/chat/"]:active,
+	#navbar .dropdown-container > a[href="/chat/"]:focus-visible {
+		background: linear-gradient(
+			135deg,
+			color-mix(in oklch, var(--primary) 94%, white) 0%,
+			color-mix(in oklch, var(--primary) 92%, black) 100%
+		) !important;
+		color: color-mix(in oklch, var(--primary) 16%, black) !important;
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+			0 4px 16px color-mix(in oklch, var(--primary) 62%, transparent) !important;
+	}
+	#navbar .dropdown-container > a[href="/chat/"] svg {
+		color: color-mix(in oklch, var(--primary) 55%, black) !important;
+		opacity: 1 !important;
+	}
+	#nav-menu-panel a.mobile-menu-item[href="/chat/"] {
+		background: color-mix(in oklch, var(--primary) 16%, transparent) !important;
+		color: color-mix(in oklch, var(--primary) 60%, black) !important;
+	}
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"] {
+		background: linear-gradient(
+			135deg,
+			color-mix(in oklch, var(--primary) 88%, white) 0%,
+			var(--primary) 100%
+		) !important;
+		border-color: color-mix(in oklch, var(--primary) 58%, transparent) !important;
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+			0 3px 12px color-mix(in oklch, var(--primary) 42%, transparent) !important;
+		color: color-mix(in oklch, var(--primary) 22%, black) !important;
+		font-weight: 700 !important;
+		isolation: isolate;
+	}
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]::after {
+		content: none !important;
+		background: transparent !important;
+	}
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]:hover,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]:active,
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]:focus-visible {
+		background: linear-gradient(
+			135deg,
+			color-mix(in oklch, var(--primary) 94%, white) 0%,
+			color-mix(in oklch, var(--primary) 92%, black) 100%
+		) !important;
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+			0 4px 16px color-mix(in oklch, var(--primary) 62%, transparent) !important;
+		color: color-mix(in oklch, var(--primary) 16%, black) !important;
+	}
+	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"] svg {
+		color: color-mix(in oklch, var(--primary) 55%, black) !important;
+		opacity: 1 !important;
+	}
 </style>

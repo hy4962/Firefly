@@ -42,13 +42,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		url: "#",
 		icon: "material-symbols:group",
 		children: [
-			// 茶室（Matrix 互联公开聊天室）
-			{
-				name: "茶室",
-				url: "/chat/",
-				icon: "material-symbols:forum-rounded",
-			},
-
 			// 朋友圈（友链 RSS 聚合时间线）
 			{
 				name: "朋友圈",
@@ -183,6 +176,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "material-symbols:analytics",
 			},
 		],
+	});
+
+	// 聊天茶室：从「社交」子菜单提出来做顶级入口，和「低价米饭」一样用主题色高光
+	links.push({
+		name: "聊天茶室",
+		url: "/chat/",
+		icon: "material-symbols:forum-rounded",
 	});
 
 	// 站点统计：独立顶级入口，放在最后，不打断「内容 → 互动 → 我的」的分组
