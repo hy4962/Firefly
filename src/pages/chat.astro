@@ -3457,8 +3457,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			return all;
 		};
 		const mcRenderSongs = () => {
-			const box = q("[data-tea-mc-songs]");
-			const note = q("[data-tea-mc-song-note]");
+			const box = document.querySelector("[data-tea-mc-songs]");
+			const note = document.querySelector("[data-tea-mc-song-note]");
 			if (!box) return;
 			const songs = mcSongs();
 			if (note) note.textContent = songs.length ? `${songs.length} 首` : "正在统计";
@@ -3484,11 +3484,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			mcState.member = m;
 			mcState.sort = "time";
 			for (const b of document.querySelectorAll("[data-tea-mc-sort]")) b.classList.toggle("is-active", b.dataset.teaMcSort === "time");
-			const left = q("[data-tea-mc-left]");
+			const left = document.querySelector("[data-tea-mc-left]");
 			if (!left) return;
 			const on = m.online !== false || !!(rt.visitor && m.id === rt.visitor.id);
 			const domain = (m.id || "").split(":")[1] || "";
-			const server = domain ? `matrix.${domain}` : "";
+			const server = domain ? (domain.startsWith("matrix.") ? domain : `matrix.${domain}`) : "";
 			const isSelf = rt.visitor && m.id === rt.visitor.id;
 			const role = isSelf ? "我" : (m.site === SITE_NAME ? "站长" : "茶友");
 			const badge = `<span class="mc-badge">${esc(role)}</span>`;
