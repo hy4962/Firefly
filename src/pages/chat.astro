@@ -219,6 +219,14 @@ const peers = [
 			</div>
 		</aside>
 
+		<!-- ── 图片预览 ─────────────────────────────────────────── -->
+		<div class="tea-zoom" data-tea-zoom hidden>
+			<button type="button" class="tea-zoom__close" data-tea-zoom-close aria-label="关闭预览">
+				<Icon is:inline name="material-symbols:close-rounded" />
+			</button>
+			<img data-tea-zoom-img alt="" />
+		</div>
+
 		<!-- ── 遮罩（移动端抽屉 / 点歌台浮层） ─────────────────── -->
 		<div class="tea-scrim" data-tea-scrim hidden></div>
 		<div class="tea-scrim" data-juke-scrim hidden></div>
@@ -880,6 +888,11 @@ const peers = [
 		border-radius: 0.7rem;
 		margin-top: 0.3rem;
 		border: 1px solid var(--tea-line);
+		cursor: zoom-in;
+		transition: filter 0.15s ease;
+	}
+	.tea-msg__text img:hover {
+		filter: brightness(1.04);
 	}
 	.tea-msg__text pre {
 		margin: 0.35rem 0 0;
@@ -1473,6 +1486,62 @@ const peers = [
 		color: color-mix(in oklch, var(--primary) 86%, white);
 	}
 
+	/* ─── 图片预览 ─────────────────────────────────────────── */
+	.tea-zoom {
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		display: grid;
+		place-items: center;
+		padding: 5vh 4vw;
+		background: rgba(14, 16, 12, 0.78);
+		backdrop-filter: blur(8px);
+		animation: tea-zoom-in 0.18s ease-out;
+		cursor: zoom-out;
+	}
+	.tea-zoom[hidden] {
+		display: none;
+	}
+	.tea-zoom img {
+		max-width: min(92vw, 1400px);
+		max-height: 88vh;
+		border-radius: 0.8rem;
+		box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+		object-fit: contain;
+		cursor: default;
+	}
+	.tea-zoom__close {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		width: 2.4rem;
+		height: 2.4rem;
+		display: grid;
+		place-items: center;
+		border: 1px solid rgba(255, 255, 255, 0.24);
+		border-radius: 50%;
+		background: rgba(20, 22, 18, 0.5);
+		color: #fff;
+		cursor: pointer;
+	}
+	.tea-zoom__close svg {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+	@keyframes tea-zoom-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tea-zoom {
+			animation: none;
+		}
+	}
+
 	/* ─── 弹窗 ─────────────────────────────────────────────── */
 	.tea-dialog {
 		border: 0;
@@ -1758,7 +1827,7 @@ const peers = [
 					const label = m[2] || "";
 					out +=
 						m[1] === "!"
-							? `<img src="${esc(url)}" alt="${esc(label)}" loading="lazy" />`
+							? `<img src="${esc(url)}" alt="${esc(label)}" loading="lazy" data-zoom />`
 							: `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(label || url)}</a>`;
 				} else if (m[4]) {
 					const url = m[4];
@@ -1901,7 +1970,7 @@ const peers = [
 				: `style="${avatarStyle(m.nick, m.site)}"`;
 			const siteTag = m.site ? `<span class="tea-msg__site">来自 ${esc(m.site)}</span>` : "";
 			const body = m.image
-				? `<img src="${esc(m.image)}" alt="图片" loading="lazy" />`
+				? `<img src="${esc(m.image)}" alt="图片" loading="lazy" data-zoom />`
 				: fmtText(m.text || "");
 
 			el.innerHTML = `
@@ -2397,6 +2466,22 @@ const peers = [
 			renderJuke();
 		};
 
+		// ── 图片预览 ─────────────────────────────────────────────
+		const openZoom = (src) => {
+			const box = q("[data-tea-zoom]");
+			if (!box || !src) return;
+			const img = box.querySelector("[data-tea-zoom-img]");
+			if (img) img.src = src;
+			box.hidden = false;
+		};
+		const closeZoom = () => {
+			const box = q("[data-tea-zoom]");
+			if (!box || box.hidden) return;
+			box.hidden = true;
+			const img = box.querySelector("[data-tea-zoom-img]");
+			if (img) img.removeAttribute("src");
+		};
+
 		const setup = () => {
 			const shell = root();
 			if (!shell || shell.dataset.ready === "1") return;
@@ -2482,6 +2567,24 @@ const peers = [
 						const j = q("[data-tea-jump]");
 						if (j) j.hidden = true;
 					}
+				});
+				feed.addEventListener("click", (e) => {
+					const img = e.target.closest("img[data-zoom]");
+					if (img) openZoom(img.getAttribute("src"));
+				});
+			}
+
+			// 图片预览关闭
+			const zoomBox = q("[data-tea-zoom]");
+			if (zoomBox && zoomBox.dataset.bound !== "1") {
+				zoomBox.dataset.bound = "1";
+				zoomBox.addEventListener("click", (e) => {
+					if (e.target === zoomBox) closeZoom();
+				});
+				const zoomClose = zoomBox.querySelector("[data-tea-zoom-close]");
+				if (zoomClose) zoomClose.addEventListener("click", closeZoom);
+				document.addEventListener("keydown", (e) => {
+					if (e.key === "Escape") closeZoom();
 				});
 			}
 
