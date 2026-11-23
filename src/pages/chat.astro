@@ -220,16 +220,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						<button type="button" class="tea-tool" data-tea-md-toggle title="预览 Markdown" aria-label="预览 Markdown">
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
 						</button>
-					</div>
-					<div class="tea-emoji-panel" data-tea-emoji-panel hidden></div>
-					<div class="tea-input__foot">
-						<span class="tea-input__hint">公开消息，会被同步出去</span>
 						<span class="tea-input__count" data-tea-count>0/500</span>
 						<button type="submit" class="tea-btn tea-btn--primary tea-send" data-tea-send>
 							<span>发送</span>
 							<Icon is:inline name="material-symbols:send-rounded" />
 						</button>
 					</div>
+					<div class="tea-emoji-panel" data-tea-emoji-panel hidden></div>
 				</div>
 				<p class="tea-form-error" data-tea-error hidden></p>
 			</form>
@@ -1973,33 +1970,41 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 
 	.tea-input {
+		position: relative;
 		display: grid;
-		gap: 0.35rem;
+		gap: 0.2rem;
+		padding: 0.35rem 0.45rem 0.4rem;
+		border: 1px solid var(--tea-line-strong);
+		border-radius: 0.85rem;
+		background: color-mix(in oklch, var(--primary) 2%, transparent);
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+	.tea-input:focus-within {
+		border-color: color-mix(in oklch, var(--primary) 48%, transparent);
+		box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 14%, transparent);
 	}
 	.tea-input textarea {
 		width: 100%;
 		resize: none;
-		min-height: 2.5rem;
+		min-height: 4.3rem;
 		max-height: 8rem;
-		padding: 0.55rem 0.7rem;
-		border-radius: 0.75rem;
-		border: 1px solid var(--tea-line-strong);
+		padding: 0.3rem 0.3rem;
+		border: 0;
 		background: transparent;
 		color: inherit;
 		font: inherit;
-		font-size: 0.86rem;
+		font-size: 0.88rem;
 		line-height: 1.6;
 		outline: none;
-		transition: border-color 0.15s ease, box-shadow 0.15s ease;
 	}
 	.tea-input textarea:focus {
-		border-color: color-mix(in oklch, var(--primary) 48%, transparent);
-		box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 14%, transparent);
+		box-shadow: none;
 	}
 	.tea-input__tools {
 		display: flex;
 		align-items: center;
 		gap: 0.35rem;
+		flex-wrap: wrap;
 	}
 	.tea-tool {
 		width: 1.8rem;
@@ -2072,9 +2077,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		bottom: 0;
 		left: 0;
 		z-index: 130;
-		width: 22rem;
+		width: 19rem;
 		max-width: calc(100vw - 1.5rem);
-		max-height: min(22rem, 62vh);
+		max-height: min(17rem, 48vh);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		padding: 0.6rem;
@@ -2178,17 +2183,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-replybar__copy b { color: color-mix(in oklch, var(--primary) 70%, currentColor); }
 	.tea-replybar__copy span { color: var(--tea-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.tea-replybar button { border: 0; background: none; color: var(--tea-muted); font-size: 1.1rem; cursor: pointer; }
-	.tea-input__foot {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-	}
-	.tea-input__hint {
-		font-size: 0.66rem;
-		color: var(--tea-muted-soft);
-		flex: 1;
-	}
 	.tea-input__count {
+		margin-left: auto;
 		font-size: 0.66rem;
 		color: var(--tea-muted-soft);
 		font-variant-numeric: tabular-nums;
@@ -2959,9 +2955,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		}
 		.tea-composer {
 			padding: 0.6rem 0.7rem 0.7rem;
-		}
-		.tea-input__hint {
-			display: none;
 		}
 		.tea-gate__copy span {
 			display: none;
@@ -5025,11 +5018,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			const emojiPanel = q("[data-tea-emoji-panel]");
 			const positionEmojiPanel = () => {
 				if (!emojiToggle || !emojiPanel) return;
-				const r = emojiToggle.getBoundingClientRect();
-				const h = emojiPanel.offsetHeight || 300;
-				const w = emojiPanel.offsetWidth || 352;
+				const composer = root() ? root().querySelector("[data-tea-composer]") : null;
+				const anchor = composer || emojiToggle;
+				const r = anchor.getBoundingClientRect();
+				const h = emojiPanel.offsetHeight || 280;
+				const w = emojiPanel.offsetWidth || 304;
 				const top = Math.max(8, r.top - h - 8);
-				const left = Math.min(Math.max(8, r.left - 40), Math.max(8, window.innerWidth - w - 8));
+				const left = Math.min(Math.max(8, r.left + 8), Math.max(8, window.innerWidth - w - 8));
 				emojiPanel.style.top = top + "px";
 				emojiPanel.style.left = left + "px";
 				emojiPanel.dataset.anchored = "1";
