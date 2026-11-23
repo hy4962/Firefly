@@ -173,6 +173,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<button type="button" class="tea-jump" data-tea-jump hidden>
 					<Icon is:inline name="material-symbols:arrow-downward-rounded" /> 有新消息
 				</button>
+				<button type="button" class="tea-readjump" data-tea-readjump hidden>回到上次阅读位置 ↑</button>
 			</div>
 
 			<form class="tea-composer" data-tea-composer autocomplete="off">
@@ -1278,6 +1279,64 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		background: var(--tea-line);
 	}
 
+	/* 撤回提示 */
+	.tea-recall {
+		align-self: center;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		max-width: 90%;
+		padding: 0.25rem 0.6rem;
+		border-radius: 999px;
+		background: color-mix(in oklch, var(--primary) 6%, transparent);
+		border: 1px dashed color-mix(in oklch, var(--primary) 22%, transparent);
+		font-size: 0.68rem;
+		line-height: 1.4;
+		color: var(--tea-muted);
+	}
+	.tea-recall b { color: color-mix(in oklch, var(--primary) 70%, currentColor); font-weight: 600; }
+
+	/* 上次阅读位置 */
+	.tea-readmark {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0.2rem 0;
+	}
+	.tea-readmark::before,
+	.tea-readmark::after {
+		content: "";
+		height: 1px;
+		flex: 1;
+		background: color-mix(in oklch, var(--primary) 42%, transparent);
+	}
+	.tea-readmark span {
+		flex: none;
+		padding: 0.15rem 0.55rem;
+		border-radius: 999px;
+		background: color-mix(in oklch, var(--primary) 13%, transparent);
+		border: 1px solid color-mix(in oklch, var(--primary) 28%, transparent);
+		color: color-mix(in oklch, var(--primary) 72%, currentColor);
+		font-size: 0.66rem;
+		white-space: nowrap;
+	}
+	.tea-readjump {
+		position: absolute;
+		right: 1rem;
+		bottom: 0.6rem;
+		z-index: 12;
+		padding: 0.3rem 0.7rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in oklch, var(--primary) 35%, transparent);
+		background: var(--tea-surface, #fff);
+		color: var(--primary);
+		font: inherit;
+		font-size: 0.7rem;
+		cursor: pointer;
+		box-shadow: 0 4px 14px rgba(0,0,0,.1);
+	}
+	.tea-readjump[hidden] { display: none; }
+
 	.tea-msg {
 		display: grid;
 		grid-template-columns: 2.1rem minmax(0, 1fr);
@@ -1679,6 +1738,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-msg--pending {
 		opacity: 0.55;
 	}
+	.tea-msg--pending .tea-msg__actions { display: none; }
 	.tea-msg--failed .tea-msg__text {
 		border-color: color-mix(in oklch, #c0563f 45%, transparent);
 	}
@@ -3496,11 +3556,14 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				? `<div class="tea-msg__reply"><b>${esc(m.reply.who || "茶友")}</b><span>${esc(m.reply.text || "")}</span></div>`
 				: "";
 			const reactions = renderReactions(m);
-			const actions = m.id && !m.pending
+			// pending 时也渲染操作区（CSS 隐藏），发送成功后去掉 pending 类即可显示，
+			// 否则自己刚发的消息永远没有撤回/回复按钮。
+			const actions = m.id
 				? `<span class="tea-msg__actions">
 						<button type="button" class="tea-msg__action" data-act="react" data-id="${esc(m.id)}" title="回应" aria-label="回应"><Icon is:inline name="material-symbols:add-reaction-rounded" /></button>
 						<button type="button" class="tea-msg__action" data-act="reply" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="回复" aria-label="回复"><Icon is:inline name="material-symbols:reply-rounded" /></button>
-						${rt.room === "lobby" ? `<button type="button" class="tea-msg__action" data-act="thread" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="线程回复" aria-label="线程回复"><Icon is:inline name="material-symbols:forum-rounded" /></button>` : ""}
+						${rt.room === "lobby" ? `						<button type="button" class="tea-msg__action" data-act="thread" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="线程回复" aria-label="线程回复"><Icon is:inline name="material-symbols:forum-rounded" /></button>` : ""}
+						${mine && rt.room === "lobby" && Date.now() - Number(m.ts || 0) < 5 * 60 * 1000 ? `<button type="button" class="tea-msg__action" data-act="recall" data-id="${esc(m.id)}" title="撤回" aria-label="撤回"><Icon is:inline name="material-symbols:undo-rounded" /></button>` : ""}
 					</span>`
 				: "";
 			const receipt = renderReceipt(m);
@@ -3520,6 +3583,57 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			f.appendChild(el);
 			if (m.scroll !== false) scrollBottom(!m.pending);
 		};
+
+		// ── 撤回 ──────────────────────────────────────────────────
+		const recallHtml = (r) => {
+			const site = r.site ? " · " + esc(r.site) : "";
+			return `<div class="tea-recall" data-id="${esc(r.id)}" data-ts="${Number(r.ts) || 0}"><b>${esc(r.by || "茶友")}${site}</b> 撤回了一条消息</div>`;
+		};
+		const applyRedactions = (list) => {
+			if (!Array.isArray(list) || !list.length) return;
+			const f = feedEl();
+			if (!f) return;
+			for (const r of list) {
+				if (!r || !r.id) continue;
+				const old = f.querySelector(`.tea-msg[data-id="${CSS.escape(r.id)}"]`);
+				const box = document.createElement("div");
+				box.innerHTML = recallHtml(r);
+				const node = box.firstElementChild;
+				if (old) old.replaceWith(node);
+				else if (!f.querySelector(`.tea-recall[data-id="${CSS.escape(r.id)}"]`)) f.appendChild(node);
+			}
+		};
+
+		// ── 上次阅读位置 ──────────────────────────────────────────
+		const readKey = () => "tea.lastRead." + (api0 || "") + "." + rt.room;
+		const saveReadMark = () => {
+			const list = rt.messages || [];
+			const last = list[list.length - 1];
+			const ts = Number(last?.ts || 0);
+			if (ts) localStorage.setItem(readKey(), String(ts));
+		};
+		const fmtReadTime = (ts) => {
+			const d = new Date(Number(ts));
+			const now = new Date();
+			const sameDay = d.toDateString() === now.toDateString();
+			return (sameDay ? "今天 " : "") + d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+		};
+		const markUnreadDivider = () => {
+			const f = feedEl();
+			if (!f || f.querySelector("[data-tea-readmark]")) return;
+			const since = Number(localStorage.getItem(readKey()) || 0);
+			if (!since) return;
+			const first = [...f.querySelectorAll(".tea-msg")].find((el) => Number(el.dataset.ts || 0) > since);
+			if (!first) return;
+			const mark = document.createElement("div");
+			mark.className = "tea-readmark";
+			mark.dataset.readmark = "1";
+			mark.innerHTML = `<span>上次 ${fmtReadTime(since)} 阅读到这里</span>`;
+			first.parentElement.insertBefore(mark, first);
+			const jump = q("[data-tea-readjump]");
+			if (jump) jump.hidden = false;
+		};
+		rt.saveReadMark = saveReadMark;
 
 		const renderMembers = (members) => {
 			const list = q("[data-tea-members]");
@@ -3762,6 +3876,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					feedStatus(`<div class="tea-empty"><b>茶室里还没人说话</b><span>要不你先开个话头？</span></div>`);
 				} else {
 					for (const m of msgs) renderMessage({ ...m, scroll: false });
+					applyRedactions([...(hist.redactions || []), ...(sync.redactions || [])]);
+					markUnreadDivider();
 					scrollBottom(false);
 				}
 				rt.since = sync.next || null;
@@ -3842,10 +3958,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					}
 				}
 				const list = data.messages || [];
-				if (list.length) {
+				if (list.length || (data.redactions || []).length) {
 					const stick = atBottom();
 					rt.messages = (rt.messages || []).concat(list).slice(-120);
 					for (const m of list) renderMessage({ ...m, scroll: false });
+					applyRedactions(data.redactions || []);
 					if (stick) scrollBottom(true);
 					else {
 						const jump = q("[data-tea-jump]");
@@ -3886,6 +4003,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					target.classList.remove("tea-msg--pending", "tea-msg--failed");
 					if (res.id) {
 						target.dataset.id = res.id;
+						// 按钮上的 data-id 同步成真实 event id，否则撤回/回应拿到 tmp-xxx
+						target.querySelectorAll("[data-id]").forEach((b) => { b.dataset.id = res.id; });
 						rt.seen.add(res.id);
 					}
 					const old = target.querySelector(".tea-msg__retry");
@@ -3949,6 +4068,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					target.classList.remove("tea-msg--pending", "tea-msg--failed");
 					if (res.id) {
 						target.dataset.id = res.id;
+						// 按钮上的 data-id 同步成真实 event id，否则撤回/回应拿到 tmp-xxx
+						target.querySelectorAll("[data-id]").forEach((b) => { b.dataset.id = res.id; });
 						rt.seen.add(res.id);
 					}
 					const old = target.querySelector(".tea-msg__retry");
@@ -4439,9 +4560,12 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 
 		const switchRoom = (key) => {
 			if (!ROOMS[key] || key === rt.room) return;
+			if (rt.saveReadMark) rt.saveReadMark();
 			rt.room = key;
 			rt.since = null;
 			rt.seen.clear();
+			const rj = q("[data-tea-readjump]");
+			if (rj) rj.hidden = true;
 			// 线程只在互联茶室有意义，切房时收起相关浮层
 			if (rt.closePops) rt.closePops();
 			if (rt.closeThread) rt.closeThread();
@@ -4722,6 +4846,22 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					const id = btn.dataset.id;
 					if (btn.dataset.act === "thread") {
 						if (typeof rt.openThread === "function") rt.openThread(id);
+					} else if (btn.dataset.act === "recall") {
+						try {
+							await api("/api/recall", {
+								method: "POST",
+								body: JSON.stringify({ eventId: id }),
+							});
+							const el = f.querySelector(`.tea-msg[data-id="${CSS.escape(id)}"]`);
+							if (el) {
+								const v = rt.visitor;
+								const box = document.createElement("div");
+								box.innerHTML = recallHtml({ id, by: v?.nick || "我", site: SITE_NAME, ts: Date.now() });
+								el.replaceWith(box.firstElementChild);
+							}
+						} catch (err) {
+							showError(err.message || "撤回失败");
+						}
 					} else if (btn.dataset.act === "reply") {
 						setReply({ id, nick: btn.dataset.nick, text: btn.dataset.text });
 					} else if (btn.dataset.act === "react") {
@@ -5254,6 +5394,22 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			};
 			rt.loadPins = loadPins;
 			loadPins();
+
+			// ── 阅读位置：离开时存时间戳，回来时显示分隔线与跳转按钮 ──
+			const readJump = q("[data-tea-readjump]");
+			readJump?.addEventListener("click", () => {
+				const mark = feedEl()?.querySelector("[data-tea-readmark]");
+				if (!mark) return;
+				mark.scrollIntoView({ block: "center", behavior: "smooth" });
+				mark.animate(
+					[{ background: "color-mix(in oklch, var(--primary) 40%, transparent)" }, {}],
+					{ duration: 1200, easing: "ease-out" },
+				);
+			});
+			window.addEventListener("pagehide", () => rt.saveReadMark?.());
+			document.addEventListener("visibilitychange", () => {
+				if (document.visibilityState === "hidden") rt.saveReadMark?.();
+			});
 		};
 
 		if (!rt.bound) {

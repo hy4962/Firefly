@@ -630,6 +630,23 @@ async function handleMatrixLogin(c, request, ip) {
 	});
 }
 
+/** 收集 m.room.redaction 事件，前端据此把原消息换成「XX 撤回了一条消息」 */
+function collectRedactions(events, members) {
+	const list = [];
+	for (const ev of events || []) {
+		if (ev.type !== "m.room.redaction") continue;
+		const target = ev.content?.redacts || ev.redacts || "";
+		if (!target) continue;
+		const sender = ev.sender || "";
+		let nick = members.get(sender)?.nick || sender.split(":")[0].replace(/^@/, "");
+		const dot = nick.indexOf(" · ");
+		const site = dot > 0 ? nick.slice(dot + 3).trim() : SITE_BY_SERVER[sender.split(":")[1]] || "";
+		if (dot > 0) nick = nick.slice(0, dot).trim();
+		list.push({ id: target, by: nick, site, ts: ev.origin_server_ts || Date.now() });
+	}
+	return list;
+}
+
 // ── 接口 ────────────────────────────────────────────────────────────
 async function handleHistory(c, url, base, token) {
 	const room = roomOf(c, url);
@@ -649,7 +666,8 @@ async function handleHistory(c, url, base, token) {
 		.filter(Boolean)
 		.reverse()
 		.map((m) => ({ ...m, receipt: receipts.get(m.id) || null }));
-	return json(200, { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, end: data.end || null });
+	const redactions = collectRedactions(data.chunk || [], members);
+	return json(200, { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, redactions, end: data.end || null });
 }
 
 async function handleSync(c, url, base, token) {
@@ -676,6 +694,7 @@ async function handleSync(c, url, base, token) {
 		.map((m) => ({ ...m, receipt: receipts.get(m.id) || null, reactions: reactions.get(m.id) || [] }));
 	// reaction 更新可能指向历史消息，单独返回让前端就地合并
 	const reactionUpdates = Object.fromEntries(reactions.entries());
+	const redactions = collectRedactions(timeline, members);
 	// m.typing 的 user_ids 里是当前正在输入的人
 	const typingEv = (data.rooms?.join?.[room.id]?.ephemeral?.events || [])
 		.filter((ev) => ev.type === "m.typing")
@@ -689,7 +708,7 @@ async function handleSync(c, url, base, token) {
 			return dot > 0 ? nick.slice(0, dot).trim() : nick;
 		})
 		.filter(Boolean);
-	return json(200, { ok: true, messages, next: data.next_batch || since || null, typing, reactions: reactionUpdates });
+	return json(200, { ok: true, messages, next: data.next_batch || since || null, typing, reactions: reactionUpdates, redactions });
 }
 
 // 读取房间真实头像（m.room.avatar），统一走本站媒体代理，避免跨域 mxc://
@@ -924,6 +943,27 @@ async function handlePins(c, url, base) {
 	}
 }
 
+async function handleRecall(c, request, token, room) {
+	if (!token) return fail(401, "还没入座");
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const eventId = clean(body.eventId, 120);
+	if (!/^\$[\w-]+$/.test(eventId)) return fail(400, "消息标识不对");
+	const txn = `recall-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/redact/${enc(eventId)}/${txn}`, {
+		token,
+		method: "PUT",
+		body: { reason: "撤回" },
+	});
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok) return fail(res.status === 403 ? 403 : 502, data.error || "撤回失败");
+	return json(200, { ok: true, id: data.event_id });
+}
+
 async function handleSend(c, request, token, room) {
 	if (!token) return fail(401, "还没入座");
 	let body;
@@ -1098,6 +1138,8 @@ export async function handleRequest(request, env = {}) {
 			out = await handleSync(c, url, url.origin, visitorToken || c.bridgeToken);
 		} else if (path === "/api/media" && request.method === "GET") {
 			out = await handleMedia(c, url);
+		} else if (path === "/api/recall" && request.method === "POST") {
+			out = await handleRecall(c, request, visitorToken, roomOf(c, url));
 		} else if (path === "/api/send" && request.method === "POST") {
 			const denied = await rateCheck(env, ip, "send");
 			out = denied ? fail(429, denied) : await handleSend(c, request, visitorToken, roomOf(c, url));
