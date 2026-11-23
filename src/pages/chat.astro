@@ -56,11 +56,12 @@ const peers = [
 					<span class="tea-card__title">
 						<Icon is:inline name="material-symbols:group-outline-rounded" /> 在线茶友
 					</span>
-					<span class="tea-roster__count"><i></i><b data-tea-online>0</b> 人</span>
+					<span class="tea-roster__count"><i></i><b data-tea-online>0</b> 人在线</span>
 				</header>
 				<ul class="tea-roster__list" data-tea-members>
 					<li class="tea-roster__empty">暂时没人，等你来坐第一桌。</li>
 				</ul>
+				<button type="button" class="tea-roster__all" data-tea-roster-all hidden>显示全部</button>
 			</div>
 
 			<div class="tea-card tea-notice">
@@ -508,12 +509,42 @@ const peers = [
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.34rem 0.45rem;
-		border-radius: 0.6rem;
+		padding: 0.42rem 0.45rem;
+		border-radius: 0.55rem;
 		font-size: 0.78rem;
+		border-bottom: 1px dashed color-mix(in oklch, currentColor 12%, transparent);
+	}
+	.tea-member:last-child {
+		border-bottom: 0;
 	}
 	.tea-member:hover {
 		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
+	}
+	.tea-member__badge {
+		margin-left: auto;
+		flex: none;
+		font-size: 0.62rem;
+		line-height: 1;
+		padding: 0.22rem 0.5rem;
+		border-radius: 999px;
+		border: 1px solid transparent;
+		white-space: nowrap;
+	}
+	.tea-member__badge.is-online {
+		color: #2f9e6b;
+		background: color-mix(in oklch, #2f9e6b 12%, transparent);
+		border-color: color-mix(in oklch, #2f9e6b 28%, transparent);
+	}
+	.tea-member__badge.is-away {
+		color: #b07d12;
+		background: color-mix(in oklch, #e0a020 16%, transparent);
+		border-color: color-mix(in oklch, #e0a020 32%, transparent);
+	}
+	.dark .tea-member__badge.is-online {
+		color: #5fd39a;
+	}
+	.dark .tea-member__badge.is-away {
+		color: #f0c264;
 	}
 	.tea-member__avatar {
 		width: 1.7rem;
@@ -547,7 +578,25 @@ const peers = [
 		text-overflow: ellipsis;
 	}
 	.tea-member--idle {
-		opacity: 0.5;
+		opacity: 0.92;
+	}
+	.tea-roster__all {
+		flex: none;
+		margin: 0 0.55rem 0.6rem;
+		padding: 0.42rem 0.5rem;
+		border-radius: 0.6rem;
+		border: 1px solid var(--tea-line);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 0.72rem;
+		cursor: pointer;
+		opacity: 0.75;
+		transition: opacity 0.15s ease, background 0.15s ease;
+	}
+	.tea-roster__all:hover {
+		opacity: 1;
+		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
 	}
 
 	/* 公告 */
@@ -1899,6 +1948,8 @@ const peers = [
 				seen: new Set(),
 				sending: false,
 				jukeTimer: null,
+				rosterAll: false,
+				members: [],
 				visitor: store.identity,
 			});
 
@@ -1994,32 +2045,44 @@ const peers = [
 		const renderMembers = (members) => {
 			const list = q("[data-tea-members]");
 			if (!list) return;
-			const online = members.filter((m) => m.online !== false);
+			rt.members = members;
+			const isOn = (m) => m.online !== false || !!(rt.visitor && m.id === rt.visitor.id);
 			const countEl = q("[data-tea-online]");
-			if (countEl) countEl.textContent = String(online.length);
+			if (countEl) countEl.textContent = String(members.filter(isOn).length);
+			const more = q("[data-tea-roster-all]");
+
 			if (!members.length) {
 				list.innerHTML = `<li class="tea-roster__empty">暂时没人，等你来坐第一桌。</li>`;
+				if (more) more.hidden = true;
 				return;
 			}
-			const shown = members.slice(0, 20);
-			list.innerHTML =
-				shown
-					.map((m) => {
-						const av = m.avatar
-							? `style="background-image:url('${esc(m.avatar)}')"`
-							: `style="${avatarStyle(m.nick, m.site)}"`;
-						return `<li class="tea-member${m.online === false ? " tea-member--idle" : ""}" title="${esc(m.nick)}${m.site ? " · " + esc(m.site) : ""}">
-						<span class="tea-member__avatar" ${av}>${m.avatar ? "" : esc(initials(m.nick))}</span>
-						<span class="tea-member__copy">
-							<span class="tea-member__name">${esc(m.nick)}</span>
-							<span class="tea-member__site">${esc(m.site || "Matrix")}</span>
-						</span>
-					</li>`;
-					})
-					.join("") +
-				(members.length > shown.length
-					? `<li class="tea-roster__empty">还有 ${members.length - shown.length} 位茶友没显示</li>`
-					: "");
+
+			const LIMIT = 8;
+			const shown = rt.rosterAll ? members : members.slice(0, LIMIT);
+			list.innerHTML = shown
+				.map((m) => {
+					const av = m.avatar
+						? `style="background-image:url('${esc(m.avatar)}')"`
+						: `style="${avatarStyle(m.nick, m.site)}"`;
+					const on = isOn(m);
+					const badge = on
+						? `<span class="tea-member__badge is-online">在线</span>`
+						: `<span class="tea-member__badge is-away">离开</span>`;
+					return `<li class="tea-member${on ? "" : " tea-member--idle"}" title="${esc(m.nick)}${m.site ? " · " + esc(m.site) : ""}">
+					<span class="tea-member__avatar" ${av}>${m.avatar ? "" : esc(initials(m.nick))}</span>
+					<span class="tea-member__copy">
+						<span class="tea-member__name">${esc(m.nick)}</span>
+						<span class="tea-member__site">${esc(m.site ? "来自 " + m.site : "Matrix")}</span>
+					</span>
+					${badge}
+				</li>`;
+				})
+				.join("");
+
+			if (more) {
+				more.hidden = members.length <= LIMIT;
+				more.textContent = rt.rosterAll ? "收起" : `显示全部（${members.length}）`;
+			}
 		};
 
 		const renderSelf = () => {
@@ -2662,6 +2725,14 @@ const peers = [
 					else shell.classList.toggle("is-juke-open");
 					bindJuke();
 					setTimeout(renderJuke, 60);
+				});
+			}
+			const rosterAllBtn = q("[data-tea-roster-all]");
+			if (rosterAllBtn && rosterAllBtn.dataset.bound !== "1") {
+				rosterAllBtn.dataset.bound = "1";
+				rosterAllBtn.addEventListener("click", () => {
+					rt.rosterAll = !rt.rosterAll;
+					renderMembers(rt.members || []);
 				});
 			}
 			const jukeScrim = q("[data-juke-scrim]");
