@@ -1396,6 +1396,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-msg__text {
 		position: relative;
+		display: inline-block;
+		max-width: 100%;
+		padding: 0.42rem 0.62rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.75rem;
+		background: var(--card-bg, #fff);
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 		font-size: 0.86rem;
 		line-height: 1.7;
 		white-space: pre-wrap;
@@ -1750,12 +1757,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		color: color-mix(in oklch, var(--primary) 66%, currentColor);
 	}
 	.tea-msg--mine .tea-msg__text {
-		background: color-mix(in oklch, var(--primary) 11%, transparent);
-		border: 1px solid color-mix(in oklch, var(--primary) 18%, transparent);
-		border-radius: 0.75rem;
-		padding: 0.42rem 0.62rem;
-		display: inline-block;
-		max-width: 100%;
+		background: color-mix(in oklch, var(--primary) 16%, var(--card-bg, #fff));
+		border-color: color-mix(in oklch, var(--primary) 28%, transparent);
 		text-align: left;
 	}
 	.tea-msg--mine .tea-msg__reply {
