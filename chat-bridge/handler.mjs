@@ -305,10 +305,34 @@ function normalize(ev, members, c, base) {
 		image = `${base}/api/media?u=${enc(content.url)}`;
 		text = text || "发了一张图片";
 	}
+	// 表情包是 m.image + 自定义标记，前端按小图渲染
+	const emoticon = content["data-mx-emoticon"] ? true : false;
 
 	avatar = avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(avatar)}` : avatar;
 
-	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image, reply };
+	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image, reply, emoticon };
+}
+
+// m.reaction 用 m.relates_to 指向目标事件，按 event_id 聚合后附给前端
+function collectReactions(events, members) {
+	const map = new Map();
+	for (const ev of events || []) {
+		if (ev.type !== "m.reaction") continue;
+		const rel = ev.content?.["m.relates_to"];
+		if (rel?.rel_type !== "m.annotation" || !rel.event_id) continue;
+		const list = map.get(rel.event_id) || [];
+		const key = String(rel.key || "").slice(0, 32);
+		const existing = list.find((r) => r.key === key);
+		if (existing) {
+			existing.count++;
+		} else {
+			const m = members.get(ev.sender) || {};
+			list.push({ key, count: 1, nick: (m.nick || "").split(" · ")[0], senders: [] });
+		}
+		list.find((r) => r.key === key).senders.push(ev.sender);
+		map.set(rel.event_id, list);
+	}
+	return map;
 }
 
 // ── 限流 ────────────────────────────────────────────────────────────
@@ -632,7 +656,7 @@ async function handleSync(c, url, base, token) {
 			rooms: [room.id],
 			timeline: { limit: 50 },
 			state: { lazy_load_members: true },
-			ephemeral: { types: ["m.receipt"] },
+			ephemeral: { types: ["m.receipt", "m.typing"] },
 		},
 	});
 	const path = `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}` + (since ? `&since=${enc(since)}` : "");
@@ -641,11 +665,27 @@ async function handleSync(c, url, base, token) {
 	const members = await getMembers(c, room.id);
 	const receipts = readReceipts(data, room.id, members, c, base);
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
+	const reactions = collectReactions(timeline, members);
 	const messages = timeline
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean)
-		.map((m) => ({ ...m, receipt: receipts.get(m.id) || null }));
-	return json(200, { ok: true, messages, next: data.next_batch || since || null });
+		.map((m) => ({ ...m, receipt: receipts.get(m.id) || null, reactions: reactions.get(m.id) || [] }));
+	// reaction 更新可能指向历史消息，单独返回让前端就地合并
+	const reactionUpdates = Object.fromEntries(reactions.entries());
+	// m.typing 的 user_ids 里是当前正在输入的人
+	const typingEv = (data.rooms?.join?.[room.id]?.ephemeral?.events || [])
+		.filter((ev) => ev.type === "m.typing")
+		.pop();
+	const typing = (typingEv?.content?.user_ids || [])
+		.filter((id) => id !== c.selfUserId)
+		.map((id) => {
+			const m = members.get(id) || {};
+			const nick = m.nick || id.split(":")[0].replace(/^@/, "");
+			const dot = nick.indexOf(" · ");
+			return dot > 0 ? nick.slice(0, dot).trim() : nick;
+		})
+		.filter(Boolean);
+	return json(200, { ok: true, messages, next: data.next_batch || since || null, typing, reactions: reactionUpdates });
 }
 
 async function handleRoom(c, base, room) {
@@ -694,17 +734,99 @@ async function handleSend(c, request, token, room) {
 		return fail(400, "请求格式不对");
 	}
 	const text = clean(body.text, LIMITS.text);
-	if (!text) return fail(400, "空消息发不出去");
+	const replyTo = clean(body.replyTo, 120);
+	const imageUrl = clean(body.imageUrl, 400);
+	if (!text && !imageUrl) return fail(400, "空消息发不出去");
 
+	let content;
+	if (imageUrl) {
+		content = {
+			msgtype: "m.image",
+			body: text || "发了一张图片",
+			url: imageUrl,
+			"data-mx-emoticon": body.emoticon === true,
+		};
+	} else {
+		content = { msgtype: "m.text", body: text };
+	}
+	// Matrix 原生回复关系，客户端按 body 的 "> <@user> 原文" 渲染引用块
+	if (replyTo && /^\$[\w-]+$/.test(replyTo)) {
+		content["m.relates_to"] = { "m.in_reply_to": { event_id: replyTo } };
+	}
 	const txn = `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/send/m.room.message/${txn}`, {
 		token,
 		method: "PUT",
-		body: { msgtype: "m.text", body: text },
+		body: content,
 	});
 	const data = await res.json().catch(() => ({}));
 	if (!res.ok) return fail(res.status === 403 ? 403 : 502, data.error || "发送失败");
 	return json(200, { ok: true, id: data.event_id, ts: Date.now() });
+}
+
+// 图片/表情上传：先存到 Matrix media，再由前端发 m.image
+async function handleUpload(c, request, token) {
+	if (!token) return fail(401, "还没入座");
+	const type = (request.headers.get("content-type") || "image/png").split(";")[0].trim();
+	if (!/^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(type)) return fail(400, "只支持图片");
+	const buf = await request.arrayBuffer();
+	if (buf.byteLength > 8 * 1024 * 1024) return fail(413, "图片最大 8 MB");
+	const name = type.replace("/", ".");
+	const res = await mx(c, `/_matrix/media/v3/upload?filename=${enc(name)}`, {
+		token,
+		method: "POST",
+		raw: buf,
+		headers: { "Content-Type": type },
+	});
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok) return fail(502, data.error || "上传失败");
+	return json(200, { ok: true, url: data.content_uri });
+}
+
+// typing 上报：Matrix 的 typing 是短时状态，前端定时续期
+async function handleTyping(c, request, token, room) {
+	if (!token) return fail(401, "还没入座");
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const active = body.active === true;
+	const uid = clean(body.userId, 200);
+	if (!uid) return fail(400, "缺少用户标识");
+	await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/typing/${enc(uid)}`, {
+		token,
+		method: "PUT",
+		body: { typing: active, timeout: active ? 5000 : 0 },
+	});
+	return json(200, { ok: true });
+}
+
+// 回应（reaction）：Matrix m.reaction，带 m.relates_to
+async function handleReaction(c, request, token, room) {
+	if (!token) return fail(401, "还没入座");
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const key = clean(body.key, 32);
+	const target = clean(body.eventId, 120);
+	if (!key || !/^\$[\w-]+$/.test(target)) return fail(400, "参数不对");
+	const content = {
+		"m.relates_to": { rel_type: "m.annotation", event_id: target, key },
+	};
+	const txn = `rx-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/send/m.reaction/${txn}`, {
+		token,
+		method: "PUT",
+		body: content,
+	});
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok) return fail(502, data.error || "回应失败");
+	return json(200, { ok: true, id: data.event_id });
 }
 
 async function handleMedia(c, url) {
@@ -764,6 +886,12 @@ export async function handleRequest(request, env = {}) {
 		} else if (path === "/api/send" && request.method === "POST") {
 			const denied = await rateCheck(env, ip, "send");
 			out = denied ? fail(429, denied) : await handleSend(c, request, visitorToken, roomOf(c, url));
+		} else if (path === "/api/upload" && request.method === "POST") {
+			out = await handleUpload(c, request, visitorToken);
+		} else if (path === "/api/typing" && request.method === "POST") {
+			out = await handleTyping(c, request, visitorToken, roomOf(c, url));
+		} else if (path === "/api/reaction" && request.method === "POST") {
+			out = await handleReaction(c, request, visitorToken, roomOf(c, url));
 		} else {
 			out = fail(404, "not found");
 		}

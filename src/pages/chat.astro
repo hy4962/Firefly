@@ -165,6 +165,12 @@ const peers = [
 					</div>
 					<button type="button" class="tea-btn tea-btn--primary" data-tea-enter>进入茶室</button>
 				</div>
+				<div class="tea-typing" data-tea-typing hidden aria-live="polite"><span class="tea-typing__dots"><i></i><i></i><i></i></span><span data-tea-typing-text></span></div>
+				<div class="tea-replybar" data-tea-replybar hidden>
+					<span class="tea-replybar__icon"><Icon is:inline name="material-symbols:reply-rounded" /></span>
+					<span class="tea-replybar__copy"><b data-tea-reply-who></b><span data-tea-reply-text></span></span>
+					<button type="button" data-tea-reply-cancel aria-label="取消回复">×</button>
+				</div>
 				<div class="tea-input" data-tea-input hidden>
 					<textarea
 						name="message"
@@ -173,6 +179,12 @@ const peers = [
 						placeholder="说点什么…（Enter 发送，Shift+Enter 换行）"
 						data-tea-text
 					></textarea>
+					<div class="tea-input__tools">
+						<button type="button" class="tea-tool" data-tea-emoji-toggle title="表情包" aria-label="表情包"><Icon is:inline name="material-symbols:sentiment-satisfied-rounded" /></button>
+						<button type="button" class="tea-tool" data-tea-image-pick title="发送图片" aria-label="发送图片"><Icon is:inline name="material-symbols:image-rounded" /></button>
+						<input type="file" accept="image/*" data-tea-image-file hidden />
+					</div>
+					<div class="tea-emoji-panel" data-tea-emoji-panel hidden></div>
 					<div class="tea-input__foot">
 						<span class="tea-input__hint">公开消息，会被同步出去</span>
 						<span class="tea-input__count" data-tea-count>0/500</span>
@@ -1135,6 +1147,17 @@ const peers = [
 	.tea-msg__text img:hover {
 		filter: brightness(1.04);
 	}
+	.tea-msg__text img.tea-emoticon {
+		display: inline-block;
+		width: 2.4rem;
+		height: 2.4rem;
+		max-width: none;
+		max-height: none;
+		vertical-align: middle;
+		margin: 0;
+		border: 0;
+		cursor: default;
+	}
 	.tea-msg__text pre {
 		margin: 0.35rem 0 0;
 		padding: 0.5rem 0.65rem;
@@ -1172,6 +1195,56 @@ const peers = [
 		opacity: 0.78;
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+	}
+	.tea-msg__actions {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+		margin-inline-start: 0.4rem;
+		vertical-align: middle;
+		opacity: 0;
+		transition: opacity 0.15s;
+	}
+	.tea-msg:hover .tea-msg__actions,
+	.tea-msg__actions:focus-within {
+		opacity: 1;
+	}
+	.tea-msg__action {
+		width: 1.35rem;
+		height: 1.35rem;
+		display: grid;
+		place-items: center;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.4rem;
+		background: var(--card-bg, #fff);
+		color: var(--tea-muted);
+		cursor: pointer;
+	}
+	.tea-msg__action:hover {
+		color: color-mix(in oklch, var(--primary) 72%, currentColor);
+		border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+	}
+	.tea-msg__action svg { width: 0.85rem; height: 0.85rem; }
+	.tea-msg__reactions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		margin-top: 0.2rem;
+	}
+	.tea-msg__reaction {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		padding: 0.1rem 0.4rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 999px;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08));
+		font-size: 0.72rem;
+		cursor: pointer;
+	}
+	.tea-msg__reaction.is-mine {
+		border-color: color-mix(in oklch, var(--primary) 55%, transparent);
+		background: color-mix(in oklch, var(--primary) 14%, transparent);
 	}
 	.tea-msg--grouped {
 		margin-top: -0.55rem;
@@ -1424,6 +1497,126 @@ const peers = [
 		border-color: color-mix(in oklch, var(--primary) 48%, transparent);
 		box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 14%, transparent);
 	}
+	.tea-input__tools {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+	.tea-tool {
+		width: 1.8rem;
+		height: 1.8rem;
+		display: grid;
+		place-items: center;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.55rem;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08));
+		color: var(--tea-muted);
+		cursor: pointer;
+		transition: color 0.15s, background 0.15s;
+	}
+	.tea-tool:hover {
+		color: color-mix(in oklch, var(--primary) 70%, currentColor);
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+	}
+	.tea-tool svg {
+		width: 1.05rem;
+		height: 1.05rem;
+	}
+	.tea-emoji-panel {
+		max-height: 13rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 0.45rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.75rem;
+		background: var(--card-bg, #fff);
+	}
+	.tea-emoji-panel[hidden] {
+		display: none;
+	}
+	.tea-emoji-panel__tabs {
+		display: flex;
+		gap: 0.25rem;
+		margin-bottom: 0.4rem;
+	}
+	.tea-emoji-panel__tab {
+		padding: 0.15rem 0.55rem;
+		border: 0;
+		border-radius: 0.5rem;
+		background: transparent;
+		color: var(--tea-muted);
+		font-size: 0.72rem;
+		cursor: pointer;
+	}
+	.tea-emoji-panel__tab.is-active {
+		background: color-mix(in oklch, var(--primary) 15%, transparent);
+		color: color-mix(in oklch, var(--primary) 75%, currentColor);
+		font-weight: 600;
+	}
+	.tea-emoji-panel__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
+		gap: 0.15rem;
+	}
+	.tea-emoji-panel__grid img {
+		width: 100%;
+		height: 2rem;
+		object-fit: contain;
+		cursor: pointer;
+		border-radius: 0.35rem;
+	}
+	.tea-emoji-panel__grid img:hover {
+		background: color-mix(in oklch, var(--primary) 15%, transparent);
+	}
+	.tea-emoji-panel__msg {
+		font-size: 0.72rem;
+		color: var(--tea-muted);
+		padding: 0.4rem;
+	}
+	.tea-typing {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.25rem 0.4rem;
+		font-size: 0.7rem;
+		color: var(--tea-muted);
+	}
+	.tea-typing[hidden] {
+		display: none;
+	}
+	.tea-typing__dots {
+		display: inline-flex;
+		gap: 0.15rem;
+	}
+	.tea-typing__dots i {
+		width: 0.28rem;
+		height: 0.28rem;
+		border-radius: 50%;
+		background: color-mix(in oklch, var(--primary) 65%, currentColor);
+		animation: tea-typing-bounce 1.1s infinite ease-in-out;
+	}
+	.tea-typing__dots i:nth-child(2) { animation-delay: 0.15s; }
+	.tea-typing__dots i:nth-child(3) { animation-delay: 0.3s; }
+	@keyframes tea-typing-bounce {
+		0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+		30% { transform: translateY(-0.2rem); opacity: 1; }
+	}
+	.tea-replybar {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.35rem 0.55rem;
+		border-left: 2px solid color-mix(in oklch, var(--primary) 55%, transparent);
+		background: color-mix(in oklch, var(--primary) 8%, transparent);
+		border-radius: 0 0.5rem 0.5rem 0;
+		font-size: 0.72rem;
+	}
+	.tea-replybar[hidden] { display: none; }
+	.tea-replybar__icon svg { width: 1rem; height: 1rem; }
+	.tea-replybar__copy { flex: 1; min-width: 0; display: grid; }
+	.tea-replybar__copy b { color: color-mix(in oklch, var(--primary) 70%, currentColor); }
+	.tea-replybar__copy span { color: var(--tea-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.tea-replybar button { border: 0; background: none; color: var(--tea-muted); font-size: 1.1rem; cursor: pointer; }
 	.tea-input__foot {
 		display: flex;
 		align-items: center;
@@ -2281,7 +2474,9 @@ const peers = [
 				last = m.index + m[0].length;
 			}
 			out += esc(raw.slice(last));
-			return out.replace(/\*\*([^*<]{1,80})\*\*/g, "<strong>$1</strong>");
+			return out
+				.replace(/`([^`<>\n]{1,120})`/g, "<code>$1</code>")
+				.replace(/\*\*([^*<]{1,80})\*\*/g, "<strong>$1</strong>");
 		};
 
 		const fmtText = (text) => {
@@ -2343,6 +2538,9 @@ const peers = [
 				jukeTimer: null,
 				rosterAll: false,
 				members: [],
+				reactions: new Map(),
+				replyTo: null,
+				typingAt: 0,
 				room: params0.get("room") === "chat" ? "chat" : "lobby",
 				visitor: store.identity,
 			});
@@ -2379,6 +2577,18 @@ const peers = [
 			const f = feedEl();
 			if (!f) return;
 			f.scrollTo({ top: f.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+		};
+
+		const renderReactions = (m) => {
+			const list = Array.isArray(m.reactions) ? m.reactions : [];
+			if (!list.length) return "";
+			const me = rt.visitor?.id || "";
+			return `<div class="tea-msg__reactions">${list
+				.map((r) => {
+					const mine = Array.isArray(r.senders) && r.senders.includes(me);
+					return `<button type="button" class="tea-msg__reaction${mine ? " is-mine" : ""}" title="${esc(r.nick || "")} 回应了 ${esc(r.key)}">${esc(r.key)} ${r.count}</button>`;
+				})
+				.join("")}</div>`;
 		};
 
 		const readerFace = (r) =>
@@ -2498,10 +2708,17 @@ const peers = [
 				: `style="${avatarStyle(m.nick, m.site)}"`;
 			const siteTag = m.site ? `<span class="tea-msg__site">来自 ${esc(m.site)}</span>` : "";
 			const body = m.image
-				? `<img src="${esc(m.image)}" alt="图片" loading="lazy" data-zoom />`
+				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" loading="lazy" ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
 				: fmtText(m.text || "");
 			const reply = m.reply
 				? `<div class="tea-msg__reply"><b>${esc(m.reply.who || "茶友")}</b><span>${esc(m.reply.text || "")}</span></div>`
+				: "";
+			const reactions = renderReactions(m);
+			const actions = m.id && !m.pending
+				? `<span class="tea-msg__actions">
+						<button type="button" class="tea-msg__action" data-act="react" data-id="${esc(m.id)}" title="回应" aria-label="回应"><Icon is:inline name="material-symbols:add-reaction-rounded" /></button>
+						<button type="button" class="tea-msg__action" data-act="reply" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="回复" aria-label="回复"><Icon is:inline name="material-symbols:reply-rounded" /></button>
+					</span>`
 				: "";
 			const receipt = renderReceipt(m);
 
@@ -2511,9 +2728,9 @@ const peers = [
 					<div class="tea-msg__head">
 						<span class="tea-msg__nick">${esc(m.nick || "茶友")}</span>
 						${siteTag}
-						<time class="tea-msg__time">${esc(fmtTime(m.ts))}</time>
+						<time class="tea-msg__time">${esc(fmtTime(m.ts))}</time>${actions}
 					</div>
-					<div class="tea-msg__text">${reply}${body}</div>
+					<div class="tea-msg__text">${reply}${body}${reactions}</div>
 					${receipt}
 				</div>`;
 
@@ -2607,7 +2824,7 @@ const peers = [
 		const api = async (path, opts = {}) => {
 			const headers = { ...(opts.headers || {}) };
 			if (rt.visitor && rt.visitor.token) headers.Authorization = `Bearer ${rt.visitor.token}`;
-			if (opts.body) headers["Content-Type"] = "application/json";
+			if (typeof opts.body === "string" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
 			const res = await fetch(api0.replace(/\/$/, "") + path, { ...opts, headers });
 			let data = {};
 			try {
@@ -2674,6 +2891,19 @@ const peers = [
 					`/api/sync?room=${rt.room}` + (rt.since ? `&since=${encodeURIComponent(rt.since)}` : ""),
 				);
 				if (data.next) rt.since = data.next;
+				renderTyping(data.typing || []);
+				if (data.reactions) {
+					for (const [id, rs] of Object.entries(data.reactions)) {
+						const el = feedEl()?.querySelector(`.tea-msg[data-id="${CSS.escape(id)}"]`);
+						if (!el) continue;
+						const old = el.querySelector(".tea-msg__reactions");
+						const box = document.createElement("div");
+						box.innerHTML = renderReactions({ reactions: rs });
+						const fresh = box.firstElementChild;
+						if (old && fresh) old.replaceWith(fresh);
+						else if (fresh) el.querySelector(".tea-msg__text")?.appendChild(fresh);
+					}
+				}
 				const list = data.messages || [];
 				if (list.length) {
 					const stick = atBottom();
@@ -2709,8 +2939,10 @@ const peers = [
 			try {
 				const res = await api(`/api/send?room=${rt.room}`, {
 					method: "POST",
-					body: JSON.stringify({ text }),
+					body: JSON.stringify({ text, replyTo: rt.replyTo?.id || "" }),
 				});
+				sendTyping(false);
+				if (rt.setReply) rt.setReply(null);
 				if (target) {
 					target.classList.remove("tea-msg--pending", "tea-msg--failed");
 					if (res.id) {
@@ -2750,6 +2982,124 @@ const peers = [
 					target.querySelector(".tea-msg__body").appendChild(retry);
 				}
 			}
+		};
+
+		// ── 图片 / 表情包 ────────────────────────────────────────
+		const sendImage = async (blob, { emoticon = false, name = "图片" } = {}) => {
+			const v = rt.visitor;
+			if (!v) {
+				openDialog();
+				return;
+			}
+			const ts = Date.now();
+			const localUrl = URL.createObjectURL(blob);
+			renderMessage({
+				id: "tmp-" + ts, ts, sender: v.id, nick: v.nick, site: SITE_NAME, avatar: v.avatar,
+				image: localUrl, emoticon, text: "", self: true, pending: true,
+			});
+			const target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
+			try {
+				const fd = await blob.arrayBuffer();
+				const up = await api(`/api/upload`, { method: "POST", body: fd, headers: { "Content-Type": blob.type || "image/png" } });
+				// 发一条带图片的消息：后端 send 目前只发 text，这里用 body 携带 mxc
+				const res = await api(`/api/send?room=${rt.room}`, {
+					method: "POST",
+					body: JSON.stringify({ text: "", imageUrl: up.url, emoticon }),
+				});
+				if (target) {
+					target.classList.remove("tea-msg--pending", "tea-msg--failed");
+					if (res.id) {
+						target.dataset.id = res.id;
+						rt.seen.add(res.id);
+					}
+					const old = target.querySelector(".tea-msg__retry");
+					if (old) old.remove();
+				}
+				store.bump();
+				const c = q("[data-tea-me-count]");
+				if (c) c.textContent = String(store.count);
+			} catch (e) {
+				if (target) {
+					target.classList.remove("tea-msg--pending");
+					target.classList.add("tea-msg--failed");
+					const retry = document.createElement("button");
+					retry.type = "button";
+					retry.className = "tea-msg__retry";
+					retry.textContent = "发送失败：" + (e.message || "网络异常") + "，点此重试";
+					retry.addEventListener("click", () => {
+						target.remove();
+						sendImage(blob, { emoticon, name });
+					});
+					target.querySelector(".tea-msg__body").appendChild(retry);
+				}
+			} finally {
+				setTimeout(() => URL.revokeObjectURL(localUrl), 30_000);
+			}
+		};
+
+		const EMOTICON_SETS = [
+			{ id: "qq", name: "QQ", base: "/assets/emojis/qq/", prefix: "qq_", info: "/assets/emojis/qq.json" },
+			{ id: "bili", name: "B站", base: "/assets/emojis/bilibili/", prefix: "bb_", info: "/assets/emojis/bilibili.json" },
+		];
+		const emojiCache = new Map();
+
+		const loadEmojiSet = async (set) => {
+			if (emojiCache.has(set.id)) return emojiCache.get(set.id);
+			const p = fetch(set.info)
+				.then((r) => (r.ok ? r.json() : Promise.reject(new Error("加载失败"))))
+				.then((info) => {
+					const items = (info.items || []).slice(0, 60);
+					return items.map((it) => ({ name: it, url: `${set.base}${set.prefix}${it}.${info.type || "png"}` }));
+				});
+			emojiCache.set(set.id, p);
+			return p;
+		};
+
+		const renderEmojiPanel = async (setId) => {
+			const panel = q("[data-tea-emoji-panel]");
+			if (!panel) return;
+			const set = EMOTICON_SETS.find((s) => s.id === setId) || EMOTICON_SETS[0];
+			panel.innerHTML = `<div class="tea-emoji-panel__tabs">${EMOTICON_SETS
+				.map((s) => `<button type="button" class="tea-emoji-panel__tab${s.id === set.id ? " is-active" : ""}" data-emoji-set="${s.id}">${s.name}</button>`)
+				.join("")}</div><p class="tea-emoji-panel__msg">正在加载表情…</p>`;
+			try {
+				const items = await loadEmojiSet(set);
+				const grid = panel.querySelector(".tea-emoji-panel__grid") || document.createElement("div");
+				grid.className = "tea-emoji-panel__grid";
+				grid.innerHTML = items
+					.map((it) => `<img src="${esc(it.url)}" alt="${esc(it.name)}" title="${esc(it.name)}" loading="lazy" data-emoji-url="${esc(it.url)}" />`)
+					.join("");
+				const msg = panel.querySelector(".tea-emoji-panel__msg");
+				if (msg) msg.remove();
+				panel.appendChild(grid);
+			} catch (e) {
+				const msg = panel.querySelector(".tea-emoji-panel__msg");
+				if (msg) msg.textContent = "表情加载失败，点右上角重试";
+			}
+		};
+
+		// ── 正在输入 ────────────────────────────────────────────
+		const sendTyping = (active) => {
+			const v = rt.visitor;
+			if (!v) return;
+			api(`/api/typing?room=${rt.room}`, {
+				method: "POST",
+				body: JSON.stringify({ active, userId: v.id }),
+			}).catch(() => {});
+		};
+
+		const renderTyping = (users) => {
+			const box = q("[data-tea-typing]");
+			const text = q("[data-tea-typing-text]");
+			if (!box || !text) return;
+			const list = Array.isArray(users) ? users.filter(Boolean) : [];
+			if (!list.length) {
+				box.hidden = true;
+				return;
+			}
+			const names = list.slice(0, 3).join("、") + (list.length > 3 ? " 等人" : "");
+			text.textContent = `${names} 正在输入…`;
+			box.hidden = false;
 		};
 
 		// ── 交互 ─────────────────────────────────────────────────
@@ -3197,6 +3547,106 @@ const peers = [
 			setTimeout(killChrome, 1200);
 			loadHistory();
 			startLoop();
+
+			// 图片选择 / 粘贴
+			const imageFile = q("[data-tea-image-file]");
+			const pickBtn = q("[data-tea-image-pick]");
+			if (pickBtn && imageFile) {
+				pickBtn.addEventListener("click", () => imageFile.click());
+				imageFile.addEventListener("change", () => {
+					const f = imageFile.files?.[0];
+					if (f) sendImage(f, { name: f.name });
+					imageFile.value = "";
+				});
+			}
+			const taInput = q("[data-tea-text]");
+			if (taInput) {
+				taInput.addEventListener("paste", (e) => {
+					const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith("image/"));
+					if (f) {
+						e.preventDefault();
+						sendImage(f, { name: f.name || "粘贴的图片" });
+					}
+				});
+				taInput.addEventListener("input", () => {
+					const now = Date.now();
+					if (taInput.value.trim() && now - rt.typingAt > 1500) {
+						rt.typingAt = now;
+						sendTyping(true);
+					}
+				});
+				taInput.addEventListener("blur", () => sendTyping(false));
+			}
+
+			// 表情面板
+			const emojiToggle = q("[data-tea-emoji-toggle]");
+			const emojiPanel = q("[data-tea-emoji-panel]");
+			if (emojiToggle && emojiPanel) {
+				emojiToggle.addEventListener("click", (e) => {
+					e.stopPropagation();
+					const open = emojiPanel.hidden;
+					emojiPanel.hidden = !open;
+					if (open) renderEmojiPanel(EMOTICON_SETS[0].id);
+				});
+				emojiPanel.addEventListener("click", async (e) => {
+					const tab = e.target.closest("[data-emoji-set]");
+					if (tab) {
+						renderEmojiPanel(tab.dataset.emojiSet);
+						return;
+					}
+					const img = e.target.closest("[data-emoji-url]");
+					if (!img) return;
+					try {
+						const r = await fetch(img.dataset.emojiUrl);
+						const blob = await r.blob();
+						await sendImage(blob, { emoticon: true, name: img.alt });
+						emojiPanel.hidden = true;
+					} catch (_) {
+						showError("表情发送失败，换个试试");
+					}
+				});
+				document.addEventListener("click", (e) => {
+					if (!emojiPanel.hidden && !emojiPanel.contains(e.target) && e.target !== emojiToggle) emojiPanel.hidden = true;
+				});
+			}
+
+			// 回复 / 回应 / 取消回复
+			const replybar = q("[data-tea-replybar]");
+			const setReply = (msg) => {
+				rt.replyTo = msg;
+				if (!replybar) return;
+				if (!msg) {
+					replybar.hidden = true;
+					return;
+				}
+				const who = q("[data-tea-reply-who]");
+				const txt = q("[data-tea-reply-text]");
+				if (who) who.textContent = msg.nick || "茶友";
+				if (txt) txt.textContent = msg.text || "图片";
+				replybar.hidden = false;
+				if (ta) ta.focus();
+			};
+			rt.setReply = setReply;
+			const cancelReply = q("[data-tea-reply-cancel]");
+			if (cancelReply) cancelReply.addEventListener("click", () => setReply(null));
+			const f = feedEl();
+			if (f) {
+				f.addEventListener("click", async (e) => {
+					const btn = e.target.closest("[data-act]");
+					if (!btn) return;
+					const id = btn.dataset.id;
+					if (btn.dataset.act === "reply") {
+						setReply({ id, nick: btn.dataset.nick, text: btn.dataset.text });
+					} else if (btn.dataset.act === "react") {
+						try {
+							await api("/api/reaction", {
+								method: "POST",
+								body: JSON.stringify({ eventId: id, key: "👍" }),
+							});
+						} catch (_) {}
+					}
+				});
+			}
 
 			// 身份弹窗
 			for (const el of document.querySelectorAll("[data-tea-enter]")) {
