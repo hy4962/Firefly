@@ -61,7 +61,7 @@ const peers = [
 					<li class="tea-rooms__group">互联房间</li>
 					<li>
 						<button type="button" class="tea-room-item is-active" data-room="lobby">
-							<span class="tea-room-item__avatar"><img src="/assets/images/room-lobby.svg" alt="" /></span>
+							<span class="tea-room-item__avatar"><img src="/assets/images/room-lobby.webp" data-room-avatar="lobby" alt="" /></span>
 							<span class="tea-room-item__copy">
 								<b>互联茶室</b>
 								<span>和其他站点的朋友一起聊天</span>
@@ -71,7 +71,7 @@ const peers = [
 					<li class="tea-rooms__group">本站</li>
 					<li>
 						<button type="button" class="tea-room-item" data-room="chat">
-							<span class="tea-room-item__avatar"><img src="/assets/images/kirino.webp" alt="" loading="lazy" /></span>
+							<span class="tea-room-item__avatar"><img src="/assets/images/room-chat.webp" data-room-avatar="chat" alt="" loading="lazy" /></span>
 							<span class="tea-room-item__copy">
 								<b>闲聊</b>
 								<span>随便聊聊日常与折腾</span>
@@ -2881,10 +2881,33 @@ const peers = [
 			}
 		};
 
+		const applyRoomAvatar = (key, avatar) => {
+			if (!avatar) return;
+			const img = document.querySelector(`[data-room-avatar="${key}"]`);
+			if (!img || img.dataset.avatarApplied === "1") return;
+			img.dataset.avatarApplied = "1";
+			img.onerror = () => {
+				img.onerror = null;
+				img.src = key === "chat" ? "/assets/images/room-chat.webp" : "/assets/images/room-lobby.webp";
+			};
+			img.src = avatar;
+		};
+
+		// 房间列表头像：优先用 Matrix 房间真实头像，加载不出来回退到本地副本
+		const syncRoomAvatars = async () => {
+			for (const key of Object.keys(ROOMS)) {
+				try {
+					const data = await api(`/api/room?room=${key}`);
+					applyRoomAvatar(key, data.room && data.room.avatar);
+				} catch (_) {}
+			}
+		};
+
 		const loadRoom = async () => {
 			try {
 				const data = await api(`/api/room?room=${rt.room}`);
 				renderMembers(data.members || []);
+				applyRoomAvatar(rt.room, data.room && data.room.avatar);
 			} catch (_) {}
 		};
 
@@ -3551,6 +3574,7 @@ const peers = [
 			setTimeout(killChrome, 1200);
 			loadHistory();
 			startLoop();
+			syncRoomAvatars();
 
 			// 图片选择 / 粘贴
 			const imageFile = q("[data-tea-image-file]");

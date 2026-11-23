@@ -688,8 +688,22 @@ async function handleSync(c, url, base, token) {
 	return json(200, { ok: true, messages, next: data.next_batch || since || null, typing, reactions: reactionUpdates });
 }
 
+// 读取房间真实头像（m.room.avatar），统一走本站媒体代理，避免跨域 mxc://
+async function roomAvatar(c, base, roomId) {
+	try {
+		const { ok, data } = await mxJson(c, `/_matrix/client/v3/rooms/${enc(roomId)}/state/m.room.avatar`);
+		const mxc = ok && data?.url;
+		if (typeof mxc === "string" && mxc.startsWith("mxc://")) return `${base}/api/media?u=${enc(mxc)}`;
+	} catch (_) {}
+	return "";
+}
+
 async function handleRoom(c, base, room) {
-	const [members, active] = await Promise.all([getMembers(c, room.id), getActiveSenders(c, room.id)]);
+	const [members, active, avatar] = await Promise.all([
+		getMembers(c, room.id),
+		getActiveSenders(c, room.id),
+		roomAvatar(c, base, room.id),
+	]);
 	const list = [...members.entries()].map(([id, m]) => {
 		const domain = id.split(":")[1] || "";
 		const dot = m.nick.indexOf(" · ");
@@ -719,7 +733,7 @@ async function handleRoom(c, base, room) {
 
 	return json(200, {
 		ok: true,
-		room: { key: room.key, name: room.name, desc: room.desc, id: room.id },
+		room: { key: room.key, name: room.name, desc: room.desc, id: room.id, avatar },
 		members: unique,
 		online: unique.filter((m) => m.online).length,
 	});
