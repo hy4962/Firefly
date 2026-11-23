@@ -35,7 +35,7 @@ export const friendsConfig: FriendLink[] = [
 	},
 	{
 		title: "折腾进行时",
-		imgurl: "https://www.9ll.uk/assets/images/avatar.avif",
+		imgurl: "https://www.9ll.uk/assets/images/kirino.webp",
 		desc: "生命不息，折腾不止！",
 		siteurl: "https://www.9ll.uk",
 		rss: "/rss.xml", // 本站 RSS，使自己的文章进入朋友圈时间线并标记"本站主理人"
