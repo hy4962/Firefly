@@ -1152,6 +1152,27 @@ const peers = [
 	.tea-msg__text strong {
 		font-weight: 600;
 	}
+	.tea-msg__reply {
+		margin: 0 0 0.3rem;
+		padding: 0.3rem 0.55rem;
+		border-left: 2px solid color-mix(in oklch, var(--primary) 55%, transparent);
+		border-radius: 0 0.45rem 0.45rem 0;
+		background: color-mix(in oklch, var(--primary) 8%, var(--btn-regular-bg, rgba(128, 128, 128, 0.08)));
+		font-size: 0.76rem;
+		line-height: 1.5;
+	}
+	.tea-msg__reply b {
+		display: block;
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: color-mix(in oklch, var(--primary) 62%, currentColor);
+	}
+	.tea-msg__reply span {
+		display: block;
+		opacity: 0.78;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
 	.tea-msg--grouped {
 		margin-top: -0.55rem;
 	}
@@ -2479,6 +2500,9 @@ const peers = [
 			const body = m.image
 				? `<img src="${esc(m.image)}" alt="图片" loading="lazy" data-zoom />`
 				: fmtText(m.text || "");
+			const reply = m.reply
+				? `<div class="tea-msg__reply"><b>${esc(m.reply.who || "茶友")}</b><span>${esc(m.reply.text || "")}</span></div>`
+				: "";
 			const receipt = renderReceipt(m);
 
 			el.innerHTML = `
@@ -2489,7 +2513,7 @@ const peers = [
 						${siteTag}
 						<time class="tea-msg__time">${esc(fmtTime(m.ts))}</time>
 					</div>
-					<div class="tea-msg__text">${body}</div>
+					<div class="tea-msg__text">${reply}${body}</div>
 					${receipt}
 				</div>`;
 

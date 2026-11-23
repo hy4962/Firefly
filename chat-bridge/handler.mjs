@@ -275,6 +275,32 @@ function normalize(ev, members, c, base) {
 		nick = nick.slice(0, dot).trim();
 	}
 
+	// Matrix 引用回复：body 开头是连续的 "> <@user> 原文" 行，后面才是正文
+	let reply = null;
+	const lines = text.split("\n");
+	const quoted = [];
+	let qi = 0;
+	while (qi < lines.length && /^>\s?/.test(lines[qi])) {
+		quoted.push(lines[qi].replace(/^>\s?/, ""));
+		qi++;
+	}
+	if (quoted.length) {
+		const first = quoted[0];
+		const rm = first.match(/^<@([^>]+)>\s*(.*)$/);
+		// Matrix 正文里是 <@localpart:server>，members 索引带 @ 前缀
+		const uid = rm ? (rm[1].startsWith("@") ? rm[1] : "@" + rm[1]) : "";
+		const quotedText = [rm ? rm[2] : first, ...quoted.slice(1)].join("\n").trim();
+		let who = uid.replace(/^@/, "").split(":")[0];
+		if (uid) {
+			const mem = members.get(uid) || {};
+			who = mem.nick || who;
+			const d = who.indexOf(" · ");
+			if (d > 0) who = who.slice(0, d).trim();
+		}
+		reply = { id: content["m.relates_to"]?.["m.in_reply_to"]?.event_id || "", who: who || "茶友", text: quotedText };
+		text = lines.slice(qi).join("\n").replace(/^\n+/, "");
+	}
+
 	if (content.msgtype === "m.image" && content.url) {
 		image = `${base}/api/media?u=${enc(content.url)}`;
 		text = text || "发了一张图片";
@@ -282,7 +308,7 @@ function normalize(ev, members, c, base) {
 
 	avatar = avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(avatar)}` : avatar;
 
-	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image };
+	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image, reply };
 }
 
 // ── 限流 ────────────────────────────────────────────────────────────
