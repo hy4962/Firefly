@@ -1,0 +1,27 @@
+# 茶室桥接 Worker
+# 部署：npx wrangler deploy -c chat-bridge/wrangler.toml
+# 密钥：npx wrangler secret put BRIDGE_TOKEN -c chat-bridge/wrangler.toml
+
+name = "tea-bridge"
+main = "worker.mjs"
+compatibility_date = "2025-01-01"
+
+# 自定义域：tea.9ll.uk 必须在 Cloudflare 托管的 9ll.uk 这个 Zone 下
+routes = [{ pattern = "tea.9ll.uk", custom_domain = true }]
+
+[vars]
+MATRIX_HS = "https://matrix.0dm.cn"
+ROOM_ID = "!CKQYQ95MT69FlskJmkcEbSmkd72I6CTgnf_nITckm4I"
+SITE_NAME = "折腾进行时"
+SITE_URL = "https://www.0dm.cn"
+ALLOW_ORIGINS = "https://www.0dm.cn,https://0dm.cn,https://www.9ll.uk,https://9ll.uk,http://localhost:4399,http://127.0.0.1:4399"
+
+# 限流用 KV。想要更严的限流就取消注释，先跑：
+#   npx wrangler kv namespace create TEA_KV -c chat-bridge/wrangler.toml
+# 把输出的 id 填进来。不填也能跑（退化成每个 isolate 内存计数）。
+# [[kv_namespaces]]
+# binding = "TEA_KV"
+# id = ""
+
+[observability]
+enabled = true

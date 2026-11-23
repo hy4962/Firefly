@@ -3,292 +3,2465 @@ import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
 const title = "茶室";
-const description = "一个连着 Matrix 大厅的公开聊天室，消息会同步到互联站点。";
-const MATRIX_HOMESERVER = "https://matrix.0dm.cn";
-const MATRIX_ROOM_ID = "!CKQYQ95MT69FlskJmkcEbSmkd72I6CTgnf_nITckm4I";
-const MATRIX_ROOM_ALIAS = "#lobby:detached.online";
+const description = "一个连着 Matrix 公共大厅的聊天室，消息会同步到已接入的友站。";
+
+// ── 桥接服务地址（Cloudflare Worker，见仓库 chat-bridge/ ）────────────
+// 调试时可用 ?api=http://127.0.0.1:8787 覆盖，方便本地联调。
+const CHAT_API = "https://tea.9ll.uk";
+
+// 站点署名，后缀会拼到访客昵称后面同步到大厅
+const SITE_NAME = "折腾进行时";
+
+const roomRules = [
+	"友善交流，别刷屏、别发广告，也别打探别人的隐私。",
+	"这里是公开房间，消息会同步到 Matrix 和其他友站，别放私密内容。",
+	"图片每 10 分钟最多 3 张，慢慢来。",
+];
+
+const peers = [
+	{ name: "听雨茶室", url: "https://rainzt.cn/chat/" },
+	{ name: "Detached", url: "https://detached.online/chat/" },
+	{ name: "AIOVTUE-雪", url: "https://daily.yybb.us/chat/" },
+	{ name: "冷汐的杂货铺", url: "https://lengxiqwq.com/chat/" },
+	{ name: "Somoe Home", url: "https://somoe.xyz/chat/" },
+];
 ---
 
-<MainGridLayout title={title} description={description}>
-	<section class="chat-shell card-base z-10 relative w-full" data-tea-room aria-labelledby="chat-title">
-		<header class="chat-hero">
-			<div class="chat-hero__kicker"><span class="chat-hero__dot"></span>OPEN MATRIX LOBBY</div>
-			<h1 id="chat-title">茶室</h1>
-			<p class="chat-hero__lead">坐下来，聊几句。这里连着 Matrix 公共大厅，消息会同步到已接入的友站。</p>
-			<div class="chat-hero__meta">
-				<span><Icon is:inline name="material-symbols:public" /> 公开大厅</span>
-				<span><Icon is:inline name="material-symbols:link" /> {MATRIX_ROOM_ALIAS}</span>
-			</div>
-		</header>
-
-		<div class="chat-notice" data-chat-notice>
-			<Icon is:inline name="material-symbols:info-outline-rounded" />
-			<span>这里的公开消息会同步到 Matrix 及其他互联站点，请不要发布私密内容。</span>
-		</div>
-
-		<div class="chat-login card-base" data-chat-login>
-			<div class="chat-login__head">
-				<h2>进入茶室</h2>
-				<p>使用你自己的 Matrix 账号登录；没有账号可先看大厅消息。</p>
-			</div>
-			<form data-chat-form autocomplete="off">
-				<label>
-					<span>服务器</span>
-					<input type="url" name="homeserver" value={MATRIX_HOMESERVER} readonly />
-				</label>
-				<label>
-					<span>用户名</span>
-					<input type="text" name="username" placeholder="regenbogen" required />
-				</label>
-				<label>
-					<span>密码</span>
-					<input type="password" name="password" placeholder="Matrix 账号密码" required />
-				</label>
-				<div class="chat-login__actions">
-					<button type="submit" data-chat-submit><Icon is:inline name="material-symbols:login-rounded" /> 登录并进入</button>
-					<button type="button" class="chat-ghost" data-chat-readonly><Icon is:inline name="material-symbols:visibility-rounded" /> 只读看看</button>
+<MainGridLayout title={title} description={description} heading={title}>
+	<section class="tea-app" id="tea-app" data-tea-app data-api={CHAT_API} data-site={SITE_NAME}>
+		<!-- ── 左栏 ───────────────────────────────────────────── -->
+		<aside class="tea-side" data-tea-side>
+			<div class="tea-card tea-me" data-tea-me>
+				<div class="tea-me__cover" aria-hidden="true">
+					<span class="tea-me__glow"></span>
+					<span class="tea-me__glow tea-me__glow--b"></span>
+					<span class="tea-me__line"></span>
+					<span class="tea-me__line tea-me__line--b"></span>
 				</div>
-				<p class="chat-login__error" data-chat-error hidden></p>
+				<div class="tea-me__body">
+					<div class="tea-me__avatar" data-tea-me-avatar aria-hidden="true">?</div>
+					<div class="tea-me__name" data-tea-me-name>还没入座</div>
+					<p class="tea-me__meta" data-tea-me-meta>填个昵称，就能在这儿坐下。</p>
+					<div class="tea-me__stats">
+						<span><b data-tea-me-count>0</b> 发言</span>
+						<span class="tea-me__dot"></span>
+						<span data-tea-me-since>今天刚到</span>
+					</div>
+					<button type="button" class="tea-btn tea-btn--ghost tea-me__act" data-tea-enter>
+						<Icon is:inline name="material-symbols:login-rounded" /> 入座
+					</button>
+				</div>
+			</div>
+
+			<div class="tea-card tea-roster">
+				<header class="tea-card__head">
+					<span class="tea-card__title">
+						<Icon is:inline name="material-symbols:group-outline-rounded" /> 在线茶友
+					</span>
+					<span class="tea-roster__count"><i></i><b data-tea-online>0</b> 人</span>
+				</header>
+				<ul class="tea-roster__list" data-tea-members>
+					<li class="tea-roster__empty">暂时没人，等你来坐第一桌。</li>
+				</ul>
+			</div>
+
+			<div class="tea-card tea-notice">
+				<header class="tea-card__head">
+					<span class="tea-card__title">
+						<Icon is:inline name="material-symbols:campaign-outline-rounded" /> 群公告
+					</span>
+				</header>
+				<ul class="tea-notice__list">
+					{roomRules.map((rule) => <li>{rule}</li>)}
+				</ul>
+			</div>
+		</aside>
+
+		<!-- ── 主区 ───────────────────────────────────────────── -->
+		<div class="tea-room">
+			<header class="tea-bar">
+				<div class="tea-bar__brand">
+					<span class="tea-bar__mark"><Icon is:inline name="material-symbols:emoji-food-beverage-outline-rounded" /></span>
+					<div>
+						<h1 class="tea-bar__title">{title}</h1>
+						<p class="tea-bar__sub">Matrix 互联大厅</p>
+					</div>
+				</div>
+				<div class="tea-bar__tools">
+					<span class="tea-conn" data-tea-conn><i></i><span data-tea-conn-text>连接中</span></span>
+					<button type="button" class="tea-icon-btn" data-tea-juke-toggle title="点歌台" aria-label="打开点歌台">
+						<Icon is:inline name="material-symbols:music-note-rounded" />
+					</button>
+					<button type="button" class="tea-icon-btn" data-tea-roster-toggle title="在线列表" aria-label="在线列表">
+						<Icon is:inline name="material-symbols:group-outline-rounded" />
+					</button>
+					<button type="button" class="tea-icon-btn" data-tea-refresh title="刷新" aria-label="刷新">
+						<Icon is:inline name="material-symbols:refresh-rounded" />
+					</button>
+				</div>
+			</header>
+
+			<div class="tea-banner">
+				<Icon is:inline name="material-symbols:public" />
+				<p>
+					公开房间，消息会同步到 Matrix 大厅和已接入的友站。
+					<span class="tea-banner__peers" data-tea-peers>
+						{peers.map((p, i) => (
+							<>
+								{i > 0 && <span class="tea-banner__sep">、</span>}
+								<a href={p.url} target="_blank" rel="noopener noreferrer">{p.name}</a>
+							</>
+						))}
+					</span>
+				</p>
+			</div>
+
+			<div class="tea-feed-wrap">
+				<div class="tea-feed" data-tea-feed tabindex="0" role="log" aria-live="polite" aria-label="茶室消息">
+					<div class="tea-feed__status" data-tea-feed-status>
+						<span class="tea-spinner"></span> 正在看看大家聊到哪儿了…
+					</div>
+				</div>
+				<button type="button" class="tea-jump" data-tea-jump hidden>
+					<Icon is:inline name="material-symbols:arrow-downward-rounded" /> 有新消息
+				</button>
+			</div>
+
+			<form class="tea-composer" data-tea-composer autocomplete="off">
+				<div class="tea-gate" data-tea-gate>
+					<span class="tea-gate__icon"><Icon is:inline name="material-symbols:coffee-rounded" /></span>
+					<div class="tea-gate__copy">
+						<b>坐下来，一起聊聊吧</b>
+						<span>填个昵称就能进，不用注册账号。</span>
+					</div>
+					<button type="button" class="tea-btn tea-btn--primary" data-tea-enter>进入茶室</button>
+				</div>
+				<div class="tea-input" data-tea-input hidden>
+					<textarea
+						name="message"
+						rows="1"
+						maxlength="500"
+						placeholder="说点什么…（Enter 发送，Shift+Enter 换行）"
+						data-tea-text
+					></textarea>
+					<div class="tea-input__foot">
+						<span class="tea-input__hint">公开消息，会被同步出去</span>
+						<span class="tea-input__count" data-tea-count>0/500</span>
+						<button type="submit" class="tea-btn tea-btn--primary tea-send" data-tea-send>
+							<span>发送</span>
+							<Icon is:inline name="material-symbols:send-rounded" />
+						</button>
+					</div>
+				</div>
+				<p class="tea-form-error" data-tea-error hidden></p>
 			</form>
 		</div>
 
-		<div class="chat-room" data-chat-room hidden>
-			<div class="chat-room__bar">
-				<div class="chat-room__status">
-					<span class="chat-room__live" data-chat-live></span>
-					<span data-chat-identity>未连接</span>
+		<!-- ── 点歌台：直接驱动站点全局播放器 __fireflyMusic ──────── -->
+		<aside class="tea-juke" data-tea-juke aria-label="点歌台">
+			<header class="tea-juke__head">
+				<div class="tea-juke__title">
+					<Icon is:inline name="material-symbols:music-note-rounded" />
+					<h2>点歌台</h2>
 				</div>
-				<div class="chat-room__actions">
-					<button type="button" data-chat-refresh title="重新连接"><Icon is:inline name="material-symbols:refresh-rounded" /></button>
-					<button type="button" data-chat-logout title="退出"><Icon is:inline name="material-symbols:logout-rounded" /></button>
+				<div class="tea-juke__tools">
+					<span class="tea-juke__live" data-juke-live><i></i><b>未开始</b></span>
+					<button type="button" class="tea-icon-btn" data-juke-close aria-label="关闭点歌台">
+						<Icon is:inline name="material-symbols:close-rounded" />
+					</button>
+				</div>
+			</header>
+
+			<div class="tea-juke__stage">
+				<div class="tea-juke__cover" data-juke-cover>
+					<span class="tea-juke__eq"><i></i><i></i><i></i></span>
+				</div>
+				<div class="tea-juke__meta">
+					<span class="tea-juke__eyebrow">正在播放</span>
+					<h3 data-juke-title>还没开始听</h3>
+					<p data-juke-artist>从下面挑一首，或者让茶室随便放</p>
 				</div>
 			</div>
-			<div class="chat-room__messages" data-chat-messages aria-live="polite"></div>
-			<form class="chat-room__composer" data-chat-composer hidden>
-				<input type="text" name="message" placeholder="说点什么……" maxlength="2000" required />
-				<button type="submit" title="发送"><Icon is:inline name="material-symbols:send-rounded" /></button>
-			</form>
-			<div class="chat-room__hint" data-chat-hint>登录后可发言。公开消息会同步到互联站点。</div>
-		</div>
+
+			<div class="tea-juke__timeline">
+				<input type="range" min="0" max="1000" step="1" value="0" data-juke-seek aria-label="播放进度" />
+				<div class="tea-juke__times">
+					<span data-juke-cur>0:00</span>
+					<span data-juke-dur>0:00</span>
+				</div>
+			</div>
+
+			<div class="tea-juke__controls">
+				<button type="button" class="tea-juke__ctrl" data-juke-prev aria-label="上一首">
+					<Icon is:inline name="material-symbols:skip-previous-rounded" />
+				</button>
+				<button type="button" class="tea-juke__play" data-juke-play aria-label="播放">
+					<span data-juke-icon-play><Icon is:inline name="material-symbols:play-arrow-rounded" /></span>
+					<span data-juke-icon-pause hidden><Icon is:inline name="material-symbols:pause-rounded" /></span>
+				</button>
+				<button type="button" class="tea-juke__ctrl" data-juke-next aria-label="下一首">
+					<Icon is:inline name="material-symbols:skip-next-rounded" />
+				</button>
+				<label class="tea-juke__vol" title="音量">
+					<Icon is:inline name="material-symbols:volume-up-rounded" />
+					<input type="range" min="0" max="100" step="1" value="70" data-juke-vol aria-label="音量" />
+				</label>
+			</div>
+
+			<nav class="tea-juke__tabs" role="tablist">
+				<button type="button" class="is-active" data-juke-tab="list" role="tab">歌单</button>
+				<button type="button" data-juke-tab="lyrics" role="tab">歌词</button>
+			</nav>
+
+			<div class="tea-juke__panel" data-juke-list role="tabpanel">
+				<p class="tea-juke__empty">歌单还在路上…</p>
+			</div>
+			<div class="tea-juke__panel tea-juke__lyrics" data-juke-lyrics role="tabpanel" hidden>
+				<p class="tea-juke__empty">这首歌暂时没有歌词。</p>
+			</div>
+		</aside>
+
+		<!-- ── 遮罩（移动端抽屉 / 点歌台浮层） ─────────────────── -->
+		<div class="tea-scrim" data-tea-scrim hidden></div>
+		<div class="tea-scrim" data-juke-scrim hidden></div>
 	</section>
 
-	<script is:inline define:vars={{ homeserver: MATRIX_HOMESERVER, roomId: MATRIX_ROOM_ID }}>
-		(() => {
-			const KEY = "__teaRoomChatRuntime";
-			const rt = window[KEY] || (window[KEY] = { bound: false, controller: null, since: null, timer: null, token: "", user: "", name: "" });
+	<!-- ── 身份弹窗 ─────────────────────────────────────────── -->
+	<dialog class="tea-dialog" data-tea-dialog aria-labelledby="tea-dialog-title">
+		<form method="dialog" class="tea-dialog__inner" data-tea-identity>
+			<header class="tea-dialog__head">
+				<span class="tea-dialog__icon"><Icon is:inline name="material-symbols:local-cafe-rounded" /></span>
+				<button type="submit" class="tea-icon-btn tea-dialog__close" value="cancel" aria-label="关闭">
+					<Icon is:inline name="material-symbols:close-rounded" />
+				</button>
+			</header>
+			<h3 id="tea-dialog-title">欢迎来喝杯茶</h3>
+			<p class="tea-dialog__desc">填个昵称和邮箱就能开始聊天，邮箱不会公开显示。</p>
 
-			const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-			const q = (sel, root = document) => root.querySelector(sel);
+			<label class="tea-field">
+				<span>昵称 <em>最多 8 个字</em></span>
+				<input type="text" name="nick" maxlength="8" placeholder="你的名字或昵称" required />
+			</label>
+			<label class="tea-field">
+				<span>邮箱 <em>不会公开，只用来认人</em></span>
+				<input type="email" name="email" maxlength="120" placeholder="you@example.com" required />
+			</label>
+			<label class="tea-field">
+				<span>网站 <em>选填</em></span>
+				<input type="text" name="website" maxlength="120" placeholder="https://你的博客" />
+			</label>
 
-			const api = async (path, opts = {}) => {
-				const headers = { ...(opts.headers || {}) };
-				if (rt.token) headers.Authorization = `Bearer ${rt.token}`;
-				if (opts.body) headers["Content-Type"] = "application/json";
-				const res = await fetch(homeserver + path, { ...opts, headers });
-				let data = {};
-				try { data = await res.json(); } catch (_) {}
-				return { ok: res.ok, status: res.status, data };
-			};
+			<div class="tea-dialog__preview">
+				<div class="tea-dialog__avatar" data-tea-preview-avatar>?</div>
+				<div class="tea-dialog__preview-copy">
+					<b data-tea-preview-name>还没填昵称</b>
+					<span>会以「昵称 · {SITE_NAME}」的身份出现在大厅</span>
+				</div>
+			</div>
 
-			const showError = (msg) => {
-				const box = q("[data-chat-error]");
-				if (!box) return;
-				box.textContent = msg;
-				box.hidden = false;
-			};
-
-			const renderMessage = (ev) => {
-				const list = q("[data-chat-messages]");
-				if (!list) return;
-				const content = ev.content || {};
-				const sender = ev.sender || "";
-				const body = typeof content.body === "string" ? content.body : "";
-				const ts = ev.origin_server_ts ? new Date(ev.origin_server_ts) : new Date();
-				const time = ts.toLocaleString("zh-CN", { hour12: false, month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-				const isMine = sender === rt.user;
-				const row = document.createElement("div");
-				row.className = "chat-msg" + (isMine ? " chat-msg--mine" : "");
-				row.innerHTML = `<div class="chat-msg__head"><span class="chat-msg__who">${esc(sender.split(":")[0].replace(/^@/, ""))}</span><time>${esc(time)}</time></div><div class="chat-msg__body">${esc(body)}</div>`;
-				list.appendChild(row);
-				list.scrollTop = list.scrollHeight;
-			};
-
-			const stopSync = () => {
-				if (rt.timer) { clearTimeout(rt.timer); rt.timer = null; }
-				if (rt.controller) { try { rt.controller.abort(); } catch (_) {} rt.controller = null; }
-			};
-
-			const sync = async () => {
-				if (!q("[data-chat-room]") || q("[data-chat-room]").hidden) return;
-				rt.controller = new AbortController();
-				const params = new URLSearchParams({ timeout: "25000" });
-				if (rt.since) params.set("since", rt.since);
-				try {
-					const res = await fetch(homeserver + "/_matrix/client/v3/sync?" + params.toString(), {
-						headers: rt.token ? { Authorization: `Bearer ${rt.token}` } : {},
-						signal: rt.controller.signal,
-					});
-					if (!res.ok) throw new Error("SYNC_" + res.status);
-					const data = await res.json();
-					rt.since = data.next_batch || rt.since;
-					const timeline = data.rooms?.join?.[roomId]?.timeline?.events || [];
-					for (const ev of timeline) {
-						if (ev.type === "m.room.message" && ev.content?.msgtype === "m.text") renderMessage(ev);
-					}
-					setLive(true);
-				} catch (e) {
-					if (e.name !== "AbortError") setLive(false);
-				} finally {
-					rt.controller = null;
-					if (q("[data-chat-room]") && !q("[data-chat-room]").hidden) rt.timer = setTimeout(sync, 1200);
-				}
-			};
-
-			const setLive = (on) => {
-				const dot = q("[data-chat-live]");
-				const label = q("[data-chat-identity]");
-				if (dot) dot.classList.toggle("is-live", !!on);
-				if (label) label.textContent = (on ? "已连接 · " : "连接中断 · ") + (rt.user || "只读访客");
-			};
-
-			const enterRoom = (canSpeak) => {
-				const login = q("[data-chat-login]");
-				const room = q("[data-chat-room]");
-				if (login) login.hidden = true;
-				if (room) room.hidden = false;
-				const composer = q("[data-chat-composer]");
-				if (composer) composer.hidden = !canSpeak;
-				const hint = q("[data-chat-hint]");
-				if (hint) hint.textContent = canSpeak ? "公开消息会同步到 Matrix 及互联站点。" : "登录后可发言。公开消息会同步到互联站点。";
-				stopSync();
-				sync();
-			};
-
-			const onLogin = async (e) => {
-				e.preventDefault();
-				const form = e.currentTarget;
-				const btn = q("[data-chat-submit]");
-				const err = q("[data-chat-error]");
-				if (err) err.hidden = true;
-				if (btn) btn.disabled = true;
-				const username = (form.elements.username.value || "").trim().replace(/^@/, "");
-				const password = form.elements.password.value || "";
-				try {
-					const r = await api("/_matrix/client/v3/login", {
-						method: "POST",
-						body: JSON.stringify({ type: "m.login.password", identifier: { type: "m.id.user", user: username }, password }),
-					});
-					if (!r.ok || !r.data.access_token) throw new Error(r.data.error || "登录失败，请检查用户名密码");
-					rt.token = r.data.access_token;
-					rt.user = r.data.user_id || `@${username}:matrix.0dm.cn`;
-					rt.name = username;
-					rt.since = null;
-					enterRoom(true);
-				} catch (err2) {
-					showError(err2.message || "登录失败");
-				} finally {
-					if (btn) btn.disabled = false;
-				}
-			};
-
-			const onSend = async (e) => {
-				e.preventDefault();
-				const form = e.currentTarget;
-				const input = form.elements.message;
-				const text = (input.value || "").trim();
-				if (!text) return;
-				if (!rt.token) { showError("请先登录"); return; }
-				const txn = "web-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
-				input.value = "";
-				const r = await api(`/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/send/m.room.message/${txn}`, {
-					method: "PUT",
-					body: JSON.stringify({ msgtype: "m.text", body: `${rt.name} · 折腾进行时\n${text}` }),
-				});
-				if (!r.ok) { showError(r.data.error || "发送失败"); input.value = text; }
-			};
-
-			const setup = () => {
-				const shell = q("[data-tea-room]");
-				if (!shell || shell.dataset.chatReady === "1") return;
-				shell.dataset.chatReady = "1";
-				const form = q("[data-chat-form]");
-				const composer = q("[data-chat-composer]");
-				if (form) form.addEventListener("submit", onLogin);
-				if (composer) composer.addEventListener("submit", onSend);
-				const readonlyBtn = q("[data-chat-readonly]");
-				if (readonlyBtn) readonlyBtn.addEventListener("click", () => enterRoom(false));
-				const refreshBtn = q("[data-chat-refresh]");
-				if (refreshBtn) refreshBtn.addEventListener("click", () => { rt.since = null; stopSync(); sync(); });
-				const logoutBtn = q("[data-chat-logout]");
-				if (logoutBtn) logoutBtn.addEventListener("click", () => {
-					stopSync();
-					rt.token = ""; rt.user = ""; rt.name = ""; rt.since = null;
-					const login = q("[data-chat-login]"); if (login) login.hidden = false;
-					const room = q("[data-chat-room]"); if (room) room.hidden = true;
-					const list = q("[data-chat-messages]"); if (list) list.innerHTML = "";
-				});
-			};
-
-			if (!rt.bound) {
-				for (const name of ["astro:page-load", "astro:after-swap", "swup:contentReplaced", "swup:page:view"]) {
-					document.addEventListener(name, setup);
-				}
-				rt.bound = true;
-			}
-			setup();
-		})();
-	</script>
+			<button type="submit" class="tea-btn tea-btn--primary tea-dialog__submit" value="ok" data-tea-submit>
+				进入茶室
+				<Icon is:inline name="material-symbols:arrow-forward-rounded" />
+			</button>
+			<p class="tea-dialog__error" data-tea-dialog-error hidden></p>
+		</form>
+	</dialog>
 </MainGridLayout>
 
-<style>
-	.chat-shell { padding: 2rem 2.25rem 2.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
-	.chat-hero__kicker { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.68rem; letter-spacing: 0.16em; opacity: 0.7; }
-	.chat-hero__dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--primary); }
-	.chat-hero h1 { font-size: 1.9rem; font-weight: 600; margin: 0.35rem 0 0.4rem; }
-	.chat-hero__lead { margin: 0; opacity: 0.78; font-size: 0.92rem; line-height: 1.7; }
-	.chat-hero__meta { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.85rem; font-size: 0.78rem; opacity: 0.72; }
-	.chat-hero__meta span { display: inline-flex; align-items: center; gap: 0.35rem; }
-	.chat-hero__meta svg { width: 1rem; height: 1rem; }
-	.chat-notice { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.7rem 0.85rem; border-radius: 0.6rem; background: color-mix(in srgb, var(--primary) 8%, transparent); font-size: 0.82rem; line-height: 1.6; }
-	.chat-notice svg { width: 1.1rem; height: 1.1rem; flex: none; margin-top: 0.1rem; }
-	.chat-login { padding: 1.4rem; display: grid; gap: 1rem; }
-	.chat-login__head h2 { margin: 0 0 0.3rem; font-size: 1.05rem; }
-	.chat-login__head p { margin: 0; font-size: 0.82rem; opacity: 0.7; }
-	.chat-login form { display: grid; gap: 0.8rem; }
-	.chat-login label { display: grid; gap: 0.35rem; }
-	.chat-login label span { font-size: 0.76rem; opacity: 0.75; }
-	.chat-login input { width: 100%; padding: 0.6rem 0.75rem; border-radius: 0.55rem; border: 1px solid var(--line-color, rgba(128,128,128,0.3)); background: transparent; color: inherit; font: inherit; font-size: 0.88rem; }
-	.chat-login input[readonly] { opacity: 0.6; }
-	.chat-login__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.3rem; }
-	.chat-login__actions button { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 0.55rem; border: 1px solid transparent; background: var(--primary); color: var(--primary-bg, #fff); cursor: pointer; font-size: 0.86rem; }
-	.chat-login__actions button:disabled { opacity: 0.5; cursor: wait; }
-	.chat-login__actions button svg { width: 1.05rem; height: 1.05rem; }
-	.chat-login__actions .chat-ghost { background: transparent; border-color: var(--line-color, rgba(128,128,128,0.3)); color: inherit; }
-	.chat-login__error { margin: 0; color: #c0392b; font-size: 0.82rem; }
-	.chat-room { display: grid; gap: 0.75rem; }
-	.chat-room__bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--line-color, rgba(128,128,128,0.2)); }
-	.chat-room__status { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; opacity: 0.8; }
-	.chat-room__live { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #999; }
-	.chat-room__live.is-live { background: #2e9e6b; }
-	.chat-room__actions { display: inline-flex; gap: 0.4rem; }
-	.chat-room__actions button { display: inline-flex; padding: 0.35rem; border: 0; border-radius: 0.5rem; background: transparent; color: inherit; cursor: pointer; opacity: 0.7; }
-	.chat-room__actions button:hover { opacity: 1; background: rgba(128,128,128,0.12); }
-	.chat-room__actions svg { width: 1.15rem; height: 1.15rem; }
-	.chat-room__messages { min-height: 16rem; max-height: 28rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.4rem 0.2rem; }
-	.chat-msg { padding: 0.55rem 0.7rem; border-radius: 0.6rem; background: rgba(128,128,128,0.08); }
-	.chat-msg--mine { background: color-mix(in srgb, var(--primary) 12%, transparent); }
-	.chat-msg__head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.7rem; margin-bottom: 0.3rem; }
-	.chat-msg__who { font-size: 0.8rem; font-weight: 600; }
-	.chat-msg__head time { font-size: 0.68rem; opacity: 0.6; }
-	.chat-msg__body { font-size: 0.88rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
-	.chat-room__composer { display: flex; gap: 0.55rem; }
-	.chat-room__composer input { flex: 1; padding: 0.6rem 0.75rem; border-radius: 0.55rem; border: 1px solid var(--line-color, rgba(128,128,128,0.3)); background: transparent; color: inherit; font: inherit; font-size: 0.88rem; }
-	.chat-room__composer button { display: inline-flex; align-items: center; justify-content: center; width: 2.6rem; border: 0; border-radius: 0.55rem; background: var(--primary); color: var(--primary-bg, #fff); cursor: pointer; }
-	.chat-room__composer svg { width: 1.15rem; height: 1.15rem; }
-	.chat-room__hint { font-size: 0.74rem; opacity: 0.6; }
+<style is:global>
+	/* ─── 页面容器：固定视口，盖住侧栏，独占一屏 ─────────────── */
+	html:has(.tea-app) {
+		overflow: hidden !important;
+		overscroll-behavior: none;
+	}
+	body:has(.tea-app) {
+		overflow: hidden !important;
+	}
+	/* 上游布局的外层带 transform / 入场动画，会让 position:fixed 认错包含块，
+	   这里针对本页拆掉；同时把壁纸和侧栏藏掉，给茶室一个干净的底 */
+	html:has(.tea-app) :is(#content-panel, #content-panel-inner, #main-grid, #content-column, #content-wrapper, #swup-container) {
+		transform: none !important;
+		animation: none !important;
+		opacity: 1 !important;
+		contain: none !important;
+	}
+	html:has(.tea-app) :is(#wallpaper-wrapper, #left-sidebar-wrapper, #right-sidebar-wrapper, #left-sidebar, #right-sidebar, #left-sidebar-static, #right-sidebar-static, #left-sidebar-sticky, #right-sidebar-sticky, #left-sidebar-dynamic, #right-sidebar-dynamic, #mobile-bottom-sidebar, .site-footer, .floating-controls-container) {
+		display: none !important;
+	}
+	html:has(.tea-app),
+	html:has(.tea-app) body {
+		background: var(--page-bg, #f6f6f1) !important;
+	}
 
-	@media (max-width: 720px) {
-		.chat-shell { padding: 1.4rem 1.2rem 1.8rem; }
-		.chat-hero h1 { font-size: 1.6rem; }
+	.tea-app {
+		--tea-top: 5rem;
+		--tea-gap: 1rem;
+		--tea-line: var(--line-divider, rgba(0, 0, 0, 0.08));
+		--tea-line-strong: var(--line-color, rgba(0, 0, 0, 0.12));
+		--tea-muted: color-mix(in oklch, currentColor 58%, transparent);
+		--tea-muted-soft: color-mix(in oklch, currentColor 42%, transparent);
+		--tea-surface: var(--card-bg, #fff);
+		--tea-surface-2: color-mix(in oklch, var(--primary) 5%, var(--card-bg, #fff));
+		position: fixed;
+		z-index: 28;
+		top: var(--tea-top);
+		bottom: 0.9rem;
+		left: max(var(--tea-gap), calc((100vw - var(--page-width, 100rem)) / 2));
+		right: max(var(--tea-gap), calc((100vw - var(--page-width, 100rem)) / 2));
+		display: grid;
+		grid-template-columns: 17.5rem minmax(0, 1fr) 17.5rem;
+		gap: 0.9rem;
+		min-height: 0;
+		color: inherit;
+	}
+	.tea-app.is-juke-hidden {
+		grid-template-columns: 17.5rem minmax(0, 1fr);
+	}
+	.tea-app.is-juke-hidden .tea-juke {
+		display: none;
+	}
+
+	/* ─── 通用卡片 ─────────────────────────────────────────── */
+	.tea-card {
+		background: var(--tea-surface);
+		border: 1px solid var(--tea-line);
+		border-radius: 1.1rem;
+		overflow: hidden;
+	}
+	.tea-card__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.85rem 0.95rem 0.55rem;
+	}
+	.tea-card__title {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+	}
+	.tea-card__title svg {
+		width: 1rem;
+		height: 1rem;
+		opacity: 0.72;
+	}
+
+	/* ─── 左栏 ─────────────────────────────────────────────── */
+	.tea-side {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		min-height: 0;
+		overflow-y: auto;
+		scrollbar-width: thin;
+		padding-right: 2px;
+	}
+	.tea-side::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	/* 名片 */
+	.tea-me {
+		flex: none;
+		position: relative;
+	}
+	.tea-me__cover {
+		position: relative;
+		height: 5.6rem;
+		overflow: hidden;
+		background:
+			linear-gradient(120deg, color-mix(in oklch, var(--primary) 34%, transparent), transparent 62%),
+			color-mix(in oklch, var(--primary) 10%, var(--card-bg, #fff));
+	}
+	.tea-me__glow {
+		position: absolute;
+		width: 7rem;
+		height: 7rem;
+		border-radius: 50%;
+		background: color-mix(in oklch, var(--primary) 42%, transparent);
+		filter: blur(26px);
+		top: -2.6rem;
+		left: -1.2rem;
+	}
+	.tea-me__glow--b {
+		top: auto;
+		left: auto;
+		right: -1.6rem;
+		bottom: -3rem;
+		opacity: 0.65;
+		background: color-mix(in oklch, var(--primary) 26%, transparent);
+	}
+	.tea-me__line {
+		position: absolute;
+		inset: auto 0 1.1rem 0;
+		height: 1px;
+		background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--primary) 40%, transparent), transparent);
+	}
+	.tea-me__line--b {
+		bottom: 2.2rem;
+		opacity: 0.5;
+	}
+	.tea-me__body {
+		padding: 0 1rem 1rem;
+		margin-top: -1.75rem;
+		display: grid;
+		justify-items: center;
+		text-align: center;
+		gap: 0.3rem;
+	}
+	.tea-me__avatar {
+		width: 3.4rem;
+		height: 3.4rem;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		font-size: 1.15rem;
+		font-weight: 600;
+		color: #fff;
+		background: linear-gradient(150deg, color-mix(in oklch, var(--primary) 92%, white), color-mix(in oklch, var(--primary) 66%, #1f2937));
+		border: 3px solid var(--tea-surface);
+		box-shadow: 0 6px 18px -8px color-mix(in oklch, var(--primary) 70%, transparent);
+		background-size: cover;
+		background-position: center;
+	}
+	.tea-me__name {
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.3;
+	}
+	.tea-me__meta {
+		margin: 0;
+		font-size: 0.72rem;
+		line-height: 1.55;
+		color: var(--tea-muted);
+	}
+	.tea-me__stats {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.7rem;
+		color: var(--tea-muted);
+		margin-top: 0.1rem;
+	}
+	.tea-me__stats b {
+		font-weight: 600;
+		color: inherit;
+	}
+	.tea-me__dot {
+		width: 3px;
+		height: 3px;
+		border-radius: 50%;
+		background: currentColor;
+		opacity: 0.35;
+	}
+	.tea-me__act {
+		margin-top: 0.35rem;
+		font-size: 0.75rem;
+		padding: 0.35rem 0.9rem;
+	}
+
+	/* 在线列表 */
+	.tea-roster {
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: column;
+		min-height: 8rem;
+	}
+	.tea-roster__count {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		font-size: 0.68rem;
+		color: var(--tea-muted);
+	}
+	.tea-roster__count i {
+		width: 0.36rem;
+		height: 0.36rem;
+		border-radius: 50%;
+		background: #34c759;
+		box-shadow: 0 0 0 3px color-mix(in oklch, #34c759 22%, transparent);
+	}
+	.tea-roster__count b {
+		font-weight: 600;
+	}
+	.tea-roster__list {
+		list-style: none;
+		margin: 0;
+		padding: 0 0.45rem 0.55rem;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		scrollbar-width: thin;
+	}
+	.tea-roster__empty {
+		padding: 0.6rem 0.5rem 0.9rem;
+		font-size: 0.74rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-member {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.34rem 0.45rem;
+		border-radius: 0.6rem;
+		font-size: 0.78rem;
+	}
+	.tea-member:hover {
+		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
+	}
+	.tea-member__avatar {
+		width: 1.7rem;
+		height: 1.7rem;
+		border-radius: 50%;
+		flex: none;
+		display: grid;
+		place-items: center;
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: #fff;
+		background-size: cover;
+		background-position: center;
+	}
+	.tea-member__copy {
+		min-width: 0;
+		display: grid;
+		gap: 0.05rem;
+	}
+	.tea-member__name {
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tea-member__site {
+		font-size: 0.66rem;
+		color: var(--tea-muted-soft);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tea-member--idle {
+		opacity: 0.5;
+	}
+
+	/* 公告 */
+	.tea-notice {
+		flex: none;
+	}
+	.tea-notice__list {
+		margin: 0;
+		padding: 0 0.95rem 0.9rem;
+		list-style: none;
+		display: grid;
+		gap: 0.4rem;
+		font-size: 0.73rem;
+		line-height: 1.65;
+		color: var(--tea-muted);
+		counter-reset: rule;
+	}
+	.tea-notice__list li {
+		position: relative;
+		padding-left: 0.95rem;
+	}
+	.tea-notice__list li::before {
+		counter-increment: rule;
+		content: counter(rule);
+		position: absolute;
+		left: 0;
+		top: 0.05rem;
+		font-size: 0.6rem;
+		font-weight: 700;
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		opacity: 0.85;
+	}
+
+	/* ─── 主区 ─────────────────────────────────────────────── */
+	.tea-room {
+		position: relative;
+		display: grid;
+		grid-template-rows: auto auto minmax(0, 1fr) auto;
+		min-height: 0;
+		background: var(--tea-surface);
+		border: 1px solid var(--tea-line);
+		border-radius: 1.1rem;
+		overflow: hidden;
+	}
+	.tea-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.75rem 0.95rem;
+		border-bottom: 1px solid var(--tea-line);
+	}
+	.tea-bar__brand {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		min-width: 0;
+	}
+	.tea-bar__mark {
+		width: 2.1rem;
+		height: 2.1rem;
+		border-radius: 0.7rem;
+		display: grid;
+		place-items: center;
+		color: color-mix(in oklch, var(--primary) 82%, #3f2d0a);
+		background: color-mix(in oklch, var(--primary) 16%, transparent);
+		border: 1px solid color-mix(in oklch, var(--primary) 26%, transparent);
+		flex: none;
+	}
+	.tea-bar__mark svg {
+		width: 1.15rem;
+		height: 1.15rem;
+	}
+	.tea-bar__title {
+		margin: 0;
+		font-size: 0.98rem;
+		font-weight: 600;
+		line-height: 1.25;
+	}
+	.tea-bar__sub {
+		margin: 0;
+		font-size: 0.68rem;
+		color: var(--tea-muted-soft);
+		letter-spacing: 0.02em;
+	}
+	.tea-bar__tools {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+	.tea-conn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.7rem;
+		color: var(--tea-muted);
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		border: 1px solid var(--tea-line);
+		margin-right: 0.15rem;
+		white-space: nowrap;
+	}
+	.tea-conn i {
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 50%;
+		background: currentColor;
+		opacity: 0.45;
+	}
+	.tea-conn.is-live {
+		color: #2f9e6b;
+		border-color: color-mix(in oklch, #2f9e6b 30%, transparent);
+		background: color-mix(in oklch, #2f9e6b 8%, transparent);
+	}
+	.tea-conn.is-live i {
+		opacity: 1;
+		box-shadow: 0 0 0 3px color-mix(in oklch, #2f9e6b 20%, transparent);
+	}
+	.tea-conn.is-down {
+		color: #c0563f;
+		border-color: color-mix(in oklch, #c0563f 30%, transparent);
+	}
+	.tea-icon-btn {
+		width: 2rem;
+		height: 2rem;
+		display: grid;
+		place-items: center;
+		border: 0;
+		border-radius: 0.6rem;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+		opacity: 0.72;
+		transition: background 0.15s ease, opacity 0.15s ease;
+	}
+	.tea-icon-btn:hover {
+		opacity: 1;
+		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.1));
+	}
+	.tea-icon-btn svg {
+		width: 1.15rem;
+		height: 1.15rem;
+	}
+
+	/* 互联提示条 */
+	.tea-banner {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		margin: 0.7rem 0.95rem 0;
+		padding: 0.5rem 0.7rem;
+		border-radius: 0.75rem;
+		background: color-mix(in oklch, var(--primary) 8%, transparent);
+		border: 1px solid color-mix(in oklch, var(--primary) 16%, transparent);
+		font-size: 0.72rem;
+		line-height: 1.6;
+		color: var(--tea-muted);
+	}
+	.tea-banner > svg {
+		width: 0.95rem;
+		height: 0.95rem;
+		flex: none;
+		margin-top: 0.18rem;
+		color: color-mix(in oklch, var(--primary) 72%, currentColor);
+	}
+	.tea-banner p {
+		margin: 0;
+	}
+	.tea-banner a {
+		color: color-mix(in oklch, var(--primary) 62%, #4b3a12);
+		text-decoration: none;
+		border-bottom: 1px solid color-mix(in oklch, var(--primary) 30%, transparent);
+	}
+	.tea-banner a:hover {
+		border-bottom-color: currentColor;
+	}
+	.tea-banner__sep {
+		opacity: 0.5;
+	}
+
+	/* 消息流 */
+	.tea-feed-wrap {
+		position: relative;
+		min-height: 0;
+	}
+	.tea-feed {
+		height: 100%;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 0.9rem 1rem 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.95rem;
+		scrollbar-width: thin;
+		outline: none;
+	}
+	.tea-feed::-webkit-scrollbar {
+		width: 6px;
+	}
+	.tea-feed__status {
+		margin: auto;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.78rem;
+		color: var(--tea-muted-soft);
+		text-align: center;
+	}
+	.tea-feed__status--error {
+		flex-direction: column;
+		gap: 0.45rem;
+	}
+	.tea-feed__status--error b {
+		font-size: 0.88rem;
+		font-weight: 600;
+		color: inherit;
+		opacity: 0.85;
+	}
+	.tea-feed__status--error span {
+		font-size: 0.72rem;
+		opacity: 0.7;
+		word-break: break-word;
+	}
+	.tea-spinner {
+		width: 0.85rem;
+		height: 0.85rem;
+		border-radius: 50%;
+		border: 2px solid color-mix(in oklch, var(--primary) 30%, transparent);
+		border-top-color: var(--primary);
+		animation: tea-spin 0.8s linear infinite;
+		flex: none;
+	}
+	@keyframes tea-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tea-spinner {
+			animation-duration: 2s;
+		}
+	}
+	.tea-empty {
+		margin: auto;
+		text-align: center;
+		display: grid;
+		gap: 0.3rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-empty b {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: inherit;
+		opacity: 0.8;
+	}
+	.tea-empty span {
+		font-size: 0.74rem;
+	}
+
+	.tea-day {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		font-size: 0.68rem;
+		color: var(--tea-muted-soft);
+		margin: 0.2rem 0 -0.25rem;
+	}
+	.tea-day::before,
+	.tea-day::after {
+		content: "";
+		height: 1px;
+		flex: 1;
+		background: var(--tea-line);
+	}
+
+	.tea-msg {
+		display: grid;
+		grid-template-columns: 2.1rem minmax(0, 1fr);
+		gap: 0.6rem;
+		align-items: start;
+	}
+	.tea-msg__avatar {
+		width: 2.1rem;
+		height: 2.1rem;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: #fff;
+		background-size: cover;
+		background-position: center;
+		flex: none;
+	}
+	.tea-msg__body {
+		min-width: 0;
+	}
+	.tea-msg__head {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin-bottom: 0.16rem;
+	}
+	.tea-msg__nick {
+		font-size: 0.8rem;
+		font-weight: 600;
+	}
+	.tea-msg__site {
+		font-size: 0.66rem;
+		color: var(--tea-muted-soft);
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1));
+		border-radius: 999px;
+		padding: 0.05rem 0.42rem;
+		white-space: nowrap;
+	}
+	.tea-msg__time {
+		font-size: 0.66rem;
+		color: var(--tea-muted-soft);
+		font-variant-numeric: tabular-nums;
+	}
+	.tea-msg__text {
+		font-size: 0.86rem;
+		line-height: 1.7;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+	.tea-msg__text a {
+		color: color-mix(in oklch, var(--primary) 60%, #4b3a12);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in oklch, var(--primary) 35%, transparent);
+		text-underline-offset: 2px;
+	}
+	.tea-msg__text img {
+		display: block;
+		max-width: min(100%, 17rem);
+		max-height: 14rem;
+		border-radius: 0.7rem;
+		margin-top: 0.3rem;
+		border: 1px solid var(--tea-line);
+	}
+	.tea-msg__text pre {
+		margin: 0.35rem 0 0;
+		padding: 0.5rem 0.65rem;
+		border-radius: 0.6rem;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1));
+		overflow-x: auto;
+		font-size: 0.74rem;
+		line-height: 1.65;
+		white-space: pre;
+	}
+	.tea-msg__text code {
+		font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+		font-size: 0.94em;
+	}
+	.tea-msg__text strong {
+		font-weight: 600;
+	}
+	.tea-msg--grouped {
+		margin-top: -0.55rem;
+	}
+	.tea-msg--grouped .tea-msg__avatar {
+		visibility: hidden;
+		height: 0;
+	}
+	.tea-msg--grouped .tea-msg__head {
+		display: none;
+	}
+	.tea-msg--mine .tea-msg__nick {
+		color: color-mix(in oklch, var(--primary) 66%, currentColor);
+	}
+	.tea-msg--mine .tea-msg__text {
+		background: color-mix(in oklch, var(--primary) 11%, transparent);
+		border: 1px solid color-mix(in oklch, var(--primary) 18%, transparent);
+		border-radius: 0.75rem;
+		padding: 0.42rem 0.62rem;
+		display: inline-block;
+	}
+	.tea-msg--pending {
+		opacity: 0.55;
+	}
+	.tea-msg--failed .tea-msg__text {
+		border-color: color-mix(in oklch, #c0563f 45%, transparent);
+	}
+	.tea-msg__retry {
+		font-size: 0.68rem;
+		color: #c0563f;
+		background: none;
+		border: 0;
+		padding: 0.2rem 0 0;
+		cursor: pointer;
+	}
+
+	.tea-jump {
+		position: absolute;
+		left: 50%;
+		bottom: 0.7rem;
+		transform: translateX(-50%);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.35rem 0.8rem;
+		border-radius: 999px;
+		border: 1px solid var(--tea-line-strong);
+		background: var(--tea-surface);
+		color: inherit;
+		font-size: 0.72rem;
+		box-shadow: 0 8px 22px -14px rgba(0, 0, 0, 0.5);
+		cursor: pointer;
+	}
+	.tea-jump svg {
+		width: 0.9rem;
+		height: 0.9rem;
+	}
+
+	/* 输入区 */
+	.tea-composer {
+		border-top: 1px solid var(--tea-line);
+		padding: 0.7rem 0.95rem 0.8rem;
+		display: grid;
+		gap: 0.4rem;
+	}
+	.tea-gate {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		padding: 0.6rem 0.7rem;
+		border-radius: 0.9rem;
+		background: color-mix(in oklch, var(--primary) 6%, transparent);
+		border: 1px dashed color-mix(in oklch, var(--primary) 30%, transparent);
+	}
+	.tea-gate__icon {
+		width: 2.1rem;
+		height: 2.1rem;
+		border-radius: 0.7rem;
+		display: grid;
+		place-items: center;
+		background: color-mix(in oklch, var(--primary) 16%, transparent);
+		color: color-mix(in oklch, var(--primary) 74%, currentColor);
+		flex: none;
+	}
+	.tea-gate__icon svg {
+		width: 1.15rem;
+		height: 1.15rem;
+	}
+	.tea-gate__copy {
+		display: grid;
+		gap: 0.1rem;
+		min-width: 0;
+		flex: 1;
+	}
+	.tea-gate__copy b {
+		font-size: 0.84rem;
+		font-weight: 600;
+	}
+	.tea-gate__copy span {
+		font-size: 0.72rem;
+		color: var(--tea-muted);
+	}
+
+	.tea-input {
+		display: grid;
+		gap: 0.35rem;
+	}
+	.tea-input textarea {
+		width: 100%;
+		resize: none;
+		min-height: 2.5rem;
+		max-height: 8rem;
+		padding: 0.55rem 0.7rem;
+		border-radius: 0.75rem;
+		border: 1px solid var(--tea-line-strong);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 0.86rem;
+		line-height: 1.6;
+		outline: none;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+	.tea-input textarea:focus {
+		border-color: color-mix(in oklch, var(--primary) 48%, transparent);
+		box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 14%, transparent);
+	}
+	.tea-input__foot {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+	.tea-input__hint {
+		font-size: 0.66rem;
+		color: var(--tea-muted-soft);
+		flex: 1;
+	}
+	.tea-input__count {
+		font-size: 0.66rem;
+		color: var(--tea-muted-soft);
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* 按钮 */
+	.tea-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.3rem;
+		border-radius: 0.65rem;
+		border: 1px solid transparent;
+		font: inherit;
+		font-size: 0.78rem;
+		font-weight: 500;
+		padding: 0.45rem 0.9rem;
+		cursor: pointer;
+		transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease;
+		white-space: nowrap;
+	}
+	.tea-btn svg {
+		width: 1rem;
+		height: 1rem;
+	}
+	.tea-btn--primary {
+		background: var(--primary);
+		color: color-mix(in oklch, var(--primary) 22%, #2b2205);
+		box-shadow: 0 8px 18px -12px color-mix(in oklch, var(--primary) 80%, transparent);
+	}
+	.tea-btn--primary:hover {
+		filter: brightness(1.04);
+	}
+	.tea-btn--primary:active {
+		transform: translateY(1px);
+	}
+	.tea-btn--ghost {
+		background: transparent;
+		border-color: var(--tea-line-strong);
+		color: inherit;
+	}
+	.tea-btn--ghost:hover {
+		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
+	}
+	.tea-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		transform: none;
+	}
+	.tea-send {
+		padding: 0.42rem 0.8rem;
+	}
+	.tea-form-error {
+		margin: 0;
+		font-size: 0.72rem;
+		color: #c0563f;
+	}
+
+	/* ─── 点歌台 ───────────────────────────────────────────── */
+	.tea-juke {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		background: var(--tea-surface);
+		border: 1px solid var(--tea-line);
+		border-radius: 1.1rem;
+		overflow: hidden;
+	}
+	.tea-juke__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.7rem 0.8rem;
+		border-bottom: 1px solid var(--tea-line);
+		flex: none;
+	}
+	.tea-juke__title {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		min-width: 0;
+	}
+	.tea-juke__title svg {
+		width: 1rem;
+		height: 1rem;
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+	}
+	.tea-juke__title h2 {
+		margin: 0;
+		font-size: 0.86rem;
+		font-weight: 600;
+	}
+	.tea-juke__tools {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+	.tea-juke__live {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		font-size: 0.66rem;
+		color: var(--tea-muted-soft);
+		white-space: nowrap;
+	}
+	.tea-juke__live i {
+		width: 0.34rem;
+		height: 0.34rem;
+		border-radius: 50%;
+		background: currentColor;
+		opacity: 0.5;
+	}
+	.tea-juke__live b {
+		font-weight: 400;
+	}
+	.tea-juke__live.is-playing {
+		color: #2f9e6b;
+	}
+	.tea-juke__live.is-playing i {
+		opacity: 1;
+		box-shadow: 0 0 0 3px color-mix(in oklch, #2f9e6b 20%, transparent);
+	}
+
+	.tea-juke__stage {
+		display: grid;
+		gap: 0.55rem;
+		padding: 0.75rem 0.8rem 0;
+		flex: none;
+	}
+	.tea-juke__cover {
+		position: relative;
+		aspect-ratio: 16 / 10;
+		border-radius: 0.8rem;
+		background-color: color-mix(in oklch, var(--primary) 12%, transparent);
+		background-size: cover;
+		background-position: center;
+		border: 1px solid var(--tea-line);
+		overflow: hidden;
+	}
+	.tea-juke__eq {
+		position: absolute;
+		left: 0.55rem;
+		bottom: 0.55rem;
+		display: flex;
+		align-items: flex-end;
+		gap: 0.14rem;
+		height: 0.85rem;
+		padding: 0.18rem 0.32rem;
+		border-radius: 0.4rem;
+		background: rgba(0, 0, 0, 0.35);
+		backdrop-filter: blur(4px);
+	}
+	.tea-juke__eq i {
+		width: 2px;
+		background: #fff;
+		border-radius: 1px;
+		height: 30%;
+		opacity: 0.55;
+	}
+	.tea-juke__eq i:nth-child(2) {
+		height: 70%;
+	}
+	.tea-juke__eq i:nth-child(3) {
+		height: 45%;
+	}
+	.tea-juke.is-playing .tea-juke__eq i {
+		animation: tea-eq 0.9s ease-in-out infinite alternate;
+		opacity: 1;
+	}
+	.tea-juke.is-playing .tea-juke__eq i:nth-child(2) {
+		animation-delay: -0.3s;
+	}
+	.tea-juke.is-playing .tea-juke__eq i:nth-child(3) {
+		animation-delay: -0.6s;
+	}
+	@keyframes tea-eq {
+		from {
+			height: 22%;
+		}
+		to {
+			height: 100%;
+		}
+	}
+	.tea-juke__meta {
+		min-width: 0;
+	}
+	.tea-juke__eyebrow {
+		font-size: 0.6rem;
+		letter-spacing: 0.08em;
+		color: var(--tea-muted-soft);
+	}
+	.tea-juke__meta h3 {
+		margin: 0.05rem 0 0;
+		font-size: 0.84rem;
+		font-weight: 600;
+		line-height: 1.35;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tea-juke__meta p {
+		margin: 0.1rem 0 0;
+		font-size: 0.68rem;
+		color: var(--tea-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.tea-juke__timeline {
+		padding: 0.55rem 0.8rem 0;
+		flex: none;
+	}
+	.tea-juke input[type="range"] {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 100%;
+		height: 3px;
+		border-radius: 999px;
+		background: linear-gradient(
+			to right,
+			var(--primary) 0%,
+			var(--primary) var(--p, 0%),
+			color-mix(in oklch, currentColor 14%, transparent) var(--p, 0%),
+			color-mix(in oklch, currentColor 14%, transparent) 100%
+		);
+		outline: none;
+		cursor: pointer;
+	}
+	.tea-juke input[type="range"]::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 50%;
+		background: var(--primary);
+		border: 2px solid var(--tea-surface);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+	}
+	.tea-juke input[type="range"]::-moz-range-thumb {
+		width: 0.6rem;
+		height: 0.6rem;
+		border: 2px solid var(--tea-surface);
+		border-radius: 50%;
+		background: var(--primary);
+	}
+	.tea-juke__times {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.62rem;
+		color: var(--tea-muted-soft);
+		margin-top: 0.2rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.tea-juke__controls {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.45rem 0.8rem 0.6rem;
+		flex: none;
+	}
+	.tea-juke__ctrl,
+	.tea-juke__play {
+		border: 0;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		opacity: 0.75;
+	}
+	.tea-juke__ctrl {
+		width: 1.9rem;
+		height: 1.9rem;
+	}
+	.tea-juke__ctrl:hover {
+		opacity: 1;
+		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.1));
+	}
+	.tea-juke__ctrl svg {
+		width: 1.1rem;
+		height: 1.1rem;
+	}
+	.tea-juke__play {
+		width: 2.35rem;
+		height: 2.35rem;
+		background: var(--primary);
+		color: color-mix(in oklch, var(--primary) 20%, #2b2205);
+		box-shadow: 0 8px 18px -12px color-mix(in oklch, var(--primary) 80%, transparent);
+		opacity: 1;
+	}
+	.tea-juke__play svg {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+	.tea-juke__play span {
+		display: grid;
+		place-items: center;
+	}
+	.tea-juke__play span[hidden] {
+		display: none;
+	}
+	.tea-juke__vol {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		margin-left: auto;
+		flex: 1;
+		max-width: 5.6rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-juke__vol svg {
+		width: 0.9rem;
+		height: 0.9rem;
+		flex: none;
+	}
+
+	.tea-juke__tabs {
+		display: flex;
+		gap: 0.2rem;
+		padding: 0 0.7rem;
+		border-top: 1px solid var(--tea-line);
+		flex: none;
+	}
+	.tea-juke__tabs button {
+		border: 0;
+		background: none;
+		color: var(--tea-muted);
+		font: inherit;
+		font-size: 0.72rem;
+		padding: 0.5rem 0.4rem 0.45rem;
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+	}
+	.tea-juke__tabs button.is-active {
+		color: inherit;
+		font-weight: 600;
+		border-bottom-color: var(--primary);
+	}
+	.tea-juke__panel {
+		flex: 1 1 auto;
+		min-height: 5rem;
+		overflow-y: auto;
+		padding: 0.35rem 0.4rem 0.6rem;
+		scrollbar-width: thin;
+	}
+	.tea-juke__empty {
+		margin: 0;
+		padding: 0.6rem 0.4rem;
+		font-size: 0.7rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-song {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		width: 100%;
+		padding: 0.3rem 0.4rem;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		border-radius: 0.55rem;
+		cursor: pointer;
+	}
+	.tea-song:hover {
+		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
+	}
+	.tea-song.is-current {
+		background: color-mix(in oklch, var(--primary) 10%, transparent);
+	}
+	.tea-song__idx {
+		width: 1rem;
+		flex: none;
+		font-size: 0.62rem;
+		color: var(--tea-muted-soft);
+		font-variant-numeric: tabular-nums;
+		text-align: center;
+	}
+	.tea-song.is-current .tea-song__idx {
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+	}
+	.tea-song__copy {
+		min-width: 0;
+		display: grid;
+	}
+	.tea-song__name {
+		font-size: 0.74rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tea-song__artist {
+		font-size: 0.64rem;
+		color: var(--tea-muted-soft);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tea-juke__lyrics {
+		font-size: 0.74rem;
+		line-height: 1.9;
+		text-align: center;
+		color: var(--tea-muted-soft);
+		padding: 0.5rem 0.6rem 2rem;
+	}
+	.tea-juke__lyrics p {
+		margin: 0;
+		transition: color 0.2s ease, opacity 0.2s ease;
+	}
+	.tea-juke__lyrics p.is-current {
+		color: color-mix(in oklch, var(--primary) 72%, currentColor);
+		font-weight: 600;
+	}
+
+	/* ─── 弹窗 ─────────────────────────────────────────────── */
+	.tea-dialog {
+		border: 0;
+		padding: 0;
+		width: min(24rem, calc(100vw - 2rem));
+		border-radius: 1.1rem;
+		background: var(--card-bg, #fff);
+		color: inherit;
+		box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.5);
+		overflow: visible;
+	}
+	.tea-dialog::backdrop {
+		background: rgba(20, 24, 18, 0.36);
+		backdrop-filter: blur(6px);
+	}
+	.tea-dialog__inner {
+		padding: 1.05rem 1.25rem 1.25rem;
+		display: grid;
+		gap: 0.65rem;
+	}
+	.tea-dialog__head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+	}
+	.tea-dialog__icon {
+		width: 2.4rem;
+		height: 2.4rem;
+		border-radius: 0.8rem;
+		display: grid;
+		place-items: center;
+		background: color-mix(in oklch, var(--primary) 15%, transparent);
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+	}
+	.tea-dialog__icon svg {
+		width: 1.3rem;
+		height: 1.3rem;
+	}
+	.tea-dialog__close {
+		width: 1.9rem;
+		height: 1.9rem;
+	}
+	.tea-dialog h3 {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 600;
+	}
+	.tea-dialog__desc {
+		margin: -0.25rem 0 0.2rem;
+		font-size: 0.76rem;
+		line-height: 1.6;
+		color: var(--tea-muted);
+	}
+	.tea-field {
+		display: grid;
+		gap: 0.28rem;
+	}
+	.tea-field > span {
+		display: flex;
+		align-items: baseline;
+		gap: 0.4rem;
+		font-size: 0.74rem;
+		font-weight: 500;
+	}
+	.tea-field em {
+		font-style: normal;
+		font-size: 0.66rem;
+		font-weight: 400;
+		color: var(--tea-muted-soft);
+	}
+	.tea-field input {
+		width: 100%;
+		padding: 0.5rem 0.65rem;
+		border-radius: 0.6rem;
+		border: 1px solid var(--tea-line-strong);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 0.84rem;
+		outline: none;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+	.tea-field input:focus {
+		border-color: color-mix(in oklch, var(--primary) 48%, transparent);
+		box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 14%, transparent);
+	}
+	.tea-dialog__preview {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.55rem 0.65rem;
+		border-radius: 0.75rem;
+		background: color-mix(in oklch, var(--primary) 6%, transparent);
+		border: 1px solid color-mix(in oklch, var(--primary) 14%, transparent);
+	}
+	.tea-dialog__avatar {
+		width: 2.1rem;
+		height: 2.1rem;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: #fff;
+		background: color-mix(in oklch, var(--primary) 70%, #6b5a22);
+		flex: none;
+	}
+	.tea-dialog__preview-copy {
+		display: grid;
+		gap: 0.08rem;
+		min-width: 0;
+	}
+	.tea-dialog__preview-copy b {
+		font-size: 0.8rem;
+		font-weight: 600;
+	}
+	.tea-dialog__preview-copy span {
+		font-size: 0.66rem;
+		color: var(--tea-muted);
+	}
+	.tea-dialog__submit {
+		margin-top: 0.15rem;
+		padding: 0.55rem 1rem;
+	}
+	.tea-dialog__error {
+		margin: 0;
+		font-size: 0.72rem;
+		color: #c0563f;
+	}
+
+	/* 遮罩（移动端抽屉） */
+	.tea-scrim {
+		position: fixed;
+		inset: 0;
+		z-index: 29;
+		background: rgba(20, 24, 18, 0.32);
+		backdrop-filter: blur(2px);
+	}
+	.tea-juke-scrim {
+		display: none;
+		z-index: 30;
+	}
+
+	/* ─── 响应式 ───────────────────────────────────────────── */
+	@media (max-width: 1440px) {
+		.tea-app {
+			grid-template-columns: 15.5rem minmax(0, 1fr) 16rem;
+		}
+		.tea-app.is-juke-hidden {
+			grid-template-columns: 15.5rem minmax(0, 1fr);
+		}
+	}
+	@media (max-width: 1240px) {
+		.tea-app,
+		.tea-app.is-juke-hidden {
+			grid-template-columns: 15rem minmax(0, 1fr);
+		}
+		.tea-juke {
+			position: fixed;
+			top: var(--tea-top);
+			right: 0.5rem;
+			bottom: 0.5rem;
+			width: min(19rem, calc(100vw - 1rem));
+			z-index: 31;
+			display: flex !important;
+			transform: translateX(114%);
+			transition: transform 0.24s ease;
+			box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.55);
+		}
+		.tea-app.is-juke-open .tea-juke {
+			transform: none;
+		}
+		.tea-app.is-juke-open .tea-juke-scrim {
+			display: block;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tea-juke {
+			transition: none;
+		}
+	}
+	@media (max-width: 900px) {
+		.tea-app {
+			--tea-top: 3.6rem;
+			left: 0.5rem;
+			right: 0.5rem;
+			bottom: 0.5rem;
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.tea-side {
+			position: fixed;
+			top: var(--tea-top);
+			bottom: 0.5rem;
+			left: 0.5rem;
+			width: min(17rem, calc(100vw - 2rem));
+			z-index: 30;
+			padding: 0.6rem;
+			border-radius: 1.1rem;
+			background: var(--page-bg, #f6f6f1);
+			overflow-y: auto;
+			transform: translateX(-116%);
+			transition: transform 0.22s ease;
+			box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.6);
+		}
+		.tea-app.is-drawer-open .tea-side {
+			transform: none;
+		}
+		.tea-bar {
+			padding: 0.6rem 0.7rem;
+		}
+		.tea-banner {
+			margin: 0.55rem 0.7rem 0;
+			font-size: 0.68rem;
+		}
+		.tea-feed {
+			padding: 0.75rem 0.75rem 0.85rem;
+		}
+		.tea-composer {
+			padding: 0.6rem 0.7rem 0.7rem;
+		}
+		.tea-input__hint {
+			display: none;
+		}
+		.tea-gate__copy span {
+			display: none;
+		}
+	}
+	@media (max-width: 520px) {
+		.tea-banner__peers {
+			display: none;
+		}
+		.tea-bar__sub {
+			display: none;
+		}
+	}
+
+	.dark .tea-banner a,
+	.dark .tea-msg__text a {
+		color: color-mix(in oklch, var(--primary) 82%, white);
 	}
 </style>
+
+<script is:inline define:vars={{ API_BASE: CHAT_API, SITE_NAME }}>
+	(() => {
+		const KEY = "__teaRoomRuntime";
+		const api0 = new URLSearchParams(location.search).get("api") || API_BASE;
+
+		const esc = (s) =>
+			String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+		const hash = (str) => {
+			let h = 2166136261;
+			for (let i = 0; i < str.length; i++) {
+				h ^= str.charCodeAt(i);
+				h = Math.imul(h, 16777619);
+			}
+			return Math.abs(h);
+		};
+
+		const avatarStyle = (nick, site) => {
+			const h = hash(nick + "|" + (site || ""));
+			const a = h % 360;
+			const b = (a + 38) % 360;
+			return `background-image:linear-gradient(145deg,oklch(0.74 0.13 ${a}),oklch(0.62 0.14 ${b}))`;
+		};
+
+		const initials = (nick) => {
+			const n = String(nick || "?").trim();
+			if (!n) return "?";
+			return /[\u4e00-\u9fa5]/.test(n[0]) ? n[0] : n.slice(0, 1).toUpperCase();
+		};
+
+		// 极简 markdown：只认图片、链接、粗体、代码块，够大厅里的分享消息用
+		const inlineFmt = (raw) => {
+			const re = /(!?)\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>"'）)，。]+)/g;
+			let out = "";
+			let last = 0;
+			let m;
+			while ((m = re.exec(raw))) {
+				out += esc(raw.slice(last, m.index));
+				if (m[3]) {
+					const url = m[3];
+					const label = m[2] || "";
+					out +=
+						m[1] === "!"
+							? `<img src="${esc(url)}" alt="${esc(label)}" loading="lazy" />`
+							: `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(label || url)}</a>`;
+				} else if (m[4]) {
+					const url = m[4];
+					out += `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(url.replace(/^https?:\/\//, ""))}</a>`;
+				}
+				last = m.index + m[0].length;
+			}
+			out += esc(raw.slice(last));
+			return out.replace(/\*\*([^*<]{1,80})\*\*/g, "<strong>$1</strong>");
+		};
+
+		const fmtText = (text) => {
+			const parts = String(text ?? "").split(/```[a-zA-Z0-9+#-]*\n?/);
+			return parts
+				.map((chunk, i) => (i % 2 === 1 ? `<pre><code>${esc(chunk.replace(/\n$/, ""))}</code></pre>` : inlineFmt(chunk)))
+				.join("");
+		};
+
+		const fmtTime = (ts) =>
+			new Date(ts).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+
+		const dayKey = (ts) => {
+			const d = new Date(ts);
+			return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+		};
+
+		const dayLabel = (ts) => {
+			const d = new Date(ts);
+			const today = new Date();
+			const diff = (today.setHours(0, 0, 0, 0) - new Date(ts).setHours(0, 0, 0, 0)) / 86400000;
+			if (diff === 0) return "今天";
+			if (diff === 1) return "昨天";
+			return `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+		};
+
+		const store = {
+			get identity() {
+				try {
+					return JSON.parse(localStorage.getItem("tea.identity") || "null");
+				} catch {
+					return null;
+				}
+			},
+			set identity(v) {
+				if (v) localStorage.setItem("tea.identity", JSON.stringify(v));
+				else localStorage.removeItem("tea.identity");
+			},
+			get count() {
+				return Number(localStorage.getItem("tea.count") || 0);
+			},
+			bump() {
+				localStorage.setItem("tea.count", String(this.count + 1));
+			},
+		};
+
+		// ── 实例状态 ──────────────────────────────────────────────
+		const rt =
+			window[KEY] ||
+			(window[KEY] = {
+				bound: false,
+				timer: null,
+				since: null,
+				lastId: null,
+				seen: new Set(),
+				sending: false,
+				jukeTimer: null,
+				visitor: store.identity,
+			});
+
+		const root = () => document.getElementById("tea-app");
+		const q = (sel) => (root() ? root().querySelector(sel) : null);
+
+		const setConn = (state, text) => {
+			const el = q("[data-tea-conn]");
+			const label = q("[data-tea-conn-text]");
+			if (!el) return;
+			el.classList.toggle("is-live", state === "live");
+			el.classList.toggle("is-down", state === "down");
+			if (label) label.textContent = text || (state === "live" ? "已连接" : state === "down" ? "连接中断" : "连接中");
+		};
+
+		const showError = (msg) => {
+			const box = q("[data-tea-error]");
+			if (!box) return;
+			box.textContent = msg || "";
+			box.hidden = !msg;
+		};
+
+		// ── 渲染 ─────────────────────────────────────────────────
+		const feedEl = () => q("[data-tea-feed]");
+
+		const atBottom = () => {
+			const f = feedEl();
+			if (!f) return true;
+			return f.scrollHeight - f.scrollTop - f.clientHeight < 90;
+		};
+
+		const scrollBottom = (smooth) => {
+			const f = feedEl();
+			if (!f) return;
+			f.scrollTo({ top: f.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+		};
+
+		const renderMessage = (m) => {
+			const f = feedEl();
+			if (!f) return;
+			if (m.id && rt.seen.has(m.id)) return;
+			if (m.id) rt.seen.add(m.id);
+
+			const prev = f.querySelector(".tea-msg:last-of-type");
+			const grouped =
+				prev &&
+				prev.dataset.nick === m.nick &&
+				prev.dataset.site === (m.site || "") &&
+				Number(m.ts) - Number(prev.dataset.ts || 0) < 4 * 60 * 1000;
+
+			const lastDay = f.dataset.day;
+			if (lastDay !== dayKey(m.ts)) {
+				const sep = document.createElement("div");
+				sep.className = "tea-day";
+				sep.textContent = dayLabel(m.ts);
+				f.appendChild(sep);
+				f.dataset.day = dayKey(m.ts);
+			}
+
+			const mine = !!(rt.visitor && m.nick === rt.visitor.nick && (m.site || "") === SITE_NAME);
+			const el = document.createElement("article");
+			el.className = "tea-msg" + (grouped ? " tea-msg--grouped" : "") + (mine ? " tea-msg--mine" : "");
+			el.dataset.nick = m.nick || "";
+			el.dataset.site = m.site || "";
+			el.dataset.ts = String(m.ts || Date.now());
+			if (m.id) el.dataset.id = m.id;
+			if (m.pending) el.classList.add("tea-msg--pending");
+			if (m.failed) el.classList.add("tea-msg--failed");
+
+			const av = m.avatar
+				? `style="background-image:url('${esc(m.avatar)}')"`
+				: `style="${avatarStyle(m.nick, m.site)}"`;
+			const siteTag = m.site ? `<span class="tea-msg__site">来自 ${esc(m.site)}</span>` : "";
+			const body = m.image
+				? `<img src="${esc(m.image)}" alt="图片" loading="lazy" />`
+				: fmtText(m.text || "");
+
+			el.innerHTML = `
+				<div class="tea-msg__avatar" ${av} aria-hidden="true">${m.avatar ? "" : esc(initials(m.nick))}</div>
+				<div class="tea-msg__body">
+					<div class="tea-msg__head">
+						<span class="tea-msg__nick">${esc(m.nick || "茶友")}</span>
+						${siteTag}
+						<time class="tea-msg__time">${esc(fmtTime(m.ts))}</time>
+					</div>
+					<div class="tea-msg__text">${body}</div>
+				</div>`;
+
+			f.appendChild(el);
+			if (m.scroll !== false) scrollBottom(!m.pending);
+		};
+
+		const renderMembers = (members) => {
+			const list = q("[data-tea-members]");
+			if (!list) return;
+			const online = members.filter((m) => m.online !== false);
+			const countEl = q("[data-tea-online]");
+			if (countEl) countEl.textContent = String(online.length);
+			if (!members.length) {
+				list.innerHTML = `<li class="tea-roster__empty">暂时没人，等你来坐第一桌。</li>`;
+				return;
+			}
+			const shown = members.slice(0, 20);
+			list.innerHTML =
+				shown
+					.map((m) => {
+						const av = m.avatar
+							? `style="background-image:url('${esc(m.avatar)}')"`
+							: `style="${avatarStyle(m.nick, m.site)}"`;
+						return `<li class="tea-member${m.online === false ? " tea-member--idle" : ""}" title="${esc(m.nick)}${m.site ? " · " + esc(m.site) : ""}">
+						<span class="tea-member__avatar" ${av}>${m.avatar ? "" : esc(initials(m.nick))}</span>
+						<span class="tea-member__copy">
+							<span class="tea-member__name">${esc(m.nick)}</span>
+							<span class="tea-member__site">${esc(m.site || "Matrix")}</span>
+						</span>
+					</li>`;
+					})
+					.join("") +
+				(members.length > shown.length
+					? `<li class="tea-roster__empty">还有 ${members.length - shown.length} 位茶友没显示</li>`
+					: "");
+		};
+
+		const renderSelf = () => {
+			const v = rt.visitor;
+			const av = q("[data-tea-me-avatar]");
+			const name = q("[data-tea-me-name]");
+			const meta = q("[data-tea-me-meta]");
+			const count = q("[data-tea-me-count]");
+			const act = q("[data-tea-enter]");
+			if (!av || !name) return;
+			if (v) {
+				av.textContent = initials(v.nick);
+				av.setAttribute("style", avatarStyle(v.nick, SITE_NAME));
+				name.textContent = v.nick;
+				if (meta) meta.textContent = `来自 ${SITE_NAME}`;
+				if (count) count.textContent = String(store.count);
+				if (act) act.textContent = "换个身份";
+			} else {
+				av.textContent = "?";
+				av.removeAttribute("style");
+				name.textContent = "还没入座";
+				if (meta) meta.textContent = "填个昵称，就能在这儿坐下。";
+				if (count) count.textContent = "0";
+				if (act) act.textContent = "入座";
+			}
+			const since = q("[data-tea-me-since]");
+			if (since) since.textContent = v ? "已入座" : "今天刚到";
+		};
+
+		const setGate = (entered) => {
+			const gate = q("[data-tea-gate]");
+			const input = q("[data-tea-input]");
+			if (gate) gate.hidden = !!entered;
+			if (input) input.hidden = !entered;
+		};
+
+		// ── 数据 ─────────────────────────────────────────────────
+		const api = async (path, opts = {}) => {
+			const res = await fetch(api0.replace(/\/$/, "") + path, {
+				...opts,
+				headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+			});
+			let data = {};
+			try {
+				data = await res.json();
+			} catch (_) {}
+			if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
+			return data;
+		};
+
+		const feedStatus = (html, isError) => {
+			const f = feedEl();
+			if (!f) return;
+			f.innerHTML = `<div class="tea-feed__status${isError ? " tea-feed__status--error" : ""}">${html}</div>`;
+			f.dataset.day = "";
+			rt.seen.clear();
+		};
+
+		const loadHistory = async () => {
+			feedStatus(`<span class="tea-spinner"></span> 正在看看大家聊到哪儿了…`);
+			try {
+				const [hist, sync] = await Promise.all([api("/api/history?limit=60"), api("/api/sync")]);
+				feedStatus("");
+				const f = feedEl();
+				if (f) f.innerHTML = "";
+				const msgs = [...(hist.messages || []), ...(sync.messages || [])];
+				msgs.sort((a, b) => a.ts - b.ts);
+				if (!msgs.length) {
+					feedStatus(`<div class="tea-empty"><b>茶室里还没人说话</b><span>要不你先开个话头？</span></div>`);
+				} else {
+					for (const m of msgs) renderMessage({ ...m, scroll: false });
+					scrollBottom(false);
+				}
+				rt.since = sync.next || null;
+				setConn("live");
+				loadRoom();
+			} catch (e) {
+				feedStatus(
+					`<b>茶室暂时打不开</b><span>${esc(e.message || "网络异常")}</span><button type="button" class="tea-btn tea-btn--ghost" data-tea-retry>重试</button>`,
+					true,
+				);
+				setConn("down", "连接失败");
+				const btn = q("[data-tea-retry]");
+				if (btn) btn.addEventListener("click", () => {
+					showError("");
+					loadHistory();
+				});
+			}
+		};
+
+		const loadRoom = async () => {
+			try {
+				const data = await api("/api/room");
+				renderMembers(data.members || []);
+			} catch (_) {}
+		};
+
+		const poll = async () => {
+			if (!root()) return;
+			try {
+				const data = await api("/api/sync" + (rt.since ? `?since=${encodeURIComponent(rt.since)}` : ""));
+				if (data.next) rt.since = data.next;
+				const list = data.messages || [];
+				if (list.length) {
+					const stick = atBottom();
+					for (const m of list) renderMessage({ ...m, scroll: false });
+					if (stick) scrollBottom(true);
+					else {
+						const jump = q("[data-tea-jump]");
+						if (jump) jump.hidden = false;
+					}
+				}
+				setConn("live");
+			} catch (_) {
+				setConn("down", "连接中断");
+			}
+			rt.timer = setTimeout(poll, 3000);
+		};
+
+		const startLoop = () => {
+			clearTimeout(rt.timer);
+			poll();
+		};
+
+		// ── 发送 ─────────────────────────────────────────────────
+		const sendText = async (text, node) => {
+			const v = rt.visitor;
+			if (!v) return;
+			let target = node;
+			if (!target) {
+				const ts = Date.now();
+				renderMessage({ id: "tmp-" + ts, ts, nick: v.nick, site: SITE_NAME, text, self: true, pending: true });
+				target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
+			}
+			try {
+				const res = await api("/api/send", {
+					method: "POST",
+					body: JSON.stringify({ nick: v.nick, email: v.email, website: v.website, text }),
+				});
+				if (target) {
+					target.classList.remove("tea-msg--pending", "tea-msg--failed");
+					if (res.id) {
+						target.dataset.id = res.id;
+						rt.seen.add(res.id);
+					}
+					const old = target.querySelector(".tea-msg__retry");
+					if (old) old.remove();
+				}
+				store.bump();
+				const c = q("[data-tea-me-count]");
+				if (c) c.textContent = String(store.count);
+			} catch (e) {
+				if (target) {
+					target.classList.remove("tea-msg--pending");
+					target.classList.add("tea-msg--failed");
+					const old = target.querySelector(".tea-msg__retry");
+					if (old) old.remove();
+					const retry = document.createElement("button");
+					retry.type = "button";
+					retry.className = "tea-msg__retry";
+					retry.textContent = "发送失败：" + (e.message || "网络异常") + "，点此重试";
+					retry.addEventListener("click", () => {
+						target.remove();
+						sendText(text);
+					});
+					target.querySelector(".tea-msg__body").appendChild(retry);
+				}
+			}
+		};
+
+		// ── 交互 ─────────────────────────────────────────────────
+		const openDialog = () => {
+			const dlg = document.querySelector("[data-tea-dialog]");
+			const form = document.querySelector("[data-tea-identity]");
+			if (!dlg || !form) return;
+			const v = rt.visitor;
+			if (v) {
+				form.elements.nick.value = v.nick || "";
+				form.elements.email.value = v.email || "";
+				form.elements.website.value = v.website || "";
+				updatePreview();
+			}
+			if (typeof dlg.showModal === "function") dlg.showModal();
+		};
+
+		const updatePreview = () => {
+			const form = document.querySelector("[data-tea-identity]");
+			if (!form) return;
+			const nick = (form.elements.nick.value || "").trim();
+			const av = document.querySelector("[data-tea-preview-avatar]");
+			const name = document.querySelector("[data-tea-preview-name]");
+			if (av) {
+				av.textContent = nick ? initials(nick) : "?";
+				av.setAttribute("style", nick ? avatarStyle(nick, SITE_NAME) : "");
+			}
+			if (name) name.textContent = nick ? `${nick} · ${SITE_NAME}` : "还没填昵称";
+		};
+
+		const submitIdentity = async (e) => {
+			e.preventDefault();
+			const form = document.querySelector("[data-tea-identity]");
+			if (!form) return;
+			const nick = (form.elements.nick.value || "").trim();
+			const email = (form.elements.email.value || "").trim();
+			const website = (form.elements.website.value || "").trim();
+			const err = document.querySelector("[data-tea-dialog-error]");
+			const btn = document.querySelector("[data-tea-submit]");
+			if (!nick) {
+				if (err) {
+					err.textContent = "昵称不能为空";
+					err.hidden = false;
+				}
+				return;
+			}
+			if (err) err.hidden = true;
+			if (btn) btn.disabled = true;
+			try {
+				rt.visitor = { nick, email, website };
+				store.identity = rt.visitor;
+				renderSelf();
+				setGate(true);
+				const dlg = document.querySelector("[data-tea-dialog]");
+				if (dlg) dlg.close();
+				const ta = q("[data-tea-text]");
+				if (ta) ta.focus();
+			} finally {
+				if (btn) btn.disabled = false;
+			}
+		};
+
+		// ── 点歌台：复用站点全局播放器 window.__fireflyMusic ─────
+		const jukeSig = { list: "", lrc: -1, tab: "list" };
+
+		const musicApi = () => (window.__fireflyMusic ? window.__fireflyMusic : null);
+		const jukeNode = (sel) => (root() ? root().querySelector("[data-tea-juke] " + sel) : null);
+
+		const renderPlaylist = (st) => {
+			const box = jukeNode("[data-juke-list]");
+			if (!box) return;
+			const sig = st.playlist.length + "|" + st.currentIndex;
+			if (jukeSig.list === sig) return;
+			jukeSig.list = sig;
+			if (!st.playlist.length) {
+				box.innerHTML = `<p class="tea-juke__empty">歌单还没加载出来，点一下播放试试。</p>`;
+				return;
+			}
+			box.innerHTML = st.playlist
+				.map((t, i) => {
+					const cur = i === st.currentIndex;
+					return `<button type="button" class="tea-song${cur ? " is-current" : ""}" data-juke-index="${i}">
+						<span class="tea-song__idx">${cur ? "♪" : i + 1}</span>
+						<span class="tea-song__copy">
+							<span class="tea-song__name">${esc(t.name || "未知曲目")}</span>
+							<span class="tea-song__artist">${esc(t.artist || "")}</span>
+						</span>
+					</button>`;
+				})
+				.join("");
+		};
+
+		const renderLyrics = (st, force) => {
+			const box = jukeNode("[data-juke-lyrics]");
+			if (!box) return;
+			if (!st.lyrics || !st.lyrics.length) {
+				if (box.dataset.empty !== "1") {
+					box.innerHTML = `<p class="tea-juke__empty">这首歌暂时没有歌词。</p>`;
+					box.dataset.empty = "1";
+					jukeSig.lrc = -1;
+				}
+				return;
+			}
+			if (box.dataset.empty === "1" || force) {
+				box.innerHTML = st.lyrics.map((l) => `<p>${esc(l.text)}</p>`).join("");
+				box.dataset.empty = "0";
+				jukeSig.lrc = -1;
+			}
+			if (jukeSig.lrc !== st.currentLrcIndex) {
+				jukeSig.lrc = st.currentLrcIndex;
+				const lines = box.querySelectorAll("p");
+				lines.forEach((p, i) => p.classList.toggle("is-current", i === st.currentLrcIndex));
+				const active = lines[st.currentLrcIndex];
+				if (active) active.scrollIntoView({ block: "center", behavior: "smooth" });
+			}
+		};
+
+		const renderJuke = () => {
+			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
+			if (!juke) return;
+			const m = musicApi();
+			if (!m) {
+				const t = jukeNode("[data-juke-title]");
+				if (t) t.textContent = "播放器还没就绪";
+				return;
+			}
+			const st = m.getState();
+			if (!st.initialized && !st.error) {
+				try {
+					m.init();
+				} catch (_) {}
+			}
+			juke.classList.toggle("is-playing", !!st.isPlaying);
+			const live = jukeNode("[data-juke-live]");
+			if (live) {
+				live.classList.toggle("is-playing", !!st.isPlaying);
+				const label = live.querySelector("b");
+				if (label) label.textContent = st.isPlaying ? "播放中" : st.initialized ? "已暂停" : "加载中";
+			}
+			const cover = jukeNode("[data-juke-cover]");
+			if (cover) cover.style.backgroundImage = st.track && st.track.pic ? `url("${st.track.pic}")` : "";
+			const title = jukeNode("[data-juke-title]");
+			if (title) title.textContent = (st.track && st.track.name) || "还没开始听";
+			const artist = jukeNode("[data-juke-artist]");
+			if (artist) artist.textContent = (st.track && st.track.artist) || "从下面挑一首，或者让茶室随便放";
+			const seek = jukeNode("[data-juke-seek]");
+			if (seek) {
+				seek.value = String(Math.round((st.progress || 0) * 10));
+				seek.style.setProperty("--p", (st.progress || 0) + "%");
+			}
+			const cur = jukeNode("[data-juke-cur]");
+			if (cur) cur.textContent = st.currentTimeStr || "0:00";
+			const dur = jukeNode("[data-juke-dur]");
+			if (dur) dur.textContent = st.durationStr || "0:00";
+			const vol = jukeNode("[data-juke-vol]");
+			if (vol) vol.value = String(Math.round((st.isMuted ? 0 : st.volume || 0) * 100));
+			const playBtn = jukeNode("[data-juke-play]");
+			if (playBtn) {
+				const iPlay = playBtn.querySelector("[data-juke-icon-play]");
+				const iPause = playBtn.querySelector("[data-juke-icon-pause]");
+				if (iPlay) iPlay.hidden = !!st.isPlaying;
+				if (iPause) iPause.hidden = !st.isPlaying;
+				playBtn.setAttribute("aria-label", st.isPlaying ? "暂停" : "播放");
+			}
+			renderPlaylist(st);
+			if (jukeSig.tab === "lyrics") renderLyrics(st);
+		};
+
+		const bindJuke = () => {
+			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
+			if (!juke || juke.dataset.bound === "1") return;
+			juke.dataset.bound = "1";
+			const m = () => musicApi();
+
+			juke.addEventListener("click", (e) => {
+				const song = e.target.closest("[data-juke-index]");
+				if (song && m()) {
+					m().playTrackByIndex(Number(song.dataset.jukeIndex));
+					setTimeout(renderJuke, 150);
+					return;
+				}
+				const tab = e.target.closest("[data-juke-tab]");
+				if (tab) {
+					jukeSig.tab = tab.dataset.jukeTab;
+					for (const b of juke.querySelectorAll("[data-juke-tab]")) b.classList.toggle("is-active", b === tab);
+					const list = jukeNode("[data-juke-list]");
+					const lrc = jukeNode("[data-juke-lyrics]");
+					if (list) list.hidden = jukeSig.tab !== "list";
+					if (lrc) lrc.hidden = jukeSig.tab !== "lyrics";
+					if (jukeSig.tab === "lyrics" && m()) renderLyrics(m().getState(), true);
+				}
+			});
+
+			juke.querySelector("[data-juke-play]").addEventListener("click", () => {
+				if (m()) m().togglePlay();
+				setTimeout(renderJuke, 160);
+			});
+			juke.querySelector("[data-juke-prev]").addEventListener("click", () => m() && m().playPrev());
+			juke.querySelector("[data-juke-next]").addEventListener("click", () => m() && m().playNext());
+			juke.querySelector("[data-juke-seek]").addEventListener("input", (e) => {
+				if (m()) m().seek(Number(e.target.value) / 10);
+			});
+			juke.querySelector("[data-juke-vol]").addEventListener("input", (e) => {
+				if (m()) m().setVolume(Number(e.target.value) / 100);
+			});
+			juke.querySelector("[data-juke-close]").addEventListener("click", () => {
+				const shell = root();
+				if (!shell) return;
+				if (window.matchMedia("(min-width: 1241px)").matches) shell.classList.add("is-juke-hidden");
+				else shell.classList.remove("is-juke-open");
+			});
+
+			if (!rt.jukeTimer) {
+				rt.jukeTimer = setInterval(() => {
+					if (!root()) {
+						clearInterval(rt.jukeTimer);
+						rt.jukeTimer = null;
+						return;
+					}
+					renderJuke();
+				}, 900);
+			}
+			renderJuke();
+		};
+
+		const setup = () => {
+			const shell = root();
+			if (!shell || shell.dataset.ready === "1") return;
+			shell.dataset.ready = "1";
+
+			// 视口高度：按导航栏实际底部算，避免和胶囊导航打架
+			const measure = () => {
+				const nav = document.querySelector("#navbar") || document.querySelector("header");
+				if (!nav) return;
+				const r = nav.getBoundingClientRect();
+				const top = Math.max(0, Math.round(r.bottom)) + 8;
+				if (top > 8) shell.style.setProperty("--tea-top", top + "px");
+			};
+			measure();
+			window.addEventListener("resize", measure);
+
+			renderSelf();
+			setGate(!!rt.visitor);
+			loadHistory();
+			startLoop();
+
+			// 身份弹窗
+			for (const el of document.querySelectorAll("[data-tea-enter]")) {
+				el.addEventListener("click", openDialog);
+			}
+			const form = document.querySelector("[data-tea-identity]");
+			if (form) {
+				form.addEventListener("submit", (e) => {
+					if (e.submitter && e.submitter.value === "cancel") return;
+					submitIdentity(e);
+				});
+				form.elements.nick.addEventListener("input", updatePreview);
+			}
+
+			// 输入框
+			const ta = q("[data-tea-text]");
+			const counter = q("[data-tea-count]");
+			if (ta) {
+				ta.addEventListener("input", () => {
+					ta.style.height = "auto";
+					ta.style.height = Math.min(ta.scrollHeight, 128) + "px";
+					if (counter) counter.textContent = `${ta.value.length}/500`;
+				});
+				ta.addEventListener("keydown", (e) => {
+					if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+						e.preventDefault();
+						const f = q("[data-tea-composer]");
+						if (f) f.requestSubmit();
+					}
+				});
+			}
+			const composer = q("[data-tea-composer]");
+			if (composer) {
+				composer.addEventListener("submit", async (e) => {
+					e.preventDefault();
+					if (!ta) return;
+					const text = ta.value.trim();
+					if (!text) return;
+					if (!rt.visitor) {
+						openDialog();
+						return;
+					}
+					showError("");
+					ta.value = "";
+					ta.style.height = "auto";
+					if (counter) counter.textContent = "0/500";
+					await sendText(text);
+				});
+			}
+
+			// 回到最新
+			const jump = q("[data-tea-jump]");
+			if (jump) {
+				jump.addEventListener("click", () => {
+					scrollBottom(true);
+					jump.hidden = true;
+				});
+			}
+			const feed = feedEl();
+			if (feed) {
+				feed.addEventListener("scroll", () => {
+					if (atBottom()) {
+						const j = q("[data-tea-jump]");
+						if (j) j.hidden = true;
+					}
+				});
+			}
+
+			// 刷新 / 抽屉
+			const refresh = q("[data-tea-refresh]");
+			if (refresh) {
+				refresh.addEventListener("click", () => {
+					rt.since = null;
+					clearTimeout(rt.timer);
+					loadHistory();
+					startLoop();
+				});
+			}
+			const toggle = q("[data-tea-roster-toggle]");
+			const scrim = q("[data-tea-scrim]");
+			const closeDrawer = () => {
+				shell.classList.remove("is-drawer-open");
+				if (scrim) scrim.hidden = true;
+			};
+			if (toggle) {
+				toggle.addEventListener("click", () => {
+					const open = !shell.classList.contains("is-drawer-open");
+					shell.classList.toggle("is-drawer-open", open);
+					if (scrim) scrim.hidden = !open;
+				});
+			}
+			if (scrim) scrim.addEventListener("click", closeDrawer);
+
+			// 点歌台开关
+			const jukeToggle = q("[data-tea-juke-toggle]");
+			if (jukeToggle) {
+				jukeToggle.addEventListener("click", () => {
+					if (window.matchMedia("(min-width: 1241px)").matches) shell.classList.toggle("is-juke-hidden");
+					else shell.classList.toggle("is-juke-open");
+					bindJuke();
+					setTimeout(renderJuke, 60);
+				});
+			}
+			const jukeScrim = q("[data-juke-scrim]");
+			if (jukeScrim) jukeScrim.addEventListener("click", () => shell.classList.remove("is-juke-open"));
+			bindJuke();
+		};
+
+		if (!rt.bound) {
+			for (const name of ["astro:page-load", "astro:after-swap", "swup:contentReplaced", "swup:page:view"]) {
+				document.addEventListener(name, () => {
+					if (root()) setup();
+					else clearTimeout(rt.timer);
+				});
+			}
+			rt.bound = true;
+		}
+		setup();
+	})();
+</script>
