@@ -5046,6 +5046,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					}
 				}
 				setConn("live");
+				if (!rt.rosterAt || Date.now() - rt.rosterAt > 30_000) {
+					rt.rosterAt = Date.now();
+					loadRoom();
+				}
 			} catch (_) {
 				setConn("down", "连接中断");
 			}
