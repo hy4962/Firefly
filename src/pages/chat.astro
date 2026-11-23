@@ -48,6 +48,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					<Icon is:inline name="material-symbols:notifications-outline-rounded" />
 					<span class="tea-me__dot" data-tea-notify-dot hidden></span>
 				</button>
+				<button type="button" class="tea-btn tea-btn--primary tea-me__login" data-tea-enter data-tea-card-login hidden>登录</button>
 			</div>
 
 			<div class="tea-card tea-rooms">
@@ -935,6 +936,40 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		background: #e5484d;
 		border: 1px solid var(--tea-surface, #fff);
 		opacity: 1;
+	}
+	.tea-me__login {
+		flex: none;
+		font-size: 0.68rem;
+		padding: 0.3rem 0.65rem;
+	}
+	.tea-me.is-guest .tea-me__bell {
+		display: none;
+	}
+	.tea-me.is-guest .tea-me__avatar {
+		width: 2.05rem;
+		height: 2.05rem;
+	}
+	.tea-member--observer .tea-member__avatar {
+		position: relative;
+		display: grid;
+		place-items: center;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1));
+		color: var(--tea-muted);
+	}
+	.tea-member--observer .tea-member__avatar::after {
+		content: "";
+		position: absolute;
+		right: -1px;
+		bottom: -1px;
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 50%;
+		background: #eab308;
+		border: 2px solid var(--tea-surface, #fff);
+	}
+	.tea-member--observer .tea-member__avatar svg {
+		width: 1rem;
+		height: 1rem;
 	}
 
 	/* ── 通知中心 ─────────────────────────────────────────── */
@@ -4283,11 +4318,20 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			rt.members = members;
 			const isOn = (m) => m.online !== false || !!(rt.visitor && m.id === rt.visitor.id);
 			const countEl = q("[data-tea-online]");
-			if (countEl) countEl.textContent = String(members.filter(isOn).length);
+			if (countEl) countEl.textContent = String(members.filter(isOn).length + (rt.visitor ? 0 : 1));
 			const more = q("[data-tea-roster-all]");
+			const observerHtml = rt.visitor
+				? ""
+				: `<li class="tea-member tea-member--observer" role="note" title="未登录，正在旁观">
+					<span class="tea-member__avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.6"/></svg></span>
+					<span class="tea-member__copy">
+						<span class="tea-member__name">旁观者</span>
+						<span class="tea-member__site">互联茶室</span>
+					</span>
+				</li>`;
 
 			if (!members.length) {
-				list.innerHTML = `<li class="tea-roster__empty">暂时没人，等你来坐第一桌。</li>`;
+				list.innerHTML = observerHtml || `<li class="tea-roster__empty">暂时没人，等你来坐第一桌。</li>`;
 				if (more) more.hidden = true;
 				return;
 			}
@@ -4318,13 +4362,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			const others = members.filter((m) => !isSelfSite(m));
 			const localOnline = local.filter(isOn).length;
 			const othersOnline = others.filter(isOn).length;
-			const groupHtml = (label, list, online) => {
-				if (!list.length) return "";
+			const groupHtml = (label, list, online, extra = "") => {
+				if (!list.length && !extra) return "";
 				const rows = rt.rosterAll ? list : list.slice(0, LIMIT);
 				return `<li class="tea-roster__group" role="presentation"><span>${label}</span><span class="tea-roster__group-count">${online} 人在线</span></li>` +
-					rows.map(rowHtml).join("");
+					rows.map(rowHtml).join("") + extra;
 			};
-			list.innerHTML = groupHtml("本站在线", local, localOnline) + groupHtml("其他站点", others, othersOnline);
+			list.innerHTML = groupHtml("本站在线", local, localOnline, observerHtml) + groupHtml("其他站点", others, othersOnline);
 
 			if (more) {
 				more.hidden = members.length <= LIMIT;
@@ -4434,7 +4478,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			const status = q("[data-tea-me-status]");
 			const badge = q("[data-tea-me-badge]");
 			const count = q("[data-tea-me-count]");
+			const card = q("[data-tea-me]");
+			const loginBtn = q("[data-tea-card-login]");
+			const bell = q("[data-tea-notify-toggle]");
 			if (!av || !name) return;
+			if (card) card.classList.toggle("is-guest", !v);
+			if (loginBtn) loginBtn.hidden = !!v;
+			if (bell) {
+				bell.disabled = !v;
+				bell.title = v ? "通知" : "登录后才能接收通知";
+			}
 			if (v) {
 				if (v.avatar) {
 					av.textContent = "";
@@ -4450,13 +4503,14 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			} else {
 				av.textContent = "?";
 				av.removeAttribute("style");
-				name.textContent = "还没入座";
+				name.textContent = "未登录（旁观）";
 				if (badge) badge.hidden = true;
-				if (status) status.textContent = "点一下登录，开始聊天";
+				if (status) status.textContent = "登录后即可发言与点歌";
 				if (count) count.textContent = "0";
 			}
 			const since = q("[data-tea-me-since]");
 			if (since) since.textContent = v ? "已入座" : "今天刚到";
+			if (rt.members) renderMembers(rt.members);
 			updatePlaceholder();
 		};
 
