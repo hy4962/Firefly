@@ -2819,4 +2819,20 @@
 			opacity: 1 !important;
 		}
 	}
+
+	/* 茶室标题栏 mark：与左栏「互联茶室」的群头像一致，不动上游 chat.astro */
+	.tea-bar__mark {
+		background: transparent !important;
+		border-color: transparent !important;
+	}
+	.tea-bar__mark svg {
+		display: none !important;
+	}
+	.tea-bar__mark::before {
+		content: "";
+		width: 100%;
+		height: 100%;
+		border-radius: inherit;
+		background: url("/assets/images/room-lobby.webp") center / cover no-repeat;
+	}
 </style>
