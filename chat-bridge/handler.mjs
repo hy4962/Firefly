@@ -14,6 +14,7 @@ const DEFAULTS = {
 	MATRIX_HS: "https://matrix.0dm.cn",
 	ROOM_ID: "!CKQYQ95MT69FlskJmkcEbSmkd72I6CTgnf_nITckm4I",
 	CHAT_ROOM_ID: "!SKwkPyDSYsvMsjJWCi:matrix.0dm.cn",
+	INDEX_ROOM_ID: "!rrPkhRAMIwcCDHUpTC:matrix.0dm.cn",
 	SITE_NAME: "折腾进行时",
 	SITE_URL: "https://www.0dm.cn",
 	ALLOW_ORIGINS: "https://www.0dm.cn,https://0dm.cn,https://www.9ll.uk,https://9ll.uk,http://localhost:4399,http://127.0.0.1:4399",
@@ -49,6 +50,7 @@ const cfg = (env) => ({
 	hs: (env.MATRIX_HS || DEFAULTS.MATRIX_HS).replace(/\/$/, ""),
 	room: env.ROOM_ID || DEFAULTS.ROOM_ID,
 	chatRoom: env.CHAT_ROOM_ID || DEFAULTS.CHAT_ROOM_ID,
+	indexRoom: env.INDEX_ROOM_ID || DEFAULTS.INDEX_ROOM_ID,
 	adminToken: env.ADMIN_TOKEN || "",
 	bridgeToken: env.BRIDGE_TOKEN || "",
 	siteName: env.SITE_NAME || DEFAULTS.SITE_NAME,
@@ -65,7 +67,7 @@ const ROOM_META = {
 
 function roomOf(c, url) {
 	const key = url.searchParams.get("room");
-	const k = key && ROOM_META[key] ? key : "chat";
+	const k = key && ROOM_META[key] ? key : "lobby";
 	return { key: k, id: k === "chat" ? c.chatRoom : c.room, ...ROOM_META[k] };
 }
 
@@ -257,26 +259,6 @@ async function rateCheck(env, ip, kind = "send") {
 	const now = Date.now();
 	const gap = kind === "enter" ? RATE.enterGap : RATE.minGap;
 
-	if (env.TEA_KV) {
-		const gapKey = `${kind}:gap:${ip}`;
-		if (await env.TEA_KV.get(gapKey)) return `手速有点快，${Math.ceil(gap / 1000)} 秒后再试。`;
-		if (kind === "enter") {
-			await env.TEA_KV.put(gapKey, "1", { expirationTtl: Math.ceil(gap / 1000) });
-			return "";
-		}
-		const minuteKey = `send:m:${ip}:${Math.floor(now / 60000)}`;
-		const hourKey = `send:h:${ip}:${Math.floor(now / 3600000)}`;
-		const [minute, hour] = await Promise.all([env.TEA_KV.get(minuteKey), env.TEA_KV.get(hourKey)]);
-		if (Number(minute || 0) >= RATE.perMinute) return "一分钟说得有点多，喘口气。";
-		if (Number(hour || 0) >= RATE.perHour) return "这一小时的额度用完了，晚点再来。";
-		await Promise.all([
-			env.TEA_KV.put(gapKey, "1", { expirationTtl: Math.ceil(gap / 1000) }),
-			env.TEA_KV.put(minuteKey, String(Number(minute || 0) + 1), { expirationTtl: 120 }),
-			env.TEA_KV.put(hourKey, String(Number(hour || 0) + 1), { expirationTtl: 3700 }),
-		]);
-		return "";
-	}
-
 	const b = memory.get(`${kind}:${ip}`) || { last: 0, minute: [], hour: [] };
 	if (now - b.last < gap) return `手速有点快，${Math.ceil((gap - (now - b.last)) / 1000)} 秒后再试。`;
 	b.last = now;
@@ -325,22 +307,30 @@ async function uploadAvatar(c, email) {
 
 const WALINE_DEFAULT = "https://waline.0dm.cn";
 
-const idKey = (email) => "id:" + md5Hex(email.trim().toLowerCase());
+// 身份索引存在 Synapse 的私有房间里：状态事件类型 com.0dm.tea.identity，state_key = md5(邮箱)
+const ID_EVENT_TYPE = "com.0dm.tea.identity";
+const idKey = (email) => md5Hex(email.trim().toLowerCase());
 
-async function readIdentity(env, email) {
-	if (!env.TEA_KV || !email) return null;
+async function readIdentity(c, email) {
+	if (!email || !c.indexRoom) return null;
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.indexRoom)}/state/${ID_EVENT_TYPE}/${enc(idKey(email))}`, {
+		token: c.adminToken,
+	});
+	if (!res.ok) return null;
 	try {
-		return await env.TEA_KV.get(idKey(email), "json");
+		return await res.json();
 	} catch {
 		return null;
 	}
 }
 
-async function writeIdentity(env, email, data) {
-	if (!env.TEA_KV || !email) return;
-	try {
-		await env.TEA_KV.put(idKey(email), JSON.stringify(data), { expirationTtl: 60 * 60 * 24 * 365 });
-	} catch (_) {}
+async function writeIdentity(c, email, data) {
+	if (!email || !c.indexRoom) return;
+	await mxJson(c, `/_matrix/client/v3/rooms/${enc(c.indexRoom)}/state/${ID_EVENT_TYPE}/${enc(idKey(email))}`, {
+		token: c.adminToken,
+		method: "PUT",
+		body: data,
+	});
 }
 
 /** 同一邮箱复用同一个 Matrix 账号；没有就新建。 */
@@ -348,7 +338,7 @@ async function provisionIdentity(c, env, profile, base) {
 	const { nick, email, website } = profile;
 	if (!c.adminToken) throw new Error("bridge 未配置 ADMIN_TOKEN");
 
-	const stored = await readIdentity(env, email);
+	const stored = await readIdentity(c, email);
 	if (stored && stored.uid && stored.pw) {
 		const login = await mxJson(c, "/_matrix/client/v3/login", {
 			token: "",
@@ -367,7 +357,7 @@ async function provisionIdentity(c, env, profile, base) {
 					method: "PUT",
 					body: { displayname: `${nick} · ${c.siteName}` },
 				});
-				await writeIdentity(env, email, { ...stored, nick, website: website || stored.website });
+				await writeIdentity(c, email, { ...stored, nick, website: website || stored.website });
 			}
 			return {
 				user: {
@@ -425,7 +415,7 @@ async function provisionIdentity(c, env, profile, base) {
 	await mxJson(c, `/_matrix/client/v3/join/${enc(c.chatRoom)}`, { token, method: "POST", body: {} });
 	await mxJson(c, `/_matrix/client/v3/join/${enc(c.room)}`, { token, method: "POST", body: {} });
 
-	await writeIdentity(env, email, { uid: userId, pw: password, nick, website, mxc: avatarUrl || "", ts: Date.now() });
+	await writeIdentity(c, email, { uid: userId, pw: password, nick, website, mxc: avatarUrl || "", ts: Date.now() });
 
 	return {
 		user: { id: userId, nick, avatar: avatarUrl ? `${base}/api/media?u=${enc(avatarUrl)}` : "" },

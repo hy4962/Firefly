@@ -58,23 +58,23 @@ const peers = [
 					</span>
 				</header>
 				<ul class="tea-rooms__list" data-tea-rooms>
-					<li class="tea-rooms__group">本站</li>
-					<li>
-						<button type="button" class="tea-room-item is-active" data-room="chat">
-							<span class="tea-room-item__hash">#</span>
-							<span class="tea-room-item__copy">
-								<b>闲聊</b>
-								<span>随便聊聊日常与折腾</span>
-							</span>
-						</button>
-					</li>
 					<li class="tea-rooms__group">互联房间</li>
 					<li>
-						<button type="button" class="tea-room-item" data-room="lobby">
+						<button type="button" class="tea-room-item is-active" data-room="lobby">
 							<span class="tea-room-item__hash">#</span>
 							<span class="tea-room-item__copy">
 								<b>互联茶室</b>
 								<span>和其他站点的朋友一起聊天</span>
+							</span>
+						</button>
+					</li>
+					<li class="tea-rooms__group">本站</li>
+					<li>
+						<button type="button" class="tea-room-item" data-room="chat">
+							<span class="tea-room-item__hash">#</span>
+							<span class="tea-room-item__copy">
+								<b>闲聊</b>
+								<span>随便聊聊日常与折腾</span>
 							</span>
 						</button>
 					</li>
@@ -2142,7 +2142,7 @@ const peers = [
 				jukeTimer: null,
 				rosterAll: false,
 				members: [],
-				room: params0.get("room") === "lobby" ? "lobby" : "chat",
+				room: params0.get("room") === "chat" ? "chat" : "lobby",
 				visitor: store.identity,
 			});
 
