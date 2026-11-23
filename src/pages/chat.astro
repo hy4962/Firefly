@@ -1187,6 +1187,131 @@ const peers = [
 		cursor: pointer;
 	}
 
+	/* ── 已读回执 ───────────────────────────────────────── */
+	.tea-receipt {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		margin-top: 0.2rem;
+	}
+	.tea-receipt__trigger {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		min-height: 1.35rem;
+		padding: 0 0.3rem;
+		border: 0;
+		border-radius: 0.6rem;
+		background: transparent;
+		color: var(--tea-muted-soft);
+		font-size: 0.66rem;
+		cursor: pointer;
+	}
+	.tea-receipt__trigger:hover,
+	.tea-receipt__trigger[aria-expanded="true"] {
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1));
+	}
+	.tea-receipt__faces {
+		display: inline-flex;
+		align-items: center;
+	}
+	.tea-receipt__faces img {
+		width: 0.95rem;
+		height: 0.95rem;
+		border-radius: 50%;
+		object-fit: cover;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1));
+		border: 1px solid var(--card-bg, #fff);
+	}
+	.tea-receipt__faces img + img {
+		margin-inline-start: -0.3rem;
+	}
+	.tea-receipt__faces span {
+		width: 0.95rem;
+		height: 0.95rem;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		font-size: 0.5rem;
+		font-weight: 600;
+		color: #fff;
+		border: 1px solid var(--card-bg, #fff);
+	}
+	.tea-receipt__faces span + span,
+	.tea-receipt__faces img + span {
+		margin-inline-start: -0.3rem;
+	}
+	.tea-receipt__pop {
+		position: fixed;
+		z-index: 100;
+		width: min(15rem, calc(100vw - 2rem));
+		max-height: min(18rem, 60vh);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.8rem;
+		background: var(--card-bg, #fff);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+		padding: 0.35rem;
+	}
+	.tea-receipt__pop[hidden] {
+		display: none;
+	}
+	.tea-receipt__pop h5 {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		margin: 0 0 0.25rem;
+		padding: 0.15rem 0.4rem 0.35rem;
+		border-bottom: 1px solid var(--tea-line);
+		font-size: 0.72rem;
+		font-weight: 600;
+	}
+	.tea-receipt__pop h5 small {
+		color: var(--tea-muted-soft);
+		font-weight: 400;
+	}
+	.tea-receipt__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.tea-receipt__list li {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0.28rem 0.4rem;
+		border-radius: 0.45rem;
+		font-size: 0.72rem;
+	}
+	.tea-receipt__list li:hover {
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1));
+	}
+	.tea-receipt__list img,
+	.tea-receipt__list span.tea-receipt__ph {
+		width: 1.35rem;
+		height: 1.35rem;
+		flex: none;
+		border-radius: 50%;
+		object-fit: cover;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1));
+		display: grid;
+		place-items: center;
+		font-size: 0.62rem;
+	}
+	.tea-receipt__who {
+		min-width: 0;
+		display: grid;
+	}
+	.tea-receipt__who small {
+		color: var(--tea-muted-soft);
+		font-size: 0.62rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
 	.tea-jump {
 		position: absolute;
 		left: 50%;
@@ -2235,6 +2360,86 @@ const peers = [
 			f.scrollTo({ top: f.scrollHeight, behavior: smooth ? "smooth" : "auto" });
 		};
 
+		const readerFace = (r) =>
+			r.avatar
+				? `<img src="${esc(r.avatar)}" alt="" loading="lazy" />`
+				: `<span style="${avatarStyle(r.nick, r.site)}">${esc(initials(r.nick))}</span>`;
+
+		const renderReceipt = (m) => {
+			const rp = m.receipt;
+			if (!rp || !rp.count) return "";
+			const readers = Array.isArray(rp.readers) ? rp.readers : [];
+			const faces = readers
+				.slice(0, 3)
+				.map(readerFace)
+				.join("");
+			const more = Math.max(0, (rp.count || 0) - readers.length);
+			const rows = readers
+				.map(
+					(r) => `<li>
+						${readerFace(r)}
+						<span class="tea-receipt__who"><b>${esc(r.nick || "茶友")}</b>${r.site ? `<small>来自 ${esc(r.site)}</small>` : ""}</span>
+					</li>`,
+				)
+				.join("");
+			return `<div class="tea-receipt">
+				<button type="button" class="tea-receipt__trigger" data-receipt aria-expanded="false" aria-label="已读 ${Number(rp.count) || 0} 人，查看名单">
+					<span class="tea-receipt__faces">${faces}${more ? `<span>+${more}</span>` : ""}</span>
+					<span>${Number(rp.count) || 0} 人已读</span>
+				</button>
+				<div class="tea-receipt__pop" data-receipt-pop hidden>
+					<h5>已读成员 <small>${Number(rp.count) || 0} 人</small></h5>
+					<ul class="tea-receipt__list">${rows}${more ? `<li><small>还有 ${more} 人未显示</small></li>` : ""}</ul>
+				</div>
+			</div>`;
+		};
+
+		// 已读名单弹层：fixed 定位避开消息区 overflow 裁剪
+		const bindReceipts = () => {
+			const f = feedEl();
+			if (!f || f.dataset.receiptBound) return;
+			f.dataset.receiptBound = "1";
+			let activePop = null;
+			let activeBtn = null;
+			const close = () => {
+				if (activePop) {
+					activePop.hidden = true;
+					activePop = null;
+				}
+				if (activeBtn) {
+					activeBtn.setAttribute("aria-expanded", "false");
+					activeBtn = null;
+				}
+			};
+			f.addEventListener("click", (e) => {
+				const btn = e.target.closest("[data-receipt]");
+				if (!btn || !f.contains(btn)) {
+					if (!e.target.closest("[data-receipt-pop]")) close();
+					return;
+				}
+				const pop = btn.parentElement.querySelector("[data-receipt-pop]");
+				if (!pop) return;
+				if (activeBtn === btn && !pop.hidden) {
+					close();
+					return;
+				}
+				close();
+				pop.hidden = false;
+				const r = btn.getBoundingClientRect();
+				const w = pop.offsetWidth;
+				const h = pop.offsetHeight;
+				pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - w - 8))}px`;
+				const up = r.top - h - 6 >= 8;
+				pop.style.top = `${up ? r.top - h - 6 : Math.min(r.bottom + 6, innerHeight - h - 8)}px`;
+				activePop = pop;
+				activeBtn = btn;
+				btn.setAttribute("aria-expanded", "true");
+			});
+			document.addEventListener("keydown", (e) => {
+				if (e.key === "Escape") close();
+			});
+		};
+
 		const renderMessage = (m) => {
 			const f = feedEl();
 			if (!f) return;
@@ -2274,6 +2479,7 @@ const peers = [
 			const body = m.image
 				? `<img src="${esc(m.image)}" alt="图片" loading="lazy" data-zoom />`
 				: fmtText(m.text || "");
+			const receipt = renderReceipt(m);
 
 			el.innerHTML = `
 				<div class="tea-msg__avatar" ${av} aria-hidden="true">${m.avatar ? "" : esc(initials(m.nick))}</div>
@@ -2284,6 +2490,7 @@ const peers = [
 						<time class="tea-msg__time">${esc(fmtTime(m.ts))}</time>
 					</div>
 					<div class="tea-msg__text">${body}</div>
+					${receipt}
 				</div>`;
 
 			f.appendChild(el);
@@ -3163,6 +3370,7 @@ const peers = [
 			const jukeScrim = q("[data-juke-scrim]");
 			if (jukeScrim) jukeScrim.addEventListener("click", () => shell.classList.remove("is-juke-open"));
 			bindJuke();
+			bindReceipts();
 		};
 
 		if (!rt.bound) {

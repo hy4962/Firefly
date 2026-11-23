@@ -175,6 +175,39 @@ async function getMembers(c, roomId, force = false) {
 	return map;
 }
 
+// m.receipt 在 sync 的 ephemeral 里是一条「全量快照」事件：
+// content = { "$eventId": { "m.read": { "@user": { ts, thread_id } } } }
+// 取最近一条即可；顺手把 Matrix 用户映射成房间成员资料。
+function readReceipts(data, roomId, members, c, base) {
+	const events = data?.rooms?.join?.[roomId]?.ephemeral?.events || [];
+	const snapshot = [...events].reverse().find((ev) => ev.type === "m.receipt")?.content || {};
+	const map = new Map();
+	for (const [eventId, reads] of Object.entries(snapshot)) {
+		const users = reads?.["m.read"] || {};
+		const readers = Object.entries(users)
+			.map(([id, info]) => {
+				const m = members.get(id) || {};
+				const nick = m.nick || id.split(":")[0].replace(/^@/, "");
+				const dot = nick.indexOf(" · ");
+				const avatar = m.avatar
+					? m.avatar.startsWith("mxc://")
+						? `${base}/api/media?u=${enc(m.avatar)}`
+						: m.avatar
+					: "";
+				return {
+					id,
+					nick: dot > 0 ? nick.slice(0, dot) : nick,
+					site: dot > 0 ? nick.slice(dot + 3) : SITE_BY_SERVER[id.split(":")[1]] || "",
+					avatar,
+					ts: info?.ts || 0,
+				};
+			})
+			.sort((a, b) => b.ts - a.ts);
+		if (readers.length) map.set(eventId, { count: readers.length, readers });
+	}
+	return map;
+}
+
 let activeCache = { at: 0, set: new Set(), room: "" };
 
 async function getActiveSenders(c, roomId) {
@@ -550,10 +583,18 @@ async function handleHistory(c, url, base, token) {
 	const members = await getMembers(c, room.id);
 	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}`, { token });
 	const data = await res.json();
+	// 回执只在 sync 的 ephemeral 里；这里单独取一次全量快照，给历史消息带上已读名单。
+	let receipts = new Map();
+	try {
+		const filter = JSON.stringify({ room: { rooms: [room.id], ephemeral: { types: ["m.receipt"] } } });
+		const sync = await mx(c, `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}`, { token });
+		receipts = readReceipts(await sync.json(), room.id, members, c, base);
+	} catch (_) {}
 	const messages = (data.chunk || [])
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean)
-		.reverse();
+		.reverse()
+		.map((m) => ({ ...m, receipt: receipts.get(m.id) || null }));
 	return json(200, { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, end: data.end || null });
 }
 
@@ -561,16 +602,23 @@ async function handleSync(c, url, base, token) {
 	const room = roomOf(c, url);
 	const since = url.searchParams.get("since") || "";
 	const filter = JSON.stringify({
-		room: { rooms: [room.id], timeline: { limit: 50 }, state: { lazy_load_members: true } },
+		room: {
+			rooms: [room.id],
+			timeline: { limit: 50 },
+			state: { lazy_load_members: true },
+			ephemeral: { types: ["m.receipt"] },
+		},
 	});
 	const path = `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}` + (since ? `&since=${enc(since)}` : "");
 	const res = await mx(c, path, { token });
 	const data = await res.json();
 	const members = await getMembers(c, room.id);
+	const receipts = readReceipts(data, room.id, members, c, base);
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
 	const messages = timeline
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
-		.filter(Boolean);
+		.filter(Boolean)
+		.map((m) => ({ ...m, receipt: receipts.get(m.id) || null }));
 	return json(200, { ok: true, messages, next: data.next_batch || since || null });
 }
 
