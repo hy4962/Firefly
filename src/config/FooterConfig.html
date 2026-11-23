@@ -2994,3 +2994,85 @@
 		document.addEventListener("swup:page:view", apply);
 	})();
 </script>
+
+<style>
+	/* ===== 菜单岛：一整块玻璃 + 平铺文字，不再每项再套一层胶囊 =====
+	   参考站的做法是外层一块玻璃岛，里面只有文字和图标；当前项是唯一
+	   的浅色实心胶囊。这里用更高特异性覆盖上面那套「小胶囊」样式，
+	   同时把液态玻璃那层 ::before 从菜单项上摘掉，避免又出现一层内嵌玻璃。 */
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button {
+		background: transparent !important;
+		border-color: transparent !important;
+		box-shadow: none !important;
+		color: var(--ff-np-fg) !important;
+		padding-inline: 0.75rem !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button::before,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a::after,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button::after {
+		content: none !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a:hover:not(.ff-np-active),
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button:hover:not(.ff-np-active) {
+		background: rgba(255, 255, 255, 0.26) !important;
+		border-color: transparent !important;
+		color: var(--ff-np-fg) !important;
+	}
+
+	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a:hover:not(.ff-np-active),
+	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button:hover:not(.ff-np-active) {
+		background: rgba(255, 255, 255, 0.1) !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a.ff-np-active,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button.ff-np-active {
+		background: rgba(255, 255, 255, 0.88) !important;
+		border-color: transparent !important;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14) !important;
+		color: color-mix(in oklch, var(--primary) 42%, black) !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a.ff-np-active .navbar-icon,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button.ff-np-active .navbar-icon {
+		color: inherit !important;
+		opacity: 1 !important;
+	}
+
+	/* 两个自定义高亮入口也退回平铺文字，只留主题色文字和图标 */
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"],
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"] {
+		background: transparent !important;
+		border-color: transparent !important;
+		box-shadow: none !important;
+		color: var(--primary) !important;
+		font-weight: 700 !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"]:hover,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"]:hover {
+		background: rgba(255, 255, 255, 0.26) !important;
+		color: var(--primary) !important;
+	}
+
+	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"]:hover,
+	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"]:hover {
+		background: rgba(255, 255, 255, 0.1) !important;
+	}
+
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"] svg,
+	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"] svg {
+		color: inherit !important;
+		opacity: 1 !important;
+	}
+
+	@media (max-width: 1279px) {
+		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a,
+		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button {
+			padding-inline: 0.5rem !important;
+		}
+	}
+</style>
