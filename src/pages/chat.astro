@@ -217,18 +217,18 @@ const peers = [
 				<div class="tea-juke__cover" data-juke-cover>
 					<span class="tea-juke__eq"><i></i><i></i><i></i></span>
 				</div>
-				<div class="tea-juke__meta">
-					<span class="tea-juke__eyebrow">正在播放</span>
-					<h3 data-juke-title>还没开始听</h3>
-					<p data-juke-artist>从下面挑一首，或者让茶室随便放</p>
-				</div>
-			</div>
-
-			<div class="tea-juke__timeline">
-				<input type="range" min="0" max="1000" step="1" value="0" data-juke-seek aria-label="播放进度" />
-				<div class="tea-juke__times">
-					<span data-juke-cur>0:00</span>
-					<span data-juke-dur>0:00</span>
+				<div class="tea-juke__info">
+					<div class="tea-juke__meta">
+						<h3 data-juke-title>还没开始听</h3>
+						<p data-juke-artist>从下面挑一首，或者让茶室随便放</p>
+					</div>
+					<div class="tea-juke__timeline">
+						<input type="range" min="0" max="1000" step="1" value="0" data-juke-seek aria-label="播放进度" />
+						<div class="tea-juke__times">
+							<span data-juke-cur>0:00</span>
+							<span data-juke-dur>0:00</span>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -1754,13 +1754,16 @@ const peers = [
 
 	.tea-juke__stage {
 		display: grid;
-		gap: 0.55rem;
-		padding: 0.75rem 0.8rem 0;
+		grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+		gap: 0.65rem;
+		padding: 0.8rem 0.8rem 0.15rem;
+		align-items: center;
 		flex: none;
 	}
 	.tea-juke__cover {
 		position: relative;
-		aspect-ratio: 16 / 10;
+		aspect-ratio: 1 / 1;
+		width: 100%;
 		border-radius: 0.8rem;
 		background-color: color-mix(in oklch, var(--primary) 12%, transparent);
 		background-size: cover;
@@ -1812,25 +1815,27 @@ const peers = [
 			height: 100%;
 		}
 	}
+	.tea-juke__info {
+		min-width: 0;
+		display: grid;
+		gap: 0.6rem;
+		align-content: center;
+	}
 	.tea-juke__meta {
 		min-width: 0;
 	}
-	.tea-juke__eyebrow {
-		font-size: 0.6rem;
-		letter-spacing: 0.08em;
-		color: var(--tea-muted-soft);
-	}
 	.tea-juke__meta h3 {
-		margin: 0.05rem 0 0;
-		font-size: 0.84rem;
+		margin: 0;
+		font-size: 0.82rem;
 		font-weight: 600;
 		line-height: 1.35;
-		white-space: nowrap;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
 		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 	.tea-juke__meta p {
-		margin: 0.1rem 0 0;
+		margin: 0.25rem 0 0;
 		font-size: 0.68rem;
 		color: var(--tea-muted);
 		white-space: nowrap;
@@ -1839,8 +1844,7 @@ const peers = [
 	}
 
 	.tea-juke__timeline {
-		padding: 0.55rem 0.8rem 0;
-		flex: none;
+		min-width: 0;
 	}
 	.tea-juke input[type="range"] {
 		-webkit-appearance: none;
