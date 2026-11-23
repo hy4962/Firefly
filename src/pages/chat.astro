@@ -380,49 +380,75 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	</section>
 
 	<!-- ── 身份弹窗 ─────────────────────────────────────────── -->
-	<dialog class="tea-dialog" data-tea-dialog aria-labelledby="tea-dialog-title">
+	<dialog class="tea-dialog tea-login" data-tea-dialog aria-labelledby="tea-dialog-title">
 		<form method="dialog" class="tea-dialog__inner" data-tea-identity>
-			<header class="tea-dialog__head">
-				<span class="tea-dialog__icon"><Icon is:inline name="material-symbols:local-cafe-rounded" /></span>
+			<header class="tea-dialog__head tea-login__head">
+				<div>
+					<h3 id="tea-dialog-title">登录聊天室</h3>
+					<p class="tea-dialog__desc">登录后即可发言、传图与点歌</p>
+				</div>
 				<button type="button" class="tea-icon-btn tea-dialog__close" data-tea-dialog-close aria-label="关闭">
 					<Icon is:inline name="material-symbols:close-rounded" />
 				</button>
 			</header>
-			<h3 id="tea-dialog-title">欢迎来喝杯茶</h3>
-			<p class="tea-dialog__desc">填个昵称和邮箱就能开始聊天，邮箱不会公开显示。</p>
 
-			<label class="tea-field">
-				<span>昵称 <em>最多 8 个字</em></span>
-				<input type="text" name="nick" maxlength="8" placeholder="你的名字或昵称" required />
-			</label>
-			<label class="tea-field">
-				<span>邮箱 <em>不会公开，只用来认人</em></span>
-				<input type="email" name="email" maxlength="120" placeholder="you@example.com" required />
-			</label>
-			<label class="tea-field">
-				<span>网站 <em>选填</em></span>
-				<input type="text" name="website" maxlength="120" placeholder="https://你的博客" />
-			</label>
-
-			<div class="tea-dialog__preview">
-				<div class="tea-dialog__avatar" data-tea-preview-avatar>?</div>
-				<div class="tea-dialog__preview-copy">
-					<b data-tea-preview-name>还没填昵称</b>
-					<span>会以「昵称 · {SITE_NAME}」的身份出现在大厅</span>
+			<div class="tea-login__primary">
+				<div class="tea-login__primary-head">
+					<b>Waline 账号登录</b>
+					<span class="tea-login__badge">推荐</span>
+					<a class="tea-login__link" href="/guestbook/" target="_blank" rel="noopener">评论区互通</a>
+				</div>
+				<p class="tea-login__desc">
+					点击下方按钮完成 Waline 登录或注册（支持账号密码、GitHub 等方式），即可拥有 <b>认证</b> 标识并解锁个人歌单。
+				</p>
+				<button type="button" class="tea-btn tea-btn--primary tea-login__cta" data-tea-waline-open>
+					<Icon is:inline name="material-symbols:open-in-new-rounded" />
+					使用 Waline 账号登录
+				</button>
+				<div class="tea-login__foot">
+					<span>未弹出窗口或偏好新标签页？</span>
+					<a href="/guestbook/" target="_blank" rel="noopener">在新标签页打开 ↗</a>
 				</div>
 			</div>
 
-			<button type="submit" class="tea-btn tea-btn--primary tea-dialog__submit" value="ok" data-tea-submit>
-				<span data-tea-submit-label>进入茶室</span>
-				<Icon is:inline name="material-symbols:arrow-forward-rounded" />
-			</button>
-			<p class="tea-dialog__error" data-tea-dialog-error hidden></p>
+			<details class="tea-login__guest">
+				<summary>
+					<span class="tea-login__guest-copy">
+						<b>临时访客进入（无需账号）</b>
+						<small>仅填昵称与邮箱快速发言，不支持导入与管理个人歌单</small>
+					</span>
+					<Icon is:inline name="material-symbols:expand-more-rounded" class="tea-login__chev" />
+				</summary>
+				<div class="tea-login__guest-body">
+					<label class="tea-field">
+						<span>昵称 <em>最多 8 个字</em></span>
+						<input type="text" name="nick" maxlength="8" placeholder="你的名字或昵称" required />
+					</label>
+					<label class="tea-field">
+						<span>邮箱 <em>不会公开，只用来认人</em></span>
+						<input type="email" name="email" maxlength="120" placeholder="you@example.com" required />
+					</label>
+					<label class="tea-field">
+						<span>网站 <em>选填</em></span>
+						<input type="text" name="website" maxlength="120" placeholder="https://你的博客" />
+					</label>
 
-			<div class="tea-dialog__divider"><span>也可以使用 Waline 账号</span></div>
-			<button type="button" class="tea-btn tea-btn--ghost tea-dialog__waline" data-tea-waline-open>
-				<Icon is:inline name="material-symbols:forum-outline-rounded" />
-				Waline 账号登录 / 注册
-			</button>
+					<div class="tea-dialog__preview">
+						<div class="tea-dialog__avatar" data-tea-preview-avatar>?</div>
+						<div class="tea-dialog__preview-copy">
+							<b data-tea-preview-name>还没填昵称</b>
+							<span>会以「昵称 · {SITE_NAME}」的身份出现在大厅</span>
+						</div>
+					</div>
+
+					<button type="submit" class="tea-btn tea-btn--primary tea-dialog__submit" value="ok" data-tea-submit>
+						<span data-tea-submit-label>进入茶室</span>
+						<Icon is:inline name="material-symbols:arrow-forward-rounded" />
+					</button>
+					<p class="tea-dialog__error" data-tea-dialog-error hidden></p>
+				</div>
+			</details>
+
 			<p class="tea-dialog__hint">同一邮箱共用茶室资料、聊天记录和网站绑定，切换登录方式无需重复填写。</p>
 			<button type="button" class="tea-dialog__back" data-tea-matrix-open>
 				<Icon is:inline name="material-symbols:admin-panel-settings-outline-rounded" /> 已有 Matrix 账号？登录
@@ -3257,6 +3283,118 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		font-size: 0.66rem;
 		line-height: 1.6;
 		color: var(--tea-muted-soft);
+	}
+	/* ── 登录弹窗：Waline 主入口 + 访客折叠 ─────────────── */
+	.tea-dialog.tea-login {
+		width: min(32rem, calc(100vw - 2rem));
+	}
+	.tea-login__head h3 {
+		margin: 0;
+		font-size: 1.12rem;
+	}
+	.tea-login__head .tea-dialog__desc {
+		margin: 0.18rem 0 0;
+	}
+	.tea-login__primary {
+		display: grid;
+		gap: 0.6rem;
+		padding: 0.85rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 28%, var(--tea-line));
+		border-radius: 0.9rem;
+		background: color-mix(in oklch, var(--primary) 7%, var(--card-bg, #fff));
+	}
+	.tea-login__primary-head {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.tea-login__primary-head b {
+		font-size: 0.92rem;
+	}
+	.tea-login__badge {
+		font-size: 0.58rem;
+		font-weight: 700;
+		padding: 0.18rem 0.4rem;
+		border-radius: 999px;
+		background: #2f6b4f;
+		color: #fff;
+	}
+	.tea-login__link {
+		margin-left: auto;
+		font-size: 0.68rem;
+		color: color-mix(in oklch, var(--primary) 72%, currentColor);
+		text-decoration: none;
+	}
+	.tea-login__link:hover { text-decoration: underline; }
+	.tea-login__desc {
+		margin: 0;
+		font-size: 0.74rem;
+		line-height: 1.65;
+		color: var(--tea-muted);
+	}
+	.tea-login__desc b { color: color-mix(in oklch, var(--primary) 72%, currentColor); }
+	.tea-login__cta {
+		width: 100%;
+		padding: 0.65rem 0.9rem;
+		font-size: 0.88rem;
+		font-weight: 600;
+	}
+	.tea-login__cta svg { width: 1rem; height: 1rem; }
+	.tea-login__foot {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		font-size: 0.64rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-login__foot a {
+		color: color-mix(in oklch, var(--primary) 68%, currentColor);
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.tea-login__foot a:hover { text-decoration: underline; }
+	.tea-login__guest {
+		border: 1px solid var(--tea-line);
+		border-radius: 0.85rem;
+		overflow: hidden;
+	}
+	.tea-login__guest summary {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.7rem 0.8rem;
+		cursor: pointer;
+		list-style: none;
+	}
+	.tea-login__guest summary::-webkit-details-marker { display: none; }
+	.tea-login__guest-copy {
+		flex: 1;
+		min-width: 0;
+		display: grid;
+		gap: 0.16rem;
+	}
+	.tea-login__guest-copy b {
+		font-size: 0.82rem;
+		font-weight: 500;
+	}
+	.tea-login__guest-copy small {
+		font-size: 0.66rem;
+		color: var(--tea-muted);
+		line-height: 1.5;
+	}
+	.tea-login__chev {
+		width: 1rem;
+		height: 1rem;
+		flex: none;
+		color: var(--tea-muted);
+		transition: transform 0.15s ease;
+	}
+	.tea-login__guest[open] .tea-login__chev { transform: rotate(180deg); }
+	.tea-login__guest-body {
+		display: grid;
+		gap: 0.5rem;
+		padding: 0.15rem 0.8rem 0.8rem;
 	}
 	.tea-dialog__back {
 		display: inline-flex;
