@@ -368,6 +368,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		<!-- ── 遮罩（移动端抽屉 / 点歌台浮层） ─────────────────── -->
 		<div class="tea-scrim" data-tea-scrim hidden></div>
 		<div class="tea-scrim" data-juke-scrim hidden></div>
+		<div class="tea-msg-menu" data-tea-msg-menu hidden></div>
 	</section>
 
 	<!-- ── 身份弹窗 ─────────────────────────────────────────── -->
@@ -1682,7 +1683,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		transition: opacity 0.15s ease;
 		z-index: 4;
 	}
-	.tea-msg__text:hover .tea-msg__actions,
+	.tea-msg:hover .tea-msg__actions,
+	.tea-msg__actions:hover,
 	.tea-msg__actions:focus-within {
 		opacity: 1;
 		pointer-events: auto;
@@ -1700,14 +1702,85 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		border: 0;
 		border-radius: 999px;
 		background: transparent;
-		color: var(--tea-muted);
+		color: color-mix(in oklch, var(--tea-muted) 40%, #000);
 		cursor: pointer;
 	}
 	.tea-msg__action:hover {
 		color: color-mix(in oklch, var(--primary) 72%, currentColor);
 		background: color-mix(in oklch, var(--primary) 12%, transparent);
 	}
-	.tea-msg__action svg { width: 0.9rem; height: 0.9rem; }
+	.tea-msg__action svg { width: 1rem; height: 1rem; display: block; }
+	.tea-msg-menu {
+		position: fixed;
+		z-index: 140;
+		min-width: 9.5rem;
+		padding: 0.28rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.7rem;
+		background: var(--card-bg, #fff);
+		box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+		display: grid;
+		gap: 0.1rem;
+	}
+	.tea-msg-menu[hidden] { display: none; }
+	.tea-msg-menu button {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		width: 100%;
+		padding: 0.4rem 0.5rem;
+		border: 0;
+		border-radius: 0.45rem;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 0.74rem;
+		text-align: left;
+		cursor: pointer;
+	}
+	.tea-msg-menu button:hover { background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08)); }
+	.tea-msg-menu button.is-danger { color: #c0563f; }
+	.tea-msg-menu svg { width: 0.95rem; height: 0.95rem; color: var(--tea-muted); flex: none; }
+	.tea-source {
+		border: 0;
+		padding: 0;
+		background: transparent;
+		max-width: min(34rem, calc(100vw - 2rem));
+	}
+	.tea-source::backdrop { background: rgba(0, 0, 0, 0.35); }
+	.tea-source__box {
+		background: var(--card-bg, #fff);
+		border: 1px solid var(--tea-line);
+		border-radius: 0.9rem;
+		box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+		overflow: hidden;
+	}
+	.tea-source__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.45rem 0.7rem;
+		border-bottom: 1px solid var(--tea-line);
+		font-size: 0.74rem;
+		font-weight: 600;
+	}
+	.tea-source__head button {
+		border: 0;
+		background: none;
+		color: var(--tea-muted);
+		font-size: 1.1rem;
+		cursor: pointer;
+	}
+	.tea-source pre {
+		margin: 0;
+		padding: 0.7rem;
+		max-height: min(22rem, 60vh);
+		overflow: auto;
+		font-size: 0.74rem;
+		line-height: 1.55;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
 	.tea-msg__reactions {
 		display: flex;
 		flex-wrap: wrap;
@@ -3615,6 +3688,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			});
 		};
 
+		const ICON_REACT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="12.5" r="6.5"/><path d="M6.8 14.4s1 1.4 2.7 1.4 2.7-1.4 2.7-1.4"/><circle cx="7.2" cy="10.6" r=".7" fill="currentColor" stroke="none"/><circle cx="11.8" cy="10.6" r=".7" fill="currentColor" stroke="none"/><path d="M19 5v5M16.5 7.5h5"/></svg>`;
+		const ICON_REPLY = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7 3 12l6 5"/><path d="M3 12h11a6 6 0 0 1 6 6v1"/></svg>`;
+		const ICON_MORE = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>`;
+
 		const renderMessage = (m) => {
 			const f = feedEl();
 			if (!f) return;
@@ -3660,10 +3737,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			// 否则自己刚发的消息永远没有撤回/回复按钮。
 			const actions = m.id
 				? `<span class="tea-msg__actions">
-						<button type="button" class="tea-msg__action" data-act="react" data-id="${esc(m.id)}" title="回应" aria-label="回应"><Icon is:inline name="material-symbols:add-reaction-rounded" /></button>
-						<button type="button" class="tea-msg__action" data-act="reply" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="回复" aria-label="回复"><Icon is:inline name="material-symbols:reply-rounded" /></button>
-						${rt.room === "lobby" ? `						<button type="button" class="tea-msg__action" data-act="thread" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="线程回复" aria-label="线程回复"><Icon is:inline name="material-symbols:forum-rounded" /></button>` : ""}
-						${mine && rt.room === "lobby" && Date.now() - Number(m.ts || 0) < 5 * 60 * 1000 ? `<button type="button" class="tea-msg__action" data-act="recall" data-id="${esc(m.id)}" title="撤回" aria-label="撤回"><Icon is:inline name="material-symbols:undo-rounded" /></button>` : ""}
+						<button type="button" class="tea-msg__action" data-act="react" data-id="${esc(m.id)}" title="回应" aria-label="回应">${ICON_REACT}</button>
+						<button type="button" class="tea-msg__action" data-act="reply" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="回复" aria-label="回复">${ICON_REPLY}</button>
+						<button type="button" class="tea-msg__action" data-act="more" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 500))}" data-recall="${mine && Date.now() - Number(m.ts || 0) < 5 * 60 * 1000 ? "1" : "0"}" data-thread="${rt.room === "lobby" ? "1" : "0"}" title="更多" aria-label="更多">${ICON_MORE}</button>
 					</span>`
 				: "";
 			const receipt = renderReceipt(m);
@@ -5132,12 +5208,109 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			const cancelReply = q("[data-tea-reply-cancel]");
 			if (cancelReply) cancelReply.addEventListener("click", () => setReply(null));
 			const f = feedEl();
+			const msgMenu = q("[data-tea-msg-menu]");
+			let msgMenuTarget = null;
+			const closeMsgMenu = () => {
+				if (!msgMenu) return;
+				msgMenu.hidden = true;
+				msgMenuTarget = null;
+			};
+			const showSource = (text) => {
+				let dlg = document.querySelector("[data-tea-source-dialog]");
+				if (!dlg) {
+					dlg = document.createElement("dialog");
+					dlg.className = "tea-source";
+					dlg.dataset.teaSourceDialog = "";
+					dlg.innerHTML = `<div class="tea-source__box"><header class="tea-source__head"><span>消息源码</span><button type="button" data-source-close aria-label="关闭">×</button></header><pre></pre></div>`;
+					document.body.appendChild(dlg);
+				}
+				dlg.querySelector("pre").textContent = text;
+				dlg.querySelector("[data-source-close]").onclick = () => dlg.close();
+				dlg.showModal();
+			};
+			const copyText = async (text) => {
+				try {
+					await navigator.clipboard.writeText(text);
+				} catch (_) {
+					const ta = document.createElement("textarea");
+					ta.value = text;
+					ta.style.position = "fixed";
+					ta.style.opacity = "0";
+					document.body.appendChild(ta);
+					ta.select();
+					document.execCommand("copy");
+					ta.remove();
+				}
+			};
+			const openMsgMenu = (btn) => {
+				if (!msgMenu) return;
+				const canRecall = btn.dataset.recall === "1";
+				msgMenuTarget = {
+					id: btn.dataset.id,
+					nick: btn.dataset.nick || "茶友",
+					text: btn.dataset.text || "",
+				};
+				msgMenu.innerHTML = `
+					<button type="button" data-menu="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>复制内容</button>
+					${btn.dataset.thread === "1" ? `<button type="button" data-menu="thread"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.2-4.2A8 8 0 1 1 21 12Z"/></svg>线程回复</button>` : ""}
+					<button type="button" data-menu="source"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m9 8-4 4 4 4M15 8l4 4-4 4"/></svg>查看源码</button>
+					${canRecall ? `<button type="button" data-menu="recall" class="is-danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7 3 12l6 5"/><path d="M3 12h10a7 7 0 0 1 7 7"/></svg>撤回</button>` : ""}
+				`;
+				msgMenu.hidden = false;
+				const r = btn.getBoundingClientRect();
+				const w = msgMenu.offsetWidth || 150;
+				const h = msgMenu.offsetHeight || 120;
+				const top = r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 6) : r.bottom + 6;
+				const left = Math.min(Math.max(8, r.left), Math.max(8, innerWidth - w - 8));
+				msgMenu.style.top = top + "px";
+				msgMenu.style.left = left + "px";
+			};
+			if (msgMenu) {
+				msgMenu.addEventListener("click", async (e) => {
+					const item = e.target.closest("[data-menu]");
+					if (!item || !msgMenuTarget) return;
+					const { id, nick, text } = msgMenuTarget;
+					const kind = item.dataset.menu;
+					closeMsgMenu();
+					if (kind === "copy") {
+						await copyText(text);
+					} else if (kind === "thread") {
+						if (typeof rt.openThread === "function") rt.openThread(id);
+					} else if (kind === "source") {
+						showSource(text);
+					} else if (kind === "recall") {
+						try {
+							await api("/api/recall", { method: "POST", body: JSON.stringify({ eventId: id }) });
+							const el = f.querySelector(`.tea-msg[data-id="${CSS.escape(id)}"]`);
+							if (el) {
+								const v = rt.visitor;
+								const box = document.createElement("div");
+								box.innerHTML = recallHtml({ id, by: v?.nick || "我", site: SITE_NAME, ts: Date.now() });
+								el.replaceWith(box.firstElementChild);
+							}
+						} catch (err) {
+							showError(err.message || "撤回失败");
+						}
+					}
+				});
+				document.addEventListener("click", (e) => {
+					if (msgMenu.hidden) return;
+					if (e.target.closest("[data-tea-msg-menu]") || e.target.closest('[data-act="more"]')) return;
+					closeMsgMenu();
+				});
+				document.addEventListener("keydown", (e) => {
+					if (e.key === "Escape") closeMsgMenu();
+				});
+				if (f) f.addEventListener("scroll", closeMsgMenu, { passive: true });
+			}
 			if (f) {
 				f.addEventListener("click", async (e) => {
 					const btn = e.target.closest("[data-act]");
 					if (!btn) return;
 					const id = btn.dataset.id;
-					if (btn.dataset.act === "thread") {
+					if (btn.dataset.act === "more") {
+						openMsgMenu(btn);
+					} else if (btn.dataset.act === "thread") {
 						if (typeof rt.openThread === "function") rt.openThread(id);
 					} else if (btn.dataset.act === "recall") {
 						try {
