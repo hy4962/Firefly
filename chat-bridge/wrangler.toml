@@ -5,6 +5,7 @@
 name = "tea-bridge"
 main = "worker.mjs"
 compatibility_date = "2025-01-01"
+account_id = "46bddb57cd2c87c1eab643c4e3179136"
 
 # 自定义域：tea.9ll.uk 必须在 Cloudflare 托管的 9ll.uk 这个 Zone 下
 routes = [{ pattern = "tea.9ll.uk", custom_domain = true }]
