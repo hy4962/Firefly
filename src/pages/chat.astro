@@ -18,13 +18,14 @@ const roomRules = [
 	"图片每 10 分钟最多 3 张，慢慢来。",
 ];
 
+// 互联茶室友站（点击顶栏的站点按钮可查看）
 const peers = [
-	{ name: "听雨茶室", url: "https://rainzt.cn/chat/" },
-	{ name: "Detached", url: "https://detached.online/chat/" },
-	{ name: "AIOVTUE-雪", url: "https://daily.yybb.us/chat/" },
-	{ name: "冷汐的杂货铺", url: "https://lengxiqwq.com/chat/" },
-	{ name: "Somoe Home", url: "https://somoe.xyz/chat/" },
+	{ name: "听雨茶室", owner: "朝朝听雨", avatar: "https://rainzt.cn/zzty.png", url: "https://rainzt.cn/chat/", desc: "物物而不物于物，念念而不念于念" },
+	{ name: "Detached 茶室", owner: "Detached", avatar: "https://detached.online/favicon.ico", url: "https://detached.online/chat/", desc: "总能看见不完美，所以一直追求完美" },
+	{ name: "雪的茶室", owner: "AIOVTUE-雪", avatar: "https://daily.yybb.us/owo/snow/snow-03.webp", url: "https://chat.yybb.us/", desc: "雨滴会记录生命中的每一个瞬间" },
+	{ name: "Somoe 茶室", owner: "Somoe", avatar: "https://somoe.xyz/favicon.ico", url: "https://somoe.xyz/chat", desc: "在文字的深海里，拾贝而行" },
 ];
+const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images/kirino.webp", url: "https://www.9ll.uk/chat/", desc: "在折腾里慢慢变老", isSelf: true };
 ---
 
 <MainGridLayout title={title} description={description} heading={title}>
@@ -108,16 +109,27 @@ const peers = [
 
 		<!-- ── 主区 ───────────────────────────────────────────── -->
 		<div class="tea-room">
-			<header class="tea-bar">
+			<header class="tea-bar" data-tea-bar>
 				<div class="tea-bar__brand">
 					<span class="tea-bar__mark"><Icon is:inline name="material-symbols:emoji-food-beverage-outline-rounded" /></span>
 					<div>
 						<h1 class="tea-bar__title">{title}</h1>
 						<p class="tea-bar__sub">Matrix 互联大厅</p>
 					</div>
+					<button type="button" class="tea-room-switch" data-tea-sites-trigger aria-expanded="false" title="查看互联茶室友站" aria-label="查看互联茶室友站">
+						<Icon is:inline name="material-symbols:public-rounded" />
+						<span>互联茶室</span>
+						<b data-tea-sites-count>{peers.length + 1}</b><span class="tea-room-switch__unit">个站点</span>
+						<Icon is:inline name="material-symbols:expand-more-rounded" class="tea-room-switch__caret" />
+					</button>
 				</div>
 				<div class="tea-bar__tools">
 					<span class="tea-conn" data-tea-conn><i></i><span data-tea-conn-text>连接中</span></span>
+					<button type="button" class="tea-thread-pill" data-tea-threads-trigger aria-expanded="false" title="查看活跃线程回复" aria-label="查看活跃线程回复" hidden>
+						<Icon is:inline name="material-symbols:forum-rounded" />
+						<span>线程回复</span>
+						<b data-tea-threads-count>0</b>
+					</button>
 					<button type="button" class="tea-icon-btn" data-tea-juke-toggle title="点歌台" aria-label="打开点歌台">
 						<Icon is:inline name="material-symbols:music-note-rounded" />
 					</button>
@@ -172,17 +184,34 @@ const peers = [
 					<button type="button" data-tea-reply-cancel aria-label="取消回复">×</button>
 				</div>
 				<div class="tea-input" data-tea-input hidden>
+					<div class="tea-md-preview" data-tea-md-preview hidden>
+						<div class="tea-md-preview__head">
+							<span>预览 Markdown</span>
+							<button type="button" data-tea-md-close aria-label="切回编辑">切回编辑</button>
+						</div>
+						<div class="tea-md-preview__body" data-tea-md-body></div>
+					</div>
 					<textarea
 						name="message"
 						rows="1"
 						maxlength="500"
-						placeholder="说点什么…（Enter 发送，Shift+Enter 换行）"
+						placeholder="说点什么…"
 						data-tea-text
 					></textarea>
 					<div class="tea-input__tools">
-						<button type="button" class="tea-tool" data-tea-emoji-toggle title="表情包" aria-label="表情包"><Icon is:inline name="material-symbols:sentiment-satisfied-rounded" /></button>
-						<button type="button" class="tea-tool" data-tea-image-pick title="发送图片" aria-label="发送图片"><Icon is:inline name="material-symbols:image-rounded" /></button>
+						<button type="button" class="tea-tool" data-tea-emoji-toggle title="表情" aria-label="表情">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+						</button>
+						<button type="button" class="tea-tool" data-tea-image-pick title="发送图片或链接" aria-label="发送图片或链接">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+						</button>
 						<input type="file" accept="image/*" data-tea-image-file hidden />
+						<button type="button" class="tea-tool" data-tea-poll-toggle title="发起投票" aria-label="发起投票">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="13" rx="1"/><rect x="19" y="13" width="3" height="5" rx="1"/></svg>
+						</button>
+						<button type="button" class="tea-tool" data-tea-md-toggle title="预览 Markdown" aria-label="预览 Markdown">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+						</button>
 					</div>
 					<div class="tea-emoji-panel" data-tea-emoji-panel hidden></div>
 					<div class="tea-input__foot">
@@ -261,6 +290,53 @@ const peers = [
 				<p class="tea-juke__empty">先挑一首歌吧。</p>
 			</div>
 		</aside>
+
+		<!-- ── 互联友站浮层 ─────────────────────────────────────── -->
+		<div class="tea-pop tea-pop--sites" data-tea-sites-pop hidden role="dialog" aria-label="互联茶室友站列表">
+			<div class="tea-pop__head">
+				<span class="tea-pop__title"><Icon is:inline name="material-symbols:emoji-food-beverage-outline-rounded" /> 互联茶室</span>
+				<div class="tea-pop__links">
+					<a href="https://app.element.io/" target="_blank" rel="noopener noreferrer">Element <Icon is:inline name="material-symbols:open-in-new-rounded" /></a>
+					<a href="https://rainzt.cn/posts/tingyu-tea-room-guide/" target="_blank" rel="noopener noreferrer">加入指南 <Icon is:inline name="material-symbols:open-in-new-rounded" /></a>
+					<button type="button" data-tea-pop-close aria-label="关闭">×</button>
+				</div>
+			</div>
+			<p class="tea-pop__note">以下这些博客是和本站聊天互相连通的哦，也可以去他们的小站坐坐：</p>
+			<div class="tea-pop__list" data-tea-sites-list></div>
+		</div>
+
+		<!-- ── 活跃线程浮层 ─────────────────────────────────────── -->
+		<div class="tea-pop tea-pop--threads" data-tea-threads-pop hidden role="dialog" aria-label="活跃线程回复列表">
+			<div class="tea-pop__head">
+				<span class="tea-pop__title"><Icon is:inline name="material-symbols:forum-rounded" /> 活跃线程回复</span>
+				<div class="tea-pop__links">
+					<span class="tea-pop__badge" data-tea-threads-total>0 个</span>
+					<button type="button" data-tea-pop-close aria-label="关闭">×</button>
+				</div>
+			</div>
+			<div class="tea-pop__list" data-tea-threads-list></div>
+		</div>
+
+		<!-- ── 线程详情弹层 ─────────────────────────────────────── -->
+		<div class="tea-thread" data-tea-thread-view hidden role="dialog" aria-label="线程回复详情">
+			<div class="tea-thread__scrim" data-tea-thread-close></div>
+			<div class="tea-thread__panel">
+				<header class="tea-thread__head">
+					<div>
+						<b>线程回复</b>
+						<span data-tea-thread-sub>Matrix 线程 · 0 条回复</span>
+					</div>
+					<button type="button" class="tea-icon-btn" data-tea-thread-close aria-label="关闭线程">
+						<Icon is:inline name="material-symbols:close-rounded" />
+					</button>
+				</header>
+				<div class="tea-thread__body" data-tea-thread-body></div>
+				<div class="tea-thread__footer" data-tea-thread-footer>
+					<textarea rows="2" maxlength="500" placeholder="在此线程中回复，Enter 发送…" data-tea-thread-input></textarea>
+					<button type="button" class="tea-btn tea-btn--primary" data-tea-thread-send>发送</button>
+				</div>
+			</div>
+		</div>
 
 		<!-- ── 图片预览 ─────────────────────────────────────────── -->
 		<div class="tea-zoom" data-tea-zoom hidden>
@@ -386,6 +462,34 @@ const peers = [
 			<button type="button" class="tea-dialog__back" data-tea-matrix-back>
 				<Icon is:inline name="material-symbols:arrow-back-rounded" /> 返回其他方式
 			</button>
+		</form>
+	</dialog>
+
+	<!-- ── 投票弹窗 ─────────────────────────────────────────── -->
+	<dialog class="tea-dialog tea-poll-dialog" data-tea-poll-dialog aria-labelledby="tea-poll-title">
+		<form class="tea-dialog__inner" data-tea-poll-form>
+			<header class="tea-dialog__head">
+				<span class="tea-dialog__icon"><Icon is:inline name="material-symbols:bar-chart-rounded" /></span>
+				<button type="button" class="tea-icon-btn tea-dialog__close" data-tea-poll-close aria-label="关闭">
+					<Icon is:inline name="material-symbols:close-rounded" />
+				</button>
+			</header>
+			<h3 id="tea-poll-title">发起投票</h3>
+			<p class="tea-dialog__desc">让大家选一选，投票会显示在聊天里。</p>
+			<label class="tea-field">
+				<span>问题</span>
+				<input type="text" name="question" maxlength="80" placeholder="想问点什么？" required />
+			</label>
+			<div class="tea-poll-options" data-tea-poll-options>
+				<label class="tea-field"><span>选项 1</span><input type="text" name="option" maxlength="60" placeholder="选项一" required /></label>
+				<label class="tea-field"><span>选项 2</span><input type="text" name="option" maxlength="60" placeholder="选项二" required /></label>
+			</div>
+			<button type="button" class="tea-btn tea-btn--ghost tea-poll-add" data-tea-poll-add>+ 添加选项</button>
+			<button type="submit" class="tea-btn tea-btn--primary tea-dialog__submit" data-tea-poll-submit>
+				<span>发起投票</span>
+				<Icon is:inline name="material-symbols:send-rounded" />
+			</button>
+			<p class="tea-dialog__error" data-tea-poll-error hidden></p>
 		</form>
 	</dialog>
 </MainGridLayout>
@@ -1196,6 +1300,66 @@ const peers = [
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
+	/* 投票卡片 */
+	.tea-poll-card {
+		margin: 0.2rem 0;
+		min-width: 13rem;
+		max-width: 20rem;
+		display: grid;
+		gap: 0.35rem;
+	}
+	.tea-poll-card__q {
+		font-weight: 600;
+		font-size: 0.84rem;
+	}
+	.tea-poll-card__opt {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.35rem 0.6rem;
+		border: 1px solid var(--tea-line-strong);
+		border-radius: 0.5rem;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 0.78rem;
+		text-align: left;
+		cursor: pointer;
+		overflow: hidden;
+	}
+	.tea-poll-card__opt:hover:not(:disabled) {
+		border-color: color-mix(in oklch, var(--primary) 55%, transparent);
+	}
+	.tea-poll-card__opt:disabled { cursor: default; }
+	.tea-poll-card__bar {
+		position: absolute;
+		inset: 0 auto 0 0;
+		background: color-mix(in oklch, var(--primary) 18%, transparent);
+		transition: width 0.3s ease;
+	}
+	.tea-poll-card__opt.is-mine {
+		border-color: color-mix(in oklch, var(--primary) 70%, transparent);
+	}
+	.tea-poll-card__opt.is-mine .tea-poll-card__bar {
+		background: color-mix(in oklch, var(--primary) 32%, transparent);
+	}
+	.tea-poll-card__label,
+	.tea-poll-card__pct { position: relative; z-index: 1; }
+	.tea-poll-card__pct { font-variant-numeric: tabular-nums; opacity: 0.8; }
+	.tea-poll-card__foot {
+		font-size: 0.66rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-poll-options { display: grid; gap: 0.45rem; margin-bottom: 0.4rem; }
+	.tea-poll-add {
+		width: 100%;
+		margin-bottom: 0.5rem;
+		font-size: 0.76rem;
+	}
+
 	.tea-msg__actions {
 		display: inline-flex;
 		align-items: center;
@@ -1519,9 +1683,55 @@ const peers = [
 		background: color-mix(in oklch, var(--primary) 12%, transparent);
 	}
 	.tea-tool svg {
-		width: 1.05rem;
-		height: 1.05rem;
+		width: 1.1rem;
+		height: 1.1rem;
 	}
+	.tea-tool.is-active {
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		background: color-mix(in oklch, var(--primary) 14%, transparent);
+	}
+	.tea-md-preview {
+		border: 1px solid var(--tea-line-strong);
+		border-radius: 0.75rem;
+		background: color-mix(in oklch, var(--primary) 4%, transparent);
+		overflow: hidden;
+	}
+	.tea-md-preview[hidden] { display: none; }
+	.tea-md-preview__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.35rem 0.6rem;
+		font-size: 0.68rem;
+		color: var(--tea-muted);
+		border-bottom: 1px solid var(--tea-line);
+	}
+	.tea-md-preview__head button {
+		border: 0;
+		background: none;
+		color: color-mix(in oklch, var(--primary) 70%, currentColor);
+		font-size: 0.68rem;
+		cursor: pointer;
+	}
+	.tea-md-preview__body {
+		padding: 0.5rem 0.7rem;
+		min-height: 2.4rem;
+		max-height: 8rem;
+		overflow: auto;
+		font-size: 0.86rem;
+		line-height: 1.6;
+	}
+	.tea-md-preview__body p { margin: 0 0 0.5rem; }
+	.tea-md-preview__body p:last-child { margin-bottom: 0; }
+	.tea-md-preview__body pre {
+		padding: 0.5rem 0.6rem;
+		border-radius: 0.5rem;
+		background: rgba(128, 128, 128, 0.12);
+		overflow: auto;
+	}
+	.tea-md-preview__body code { font-size: 0.8em; }
+	.tea-md-preview__body a { color: color-mix(in oklch, var(--primary) 70%, currentColor); }
+	.tea-md-preview__body .tea-poll-card { margin: 0; }
 	.tea-emoji-panel {
 		max-height: 13rem;
 		overflow-y: auto;
@@ -2419,6 +2629,238 @@ const peers = [
 	.dark .tea-msg__text a {
 		color: color-mix(in oklch, var(--primary) 82%, white);
 	}
+
+	/* ─── 互联友站 / 活跃线程浮层 ───────────────────────────── */
+	.tea-room-switch {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		height: 1.85rem;
+		padding: 0 0.55rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in oklch, var(--primary) 26%, transparent);
+		background: color-mix(in oklch, var(--primary) 8%, transparent);
+		color: var(--primary);
+		font: inherit;
+		font-size: 0.72rem;
+		font-weight: 600;
+		white-space: nowrap;
+		cursor: pointer;
+		transition: background 0.15s ease, border-color 0.15s ease;
+	}
+	.tea-room-switch:hover,
+	.tea-room-switch[aria-expanded="true"] {
+		background: color-mix(in oklch, var(--primary) 16%, transparent);
+		border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+	}
+	.tea-room-switch svg { width: 0.9rem; height: 0.9rem; }
+	.tea-room-switch b {
+		font-size: 0.66rem;
+		padding: 0.05rem 0.34rem;
+		border-radius: 999px;
+		background: color-mix(in oklch, var(--primary) 20%, transparent);
+	}
+	.tea-room-switch__unit { font-size: 0.66rem; font-weight: 400; opacity: 0.85; }
+	.tea-room-switch__caret { width: 0.8rem !important; height: 0.8rem !important; opacity: 0.7; }
+	.tea-thread-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		height: 1.85rem;
+		padding: 0 0.6rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in oklch, var(--primary) 34%, transparent);
+		background: color-mix(in oklch, var(--primary) 10%, transparent);
+		color: var(--primary);
+		font: inherit;
+		font-size: 0.72rem;
+		font-weight: 600;
+		white-space: nowrap;
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+	.tea-thread-pill:hover { background: color-mix(in oklch, var(--primary) 18%, transparent); }
+	.tea-thread-pill svg { width: 0.9rem; height: 0.9rem; }
+	.tea-thread-pill b { font-size: 0.66rem; }
+
+	.tea-pop {
+		position: absolute;
+		top: calc(100% - 0.35rem);
+		z-index: 120;
+		width: 20rem;
+		max-width: calc(100vw - 2rem);
+		background: var(--tea-surface, #fff);
+		border: 1px solid var(--tea-line);
+		border-radius: 0.9rem;
+		box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
+		padding: 0.55rem 0.7rem 0.7rem;
+	}
+	.tea-pop--sites { left: 4.5rem; }
+	.tea-pop--threads { right: 0.7rem; width: 22rem; }
+	.tea-pop[hidden] { display: none; }
+	.tea-pop__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding-bottom: 0.5rem;
+		border-bottom: 1px solid var(--tea-line);
+	}
+	.tea-pop__title {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+	.tea-pop__title svg { width: 1rem; height: 1rem; color: var(--primary); }
+	.tea-pop__links { display: inline-flex; align-items: center; gap: 0.35rem; }
+	.tea-pop__links a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.1rem;
+		font-size: 0.66rem;
+		color: var(--primary);
+		text-decoration: none;
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.4rem;
+	}
+	.tea-pop__links a:hover { background: var(--btn-plain-bg-hover, rgba(128,128,128,0.1)); }
+	.tea-pop__links svg { width: 0.7rem; height: 0.7rem; }
+	.tea-pop__links button {
+		width: 1.25rem; height: 1.25rem; display: grid; place-items: center;
+		border: 0; border-radius: 0.35rem; background: transparent;
+		color: var(--tea-muted); cursor: pointer; font-size: 0.95rem; line-height: 1;
+	}
+	.tea-pop__links button:hover { background: var(--btn-plain-bg-hover, rgba(128,128,128,0.1)); color: inherit; }
+	.tea-pop__badge {
+		font-size: 0.66rem; color: var(--primary); font-weight: 600;
+		padding: 0.1rem 0.4rem; border-radius: 999px;
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+	}
+	.tea-pop__note {
+		margin: 0.55rem 0 0.6rem;
+		font-size: 0.69rem;
+		line-height: 1.5;
+		color: var(--tea-muted);
+	}
+	.tea-pop__list { display: flex; flex-direction: column; gap: 0.35rem; max-height: min(55vh, 26rem); overflow-y: auto; }
+	.tea-pop__empty { padding: 1.2rem 0; text-align: center; font-size: 0.72rem; color: var(--tea-muted); }
+
+	.tea-site-card {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		min-width: 0;
+		padding: 0.45rem 0.55rem;
+		border-radius: 0.7rem;
+		border: 1px solid var(--tea-line);
+		background: color-mix(in oklch, var(--primary) 3%, transparent);
+		text-decoration: none;
+		color: inherit;
+		transition: background 0.15s ease, border-color 0.15s ease;
+	}
+	.tea-site-card:hover {
+		background: color-mix(in oklch, var(--primary) 9%, transparent);
+		border-color: color-mix(in oklch, var(--primary) 24%, transparent);
+	}
+	.tea-site-card__avatar {
+		width: 2.1rem; height: 2.1rem; flex: none;
+		border-radius: 0.6rem; object-fit: cover;
+		background: color-mix(in oklch, var(--primary) 14%, transparent);
+	}
+	.tea-site-card__copy { min-width: 0; flex: 1; }
+	.tea-site-card__name {
+		display: flex; align-items: center; gap: 0.35rem;
+		font-size: 0.78rem; font-weight: 700;
+		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	}
+	.tea-site-card__self {
+		font-size: 0.58rem; font-weight: 600; padding: 0.05rem 0.3rem;
+		border-radius: 0.3rem; color: var(--primary);
+		background: color-mix(in oklch, var(--primary) 16%, transparent);
+	}
+	.tea-site-card__desc {
+		display: block; margin-top: 0.12rem;
+		font-size: 0.66rem; color: var(--tea-muted);
+		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	}
+
+	.tea-thread-item {
+		display: flex; align-items: flex-start; gap: 0.55rem;
+		width: 100%; text-align: left;
+		padding: 0.5rem 0.55rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.7rem;
+		background: color-mix(in oklch, var(--primary) 3%, transparent);
+		color: inherit; font: inherit; cursor: pointer;
+		transition: background 0.15s ease;
+	}
+	.tea-thread-item:hover { background: color-mix(in oklch, var(--primary) 9%, transparent); }
+	.tea-thread-item__avatar {
+		width: 1.7rem; height: 1.7rem; flex: none; border-radius: 50%; object-fit: cover;
+	}
+	.tea-thread-item__copy { min-width: 0; flex: 1; }
+	.tea-thread-item__row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+	.tea-thread-item__who { font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.tea-thread-item__count { font-size: 0.66rem; color: var(--primary); font-weight: 700; white-space: nowrap; }
+	.tea-thread-item__text { display: block; font-size: 0.69rem; margin-top: 0.15rem; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.tea-thread-item__latest { display: block; font-size: 0.64rem; margin-top: 0.12rem; color: var(--tea-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+	/* 线程详情弹层 */
+	.tea-thread {
+		position: fixed; inset: 0; z-index: 200;
+		display: grid; place-items: center;
+	}
+	.tea-thread[hidden] { display: none; }
+	.tea-thread__scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.42); }
+	.tea-thread__panel {
+		position: relative;
+		width: min(34rem, calc(100vw - 2rem));
+		max-height: min(42rem, calc(100vh - 4rem));
+		display: flex; flex-direction: column;
+		background: var(--tea-surface, #fff);
+		border: 1px solid var(--tea-line);
+		border-radius: 1rem;
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+		overflow: hidden;
+	}
+	.tea-thread__head {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 0.6rem; padding: 0.7rem 0.9rem;
+		border-bottom: 1px solid var(--tea-line);
+	}
+	.tea-thread__head b { display: block; font-size: 0.9rem; }
+	.tea-thread__head span { display: block; font-size: 0.66rem; color: var(--tea-muted); margin-top: 0.1rem; }
+	.tea-thread__body { flex: 1; min-height: 0; overflow-y: auto; padding: 0.7rem 0.9rem; }
+	.tea-thread__divider {
+		display: flex; align-items: center; gap: 0.6rem;
+		margin: 0.7rem 0; font-size: 0.68rem; color: var(--tea-muted);
+	}
+	.tea-thread__divider::before, .tea-thread__divider::after {
+		content: ""; flex: 1; height: 1px; background: var(--tea-line);
+	}
+	.tea-thread__empty { padding: 1.5rem 0; text-align: center; font-size: 0.74rem; color: var(--tea-muted); }
+	.tea-thread__footer {
+		display: flex; gap: 0.5rem; align-items: flex-end;
+		padding: 0.65rem 0.9rem; border-top: 1px solid var(--tea-line);
+	}
+	.tea-thread__footer textarea {
+		flex: 1; min-width: 0; resize: none;
+		padding: 0.45rem 0.6rem; border-radius: 0.6rem;
+		border: 1px solid var(--tea-line-strong); background: transparent; color: inherit;
+		font: inherit; font-size: 0.78rem; outline: none;
+	}
+	.tea-thread__footer textarea:focus { border-color: color-mix(in oklch, var(--primary) 48%, transparent); }
+	.tea-thread__footer button { flex: none; }
+	.tea-thread__msg { padding: 0.15rem 0; }
+	.tea-thread__msg .tea-msg { padding-left: 0; }
+	.tea-thread__loading { padding: 1.5rem 0; text-align: center; font-size: 0.72rem; color: var(--tea-muted); }
+	@media (max-width: 900px) {
+		.tea-pop--sites { left: 0.5rem; }
+		.tea-room-switch__unit { display: none; }
+		.tea-thread-pill span { display: none; }
+	}
 </style>
 
 <script is:inline define:vars={{ API_BASE: CHAT_API, SITE_NAME }}>
@@ -2488,6 +2930,47 @@ const peers = [
 			return parts
 				.map((chunk, i) => (i % 2 === 1 ? `<pre><code>${esc(chunk.replace(/\n$/, ""))}</code></pre>` : inlineFmt(chunk)))
 				.join("");
+		};
+
+		// 投票消息：正文用 📊 开头，选项用圈数字；投票本身走 Matrix reaction，跨站也能看到
+		const POLL_MARKS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
+		const POLL_KEYS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣"];
+		const parsePoll = (text) => {
+			const lines = String(text ?? "").split("\n");
+			const first = lines[0] || "";
+			if (!first.startsWith("📊 ")) return null;
+			const question = first.slice(2).trim();
+			const options = [];
+			for (const line of lines.slice(1)) {
+				const m = line.match(/^([①②③④⑤⑥⑦⑧])\s+(.+)$/);
+				if (m) options.push(m[2].trim());
+			}
+			return question && options.length >= 2 ? { question, options } : null;
+		};
+		const renderPollCard = (poll, reactions, eventId) => {
+			const list = Array.isArray(reactions) ? reactions : [];
+			const counts = poll.options.map((_, i) => {
+				const r = list.find((x) => x.key === POLL_KEYS[i]);
+				return r ? Number(r.count) || 0 : 0;
+			});
+			const total = counts.reduce((a, b) => a + b, 0);
+			const me = rt.visitor && rt.visitor.id;
+			return `<div class="tea-poll-card">
+				<div class="tea-poll-card__q">📊 ${esc(poll.question)}</div>
+				${poll.options
+					.map((opt, i) => {
+						const pct = total ? Math.round((counts[i] / total) * 100) : 0;
+						const r = list.find((x) => x.key === POLL_KEYS[i]);
+						const mine = !!(r && Array.isArray(r.senders) && me && r.senders.includes(me));
+						return `<button type="button" class="tea-poll-card__opt${mine ? " is-mine" : ""}" data-act="poll-vote" data-id="${esc(eventId || "")}" data-key="${esc(POLL_KEYS[i])}" ${eventId ? "" : "disabled"}>
+							<span class="tea-poll-card__bar" style="width:${pct}%"></span>
+							<span class="tea-poll-card__label">${esc(POLL_MARKS[i])} ${esc(opt)}</span>
+							<span class="tea-poll-card__pct">${counts[i]} 票 · ${pct}%</span>
+						</button>`;
+					})
+					.join("")}
+				<div class="tea-poll-card__foot">${total ? `${total} 票` : "还没人投票"}</div>
+			</div>`;
 		};
 
 		const fmtTime = (ts) =>
@@ -2711,9 +3194,13 @@ const peers = [
 				? `style="background-image:url('${esc(m.avatar)}')"`
 				: `style="${avatarStyle(m.nick, m.site)}"`;
 			const siteTag = m.site ? `<span class="tea-msg__site">来自 ${esc(m.site)}</span>` : "";
+			const poll = parsePoll(m.text || "");
+			if (poll) el.dataset.poll = JSON.stringify(poll);
 			const body = m.image
 				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" loading="lazy" ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
-				: fmtText(m.text || "");
+				: poll
+					? renderPollCard(poll, m.reactions, m.id)
+					: fmtText(m.text || "");
 			const reply = m.reply
 				? `<div class="tea-msg__reply"><b>${esc(m.reply.who || "茶友")}</b><span>${esc(m.reply.text || "")}</span></div>`
 				: "";
@@ -2722,6 +3209,7 @@ const peers = [
 				? `<span class="tea-msg__actions">
 						<button type="button" class="tea-msg__action" data-act="react" data-id="${esc(m.id)}" title="回应" aria-label="回应"><Icon is:inline name="material-symbols:add-reaction-rounded" /></button>
 						<button type="button" class="tea-msg__action" data-act="reply" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="回复" aria-label="回复"><Icon is:inline name="material-symbols:reply-rounded" /></button>
+						${rt.room === "lobby" ? `<button type="button" class="tea-msg__action" data-act="thread" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="线程回复" aria-label="线程回复"><Icon is:inline name="material-symbols:forum-rounded" /></button>` : ""}
 					</span>`
 				: "";
 			const receipt = renderReceipt(m);
@@ -2815,6 +3303,7 @@ const peers = [
 			}
 			const since = q("[data-tea-me-since]");
 			if (since) since.textContent = v ? "已入座" : "今天刚到";
+			updatePlaceholder();
 		};
 
 		const setGate = (entered) => {
@@ -2822,6 +3311,18 @@ const peers = [
 			const input = q("[data-tea-input]");
 			if (gate) gate.hidden = !!entered;
 			if (input) input.hidden = !entered;
+			updatePlaceholder();
+		};
+
+		// 输入框占位提示：以 昵称 的身份在 #房间 说点什么…
+		const updatePlaceholder = () => {
+			const ta = q("[data-tea-text]");
+			if (!ta) return;
+			const v = rt.visitor;
+			const room = (ROOMS[rt.room] || ROOMS.chat).name;
+			ta.placeholder = v
+				? `以 ${v.nick || "茶友"} 的身份在 #${room} 说点什么…`
+				: `在 #${room} 说点什么…`;
 		};
 
 		// ── 数据 ─────────────────────────────────────────────────
@@ -2929,6 +3430,16 @@ const peers = [
 						const fresh = box.firstElementChild;
 						if (old && fresh) old.replaceWith(fresh);
 						else if (fresh) el.querySelector(".tea-msg__text")?.appendChild(fresh);
+						// 投票消息：票数随 reaction 同步刷新
+						if (el.dataset.poll) {
+							try {
+								const poll = JSON.parse(el.dataset.poll);
+								const oldCard = el.querySelector(".tea-poll-card");
+								const cb = document.createElement("div");
+								cb.innerHTML = renderPollCard(poll, rs, el.dataset.id);
+								if (oldCard && cb.firstElementChild) oldCard.replaceWith(cb.firstElementChild);
+							} catch (_) {}
+						}
 					}
 				}
 				const list = data.messages || [];
@@ -2954,11 +3465,11 @@ const peers = [
 		};
 
 		// ── 发送 ─────────────────────────────────────────────────
-		const sendText = async (text, node) => {
+		const sendText = async (text, node, threadRoot = "") => {
 			const v = rt.visitor;
 			if (!v) return;
 			let target = node;
-			if (!target) {
+			if (!target && !threadRoot) {
 				const ts = Date.now();
 				renderMessage({ id: "tmp-" + ts, ts, sender: v.id, nick: v.nick, site: SITE_NAME, avatar: v.avatar, text, self: true, pending: true });
 				target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
@@ -2966,8 +3477,9 @@ const peers = [
 			try {
 				const res = await api(`/api/send?room=${rt.room}`, {
 					method: "POST",
-					body: JSON.stringify({ text, replyTo: rt.replyTo?.id || "" }),
+					body: JSON.stringify({ text, replyTo: threadRoot ? "" : (rt.replyTo?.id || ""), threadRoot }),
 				});
+				if (threadRoot && rt.refreshThreads) rt.refreshThreads();
 				sendTyping(false);
 				if (rt.setReply) rt.setReply(null);
 				if (target) {
@@ -3488,6 +4000,7 @@ const peers = [
 			for (const b of document.querySelectorAll("[data-room]")) {
 				b.classList.toggle("is-active", b.dataset.room === rt.room);
 			}
+			updatePlaceholder();
 		};
 
 		const switchRoom = (key) => {
@@ -3580,13 +4093,90 @@ const peers = [
 			const imageFile = q("[data-tea-image-file]");
 			const pickBtn = q("[data-tea-image-pick]");
 			if (pickBtn && imageFile) {
-				pickBtn.addEventListener("click", () => imageFile.click());
+				pickBtn.addEventListener("click", () => {
+					const ta = q("[data-tea-text]");
+					const typed = (ta && ta.value || "").trim();
+					// 输入框里是网址 → 当作链接消息发出（fmtText 会自动渲染成可点链接）
+					if (/^https?:\/\/\S+$/i.test(typed)) {
+						sendText(typed);
+						if (ta) ta.value = "";
+						return;
+					}
+					imageFile.click();
+				});
 				imageFile.addEventListener("change", () => {
 					const f = imageFile.files?.[0];
 					if (f) sendImage(f, { name: f.name });
 					imageFile.value = "";
 				});
 			}
+
+			// Markdown 实时预览
+			const mdToggle = q("[data-tea-md-toggle]");
+			const mdClose = q("[data-tea-md-close]");
+			const mdPreview = q("[data-tea-md-preview]");
+			const mdBody = q("[data-tea-md-body]");
+			const mdOff = () => {
+				if (!mdPreview || !taInput) return;
+				mdPreview.hidden = true;
+				taInput.hidden = false;
+				mdToggle?.classList.remove("is-active");
+				taInput.focus();
+			};
+			const mdOn = () => {
+				if (!mdPreview || !taInput || !mdBody) return;
+				const txt = taInput.value.trim();
+				const poll = parsePoll(txt);
+				mdBody.innerHTML = txt
+					? poll
+						? renderPollCard(poll, [], "")
+						: fmtText(txt)
+					: `<span style="opacity:.6">还没写内容。输入 Markdown 语法后可在这里预览效果。</span>`;
+				taInput.hidden = true;
+				mdPreview.hidden = false;
+				mdToggle?.classList.add("is-active");
+			};
+			mdToggle?.addEventListener("click", () => (mdPreview && !mdPreview.hidden ? mdOff() : mdOn()));
+			mdClose?.addEventListener("click", mdOff);
+
+			// 投票弹窗
+			const pollDialog = document.querySelector("[data-tea-poll-dialog]");
+			const pollForm = document.querySelector("[data-tea-poll-form]");
+			const pollOptions = document.querySelector("[data-tea-poll-options]");
+			const pollToggle = q("[data-tea-poll-toggle]");
+			pollToggle?.addEventListener("click", () => {
+				if (!rt.visitor) { openDialog(); return; }
+				if (pollDialog && typeof pollDialog.showModal === "function") pollDialog.showModal();
+			});
+			document.querySelector("[data-tea-poll-close]")?.addEventListener("click", () => pollDialog?.close());
+			document.querySelector("[data-tea-poll-add]")?.addEventListener("click", () => {
+				if (!pollOptions) return;
+				const count = pollOptions.querySelectorAll("input").length;
+				if (count >= 8) return;
+				const label = document.createElement("label");
+				label.className = "tea-field";
+				label.innerHTML = `<span>选项 ${count + 1}</span><input type="text" name="option" maxlength="60" placeholder="选项${count + 1}" required />`;
+				pollOptions.appendChild(label);
+				label.querySelector("input")?.focus();
+			});
+			pollForm?.addEventListener("submit", (e) => {
+				e.preventDefault();
+				const err = document.querySelector("[data-tea-poll-error]");
+				const question = (pollForm.elements.question.value || "").trim();
+				const opts = [...pollForm.querySelectorAll('input[name="option"]')].map((x) => (x.value || "").trim()).filter(Boolean);
+				if (!question || opts.length < 2) {
+					if (err) { err.textContent = "请填写问题和至少两个选项"; err.hidden = false; }
+					return;
+				}
+				const text = `📊 ${question}\n${opts.map((o, i) => `${POLL_MARKS[i]} ${o}`).join("\n")}`;
+				sendText(text);
+				pollForm.reset();
+				while (pollOptions && pollOptions.querySelectorAll("input").length > 2) {
+					pollOptions.lastElementChild?.remove();
+				}
+				if (err) err.hidden = true;
+				pollDialog?.close();
+			});
 			const taInput = q("[data-tea-text]");
 			if (taInput) {
 				taInput.addEventListener("paste", (e) => {
@@ -3672,6 +4262,18 @@ const peers = [
 								body: JSON.stringify({ eventId: id, key: "👍" }),
 							});
 						} catch (_) {}
+					} else if (btn.dataset.act === "poll-vote") {
+						if (!rt.visitor) { openDialog(); return; }
+						try {
+							btn.disabled = true;
+							await api("/api/reaction", {
+								method: "POST",
+								body: JSON.stringify({ eventId: id, key: btn.dataset.key }),
+							});
+						} catch (_) {
+							showError("投票失败，稍后再试");
+							btn.disabled = false;
+						}
 					}
 				});
 			}
