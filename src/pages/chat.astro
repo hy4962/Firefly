@@ -61,7 +61,7 @@ const peers = [
 					<li class="tea-rooms__group">互联房间</li>
 					<li>
 						<button type="button" class="tea-room-item is-active" data-room="lobby">
-							<span class="tea-room-item__hash">#</span>
+							<span class="tea-room-item__avatar"><img src="/assets/images/room-lobby.svg" alt="" /></span>
 							<span class="tea-room-item__copy">
 								<b>互联茶室</b>
 								<span>和其他站点的朋友一起聊天</span>
@@ -71,7 +71,7 @@ const peers = [
 					<li class="tea-rooms__group">本站</li>
 					<li>
 						<button type="button" class="tea-room-item" data-room="chat">
-							<span class="tea-room-item__hash">#</span>
+							<span class="tea-room-item__avatar"><img src="/assets/images/kirino.webp" alt="" loading="lazy" /></span>
 							<span class="tea-room-item__copy">
 								<b>闲聊</b>
 								<span>随便聊聊日常与折腾</span>
@@ -624,6 +624,22 @@ const peers = [
 		font-weight: 600;
 		color: color-mix(in oklch, var(--primary) 72%, currentColor);
 		background: color-mix(in oklch, var(--primary) 12%, transparent);
+	}
+	.tea-room-item__avatar {
+		width: 1.5rem;
+		height: 1.5rem;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 0.5rem;
+		overflow: hidden;
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+	}
+	.tea-room-item__avatar img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
 	}
 	.tea-room-item__copy {
 		min-width: 0;
