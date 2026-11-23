@@ -1360,6 +1360,17 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		border: 0;
 		cursor: default;
 	}
+	.tea-msg__text img.tea-inline-emoji {
+		display: inline-block;
+		width: 1.35rem;
+		height: 1.35rem;
+		max-width: none;
+		max-height: none;
+		vertical-align: -0.22rem;
+		margin: 0 0.08rem;
+		border: 0;
+		cursor: default;
+	}
 	.tea-msg__text pre {
 		margin: 0.35rem 0 0;
 		padding: 0.5rem 0.65rem;
@@ -1968,14 +1979,22 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-md-preview__body a { color: color-mix(in oklch, var(--primary) 70%, currentColor); }
 	.tea-md-preview__body .tea-poll-card { margin: 0; }
 	.tea-emoji-panel {
-		max-height: 13rem;
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		z-index: 130;
+		width: 22rem;
+		max-width: calc(100vw - 1.5rem);
+		max-height: min(22rem, 62vh);
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding: 0.45rem;
+		padding: 0.6rem;
 		border: 1px solid var(--tea-line);
-		border-radius: 0.75rem;
+		border-radius: 0.85rem;
+		box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
 		background: var(--card-bg, #fff);
 	}
+	.tea-emoji-panel[data-anchored] { bottom: auto; left: auto; }
 	.tea-emoji-panel[hidden] {
 		display: none;
 	}
@@ -2000,17 +2019,25 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-emoji-panel__grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
-		gap: 0.15rem;
+		grid-template-columns: repeat(9, minmax(0, 1fr));
+		gap: 0.1rem;
 	}
-	.tea-emoji-panel__grid img {
+	.tea-emoji-panel__grid img,
+	.tea-emoji-panel__grid .tea-emoji-char {
 		width: 100%;
 		height: 2rem;
+		display: grid;
+		place-items: center;
 		object-fit: contain;
+		font-size: 1.25rem;
+		line-height: 1;
 		cursor: pointer;
+		border: 0;
 		border-radius: 0.35rem;
+		background: transparent;
 	}
-	.tea-emoji-panel__grid img:hover {
+	.tea-emoji-panel__grid img:hover,
+	.tea-emoji-panel__grid .tea-emoji-char:hover {
 		background: color-mix(in oklch, var(--primary) 15%, transparent);
 	}
 	.tea-emoji-panel__msg {
@@ -3164,7 +3191,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		const fmtText = (text) => {
 			const parts = String(text ?? "").split(/```[a-zA-Z0-9+#-]*\n?/);
 			return parts
-				.map((chunk, i) => (i % 2 === 1 ? `<pre><code>${esc(chunk.replace(/\n$/, ""))}</code></pre>` : inlineFmt(chunk)))
+				.map((chunk, i) =>
+					i % 2 === 1
+						? `<pre><code>${esc(chunk.replace(/\n$/, ""))}</code></pre>`
+						: renderEmojiTags(inlineFmt(chunk)),
+				)
 				.join("");
 		};
 
@@ -3946,12 +3977,39 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		};
 
 		const EMOTICON_SETS = [
+			{
+				id: "unicode", name: "Emoji", unicode: true,
+				items: [
+					"😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘","😗","😚","😙",
+					"😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😏","😒","🙄","😬","🤥",
+					"😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","🥴","😵","🤯","🤠","🥳","😎","🤓",
+					"🧐","🤓","😕","😟","🙁","😮","😯","😲","😳","🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣",
+					"😞","😓","😩","😫","🥱","😤","😡","😠","🤬","😈","👿","💀","🤡","👻","👽","🤖","💩","😺","😸","😹",
+					"😻","😼","😽","🙀","😿","🙈","🙉","🙊","👶","🧒","👦","👧","👨","👩","🧑","👴","👵","👮","👷","💂",
+					"🕵️","🧙","🧚","🧛","👨‍🎤","👩‍🎤","🤵","👰","🙋","🙇","🤦","🤷","💪","👏","🙌","👍","👎","✌️","🤞","🤟",
+					"🤘","👌","👈","👉","👆","👇","☝️","✍️","🙏","💅","🤳","💃","🕺","🫰","🧡","💛","💚","💙","💜","🖤",
+					"❤️","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💯","💢","💥","💫","💦","💨","🕳️","💣","🔥","🌟",
+					"✨","⚡","☀️","🌈","☁️","🌙","⭐","🍎","🍊","🍋","🍉","🍇","🍓","🍑","🥝","🍍","🥑","🍔","🍟","🍕",
+					"🌮","🍜","🍣","🍰","🍩","🍪","☕","🍵","🍺","🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁",
+					"🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆","🦉","🐴","🦄","🐝","🦋","🐌","🐙","🐳","🐬","🌵","🌸",
+				],
+			},
 			{ id: "qq", name: "QQ", base: "/assets/emojis/qq/", prefix: "qq_", info: "/assets/emojis/qq.json" },
 			{ id: "bili", name: "B站", base: "/assets/emojis/bilibili/", prefix: "bb_", info: "/assets/emojis/bilibili.json" },
 		];
+		// 表情标记：图片表情写成 [emoji:qq:smile]，发送后由 fmtText 渲染回图片
+		const EMOJI_TAG_RE = /\[emoji:(qq|bili):([\w-]+)\]/g;
+		const renderEmojiTags = (html) =>
+			html.replace(EMOJI_TAG_RE, (_, set, name) => {
+				const src = set === "qq"
+					? `/assets/emojis/qq/qq_${name}.gif`
+					: `/assets/emojis/bilibili/bb_${name}.png`;
+				return `<img src="${src}" alt="${name}" class="tea-inline-emoji" loading="lazy" />`;
+			});
 		const emojiCache = new Map();
 
 		const loadEmojiSet = async (set) => {
+			if (set.unicode) return set.items.map((ch) => ({ name: ch, char: ch }));
 			if (emojiCache.has(set.id)) return emojiCache.get(set.id);
 			const p = fetch(set.info)
 				.then((r) => (r.ok ? r.json() : Promise.reject(new Error("加载失败"))))
@@ -3974,9 +4032,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				const items = await loadEmojiSet(set);
 				const grid = panel.querySelector(".tea-emoji-panel__grid") || document.createElement("div");
 				grid.className = "tea-emoji-panel__grid";
-				grid.innerHTML = items
-					.map((it) => `<img src="${esc(it.url)}" alt="${esc(it.name)}" title="${esc(it.name)}" loading="lazy" data-emoji-url="${esc(it.url)}" />`)
-					.join("");
+			grid.innerHTML = items
+				.map((it) =>
+					it.char
+						? `<button type="button" class="tea-emoji-char" title="${esc(it.name)}" data-emoji-char="${esc(it.char)}">${esc(it.char)}</button>`
+						: `<img src="${esc(it.url)}" alt="${esc(it.name)}" title="${esc(it.name)}" loading="lazy" data-emoji-set-id="${set.id}" data-emoji-name="${esc(it.name)}" data-emoji-url="${esc(it.url)}" />`,
+				)
+				.join("");
 				const msg = panel.querySelector(".tea-emoji-panel__msg");
 				if (msg) msg.remove();
 				panel.appendChild(grid);
@@ -4577,32 +4639,59 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			// 表情面板
 			const emojiToggle = q("[data-tea-emoji-toggle]");
 			const emojiPanel = q("[data-tea-emoji-panel]");
+			const positionEmojiPanel = () => {
+				if (!emojiToggle || !emojiPanel) return;
+				const r = emojiToggle.getBoundingClientRect();
+				const h = emojiPanel.offsetHeight || 300;
+				const w = emojiPanel.offsetWidth || 352;
+				const top = Math.max(8, r.top - h - 8);
+				const left = Math.min(Math.max(8, r.left - 40), Math.max(8, window.innerWidth - w - 8));
+				emojiPanel.style.top = top + "px";
+				emojiPanel.style.left = left + "px";
+				emojiPanel.dataset.anchored = "1";
+			};
+			const insertAtCursor = (text) => {
+				const input = q("[data-tea-text]");
+				if (!input) return;
+				const start = input.selectionStart ?? input.value.length;
+				const end = input.selectionEnd ?? start;
+				const next = input.value.slice(0, start) + text + input.value.slice(end);
+				if (next.length > 500) { showError("内容太长了，表情放不下"); return; }
+				input.value = next;
+				const caret = start + text.length;
+				input.focus();
+				input.setSelectionRange(caret, caret);
+				input.dispatchEvent(new Event("input", { bubbles: true }));
+			};
 			if (emojiToggle && emojiPanel) {
 				emojiToggle.addEventListener("click", (e) => {
 					e.stopPropagation();
 					const open = emojiPanel.hidden;
 					emojiPanel.hidden = !open;
-					if (open) renderEmojiPanel(EMOTICON_SETS[0].id);
+					if (!open) return;
+					renderEmojiPanel(EMOTICON_SETS[0].id).then(() => setTimeout(positionEmojiPanel, 0));
 				});
-				emojiPanel.addEventListener("click", async (e) => {
+				emojiPanel.addEventListener("click", (e) => {
+					// 面板会异步重建 DOM，冒泡到 document 时 target 可能已被移除，
+					// 导致 contains() 误判 false 把面板关掉。这里直接截断冒泡。
+					e.stopPropagation();
 					const tab = e.target.closest("[data-emoji-set]");
 					if (tab) {
-						renderEmojiPanel(tab.dataset.emojiSet);
+						renderEmojiPanel(tab.dataset.emojiSet).then(() => setTimeout(positionEmojiPanel, 0));
 						return;
 					}
-					const img = e.target.closest("[data-emoji-url]");
+					const charBtn = e.target.closest("[data-emoji-char]");
+					if (charBtn) { insertAtCursor(charBtn.dataset.emojiChar); return; }
+					const img = e.target.closest("[data-emoji-name]");
 					if (!img) return;
-					try {
-						const r = await fetch(img.dataset.emojiUrl);
-						const blob = await r.blob();
-						await sendImage(blob, { emoticon: true, name: img.alt });
-						emojiPanel.hidden = true;
-					} catch (_) {
-						showError("表情发送失败，换个试试");
-					}
+					const setId = img.dataset.emojiSetId === "bili" ? "bili" : "qq";
+					insertAtCursor(`[emoji:${setId}:${img.dataset.emojiName}]`);
 				});
 				document.addEventListener("click", (e) => {
 					if (!emojiPanel.hidden && !emojiPanel.contains(e.target) && e.target !== emojiToggle) emojiPanel.hidden = true;
+				});
+				window.addEventListener("resize", () => {
+					if (!emojiPanel.hidden) positionEmojiPanel();
 				});
 			}
 
