@@ -204,6 +204,17 @@ export const friendsConfig: FriendLink[] = [
 		weight: -1,
 		enabled: true,
 	},
+	{
+		title: "Muyu の 小窝",
+		imgurl: "https://muyuimg.cc.cd/file/blog/1788157305659_maomao.gif",
+		desc: "永远相信美好的事情即将发生",
+		siteurl: "https://muyudada.dpdns.org/",
+		// 2026-11-24 友链页评论申请；对方 /friends/ 已挂 https://0dm.cn（rel=noopener noreferrer，dofollow）
+		// 同为 Firefly fork 的个人博客，文章更新节奏正常、无 noindex；不填 rss
+		tags: ["Blog"],
+		weight: -2,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
