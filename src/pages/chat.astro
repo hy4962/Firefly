@@ -207,15 +207,15 @@ const peers = [
 			</div>
 
 			<nav class="tea-juke__tabs" role="tablist">
-				<button type="button" class="is-active" data-juke-tab="list" role="tab">歌单</button>
-				<button type="button" data-juke-tab="lyrics" role="tab">歌词</button>
+				<button type="button" class="is-active" data-juke-tab="lyrics" role="tab">歌词</button>
+				<button type="button" data-juke-tab="list" role="tab">歌单</button>
 			</nav>
 
-			<div class="tea-juke__panel" data-juke-list role="tabpanel">
+			<div class="tea-juke__panel" data-juke-list role="tabpanel" hidden>
 				<p class="tea-juke__empty">歌单还在路上…</p>
 			</div>
-			<div class="tea-juke__panel tea-juke__lyrics" data-juke-lyrics role="tabpanel" hidden>
-				<p class="tea-juke__empty">这首歌暂时没有歌词。</p>
+			<div class="tea-juke__panel tea-juke__lyrics" data-juke-lyrics role="tabpanel">
+				<p class="tea-juke__empty">先挑一首歌吧。</p>
 			</div>
 		</aside>
 
@@ -1438,19 +1438,39 @@ const peers = [
 		text-overflow: ellipsis;
 	}
 	.tea-juke__lyrics {
-		font-size: 0.74rem;
-		line-height: 1.9;
+		font-size: 0.75rem;
 		text-align: center;
-		color: var(--tea-muted-soft);
-		padding: 0.5rem 0.6rem 2rem;
+		padding: 0.5rem 0.5rem 3rem;
+		-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 1.4rem, #000 calc(100% - 1.6rem), transparent 100%);
+		mask-image: linear-gradient(to bottom, transparent 0, #000 1.4rem, #000 calc(100% - 1.6rem), transparent 100%);
 	}
-	.tea-juke__lyrics p {
-		margin: 0;
-		transition: color 0.2s ease, opacity 0.2s ease;
+	.tea-lyric {
+		display: block;
+		width: 100%;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		font-size: 0.75rem;
+		line-height: 2.05;
+		padding: 0.08rem 0.3rem;
+		text-align: center;
+		cursor: pointer;
+		border-radius: 0.45rem;
+		opacity: 0.58;
+		transition: opacity 0.2s ease, color 0.2s ease;
 	}
-	.tea-juke__lyrics p.is-current {
-		color: color-mix(in oklch, var(--primary) 72%, currentColor);
+	.tea-lyric:hover {
+		opacity: 0.95;
+		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
+	}
+	.tea-lyric.is-current {
+		opacity: 1;
 		font-weight: 600;
+		color: color-mix(in oklch, var(--primary) 74%, currentColor);
+	}
+	.dark .tea-lyric.is-current {
+		color: color-mix(in oklch, var(--primary) 86%, white);
 	}
 
 	/* ─── 弹窗 ─────────────────────────────────────────────── */
@@ -2157,7 +2177,7 @@ const peers = [
 		};
 
 		// ── 点歌台：复用站点全局播放器 window.__fireflyMusic ─────
-		const jukeSig = { list: "", lrc: -1, tab: "list" };
+		const jukeSig = { list: "", lrc: -2, tab: "lyrics" };
 
 		const musicApi = () => (window.__fireflyMusic ? window.__fireflyMusic : null);
 		const jukeNode = (sel) => (root() ? root().querySelector("[data-tea-juke] " + sel) : null);
@@ -2189,25 +2209,35 @@ const peers = [
 		const renderLyrics = (st, force) => {
 			const box = jukeNode("[data-juke-lyrics]");
 			if (!box) return;
+			const songKey = (st.track && (st.track.url || st.track.name)) || "";
+
 			if (!st.lyrics || !st.lyrics.length) {
-				if (box.dataset.empty !== "1") {
-					box.innerHTML = `<p class="tea-juke__empty">这首歌暂时没有歌词。</p>`;
+				if (force || box.dataset.empty !== "1" || box.dataset.song !== songKey) {
+					box.innerHTML = `<p class="tea-juke__empty">${st.track ? "这首歌暂时没有歌词。" : "先挑一首歌吧。"}</p>`;
 					box.dataset.empty = "1";
-					jukeSig.lrc = -1;
+					box.dataset.song = songKey;
+					jukeSig.lrc = -2;
 				}
 				return;
 			}
-			if (box.dataset.empty === "1" || force) {
-				box.innerHTML = st.lyrics.map((l) => `<p>${esc(l.text)}</p>`).join("");
+
+			if (force || box.dataset.empty === "1" || box.dataset.song !== songKey) {
+				box.innerHTML = st.lyrics
+					.map((l, i) => `<button type="button" class="tea-lyric" data-lrc="${i}" data-t="${l.time}">${esc(l.text)}</button>`)
+					.join("");
 				box.dataset.empty = "0";
-				jukeSig.lrc = -1;
+				box.dataset.song = songKey;
+				jukeSig.lrc = -2;
+				const first = box.querySelector(".tea-lyric");
+				if (first) first.scrollIntoView({ block: "center", behavior: "auto" });
 			}
-			if (jukeSig.lrc !== st.currentLrcIndex) {
-				jukeSig.lrc = st.currentLrcIndex;
-				const lines = box.querySelectorAll("p");
-				lines.forEach((p, i) => p.classList.toggle("is-current", i === st.currentLrcIndex));
-				const active = lines[st.currentLrcIndex];
-				if (active) active.scrollIntoView({ block: "center", behavior: "smooth" });
+
+			const idx = st.currentLrcIndex;
+			if (jukeSig.lrc !== idx) {
+				jukeSig.lrc = idx;
+				const lines = box.querySelectorAll(".tea-lyric");
+				lines.forEach((p, i) => p.classList.toggle("is-current", i === idx));
+				if (idx >= 0 && st.isPlaying && lines[idx]) lines[idx].scrollIntoView({ block: "center", behavior: "smooth" });
 			}
 		};
 
@@ -2269,6 +2299,13 @@ const peers = [
 			const m = () => musicApi();
 
 			juke.addEventListener("click", (e) => {
+				const lyric = e.target.closest("[data-lrc]");
+				if (lyric && m()) {
+					m().seekToTime(Number(lyric.dataset.t));
+					if (!m().getState().isPlaying) m().togglePlay();
+					setTimeout(renderJuke, 200);
+					return;
+				}
 				const song = e.target.closest("[data-juke-index]");
 				if (song && m()) {
 					m().playTrackByIndex(Number(song.dataset.jukeIndex));
