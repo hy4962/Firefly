@@ -30,6 +30,38 @@ export interface ChangelogEntry {
 
 export const blogChangelogConfig: ChangelogEntry[] = [
 	{
+		version: "V1.58",
+		title: "液态玻璃顶栏",
+		date: "2026-11-24",
+		summary:
+			"顶栏的玻璃胶囊不再只是毛玻璃了：背后壁纸会被 SVG 噪声位移揉出波纹，文字仍然锐利，下拉和浮动面板也不会被这层玻璃吃掉",
+		description:
+			"按 Muyu 那篇教程给三块胶囊补上了 Apple Liquid Glass 的折射层。原理是把 backdrop-filter 的磨砂结果交给同一个元素上的 filter:url(#...) 做位移：造分形噪声 → 高斯磨平 → 线性拉伸拉满量程 → feDisplacementMap 挪像素。最容易踩的坑是 backdrop root——本体一旦带 backdrop-filter，内部搜索面板和下拉菜单的毛玻璃就废了，所以磨砂和折射全部下沉到 ::before，本体只留底色、内衬白圈和投影；再补 clip-path 收拾滤镜溢出的方角、will-change 治淡入闪烁。实现全在页脚配置里：0×0 SVG 滤镜 + 158 行纯新增 CSS/脚本，上游主题一个文件没碰。默认 10px 模糊 / 120 折射 / 0.01 波纹密度（面板模糊保底 16px），三个 localStorage 键沿用教程的命名，想换手感直接改值刷新即可。",
+		items: [
+			{
+				category: "视觉",
+				text: "三块玻璃胶囊（站名 / 菜单 / 工具簇）、搜索框、菜单项、首页横幅图标统一叠加 SVG 位移折射：壁纸被揉出波纹，文字始终锐利；折射关掉即退回普通毛玻璃",
+			},
+			{
+				category: "视觉",
+				text: "下拉菜单与浮动面板单独一档模糊（保底 16px），磨砂与折射同样放在 ::before，面板文字不被壁纸吃掉，展开淡入不闪烁",
+			},
+			{
+				category: "实现",
+				text: "FooterConfig.html 末尾追加 0×0 SVG 滤镜（feTurbulence → feGaussianBlur → feComponentTransfer 斜率 3.5/截距 -1.25 → feDisplacementMap）与配置层 CSS，本体 backdrop-filter 全部撤掉；158 行纯新增、0 删除",
+			},
+			{
+				category: "维护",
+				text: "参数复用 navbarGlassBlur / navbarGlassScale / navbarGlassFrequency 三个 localStorage 键，默认 10px / 120 / 0.01；html[data-glass-distortion] 总开关保证无玻璃面时不折射",
+			},
+			{
+				category: "验证",
+				text: "1280 / 1440 / 390 三档 + 下拉展开 + 切页后核对计算样式与截图，控制台零报错；6 段内联脚本过 new Function 语法检查",
+			},
+		],
+		tags: ["导航", "液态玻璃", "毛玻璃", "视觉"],
+	},
+	{
 		version: "V1.57",
 		title: "茶室重做",
 		date: "2026-11-23",
