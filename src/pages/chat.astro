@@ -4533,7 +4533,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					(rt.rosterAll ? offline.map(rowHtml).join("") : "")
 				: "";
 			list.innerHTML =
-				groupHtml("本站在线", local, local.length, observerHtml) +
+				groupHtml("本站在线", local, local.length + (rt.visitor ? 0 : 1), observerHtml) +
 				groupHtml("其他站点", others, others.length) +
 				offlineHtml;
 
