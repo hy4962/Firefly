@@ -467,7 +467,7 @@ async function nextUserLocalpart(c) {
 		);
 		if (!ok) break;
 		for (const u of data.users || []) {
-			const m = String(u.name || "").match(/^@user(\d+):/);
+			const m = String(u.name || "").match(/^@uid(\d+):/);
 			if (m) max = Math.max(max, Number(m[1]) || 0);
 		}
 		const next = Number(data.next_token || 0);
@@ -475,7 +475,7 @@ async function nextUserLocalpart(c) {
 		if (!next || (total && next >= total)) break;
 		from = next;
 	}
-	return `user${String(max + 1).padStart(4, "0")}`;
+	return `uid${String(max + 1).padStart(2, "0")}`;
 }
 
 async function uploadAvatar(c, email) {
@@ -579,8 +579,8 @@ async function provisionIdentity(c, env, profile, base) {
 			body: { password, displayname, admin: false },
 		});
 		if (created.ok) break;
-		const next = Number(String(localpart).replace(/^user/, "")) || 0;
-		localpart = `user${String(next + 1).padStart(4, "0")}`;
+		const next = Number(String(localpart).replace(/^uid/, "")) || 0;
+		localpart = `uid${String(next + 1).padStart(2, "0")}`;
 	}
 	if (!created || !created.ok) throw new Error(`开号失败：${created?.data?.error || created?.status || "unknown"}`);
 
