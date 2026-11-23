@@ -258,7 +258,7 @@ const peers = [
 			</div>
 
 			<button type="submit" class="tea-btn tea-btn--primary tea-dialog__submit" value="ok" data-tea-submit>
-				进入茶室
+				<span data-tea-submit-label>进入茶室</span>
 				<Icon is:inline name="material-symbols:arrow-forward-rounded" />
 			</button>
 			<p class="tea-dialog__error" data-tea-dialog-error hidden></p>
@@ -1797,7 +1797,9 @@ const peers = [
 		const store = {
 			get identity() {
 				try {
-					return JSON.parse(localStorage.getItem("tea.identity") || "null");
+					const v = JSON.parse(localStorage.getItem("tea.identity") || "null");
+					if (!v || !v.token || !v.id) return null;
+					return v;
 				} catch {
 					return null;
 				}
@@ -1884,7 +1886,7 @@ const peers = [
 				f.dataset.day = dayKey(m.ts);
 			}
 
-			const mine = !!(rt.visitor && m.nick === rt.visitor.nick && (m.site || "") === SITE_NAME);
+			const mine = !!(rt.visitor && m.sender && m.sender === rt.visitor.id);
 			const el = document.createElement("article");
 			el.className = "tea-msg" + (grouped ? " tea-msg--grouped" : "") + (mine ? " tea-msg--mine" : "");
 			el.dataset.nick = m.nick || "";
@@ -1957,8 +1959,13 @@ const peers = [
 			const act = q("[data-tea-enter]");
 			if (!av || !name) return;
 			if (v) {
-				av.textContent = initials(v.nick);
-				av.setAttribute("style", avatarStyle(v.nick, SITE_NAME));
+				if (v.avatar) {
+					av.textContent = "";
+					av.setAttribute("style", `background-image:url('${v.avatar}')`);
+				} else {
+					av.textContent = initials(v.nick);
+					av.setAttribute("style", avatarStyle(v.nick, SITE_NAME));
+				}
 				name.textContent = v.nick;
 				if (meta) meta.textContent = `来自 ${SITE_NAME}`;
 				if (count) count.textContent = String(store.count);
@@ -1984,10 +1991,10 @@ const peers = [
 
 		// ── 数据 ─────────────────────────────────────────────────
 		const api = async (path, opts = {}) => {
-			const res = await fetch(api0.replace(/\/$/, "") + path, {
-				...opts,
-				headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
-			});
+			const headers = { ...(opts.headers || {}) };
+			if (rt.visitor && rt.visitor.token) headers.Authorization = `Bearer ${rt.visitor.token}`;
+			if (opts.body) headers["Content-Type"] = "application/json";
+			const res = await fetch(api0.replace(/\/$/, "") + path, { ...opts, headers });
 			let data = {};
 			try {
 				data = await res.json();
@@ -2077,13 +2084,13 @@ const peers = [
 			let target = node;
 			if (!target) {
 				const ts = Date.now();
-				renderMessage({ id: "tmp-" + ts, ts, nick: v.nick, site: SITE_NAME, text, self: true, pending: true });
+				renderMessage({ id: "tmp-" + ts, ts, sender: v.id, nick: v.nick, site: SITE_NAME, avatar: v.avatar, text, self: true, pending: true });
 				target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
 			}
 			try {
 				const res = await api("/api/send", {
 					method: "POST",
-					body: JSON.stringify({ nick: v.nick, email: v.email, website: v.website, text }),
+					body: JSON.stringify({ text }),
 				});
 				if (target) {
 					target.classList.remove("tea-msg--pending", "tea-msg--failed");
@@ -2098,6 +2105,16 @@ const peers = [
 				const c = q("[data-tea-me-count]");
 				if (c) c.textContent = String(store.count);
 			} catch (e) {
+				const msg = e.message || "";
+				if (msg.includes("还没入座") || msg.includes("401")) {
+					rt.visitor = null;
+					store.identity = null;
+					renderSelf();
+					setGate(false);
+					if (target) target.remove();
+					openDialog();
+					return;
+				}
 				if (target) {
 					target.classList.remove("tea-msg--pending");
 					target.classList.add("tea-msg--failed");
@@ -2161,9 +2178,24 @@ const peers = [
 				return;
 			}
 			if (err) err.hidden = true;
-			if (btn) btn.disabled = true;
+			if (btn) {
+				btn.disabled = true;
+				const label = btn.querySelector("[data-tea-submit-label]");
+				if (label) label.textContent = "正在给你开座位…";
+			}
 			try {
-				rt.visitor = { nick, email, website };
+				const res = await api("/api/enter", {
+					method: "POST",
+					body: JSON.stringify({ nick, email, website }),
+				});
+				rt.visitor = {
+					id: res.user.id,
+					nick: res.user.nick,
+					avatar: res.user.avatar || "",
+					email,
+					website,
+					token: res.token,
+				};
 				store.identity = rt.visitor;
 				renderSelf();
 				setGate(true);
@@ -2171,8 +2203,17 @@ const peers = [
 				if (dlg) dlg.close();
 				const ta = q("[data-tea-text]");
 				if (ta) ta.focus();
+			} catch (e2) {
+				if (err) {
+					err.textContent = e2.message || "开座位失败，稍后再试";
+					err.hidden = false;
+				}
 			} finally {
-				if (btn) btn.disabled = false;
+				if (btn) {
+					btn.disabled = false;
+					const label = btn.querySelector("[data-tea-submit-label]");
+					if (label) label.textContent = "进入茶室";
+				}
 			}
 		};
 

@@ -1,11 +1,13 @@
 /**
- * 茶室桥接核心逻辑 —— 同时给 Cloudflare Worker 和本地调试入口复用。
+ * 茶室桥接服务 —— 每个访客一个真实 Matrix 账号。
  *
- * 职责：持有一个「转发账号」的 access token，替访客把消息发进 Matrix 房间，
- * 并把房间消息整理成前端要的精简结构。访客身份通过消息体里的
- * `[ID:昵称];[URL:头像]` 协议头传递（听雨茶室互联文档里的「共享转发账号」方案）。
+ * 访客填昵称 + 邮箱 → 后台在 matrix.0dm.cn 上开一个 @teaXXXXXX 账号，
+ * 显示名「昵称 · 站点名」，头像按邮箱哈希从 weavatar 拉取后上传成账号头像，
+ * 再邀请进房间。之后收发消息都用访客自己的 token，不再共用转发账号。
  *
- * 不落库、不存消息副本：消息的唯一真相在 Matrix 房间。
+ * 两个令牌：
+ *   ADMIN_TOKEN  —— 服务器管理员（开号 / 改资料）
+ *   BRIDGE_TOKEN —— 房间成员（匿名读历史、拉成员、邀请、代理媒体）
  */
 
 const DEFAULTS = {
@@ -13,12 +15,12 @@ const DEFAULTS = {
 	ROOM_ID: "!CKQYQ95MT69FlskJmkcEbSmkd72I6CTgnf_nITckm4I",
 	SITE_NAME: "折腾进行时",
 	SITE_URL: "https://www.0dm.cn",
-	FALLBACK_AVATAR: "https://www.9ll.uk/gallery/blog/avatar.avif",
 	ALLOW_ORIGINS: "https://www.0dm.cn,https://0dm.cn,https://www.9ll.uk,https://9ll.uk,http://localhost:4399,http://127.0.0.1:4399",
+	IDENTITY_PREFIX: "tea",
 };
 
 const LIMITS = { text: 500, nick: 8, email: 120, website: 120, history: 80 };
-const RATE = { minGap: 2500, perMinute: 12, perHour: 60 };
+const RATE = { minGap: 2000, perMinute: 12, perHour: 60, enterGap: 20_000 };
 
 const SITE_BY_SERVER = {
 	"matrix.rainzt.cn": "听雨茶室",
@@ -27,7 +29,6 @@ const SITE_BY_SERVER = {
 	"matrix.leenet.xyz": "leenet",
 };
 
-// 站点域名 → 站名（结构化协议里 site 传的是首页 URL）
 const SITE_BY_HOST = {
 	"rainzt.cn": "听雨茶室",
 	"detached.online": "Detached",
@@ -46,10 +47,11 @@ const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
 const cfg = (env) => ({
 	hs: (env.MATRIX_HS || DEFAULTS.MATRIX_HS).replace(/\/$/, ""),
 	room: env.ROOM_ID || DEFAULTS.ROOM_ID,
-	token: env.BRIDGE_TOKEN || "",
+	adminToken: env.ADMIN_TOKEN || "",
+	bridgeToken: env.BRIDGE_TOKEN || "",
 	siteName: env.SITE_NAME || DEFAULTS.SITE_NAME,
 	siteUrl: env.SITE_URL || DEFAULTS.SITE_URL,
-	fallbackAvatar: env.FALLBACK_AVATAR || DEFAULTS.FALLBACK_AVATAR,
+	prefix: env.IDENTITY_PREFIX || DEFAULTS.IDENTITY_PREFIX,
 	origins: (env.ALLOW_ORIGINS || DEFAULTS.ALLOW_ORIGINS).split(",").map((s) => s.trim()).filter(Boolean),
 });
 
@@ -102,7 +104,8 @@ export function md5Hex(input) {
 			A = D;
 			D = C;
 			C = B;
-			B = (B + ((F << S[(i >> 4) * 4 + (i % 4)]) | (F >>> (32 - S[(i >> 4) * 4 + (i % 4)])))) >>> 0;
+			const s = S[(i >> 4) * 4 + (i % 4)];
+			B = (B + ((F << s) | (F >>> (32 - s)))) >>> 0;
 		}
 		a0 = (a0 + A) >>> 0;
 		b0 = (b0 + B) >>> 0;
@@ -114,31 +117,36 @@ export function md5Hex(input) {
 	return hex(a0) + hex(b0) + hex(c0) + hex(d0);
 }
 
-// ── 成员表（每实例缓存 60s）──────────────────────────────────────────
-let memberCache = { at: 0, map: new Map(), room: "" };
-
-async function mx(c, path, opts = {}) {
-	const res = await fetch(c.hs + path, {
-		...opts,
+// ── Matrix 调用 ─────────────────────────────────────────────────────
+async function mx(c, path, { token, method = "GET", body, raw, headers = {} } = {}) {
+	return fetch(c.hs + path, {
+		method,
 		headers: {
-			Authorization: `Bearer ${c.token}`,
-			...(opts.body ? { "Content-Type": "application/json" } : {}),
-			...(opts.headers || {}),
+			Authorization: `Bearer ${token || c.bridgeToken}`,
+			...((body || raw) && { "Content-Type": headers["Content-Type"] || "application/json" }),
+			...headers,
 		},
+		body: raw || (body ? JSON.stringify(body) : undefined),
 	});
-	if (!res.ok) {
-		const text = await res.text().catch(() => "");
-		throw new Error(`matrix ${res.status}: ${text.slice(0, 180)}`);
-	}
-	return res;
 }
+
+async function mxJson(c, path, opts) {
+	const res = await mx(c, path, opts);
+	let data = {};
+	try {
+		data = await res.json();
+	} catch (_) {}
+	return { ok: res.ok, status: res.status, data };
+}
+
+let memberCache = { at: 0, map: new Map(), room: "" };
 
 async function getMembers(c, force = false) {
 	if (!force && Date.now() - memberCache.at < 60_000 && memberCache.room === c.room && memberCache.map.size) {
 		return memberCache.map;
 	}
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/members`);
-	const data = await res.json();
+	const { ok, data } = await mxJson(c, `/_matrix/client/v3/rooms/${enc(c.room)}/members`);
+	if (!ok) throw new Error(data.error || "members failed");
 	const map = new Map();
 	for (const ev of data.chunk || []) {
 		if (ev.type !== "m.room.member" || ev.content?.membership !== "join") continue;
@@ -149,6 +157,23 @@ async function getMembers(c, force = false) {
 	}
 	memberCache = { at: Date.now(), map, room: c.room };
 	return map;
+}
+
+let activeCache = { at: 0, set: new Set(), room: "" };
+
+async function getActiveSenders(c) {
+	if (Date.now() - activeCache.at < 60_000 && activeCache.room === c.room) return activeCache.set;
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/messages?dir=b&limit=120`);
+	const data = await res.json();
+	const cutoff = Date.now() - 30 * 60 * 1000;
+	const set = new Set();
+	for (const ev of data.chunk || []) {
+		if (ev.type !== "m.room.message") continue;
+		if (!ev.origin_server_ts || ev.origin_server_ts < cutoff) continue;
+		set.add(ev.sender);
+	}
+	activeCache = { at: Date.now(), set, room: c.room };
+	return set;
 }
 
 function siteLabel(url, c) {
@@ -169,7 +194,6 @@ function siteLabel(url, c) {
 function normalize(ev, members, c, base) {
 	const content = ev.content || {};
 	if (!content.body && !content.url) return null;
-	// 入房/退房之类的系统通知（m.notice）直接丢掉，别混进聊天流
 	if (!["m.text", "m.image", "m.emote"].includes(content.msgtype)) return null;
 
 	const sender = ev.sender || "";
@@ -181,13 +205,13 @@ function normalize(ev, members, c, base) {
 	let text = typeof content.body === "string" ? content.body : "";
 	let image = "";
 
+	// 别的站点用共享账号转发时，靠协议头还原身份
 	const bridge = content["org.tea-room.bridge"];
 	if (bridge && typeof bridge === "object") {
 		if (bridge.actor?.nick) nick = bridge.actor.nick;
 		if (bridge.site) site = siteLabel(bridge.site, c);
 		if (typeof bridge.text === "string") text = bridge.text;
 	}
-
 	const head = text.match(/^\[ID:([^\]]*)\];\[URL:([^\]]*)\]\s*\n?/);
 	if (head) {
 		nick = head[1].trim() || nick;
@@ -209,53 +233,158 @@ function normalize(ev, members, c, base) {
 
 	avatar = avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(avatar)}` : avatar;
 
-	return { id: ev.event_id, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image };
+	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image };
 }
 
-// ── 限流：有 KV 就用 KV，本地跑就用内存 ─────────────────────────────
+// ── 限流 ────────────────────────────────────────────────────────────
 const memory = new Map();
 
-async function rateCheck(env, ip) {
+async function rateCheck(env, ip, kind = "send") {
 	const now = Date.now();
+	const gap = kind === "enter" ? RATE.enterGap : RATE.minGap;
+
 	if (env.TEA_KV) {
-		const gapKey = `gap:${ip}`;
-		if (await env.TEA_KV.get(gapKey)) {
-			return `说太快啦，${Math.ceil(RATE.minGap / 1000)} 秒后再发。`;
+		const gapKey = `${kind}:gap:${ip}`;
+		if (await env.TEA_KV.get(gapKey)) return `手速有点快，${Math.ceil(gap / 1000)} 秒后再试。`;
+		if (kind === "enter") {
+			await env.TEA_KV.put(gapKey, "1", { expirationTtl: Math.ceil(gap / 1000) });
+			return "";
 		}
-		const minuteKey = `m:${ip}:${Math.floor(now / 60000)}`;
-		const hourKey = `h:${ip}:${Math.floor(now / 3600000)}`;
-		const [minute, hour] = await Promise.all([
-			env.TEA_KV.get(minuteKey),
-			env.TEA_KV.get(hourKey),
-		]);
+		const minuteKey = `send:m:${ip}:${Math.floor(now / 60000)}`;
+		const hourKey = `send:h:${ip}:${Math.floor(now / 3600000)}`;
+		const [minute, hour] = await Promise.all([env.TEA_KV.get(minuteKey), env.TEA_KV.get(hourKey)]);
 		if (Number(minute || 0) >= RATE.perMinute) return "一分钟说得有点多，喘口气。";
 		if (Number(hour || 0) >= RATE.perHour) return "这一小时的额度用完了，晚点再来。";
 		await Promise.all([
-			env.TEA_KV.put(gapKey, "1", { expirationTtl: 3 }),
+			env.TEA_KV.put(gapKey, "1", { expirationTtl: Math.ceil(gap / 1000) }),
 			env.TEA_KV.put(minuteKey, String(Number(minute || 0) + 1), { expirationTtl: 120 }),
 			env.TEA_KV.put(hourKey, String(Number(hour || 0) + 1), { expirationTtl: 3700 }),
 		]);
 		return "";
 	}
 
-	const b = memory.get(ip) || { last: 0, minute: [], hour: [] };
-	if (now - b.last < RATE.minGap) return `说太快啦，${Math.ceil((RATE.minGap - (now - b.last)) / 1000)} 秒后再发。`;
-	b.minute = b.minute.filter((x) => now - x < 60_000);
-	b.hour = b.hour.filter((x) => now - x < 3_600_000);
-	if (b.minute.length >= RATE.perMinute) return "一分钟说得有点多，喘口气。";
-	if (b.hour.length >= RATE.perHour) return "这一小时的额度用完了，晚点再来。";
+	const b = memory.get(`${kind}:${ip}`) || { last: 0, minute: [], hour: [] };
+	if (now - b.last < gap) return `手速有点快，${Math.ceil((gap - (now - b.last)) / 1000)} 秒后再试。`;
 	b.last = now;
-	b.minute.push(now);
-	b.hour.push(now);
-	memory.set(ip, b);
+	if (kind === "send") {
+		b.minute = b.minute.filter((x) => now - x < 60_000);
+		b.hour = b.hour.filter((x) => now - x < 3_600_000);
+		if (b.minute.length >= RATE.perMinute) return "一分钟说得有点多，喘口气。";
+		if (b.hour.length >= RATE.perHour) return "这一小时的额度用完了，晚点再来。";
+		b.minute.push(now);
+		b.hour.push(now);
+	}
+	memory.set(`${kind}:${ip}`, b);
 	return "";
 }
 
+// ── 访客账号 ────────────────────────────────────────────────────────
+const ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789";
+const randomLocalpart = (prefix) => {
+	const bytes = new Uint8Array(7);
+	crypto.getRandomValues(bytes);
+	return prefix + [...bytes].map((b) => ALPHABET[b % ALPHABET.length]).join("");
+};
+
+async function uploadAvatar(c, email) {
+	if (!email) return "";
+	try {
+		const md5 = md5Hex(email.trim().toLowerCase());
+		const res = await fetch(`https://weavatar.com/avatar/${md5}?s=128&d=mp`, { headers: { "User-Agent": "tea-room-bridge" } });
+		if (!res.ok) return "";
+		const type = res.headers.get("content-type") || "image/webp";
+		const buf = await res.arrayBuffer();
+		if (buf.byteLength > 200_000) return "";
+		const up = await mx(c, "/_matrix/media/v3/upload?filename=avatar.webp", {
+			token: c.adminToken,
+			method: "POST",
+			raw: buf,
+			headers: { "Content-Type": type },
+		});
+		if (!up.ok) return "";
+		const data = await up.json();
+		return data.content_uri || "";
+	} catch {
+		return "";
+	}
+}
+
+async function handleEnter(c, env, request, ip) {
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const nick = clean(body.nick, LIMITS.nick);
+	const email = clean(body.email, LIMITS.email);
+
+	if (!nick) return fail(400, "先起个昵称");
+	if (email && !isEmail(email)) return fail(400, "邮箱格式不对");
+	if (!c.adminToken) return fail(500, "bridge 未配置 ADMIN_TOKEN");
+
+	const denied = await rateCheck(env, ip, "enter");
+	if (denied) return fail(429, denied);
+
+	const localpart = randomLocalpart(c.prefix);
+	const userId = `@${localpart}:matrix.0dm.cn`;
+	const password = crypto.randomUUID().replace(/-/g, "") + "Aa1!";
+	const displayname = `${nick} · ${c.siteName}`;
+
+	const created = await mxJson(c, `/_synapse/admin/v2/users/${enc(userId)}`, {
+		token: c.adminToken,
+		method: "PUT",
+		body: { password, displayname, admin: false },
+	});
+	if (!created.ok) return fail(502, `开号失败：${created.data.error || created.status}`);
+
+	const avatarUrl = await uploadAvatar(c, email);
+	if (avatarUrl) {
+		await mxJson(c, `/_synapse/admin/v2/users/${enc(userId)}`, {
+			token: c.adminToken,
+			method: "PUT",
+			body: { avatar_url: avatarUrl },
+		});
+	}
+
+	// 大厅是邀请制：用房间管理员令牌发邀请，再用访客自己身份加入
+	await mxJson(c, `/_matrix/client/v3/rooms/${enc(c.room)}/invite`, {
+		token: c.bridgeToken,
+		method: "POST",
+		body: { user_id: userId },
+	});
+
+	const login = await mxJson(c, "/_matrix/client/v3/login", {
+		token: "",
+		method: "POST",
+		body: {
+			type: "m.login.password",
+			identifier: { type: "m.id.user", user: localpart },
+			password,
+			initial_device_display_name: "茶室网页",
+		},
+	});
+	if (!login.ok || !login.data.access_token) return fail(502, "登录新账号失败");
+	const token = login.data.access_token;
+
+	await mxJson(c, `/_matrix/client/v3/join/${enc(c.room)}`, { token, method: "POST", body: {} });
+
+	return json(200, {
+		ok: true,
+		user: {
+			id: userId,
+			nick,
+			avatar: avatarUrl ? `${new URL(request.url).origin}/api/media?u=${enc(avatarUrl)}` : "",
+		},
+		token,
+	});
+}
+
 // ── 接口 ────────────────────────────────────────────────────────────
-async function handleHistory(c, url, base) {
+async function handleHistory(c, url, base, token) {
 	const limit = Math.min(Number(url.searchParams.get("limit") || 50) || 50, LIMITS.history);
 	const members = await getMembers(c);
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/messages?dir=b&limit=${limit}`);
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/messages?dir=b&limit=${limit}`, { token });
 	const data = await res.json();
 	const messages = (data.chunk || [])
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
@@ -264,13 +393,13 @@ async function handleHistory(c, url, base) {
 	return json(200, { ok: true, messages, end: data.end || null });
 }
 
-async function handleSync(c, url, base) {
+async function handleSync(c, url, base, token) {
 	const since = url.searchParams.get("since") || "";
 	const filter = JSON.stringify({
 		room: { rooms: [c.room], timeline: { limit: 50 }, state: { lazy_load_members: true } },
 	});
 	const path = `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}` + (since ? `&since=${enc(since)}` : "");
-	const res = await mx(c, path);
+	const res = await mx(c, path, { token });
 	const data = await res.json();
 	const members = await getMembers(c);
 	const timeline = data.rooms?.join?.[c.room]?.timeline?.events || [];
@@ -278,24 +407,6 @@ async function handleSync(c, url, base) {
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean);
 	return json(200, { ok: true, messages, next: data.next_batch || since || null });
-}
-
-// 最近 30 分钟发过言的，算「在线」，用来给成员列表点灯
-let activeCache = { at: 0, set: new Set(), room: "" };
-
-async function getActiveSenders(c) {
-	if (Date.now() - activeCache.at < 60_000 && activeCache.room === c.room) return activeCache.set;
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/messages?dir=b&limit=120`);
-	const data = await res.json();
-	const cutoff = Date.now() - 30 * 60 * 1000;
-	const set = new Set();
-	for (const ev of data.chunk || []) {
-		if (ev.type !== "m.room.message") continue;
-		if (!ev.origin_server_ts || ev.origin_server_ts < cutoff) continue;
-		set.add(ev.sender);
-	}
-	activeCache = { at: Date.now(), set, room: c.room };
-	return set;
 }
 
 async function handleRoom(c, base) {
@@ -311,7 +422,7 @@ async function handleRoom(c, base) {
 			online: active.has(id),
 		};
 	});
-	// 同一个昵称 + 同一站点只留一个（有人开着小号或多设备，列表里会重复）
+
 	const seen = new Map();
 	for (const item of list) {
 		const key = `${item.nick}|${item.site}`;
@@ -319,7 +430,6 @@ async function handleRoom(c, base) {
 		if (!prev || (!prev.online && item.online)) seen.set(key, item);
 	}
 	const unique = [...seen.values()];
-
 	unique.sort((a, b) => {
 		if (a.online !== b.online) return a.online ? -1 : 1;
 		const aMine = a.site === c.siteName;
@@ -331,50 +441,34 @@ async function handleRoom(c, base) {
 	return json(200, { ok: true, room: { name: "大厅" }, members: unique, online: unique.filter((m) => m.online).length });
 }
 
-async function handleSend(c, request) {
+async function handleSend(c, request, token) {
+	if (!token) return fail(401, "还没入座");
 	let body;
 	try {
 		body = await request.json();
 	} catch {
 		return fail(400, "请求格式不对");
 	}
-	const nick = clean(body.nick, LIMITS.nick);
-	const email = clean(body.email, LIMITS.email);
-	const website = clean(body.website, LIMITS.website);
 	const text = clean(body.text, LIMITS.text);
-
-	if (!nick) return fail(400, "先起个昵称");
 	if (!text) return fail(400, "空消息发不出去");
-	if (email && !isEmail(email)) return fail(400, "邮箱格式不对");
-
-	const avatar = email ? `https://weavatar.com/avatar/${md5Hex(email.trim().toLowerCase())}?s=96&d=mp` : c.fallbackAvatar;
-
-	const payload = {
-		msgtype: "m.text",
-		body: `[ID:${nick}];[URL:${avatar}]\n${text}`,
-		"org.tea-room.bridge": {
-			version: 1,
-			site: c.siteUrl,
-			actor: { id: `guest-${md5Hex(nick + "|" + (email || "")).slice(0, 10)}`, nick },
-			text,
-			...(website ? { website } : {}),
-		},
-	};
 
 	const txn = `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/send/m.room.message/${txn}`, {
+		token,
 		method: "PUT",
-		body: JSON.stringify(payload),
+		body: { msgtype: "m.text", body: text },
 	});
-	const data = await res.json();
-	return json(200, { ok: true, id: data.event_id, ts: Date.now(), nick });
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok) return fail(res.status === 403 ? 403 : 502, data.error || "发送失败");
+	return json(200, { ok: true, id: data.event_id, ts: Date.now() });
 }
 
 async function handleMedia(c, url) {
 	const mxc = url.searchParams.get("u") || "";
 	const m = mxc.match(/^mxc:\/\/([^/]+)\/([A-Za-z0-9_-]+)$/);
 	if (!m) return fail(400, "bad mxc");
-	const upstream = await mx(c, `/_matrix/client/v1/media/download/${enc(m[1])}/${enc(m[2])}`);
+	const upstream = await mx(c, `/_matrix/client/v1/media/download/${enc(m[1])}/${enc(m[2])}`, { token: c.bridgeToken });
+	if (!upstream.ok) return fail(upstream.status, "media failed");
 	const headers = new Headers();
 	headers.set("Content-Type", upstream.headers.get("content-type") || "application/octet-stream");
 	headers.set("Cache-Control", "public, max-age=86400");
@@ -390,7 +484,7 @@ export async function handleRequest(request, env = {}) {
 
 	const corsHeaders = {
 		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
 		"Access-Control-Max-Age": "86400",
 		Vary: "Origin",
 	};
@@ -402,24 +496,26 @@ export async function handleRequest(request, env = {}) {
 		request.headers.get("cf-connecting-ip") ||
 		(request.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
 		"unknown";
+	const auth = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+	const visitorToken = auth && auth !== c.bridgeToken ? auth : "";
 
 	let out;
 	try {
-		if (!c.token) return withCors(fail(500, "bridge 未配置 BRIDGE_TOKEN"), corsHeaders);
-
 		if (path === "/" || path === "/api/health") {
-			out = json(200, { ok: true, room: c.room, site: c.siteName, time: Math.floor(Date.now() / 1000) });
+			out = json(200, { ok: true, room: c.room, site: c.siteName, mode: "individual", time: Math.floor(Date.now() / 1000) });
+		} else if (path === "/api/enter" && request.method === "POST") {
+			out = await handleEnter(c, env, request, ip);
 		} else if (path === "/api/room" && request.method === "GET") {
 			out = await handleRoom(c, url.origin);
 		} else if (path === "/api/history" && request.method === "GET") {
-			out = await handleHistory(c, url, url.origin);
+			out = await handleHistory(c, url, url.origin, visitorToken || c.bridgeToken);
 		} else if (path === "/api/sync" && request.method === "GET") {
-			out = await handleSync(c, url, url.origin);
+			out = await handleSync(c, url, url.origin, visitorToken || c.bridgeToken);
 		} else if (path === "/api/media" && request.method === "GET") {
 			out = await handleMedia(c, url);
 		} else if (path === "/api/send" && request.method === "POST") {
-			const denied = await rateCheck(env, ip);
-			out = denied ? fail(429, denied) : await handleSend(c, request);
+			const denied = await rateCheck(env, ip, "send");
+			out = denied ? fail(429, denied) : await handleSend(c, request, visitorToken);
 		} else {
 			out = fail(404, "not found");
 		}
