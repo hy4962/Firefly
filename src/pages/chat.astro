@@ -2959,6 +2959,32 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		}
 		.tea-bar {
 			padding: 0.6rem 0.7rem;
+			gap: 0.4rem;
+		}
+		.tea-bar__brand {
+			flex: 1;
+			gap: 0.4rem;
+		}
+		.tea-bar__brand > div {
+			display: none;
+		}
+		.tea-bar__mark {
+			width: 1.8rem;
+			height: 1.8rem;
+		}
+		.tea-room-switch {
+			flex: none;
+			white-space: nowrap;
+			padding: 0 0.45rem;
+		}
+		.tea-room-switch > span:first-of-type {
+			display: none;
+		}
+		.tea-bar__tools {
+			gap: 0.25rem;
+		}
+		.tea-conn [data-tea-conn-text] {
+			display: none;
 		}
 		.tea-banner {
 			margin: 0.55rem 0.7rem 0;
@@ -3591,12 +3617,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			if (m.id && rt.seen.has(m.id)) return;
 			if (m.id) rt.seen.add(m.id);
 
-			const prev = f.querySelector(".tea-msg:last-of-type");
-			const grouped =
-				prev &&
-				prev.dataset.nick === m.nick &&
-				prev.dataset.site === (m.site || "") &&
-				Number(m.ts) - Number(prev.dataset.ts || 0) < 4 * 60 * 1000;
 
 			const lastDay = f.dataset.day;
 			if (lastDay !== dayKey(m.ts)) {
@@ -3609,7 +3629,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 
 			const mine = !!(rt.visitor && m.sender && m.sender === rt.visitor.id);
 			const el = document.createElement("article");
-			el.className = "tea-msg" + (grouped ? " tea-msg--grouped" : "") + (mine ? " tea-msg--mine" : "");
+			el.className = "tea-msg" + (mine ? " tea-msg--mine" : "");
 			el.dataset.nick = m.nick || "";
 			el.dataset.site = m.site || "";
 			el.dataset.ts = String(m.ts || Date.now());
@@ -3675,8 +3695,17 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				const box = document.createElement("div");
 				box.innerHTML = recallHtml(r);
 				const node = box.firstElementChild;
-				if (old) old.replaceWith(node);
-				else if (!f.querySelector(`.tea-recall[data-id="${CSS.escape(r.id)}"]`)) f.appendChild(node);
+				if (old) {
+					old.replaceWith(node);
+					continue;
+				}
+				if (f.querySelector(`.tea-recall[data-id="${CSS.escape(r.id)}"]`)) continue;
+				// 目标消息不在当前加载窗口时，按时间戳插到正确位置，别全塞到底部。
+				const ts = Number(r.ts) || 0;
+				const items = [...f.querySelectorAll(".tea-msg, .tea-recall")];
+				const next = items.find((el) => Number(el.dataset.ts || 0) > ts);
+				if (next) next.before(node);
+				else if (!items.length || ts >= Number(items[items.length - 1].dataset.ts || 0)) f.appendChild(node);
 			}
 		};
 

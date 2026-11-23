@@ -208,6 +208,45 @@ function readReceipts(data, roomId, members, c, base) {
 	return map;
 }
 
+// Matrix 的 m.receipt 是「最新一条」快照，旧事件的回执会消失。
+// 这里按每个读者的最新已读时间做水位线：时间早于水位的消息都算已读。
+function readWatermarks(data, roomId, members, c, base) {
+	const events = data?.rooms?.join?.[roomId]?.ephemeral?.events || [];
+	const snapshot = [...events].reverse().find((ev) => ev.type === "m.receipt")?.content || {};
+	const byUser = new Map();
+	for (const reads of Object.values(snapshot)) {
+		const users = reads?.["m.read"] || {};
+		for (const [id, info] of Object.entries(users)) {
+			if (!id || id === c.selfUserId) continue;
+			const ts = Number(info?.ts) || 0;
+			if (!ts) continue;
+			const prev = byUser.get(id);
+			if (!prev || ts > prev.ts) {
+				const m = members.get(id) || {};
+				const nick = m.nick || id.split(":")[0].replace(/^@/, "");
+				const dot = nick.indexOf(" · ");
+				byUser.set(id, {
+					id,
+					nick: dot > 0 ? nick.slice(0, dot) : nick,
+					site: dot > 0 ? nick.slice(dot + 3) : SITE_BY_SERVER[id.split(":")[1]] || "",
+					avatar: m.avatar ? (m.avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(m.avatar)}` : m.avatar) : "",
+					ts,
+				});
+			}
+		}
+	}
+	return [...byUser.values()];
+}
+
+function receiptForMessage(m, watermarks) {
+	if (!m || !m.ts || !watermarks.length) return null;
+	const readers = watermarks
+		.filter((r) => r.id !== m.sender && r.ts >= m.ts)
+		.sort((a, b) => b.ts - a.ts);
+	if (!readers.length) return null;
+	return { count: readers.length, readers: readers.slice(0, 12) };
+}
+
 let activeCache = { at: 0, set: new Set(), room: "" };
 
 async function getActiveSenders(c, roomId) {
@@ -655,17 +694,17 @@ async function handleHistory(c, url, base, token) {
 	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}`, { token });
 	const data = await res.json();
 	// 回执只在 sync 的 ephemeral 里；这里单独取一次全量快照，给历史消息带上已读名单。
-	let receipts = new Map();
+	let watermarks = [];
 	try {
 		const filter = JSON.stringify({ room: { rooms: [room.id], ephemeral: { types: ["m.receipt"] } } });
 		const sync = await mx(c, `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}`, { token });
-		receipts = readReceipts(await sync.json(), room.id, members, c, base);
+		watermarks = readWatermarks(await sync.json(), room.id, members, c, base);
 	} catch (_) {}
 	const messages = (data.chunk || [])
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean)
 		.reverse()
-		.map((m) => ({ ...m, receipt: receipts.get(m.id) || null }));
+		.map((m) => ({ ...m, receipt: receiptForMessage(m, watermarks) }));
 	const redactions = collectRedactions(data.chunk || [], members);
 	return json(200, { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, redactions, end: data.end || null });
 }
@@ -685,13 +724,13 @@ async function handleSync(c, url, base, token) {
 	const res = await mx(c, path, { token });
 	const data = await res.json();
 	const members = await getMembers(c, room.id);
-	const receipts = readReceipts(data, room.id, members, c, base);
+	const watermarks = readWatermarks(data, room.id, members, c, base);
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
 	const reactions = collectReactions(timeline, members);
 	const messages = timeline
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean)
-		.map((m) => ({ ...m, receipt: receipts.get(m.id) || null, reactions: reactions.get(m.id) || [] }));
+		.map((m) => ({ ...m, receipt: receiptForMessage(m, watermarks), reactions: reactions.get(m.id) || [] }));
 	// reaction 更新可能指向历史消息，单独返回让前端就地合并
 	const reactionUpdates = Object.fromEntries(reactions.entries());
 	const redactions = collectRedactions(timeline, members);
