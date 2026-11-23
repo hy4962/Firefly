@@ -296,7 +296,13 @@ async function getActiveSenders(c, roomId) {
 }
 
 // 真实在线状态：只探测本站成员 + 最近发言的人，避免 100+ 成员逐个请求拖慢房间接口。
-async function getPresenceMap(c, ids) {
+let presenceCache = { at: 0, room: "", key: "", map: new Map() };
+
+async function getPresenceMap(c, roomId, ids) {
+	const key = ids.join("|");
+	if (Date.now() - presenceCache.at < 20_000 && presenceCache.room === roomId && presenceCache.key === key) {
+		return presenceCache.map;
+	}
 	const out = new Map();
 	await Promise.all(
 		ids.map(async (id) => {
@@ -308,6 +314,7 @@ async function getPresenceMap(c, ids) {
 			} catch (_) {}
 		}),
 	);
+	presenceCache = { at: Date.now(), room: roomId, key, map: out };
 	return out;
 }
 
@@ -766,14 +773,18 @@ function collectRedactions(events, members) {
 async function handleHistory(c, url, base, token) {
 	const room = roomOf(c, url);
 	const limit = Math.min(Number(url.searchParams.get("limit") || 50) || 50, LIMITS.history);
-	const members = await getMembers(c, room.id);
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}`, { token });
+	// 成员、消息、回执快照并行拉，别串成三次公网往返
+	const membersP = getMembers(c, room.id);
+	const msgP = mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}`, { token });
+	const filter = JSON.stringify({ room: { rooms: [room.id], ephemeral: { types: ["m.receipt"] } } });
+	const snapP = mx(c, `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}`, { token }).catch(() => null);
+	const members = await membersP;
+	const res = await msgP;
 	const data = await res.json();
-	// 回执只在 sync 的 ephemeral 里；这里单独取一次全量快照，给历史消息带上已读名单。
+	// 回执只在 sync 的 ephemeral 里；快照给历史消息带上已读名单。
 	try {
-		const filter = JSON.stringify({ room: { rooms: [room.id], ephemeral: { types: ["m.receipt"] } } });
-		const sync = await mx(c, `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}`, { token });
-		mergeReceiptCache(room.id, readReceipts(await sync.json(), room.id, members, c, base));
+		const snap = await snapP;
+		if (snap?.ok) mergeReceiptCache(room.id, readReceipts(await snap.json(), room.id, members, c, base));
 	} catch (_) {}
 	const messages = (data.chunk || [])
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
@@ -796,9 +807,10 @@ async function handleSync(c, url, base, token) {
 		},
 	});
 	const path = `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}` + (since ? `&since=${enc(since)}` : "");
+	const membersP = getMembers(c, room.id);
 	const res = await mx(c, path, { token });
 	const data = await res.json();
-	const members = await getMembers(c, room.id);
+	const members = await membersP;
 	mergeReceiptCache(room.id, readReceipts(data, room.id, members, c, base));
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
 	const reactions = collectReactions(timeline, members);
@@ -826,24 +838,41 @@ async function handleSync(c, url, base, token) {
 }
 
 // 读取房间真实头像（m.room.avatar），统一走本站媒体代理，避免跨域 mxc://
+const roomAvatarCache = new Map();
 async function roomAvatar(c, base, roomId) {
+	const hit = roomAvatarCache.get(roomId);
+	if (hit && Date.now() - hit.at < 5 * 60_000) return hit.url;
 	try {
 		const { ok, data } = await mxJson(c, `/_matrix/client/v3/rooms/${enc(roomId)}/state/m.room.avatar`);
 		const mxc = ok && data?.url;
-		if (typeof mxc === "string" && mxc.startsWith("mxc://")) return `${base}/api/media?u=${enc(mxc)}`;
+		if (typeof mxc === "string" && mxc.startsWith("mxc://")) {
+			const url = `${base}/api/media?u=${enc(mxc)}`;
+			roomAvatarCache.set(roomId, { at: Date.now(), url });
+			return url;
+		}
 	} catch (_) {}
 	return "";
 }
 
-async function handleRoom(c, base, room) {
+async function handleRoom(c, base, room, url) {
+	if (url?.searchParams.get("light") === "1") {
+		const avatar = await roomAvatar(c, base, room.id);
+		return json(200, {
+			ok: true,
+			room: { key: room.key, name: room.name, desc: room.desc, id: room.id, avatar },
+			members: [],
+			online: 0,
+		});
+	}
 	const [members, active, avatar] = await Promise.all([
 		getMembers(c, room.id),
 		getActiveSenders(c, room.id),
 		roomAvatar(c, base, room.id),
 	]);
+	// 只探本站账号：外站 presence 常被对方服务器拖到超时，外站成员用“最近发言”判断在线
 	const localIds = [...members.keys()].filter((id) => id.endsWith(":matrix.0dm.cn"));
-	const probeIds = [...new Set([...localIds, ...active])].slice(0, 30);
-	const presence = await getPresenceMap(c, probeIds);
+	const probeIds = localIds.slice(0, 30);
+	const presence = await getPresenceMap(c, room.id, probeIds);
 	const isPresent = (id) => {
 		const p = presence.get(id);
 		if (!p) return false;
@@ -1449,7 +1478,7 @@ export async function handleRequest(request, env = {}) {
 		} else if (path === "/api/matrix-login" && request.method === "POST") {
 			out = await handleMatrixLogin(c, request, ip);
 		} else if (path === "/api/room" && request.method === "GET") {
-			out = await handleRoom(c, url.origin, roomOf(c, url));
+			out = await handleRoom(c, url.origin, roomOf(c, url), url);
 		} else if (path === "/api/pins" && request.method === "GET") {
 			out = await handlePins(c, url, url.origin);
 		} else if (path === "/api/threads" && request.method === "GET") {

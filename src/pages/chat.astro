@@ -4986,7 +4986,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		const syncRoomAvatars = async () => {
 			for (const key of Object.keys(ROOMS)) {
 				try {
-					const data = await api(`/api/room?room=${key}`);
+					const data = await api(`/api/room?room=${key}&light=1`);
 					applyRoomAvatar(key, data.room && data.room.avatar);
 				} catch (_) {}
 			}
