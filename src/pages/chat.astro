@@ -283,7 +283,7 @@ const peers = [
 		opacity: 1 !important;
 		contain: none !important;
 	}
-	html:has(.tea-app) :is(#wallpaper-wrapper, #left-sidebar-wrapper, #right-sidebar-wrapper, #left-sidebar, #right-sidebar, #left-sidebar-static, #right-sidebar-static, #left-sidebar-sticky, #right-sidebar-sticky, #left-sidebar-dynamic, #right-sidebar-dynamic, #mobile-bottom-sidebar, .site-footer, .floating-controls-container) {
+	html:has(.tea-app) :is(#wallpaper-wrapper, #category-bar-wrapper, #category-bar, #left-sidebar-wrapper, #right-sidebar-wrapper, #left-sidebar, #right-sidebar, #left-sidebar-static, #right-sidebar-static, #left-sidebar-sticky, #right-sidebar-sticky, #left-sidebar-dynamic, #right-sidebar-dynamic, #mobile-bottom-sidebar, .site-footer, .floating-controls-container) {
 		display: none !important;
 	}
 	html:has(.tea-app),
@@ -354,11 +354,12 @@ const peers = [
 		gap: 0.75rem;
 		min-height: 0;
 		overflow-y: auto;
-		scrollbar-width: thin;
+		scrollbar-width: none;
 		padding-right: 2px;
 	}
 	.tea-side::-webkit-scrollbar {
-		width: 4px;
+		width: 0;
+		height: 0;
 	}
 
 	/* 名片 */
