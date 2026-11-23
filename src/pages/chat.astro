@@ -356,14 +356,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			</div>
 		</div>
 
-		<!-- ── 图片预览 ─────────────────────────────────────────── -->
-		<div class="tea-zoom" data-tea-zoom hidden>
-			<button type="button" class="tea-zoom__close" data-tea-zoom-close aria-label="关闭预览">
-				<Icon is:inline name="material-symbols:close-rounded" />
-			</button>
-			<img data-tea-zoom-img alt="" />
-		</div>
-
 		<!-- ── 遮罩（移动端抽屉 / 点歌台浮层） ─────────────────── -->
 		<div class="tea-scrim" data-tea-scrim hidden></div>
 		<div class="tea-scrim" data-juke-scrim hidden></div>
@@ -376,6 +368,28 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			<div class="tea-notify__list" data-tea-notify-list></div>
 		</div>
 	</section>
+
+	<!-- ── 图片预览 ─────────────────────────────────────────── -->
+	<div class="tea-zoom" data-tea-zoom hidden>
+		<button type="button" class="tea-zoom__close" data-tea-zoom-close aria-label="关闭预览">
+			<Icon is:inline name="material-symbols:close-rounded" />
+		</button>
+		<button type="button" class="tea-zoom__nav tea-zoom__nav--prev" data-tea-zoom-prev aria-label="上一张">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+		</button>
+		<button type="button" class="tea-zoom__nav tea-zoom__nav--next" data-tea-zoom-next aria-label="下一张">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+		</button>
+		<div class="tea-zoom__stage" data-tea-zoom-stage>
+			<img data-tea-zoom-img alt="" draggable="false" />
+		</div>
+		<div class="tea-zoom__bar">
+			<button type="button" data-tea-zoom-out aria-label="缩小">−</button>
+			<button type="button" data-tea-zoom-reset aria-label="重置缩放">1:1</button>
+			<button type="button" data-tea-zoom-in aria-label="放大">＋</button>
+			<span class="tea-zoom__count" data-tea-zoom-count>1/1</span>
+		</div>
+	</div>
 
 	<!-- ── 身份弹窗 ─────────────────────────────────────────── -->
 	<dialog class="tea-dialog tea-login" data-tea-dialog aria-labelledby="tea-dialog-title">
@@ -3170,17 +3184,26 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-zoom {
 		position: fixed;
 		inset: 0;
-		z-index: 60;
-		display: grid;
-		place-items: center;
-		padding: 5vh 4vw;
-		background: rgba(14, 16, 12, 0.78);
+		z-index: 170;
+		background: rgba(14, 16, 12, 0.86);
 		backdrop-filter: blur(8px);
 		animation: tea-zoom-in 0.18s ease-out;
-		cursor: zoom-out;
+		overflow: hidden;
+		touch-action: none;
 	}
 	.tea-zoom[hidden] {
 		display: none;
+	}
+	.tea-zoom__stage {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		overflow: hidden;
+		cursor: grab;
+	}
+	.tea-zoom__stage.is-dragging {
+		cursor: grabbing;
 	}
 	.tea-zoom img {
 		max-width: min(92vw, 1400px);
@@ -3189,9 +3212,18 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
 		object-fit: contain;
 		cursor: default;
+		user-select: none;
+		-webkit-user-drag: none;
+		transform-origin: center center;
+		will-change: transform;
+	}
+	.tea-zoom__close,
+	.tea-zoom__nav,
+	.tea-zoom__bar {
+		position: absolute;
+		z-index: 2;
 	}
 	.tea-zoom__close {
-		position: absolute;
 		top: 1rem;
 		right: 1rem;
 		width: 2.4rem;
@@ -3208,6 +3240,66 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-zoom__close svg {
 		width: 1.2rem;
 		height: 1.2rem;
+	}
+	.tea-zoom__nav {
+		top: 50%;
+		width: 2.6rem;
+		height: 2.6rem;
+		transform: translateY(-50%);
+		display: grid;
+		place-items: center;
+		border: 1px solid rgba(255, 255, 255, 0.28);
+		border-radius: 50%;
+		background: rgba(20, 22, 18, 0.55);
+		color: #fff;
+		cursor: pointer;
+		backdrop-filter: blur(8px);
+	}
+	.tea-zoom__nav:hover {
+		background: rgba(255, 255, 255, 0.18);
+	}
+	.tea-zoom__nav svg {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+	.tea-zoom__nav--prev { left: 1rem; }
+	.tea-zoom__nav--next { right: 1rem; }
+	.tea-zoom__nav[hidden] { display: none; }
+	.tea-zoom__bar {
+		left: 50%;
+		bottom: 1.1rem;
+		transform: translateX(-50%);
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.3rem;
+		border: 1px solid rgba(255, 255, 255, 0.22);
+		border-radius: 999px;
+		background: rgba(20, 22, 18, 0.6);
+		backdrop-filter: blur(10px);
+		color: #fff;
+	}
+	.tea-zoom__bar button {
+		width: 2rem;
+		height: 2rem;
+		display: grid;
+		place-items: center;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 1.05rem;
+		cursor: pointer;
+	}
+	.tea-zoom__bar button:hover {
+		background: rgba(255, 255, 255, 0.16);
+	}
+	.tea-zoom__count {
+		padding: 0 0.55rem;
+		font-size: 0.7rem;
+		color: rgba(255, 255, 255, 0.78);
+		font-variant-numeric: tabular-nums;
 	}
 	@keyframes tea-zoom-in {
 		from {
@@ -5755,19 +5847,112 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		};
 		rt.switchRoom = switchRoom;
 
-		const openZoom = (src) => {
-			const box = q("[data-tea-zoom]");
+		// ── 图片预览：缩放 / 拖动 / 多图切换 ──────────────────
+		const zoomState = {
+			list: [], index: 0, scale: 1, x: 0, y: 0,
+			dragging: false, startX: 0, startY: 0, originX: 0, originY: 0,
+			pointers: new Map(), pinchDist: 0, pinchScale: 1,
+		};
+		const zoomParts = () => {
+			const box = document.querySelector("[data-tea-zoom]");
+			return {
+				box,
+				stage: box && box.querySelector("[data-tea-zoom-stage]"),
+				img: box && box.querySelector("[data-tea-zoom-img]"),
+				prev: box && box.querySelector("[data-tea-zoom-prev]"),
+				next: box && box.querySelector("[data-tea-zoom-next]"),
+				count: box && box.querySelector("[data-tea-zoom-count]"),
+			};
+		};
+		const zoomClamp = () => {
+			const { stage, img } = zoomParts();
+			if (!stage || !img || !img.offsetWidth) return;
+			const maxX = Math.max(0, (img.offsetWidth * zoomState.scale - stage.clientWidth) / 2);
+			const maxY = Math.max(0, (img.offsetHeight * zoomState.scale - stage.clientHeight) / 2);
+			zoomState.x = Math.max(-maxX, Math.min(maxX, zoomState.x));
+			zoomState.y = Math.max(-maxY, Math.min(maxY, zoomState.y));
+		};
+		const zoomApply = () => {
+			const { img } = zoomParts();
+			if (!img) return;
+			zoomClamp();
+			img.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
+		};
+		const zoomReset = () => {
+			zoomState.scale = 1;
+			zoomState.x = 0;
+			zoomState.y = 0;
+			const { stage } = zoomParts();
+			if (stage) stage.classList.remove("is-dragging");
+			zoomApply();
+		};
+		const zoomAt = (next, clientX, clientY) => {
+			const { stage } = zoomParts();
+			if (!stage) return;
+			const scale = Math.max(1, Math.min(6, next));
+			const r = stage.getBoundingClientRect();
+			const cx = clientX - (r.left + r.width / 2);
+			const cy = clientY - (r.top + r.height / 2);
+			const ratio = scale / zoomState.scale;
+			zoomState.x = cx - (cx - zoomState.x) * ratio;
+			zoomState.y = cy - (cy - zoomState.y) * ratio;
+			zoomState.scale = scale;
+			if (scale === 1) {
+				zoomState.x = 0;
+				zoomState.y = 0;
+			}
+			zoomApply();
+		};
+		const zoomShow = (index) => {
+			const { img, prev, next, count, box } = zoomParts();
+			if (!img || !zoomState.list.length) return;
+			const len = zoomState.list.length;
+			zoomState.index = ((index % len) + len) % len;
+			const item = zoomState.list[zoomState.index];
+			img.src = item.src;
+			img.alt = item.alt || "";
+			if (count) count.textContent = `${zoomState.index + 1}/${len}`;
+			if (prev) prev.hidden = len <= 1;
+			if (next) next.hidden = len <= 1;
+			if (box) box.classList.toggle("is-single", len <= 1);
+			zoomReset();
+		};
+		const zoomStep = (dir) => {
+			if (zoomState.list.length <= 1) return;
+			zoomShow(zoomState.index + dir);
+		};
+		const openZoom = (src, node) => {
+			const { box, img, count } = zoomParts();
 			if (!box || !src) return;
-			const img = box.querySelector("[data-tea-zoom-img]");
-			if (img) img.src = src;
+			const feed = feedEl();
+			const nodes = feed ? [...feed.querySelectorAll("img[data-zoom]")] : [];
+			const list = nodes.map((n) => ({ src: n.currentSrc || n.src, alt: n.alt || "" }));
+			if (!list.length) list.push({ src, alt: "" });
+			zoomState.list = list;
+			zoomState.pointers.clear();
+			zoomState.dragging = false;
+			const idx = node ? nodes.indexOf(node) : list.findIndex((x) => x.src === src);
+			zoomState.index = idx >= 0 ? idx : 0;
 			box.hidden = false;
+			if (img) img.style.transition = "none";
+			zoomShow(zoomState.index);
+			if (img) img.style.transition = "";
+			if (count) count.textContent = `${zoomState.index + 1}/${list.length}`;
 		};
 		const closeZoom = () => {
-			const box = q("[data-tea-zoom]");
+			const { box, img } = zoomParts();
 			if (!box || box.hidden) return;
 			box.hidden = true;
-			const img = box.querySelector("[data-tea-zoom-img]");
-			if (img) img.removeAttribute("src");
+			if (img) {
+				img.removeAttribute("src");
+				img.style.transform = "";
+			}
+			zoomState.list = [];
+			zoomState.scale = 1;
+			zoomState.x = 0;
+			zoomState.y = 0;
+			zoomState.pointers.clear();
+			zoomState.dragging = false;
 		};
 
 		// ── 藏掉上游的壁纸/分类栏（CSS 打不过某些模式的 !important，这里补内联） ──
@@ -6388,21 +6573,112 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				});
 				feed.addEventListener("click", (e) => {
 					const img = e.target.closest("img[data-zoom]");
-					if (img) openZoom(img.getAttribute("src"));
+					if (img) openZoom(img.currentSrc || img.getAttribute("src"), img);
 				});
 			}
 
-			// 图片预览关闭
-			const zoomBox = q("[data-tea-zoom]");
+			// 图片预览：按钮 / 滚轮 / 拖动 / 双指 / 键盘 / 左右切换
+			const zoomBox = document.querySelector("[data-tea-zoom]");
+			if (zoomBox && zoomBox.parentElement !== document.body) document.body.appendChild(zoomBox);
 			if (zoomBox && zoomBox.dataset.bound !== "1") {
 				zoomBox.dataset.bound = "1";
-				zoomBox.addEventListener("click", (e) => {
-					if (e.target === zoomBox) closeZoom();
-				});
-				const zoomClose = zoomBox.querySelector("[data-tea-zoom-close]");
-				if (zoomClose) zoomClose.addEventListener("click", closeZoom);
+				const zs = zoomBox.querySelector("[data-tea-zoom-stage]");
+				const zi = zoomBox.querySelector("[data-tea-zoom-img]");
+				const zClose = zoomBox.querySelector("[data-tea-zoom-close]");
+				const zPrev = zoomBox.querySelector("[data-tea-zoom-prev]");
+				const zNext = zoomBox.querySelector("[data-tea-zoom-next]");
+				const zOut = zoomBox.querySelector("[data-tea-zoom-out]");
+				const zIn = zoomBox.querySelector("[data-tea-zoom-in]");
+				const zReset = zoomBox.querySelector("[data-tea-zoom-reset]");
+				if (zClose) zClose.addEventListener("click", closeZoom);
+				if (zPrev) zPrev.addEventListener("click", () => zoomStep(-1));
+				if (zNext) zNext.addEventListener("click", () => zoomStep(1));
+				if (zs) {
+					const centerZoom = (factor) => {
+						const r = zs.getBoundingClientRect();
+						zoomAt(zoomState.scale * factor, r.left + r.width / 2, r.top + r.height / 2);
+					};
+					if (zOut) zOut.addEventListener("click", () => centerZoom(1 / 1.25));
+					if (zIn) zIn.addEventListener("click", () => centerZoom(1.25));
+					if (zReset) zReset.addEventListener("click", zoomReset);
+					zs.addEventListener("wheel", (e) => {
+						if (zoomBox.hidden) return;
+						e.preventDefault();
+						zoomAt(zoomState.scale * (e.deltaY < 0 ? 1.12 : 0.89), e.clientX, e.clientY);
+					}, { passive: false });
+					zs.addEventListener("dblclick", (e) => {
+						if (zoomState.scale > 1) zoomReset();
+						else zoomAt(2.5, e.clientX, e.clientY);
+					});
+					const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+					zs.addEventListener("pointerdown", (e) => {
+						if (e.button !== 0 && e.pointerType === "mouse") return;
+						zs.setPointerCapture?.(e.pointerId);
+						zoomState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+						if (zoomState.pointers.size === 1) {
+							zoomState.dragging = true;
+							zoomState.startX = e.clientX;
+							zoomState.startY = e.clientY;
+							zoomState.originX = zoomState.x;
+							zoomState.originY = zoomState.y;
+							zs.classList.add("is-dragging");
+						} else if (zoomState.pointers.size === 2) {
+							const [a, b] = [...zoomState.pointers.values()];
+							zoomState.pinchDist = distance(a, b) || 1;
+							zoomState.pinchScale = zoomState.scale;
+							zoomState.dragging = false;
+						}
+					});
+					zs.addEventListener("pointermove", (e) => {
+						if (!zoomState.pointers.has(e.pointerId)) return;
+						zoomState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+						if (zoomState.pointers.size >= 2) {
+							const [a, b] = [...zoomState.pointers.values()];
+							const d = distance(a, b) || 1;
+							if (zoomState.pinchDist) {
+								zoomAt(zoomState.pinchScale * (d / zoomState.pinchDist), (a.x + b.x) / 2, (a.y + b.y) / 2);
+							}
+							return;
+						}
+						if (!zoomState.dragging || zoomState.scale <= 1) return;
+						zoomState.x = zoomState.originX + (e.clientX - zoomState.startX);
+						zoomState.y = zoomState.originY + (e.clientY - zoomState.startY);
+						zoomApply();
+					});
+					const endPointer = (e) => {
+						zoomState.pointers.delete(e.pointerId);
+						if (zoomState.pointers.size < 2) zoomState.pinchDist = 0;
+						if (zoomState.pointers.size === 0) {
+							zoomState.dragging = false;
+							zs.classList.remove("is-dragging");
+						} else if (zoomState.pointers.size === 1) {
+							const p = [...zoomState.pointers.values()][0];
+							zoomState.dragging = true;
+							zoomState.startX = p.x;
+							zoomState.startY = p.y;
+							zoomState.originX = zoomState.x;
+							zoomState.originY = zoomState.y;
+						}
+					};
+					zs.addEventListener("pointerup", endPointer);
+					zs.addEventListener("pointercancel", endPointer);
+				}
 				document.addEventListener("keydown", (e) => {
-					if (e.key === "Escape") closeZoom();
+					if (zoomBox.hidden) return;
+					if (e.key === "Escape") { closeZoom(); return; }
+					if (e.key === "ArrowLeft") { zoomStep(-1); return; }
+					if (e.key === "ArrowRight") { zoomStep(1); return; }
+					if (e.key === "+" || e.key === "=") {
+						const r = zi ? zi.getBoundingClientRect() : null;
+						zoomAt(zoomState.scale * 1.25, r ? r.left + r.width / 2 : innerWidth / 2, r ? r.top + r.height / 2 : innerHeight / 2);
+						return;
+					}
+					if (e.key === "-") {
+						const r = zi ? zi.getBoundingClientRect() : null;
+						zoomAt(zoomState.scale / 1.25, r ? r.left + r.width / 2 : innerWidth / 2, r ? r.top + r.height / 2 : innerHeight / 2);
+						return;
+					}
+					if (e.key === "0") zoomReset();
 				});
 			}
 
