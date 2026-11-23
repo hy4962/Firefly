@@ -1630,6 +1630,24 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-msg--grouped .tea-msg__head {
 		display: none;
 	}
+	/* 自己的消息：头像移到右侧，正文整体靠右对齐 */
+	.tea-msg--mine {
+		grid-template-columns: minmax(0, 1fr) 2.1rem;
+	}
+	.tea-msg--mine .tea-msg__avatar {
+		grid-column: 2;
+		grid-row: 1;
+	}
+	.tea-msg--mine .tea-msg__body {
+		grid-column: 1;
+		grid-row: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+	}
+	.tea-msg--mine .tea-msg__head {
+		justify-content: flex-end;
+	}
 	.tea-msg--mine .tea-msg__nick {
 		color: color-mix(in oklch, var(--primary) 66%, currentColor);
 	}
@@ -1639,6 +1657,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		border-radius: 0.75rem;
 		padding: 0.42rem 0.62rem;
 		display: inline-block;
+		max-width: 100%;
+		text-align: left;
+	}
+	.tea-msg--mine .tea-msg__reply {
+		border-left: 0;
+		border-right: 2px solid color-mix(in oklch, var(--primary) 55%, transparent);
+		border-radius: 0.45rem 0 0 0.45rem;
 	}
 	.tea-msg--pending {
 		opacity: 0.55;
