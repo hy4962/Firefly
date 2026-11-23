@@ -344,7 +344,7 @@ const memory = new Map();
 
 async function rateCheck(env, ip, kind = "send") {
 	const now = Date.now();
-	const gap = kind === "enter" ? RATE.enterGap : RATE.minGap;
+	const gap = kind === "enter" ? RATE.enterGap : kind === "juke" ? 800 : RATE.minGap;
 
 	const b = memory.get(`${kind}:${ip}`) || { last: 0, minute: [], hour: [] };
 	if (now - b.last < gap) return `手速有点快，${Math.ceil((gap - (now - b.last)) / 1000)} 秒后再试。`;
@@ -1090,6 +1090,124 @@ async function handleMedia(c, url) {
 	return new Response(upstream.body, { status: 200, headers });
 }
 
+// ── 点歌台：队列存在 Matrix 房间状态事件里 ──────────────────────────
+// 不分 isolate 内存、重启不丢；写入需要访客 token，读取公开。
+const JUKE_STATE_TYPE = "uk.9ll.juke.state";
+const JUKE_STATE_KEY = "juke";
+const JUKE_LIMITS = { queue: 40, history: 40 };
+
+const jukeEmpty = () => ({ v: 1, current: null, queue: [], history: [], seq: 0, updatedAt: 0 });
+
+function jukeTrack(raw) {
+	const id = clean(raw?.id, 40).replace(/[^A-Za-z0-9_-]/g, "");
+	const title = clean(raw?.title, 80);
+	const artist = clean(raw?.artist, 80);
+	const url = clean(raw?.url, 600);
+	const cover = clean(raw?.cover, 600);
+	const lrc = clean(raw?.lrc, 600);
+	if (!id || !title) return null;
+	const good = (v) => !v || /^\/assets\//.test(v) || /^https:\/\/api\.i-meto\.com\/meting\/api\?/.test(v);
+	if (!good(url) || !good(cover)) return null;
+	return { id, title, artist, url, cover, lrc, kind: raw?.kind === "rotation" ? "rotation" : "request" };
+}
+
+async function jukeRead(c, room) {
+	const path = `/_matrix/client/v3/rooms/${enc(room.id)}/state/${JUKE_STATE_TYPE}/${JUKE_STATE_KEY}`;
+	const { ok, status, data } = await mxJson(c, path);
+	if (!ok && status !== 404) throw new Error(data.error || "juke state read failed");
+	const s = status === 404 ? null : data;
+	if (!s || typeof s !== "object" || s.v !== 1) return jukeEmpty();
+	return {
+		v: 1,
+		current: s.current && typeof s.current === "object" ? s.current : null,
+		queue: Array.isArray(s.queue) ? s.queue.slice(0, JUKE_LIMITS.queue) : [],
+		history: Array.isArray(s.history) ? s.history.slice(0, JUKE_LIMITS.history) : [],
+		seq: Number(s.seq) || 0,
+		updatedAt: Number(s.updatedAt) || 0,
+	};
+}
+
+async function jukeWrite(c, room, state) {
+	const path = `/_matrix/client/v3/rooms/${enc(room.id)}/state/${JUKE_STATE_TYPE}/${JUKE_STATE_KEY}`;
+	const res = await mx(c, path, { method: "PUT", body: state });
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok) throw new Error(data.error || "juke state write failed");
+}
+
+async function jukeWho(c, token) {
+	const { ok, data } = await mxJson(c, "/_matrix/client/v3/account/whoami", { token });
+	if (!ok || !data.user_id) return "茶友";
+	const local = data.user_id.split(":")[0].replace(/^@/, "");
+	return local.startsWith("tea") ? "茶友" : local;
+}
+
+const jukeUid = () => `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+function jukeAdvance(state, next, who) {
+	if (state.current) {
+		state.history.unshift({ ...state.current, playedAt: Date.now(), by: state.current.requester || "" });
+		state.history = state.history.slice(0, JUKE_LIMITS.history);
+	}
+	state.current = next ? { ...next, uid: next.uid || jukeUid(), startAt: Date.now() + 500, requester: who } : null;
+	state.seq += 1;
+	state.updatedAt = Date.now();
+	return state;
+}
+
+async function handleJukeState(c, url, room) {
+	const state = await jukeRead(c, room);
+	return json(200, { ok: true, ...state, serverNow: Date.now(), room: room.key });
+}
+
+async function handleJukeWrite(c, request, url, token, ip, env, room) {
+	if (!token) return fail(401, "先入座，再点歌");
+	const denied = await rateCheck(env, ip, "juke");
+	if (denied) return fail(429, denied);
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const who = await jukeWho(c, token);
+	const state = await jukeRead(c, room);
+	const action = clean(body.action, 20);
+
+	if (action === "enqueue" || action === "random") {
+		const track = jukeTrack(body.track);
+		if (!track) return fail(400, "这首歌不在本站歌单里");
+		if (action === "random") track.kind = "rotation";
+		if (state.current?.id === track.id || state.queue.some((t) => t.id === track.id)) {
+			return json(200, { ok: true, duplicate: true, state });
+		}
+		state.queue.push({ ...track, uid: jukeUid(), requester: who, addedAt: Date.now() });
+		if (state.queue.length > JUKE_LIMITS.queue) state.queue = state.queue.slice(-JUKE_LIMITS.queue);
+		state.seq += 1;
+		state.updatedAt = Date.now();
+	} else if (action === "play") {
+		const uid = clean(body.uid, 40);
+		const idx = state.queue.findIndex((t) => t.uid === uid);
+		if (idx < 0) return fail(404, "队列里没找到这首歌");
+		const [next] = state.queue.splice(idx, 1);
+		jukeAdvance(state, next, who);
+	} else if (action === "next") {
+		const next = state.queue.shift() || null;
+		jukeAdvance(state, next, who);
+	} else if (action === "remove") {
+		const uid = clean(body.uid, 40);
+		const idx = state.queue.findIndex((t) => t.uid === uid);
+		if (idx < 0) return fail(404, "队列里没找到这首歌");
+		state.queue.splice(idx, 1);
+		state.seq += 1;
+		state.updatedAt = Date.now();
+	} else {
+		return fail(400, "不支持的操作");
+	}
+
+	await jukeWrite(c, room, state);
+	return json(200, { ok: true, state, serverNow: Date.now() });
+}
+
 // ── 入口 ────────────────────────────────────────────────────────────
 export async function handleRequest(request, env = {}) {
 	const c = cfg(env);
@@ -1149,6 +1267,10 @@ export async function handleRequest(request, env = {}) {
 			out = await handleTyping(c, request, visitorToken, roomOf(c, url));
 		} else if (path === "/api/reaction" && request.method === "POST") {
 			out = await handleReaction(c, request, visitorToken, roomOf(c, url));
+		} else if (path === "/api/juke/state" && request.method === "GET") {
+			out = await handleJukeState(c, url, roomOf(c, url));
+		} else if (path === "/api/juke/action" && request.method === "POST") {
+			out = await handleJukeWrite(c, request, url, visitorToken, ip, env, roomOf(c, url));
 		} else {
 			out = fail(404, "not found");
 		}
