@@ -873,6 +873,57 @@ async function handleThreadDetail(c, url, base) {
 	}
 }
 
+/**
+ * 置顶消息（Matrix 原生 m.room.pinned_events 状态事件）。
+ * 联邦事件用 /event/{id} 常常查不到（本机只存历史副本），所以翻主线历史匹配 event_id。
+ * 缓存 60 秒，避免每条请求都翻上千条历史。
+ */
+const pinCache = { at: 0, key: "", pins: [] };
+
+async function handlePins(c, url, base) {
+	const room = roomOf(c, url);
+	if (Date.now() - pinCache.at < 60_000 && pinCache.key === room.id) {
+		return json(200, { ok: true, pins: pinCache.pins });
+	}
+	try {
+		const st = await mxJson(c, `/_matrix/client/v3/rooms/${enc(room.id)}/state/m.room.pinned_events`, {
+			token: c.bridgeToken,
+		});
+		const ids = Array.isArray(st.data?.pinned) ? st.data.pinned.slice(0, 12) : [];
+		if (!ids.length) {
+			pinCache.at = Date.now();
+			pinCache.key = room.id;
+			pinCache.pins = [];
+			return json(200, { ok: true, pins: [] });
+		}
+		const wanted = new Set(ids);
+		const members = await getMembers(c, room.id);
+		const found = new Map();
+		let from = "";
+		// 最多翻 4 页（每页 500），置顶通常是建站初期的老消息
+		for (let page = 0; page < 4 && found.size < wanted.size; page++) {
+			const q = `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=500${from ? `&from=${enc(from)}` : ""}`;
+			const res = await mx(c, q, { token: c.bridgeToken });
+			const data = await res.json().catch(() => ({}));
+			for (const ev of data.chunk || []) {
+				if (wanted.has(ev.event_id)) {
+					const m = normalize(ev, members, c, base);
+					if (m) found.set(m.id, m);
+				}
+			}
+			from = data.end || "";
+			if (!from) break;
+		}
+		const pins = ids.map((id) => found.get(id)).filter(Boolean);
+		pinCache.at = Date.now();
+		pinCache.key = room.id;
+		pinCache.pins = pins;
+		return json(200, { ok: true, pins });
+	} catch (err) {
+		return fail(502, "置顶消息暂时取不到");
+	}
+}
+
 async function handleSend(c, request, token, room) {
 	if (!token) return fail(401, "还没入座");
 	let body;
@@ -1035,6 +1086,8 @@ export async function handleRequest(request, env = {}) {
 			out = await handleMatrixLogin(c, request, ip);
 		} else if (path === "/api/room" && request.method === "GET") {
 			out = await handleRoom(c, url.origin, roomOf(c, url));
+		} else if (path === "/api/pins" && request.method === "GET") {
+			out = await handlePins(c, url, url.origin);
 		} else if (path === "/api/threads" && request.method === "GET") {
 			out = await handleThreads(c, url, url.origin);
 		} else if (path === "/api/thread" && request.method === "GET") {

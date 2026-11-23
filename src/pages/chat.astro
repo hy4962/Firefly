@@ -157,6 +157,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				</p>
 			</div>
 
+			<!-- ── 置顶消息 ───────────────────────────────────────── -->
+			<div class="tea-pins" data-tea-pins hidden>
+				<span class="tea-pins__icon"><Icon is:inline name="material-symbols:push-pin" /></span>
+				<div class="tea-pins__body" data-tea-pins-body></div>
+				<button type="button" class="tea-pins__toggle" data-tea-pins-toggle aria-label="展开或收起置顶">展开</button>
+			</div>
+
 			<div class="tea-feed-wrap">
 				<div class="tea-feed" data-tea-feed tabindex="0" role="log" aria-live="polite" aria-label="茶室消息">
 					<div class="tea-feed__status" data-tea-feed-status>
@@ -850,6 +857,27 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-member:last-child {
 		border-bottom: 0;
 	}
+	.tea-roster__group {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		margin: 0.15rem 0 0.25rem;
+		padding: 0 0.55rem;
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: var(--tea-muted);
+	}
+	.tea-roster__group:not(:first-child) {
+		margin-top: 0.55rem;
+		padding-top: 0.5rem;
+		border-top: 1px dashed var(--tea-line);
+	}
+	.tea-roster__group-count {
+		font-weight: 500;
+		font-size: 0.66rem;
+		color: var(--tea-muted-soft);
+	}
 	.tea-member:hover {
 		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
 	}
@@ -969,7 +997,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-room {
 		position: relative;
 		display: grid;
-		grid-template-rows: auto auto minmax(0, 1fr) auto;
+		grid-template-rows: auto auto auto minmax(0, 1fr) auto;
 		min-height: 0;
 		background: var(--tea-surface);
 		border: 1px solid var(--tea-line);
@@ -1111,6 +1139,49 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-banner__sep {
 		opacity: 0.5;
 	}
+
+	/* 置顶消息条 */
+	.tea-pins {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		margin: 0.5rem 0.95rem 0;
+		padding: 0.4rem 0.65rem;
+		border-radius: 0.7rem;
+		background: color-mix(in oklch, var(--primary) 6%, var(--tea-surface));
+		border: 1px solid color-mix(in oklch, var(--primary) 18%, transparent);
+		font-size: 0.72rem;
+		line-height: 1.55;
+	}
+	.tea-pins[hidden] { display: none; }
+	.tea-pins__icon {
+		display: inline-flex;
+		flex: none;
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		margin-top: 0.1rem;
+	}
+	.tea-pins__icon svg { width: 0.9rem; height: 0.9rem; }
+	.tea-pins__body { flex: 1; min-width: 0; color: var(--tea-muted); }
+	.tea-pins__who { font-weight: 700; color: var(--primary); }
+	.tea-pins__text { white-space: pre-wrap; word-break: break-word; }
+	.tea-pins__text a { color: var(--primary); text-decoration: none; border-bottom: 1px solid color-mix(in oklch, var(--primary) 30%, transparent); }
+	.tea-pins--collapsed .tea-pins__text {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 1;
+		overflow: hidden;
+	}
+	.tea-pins__toggle {
+		flex: none;
+		border: 0;
+		background: transparent;
+		color: var(--primary);
+		font: inherit;
+		font-size: 0.68rem;
+		cursor: pointer;
+		padding: 0.05rem 0.2rem;
+	}
+	.tea-pins__toggle:hover { text-decoration: underline; }
 
 	/* 消息流 */
 	.tea-feed-wrap {
@@ -3410,18 +3481,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			}
 
 			const LIMIT = 6;
-			const shown = rt.rosterAll ? members : members.slice(0, LIMIT);
-			list.innerHTML = shown
-				.map((m) => {
-					const av = m.avatar
-						? `style="background-image:url('${esc(m.avatar)}')"`
-						: `style="${avatarStyle(m.nick, m.site)}"`;
-					const on = isOn(m);
-					const badge = on
-						? `<span class="tea-member__badge is-online">在线</span>`
-						: `<span class="tea-member__badge is-away">离开</span>`;
-					const idx = members.indexOf(m);
-					return `<li class="tea-member tea-member--clickable${on ? "" : " tea-member--idle"}" data-tea-member="${idx}" role="button" tabindex="0" title="查看 ${esc(m.nick)} 的名片">
+			const rowHtml = (m) => {
+				const av = m.avatar
+					? `style="background-image:url('${esc(m.avatar)}')"`
+					: `style="${avatarStyle(m.nick, m.site)}"`;
+				const on = isOn(m);
+				const badge = on
+					? `<span class="tea-member__badge is-online">在线</span>`
+					: `<span class="tea-member__badge is-away">离开</span>`;
+				const idx = members.indexOf(m);
+				return `<li class="tea-member tea-member--clickable${on ? "" : " tea-member--idle"}" data-tea-member="${idx}" role="button" tabindex="0" title="查看 ${esc(m.nick)} 的名片">
 					<span class="tea-member__avatar" ${av}>${m.avatar ? "" : esc(initials(m.nick))}</span>
 					<span class="tea-member__copy">
 						<span class="tea-member__name">${esc(m.nick)}</span>
@@ -3429,8 +3498,21 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					</span>
 					${badge}
 				</li>`;
-				})
-				.join("");
+			};
+
+			// 按站点归属分组：本站 / 其他站点，各组显示在线人数
+			const isSelfSite = (m) => !m.site || m.site === SITE_NAME;
+			const local = members.filter(isSelfSite);
+			const others = members.filter((m) => !isSelfSite(m));
+			const localOnline = local.filter(isOn).length;
+			const othersOnline = others.filter(isOn).length;
+			const groupHtml = (label, list, online) => {
+				if (!list.length) return "";
+				const rows = rt.rosterAll ? list : list.slice(0, LIMIT);
+				return `<li class="tea-roster__group" role="presentation"><span>${label}</span><span class="tea-roster__group-count">${online} 人在线</span></li>` +
+					rows.map(rowHtml).join("");
+			};
+			list.innerHTML = groupHtml("本站在线", local, localOnline) + groupHtml("其他站点", others, othersOnline);
 
 			if (more) {
 				more.hidden = members.length <= LIMIT;
@@ -4278,6 +4360,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			if (rt.closeThread) rt.closeThread();
 			const tt = q("[data-tea-threads-trigger]");
 			if (tt) tt.hidden = key !== "lobby";
+			if (rt.loadPins) rt.loadPins();
 			const f = feedEl();
 			if (f) {
 				f.innerHTML = "";
@@ -5023,6 +5106,40 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					doThreadSend();
 				}
 			});
+
+			// ── 置顶消息 ──────────────────────────────────────────
+			const pinsBox = q("[data-tea-pins]");
+			const pinsBody = q("[data-tea-pins-body]");
+			const pinsToggle = q("[data-tea-pins-toggle]");
+			const pinOpen = () => {
+				if (!pinsBox) return;
+				const collapsed = pinsBox.classList.toggle("tea-pins--collapsed");
+				if (pinsToggle) pinsToggle.textContent = collapsed ? "展开" : "收起";
+			};
+			pinsToggle?.addEventListener("click", pinOpen);
+			pinsBox?.classList.add("tea-pins--collapsed");
+			const loadPins = async () => {
+				if (!pinsBox || !pinsBody) return;
+				if (rt.room !== "lobby") { pinsBox.hidden = true; return; }
+				try {
+					const data = await api(`/api/pins?room=${rt.room}`);
+					const pins = data.pins || [];
+					if (!pins.length) { pinsBox.hidden = true; return; }
+					pinsBody.innerHTML = pins
+						.map((p) => {
+							const nick = p.nick || "茶友";
+							const site = p.site ? ` · ${esc(p.site)}` : "";
+							const text = fmtText(p.text || "");
+							return `<div class="tea-pins__item"><span class="tea-pins__who">📌 ${esc(nick)}${site}：</span><span class="tea-pins__text">${text}</span></div>`;
+						})
+						.join("");
+					pinsBox.hidden = false;
+				} catch (_) {
+					pinsBox.hidden = true;
+				}
+			};
+			rt.loadPins = loadPins;
+			loadPins();
 		};
 
 		if (!rt.bound) {
