@@ -310,7 +310,11 @@ function normalize(ev, members, c, base) {
 
 	avatar = avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(avatar)}` : avatar;
 
-	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image, reply, emoticon };
+	// Matrix 原生线程（MSC3440）：m.relates_to.rel_type = "m.thread"，event_id 指向根事件
+	const relates = content["m.relates_to"];
+	const threadRoot = relates && relates.rel_type === "m.thread" && relates.event_id ? relates.event_id : "";
+
+	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image, reply, emoticon, threadRoot };
 }
 
 // m.reaction 用 m.relates_to 指向目标事件，按 event_id 聚合后附给前端
@@ -739,6 +743,136 @@ async function handleRoom(c, base, room) {
 	});
 }
 
+/**
+ * 线程相关 API（Matrix 原生线程 MSC3440）。
+ * 实测本机 Synapse：/thread/{root} 端点未启用（M_UNRECOGNIZED），
+ * 但 relations 端点和事件 unsigned.m.relations.m.thread 摘要都可用。
+ * 策略：主线 /messages -> 看 unsigned.m.relations.m.thread 找线程根 + count/latest，
+ *       /relations/{root}?rel_type=m.thread 拉全部回复，/event/{root} 取根消息。
+ */
+const threadCache = { at: 0, key: "", threads: [] };
+
+/** 从主线历史里收集带线程的根事件（靠 unsigned.m.relations.m.thread 摘要） */
+async function collectThreadRoots(c, roomId) {
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(roomId)}/messages?dir=b&limit=200`, {
+		token: c.bridgeToken,
+	});
+	const data = await res.json().catch(() => ({}));
+	const roots = new Map();
+	for (const ev of data.chunk || []) {
+		const summary = ev.unsigned?.["m.relations"]?.["m.thread"];
+		if (!summary || !(Number(summary.count) > 0)) continue;
+		roots.set(ev.event_id, {
+			id: ev.event_id,
+			ts: ev.origin_server_ts || 0,
+			count: Number(summary.count),
+			latest: summary.latest_event || null,
+			rootEvent: ev,
+		});
+	}
+	return roots;
+}
+
+/** 取单个线程的完整回复（含根消息） */
+async function fetchThread(c, roomId, rootId, members, base, rootHint, countHint) {
+	const [relRes, rootRes] = await Promise.all([
+		mx(c, `/_matrix/client/v1/rooms/${enc(roomId)}/relations/${enc(rootId)}?rel_type=m.thread&limit=80`, {
+			token: c.bridgeToken,
+		}),
+		rootHint
+			? Promise.resolve(null)
+			: mx(c, `/_matrix/client/v3/rooms/${enc(roomId)}/event/${enc(rootId)}`, { token: c.bridgeToken }),
+	]);
+	const relData = relRes.ok ? await relRes.json().catch(() => ({})) : {};
+	const rootEv =
+		rootHint ||
+		(rootRes && rootRes.ok ? await rootRes.json().catch(() => null) : null);
+	const root = rootEv ? normalize(rootEv, members, c, base) : null;
+	const replies = (relData.chunk || [])
+		.map((ev) => normalize(ev, members, c, base))
+		.filter(Boolean)
+		.sort((a, b) => a.ts - b.ts);
+	if (!root && !replies.length) return null;
+	return { root, replies, countHint: countHint || 0 };
+}
+
+async function handleThreads(c, url, base) {
+	const room = roomOf(c, url);
+	const key = room.id;
+	if (Date.now() - threadCache.at < 20_000 && threadCache.key === key) {
+		return json(200, { ok: true, threads: threadCache.threads });
+	}
+	try {
+		const members = await getMembers(c, room.id);
+		const roots = await collectThreadRoots(c, room.id);
+		const threads = [];
+		// 并发但有上限，避免一次开几十个请求打爆 Synapse
+		const list = [...roots.values()].sort((a, b) => b.ts - a.ts).slice(0, 30);
+		for (let i = 0; i < list.length; i += 6) {
+			const batch = list.slice(i, i + 6);
+			const got = await Promise.all(
+				batch.map(async (r) => {
+					const t = await fetchThread(c, room.id, r.id, members, base, r.rootEvent, r.count);
+					if (!t) return null;
+					const root = t.root || {};
+					const latest = t.replies[t.replies.length - 1] || null;
+					const participants = [];
+					for (const m of [t.root, ...t.replies].filter(Boolean)) {
+						if (participants.length >= 4) break;
+						if (participants.some((p) => p.id === m.sender)) continue;
+						participants.push({ id: m.sender, name: m.nick || "茶友", avatar: m.avatar || "" });
+					}
+					return {
+						rootUid: root.id || r.id,
+						root: root.id ? root : null,
+						summary: {
+							count: Math.max(t.replies.length, t.countHint || 0),
+							latestReply: latest
+								? {
+										msgUid: latest.id,
+										name: latest.nick || "茶友",
+										avatar: latest.avatar || "",
+										content: String(latest.text || latest.image || "").replace(/\s+/g, " ").trim().slice(0, 120),
+										createdAt: latest.ts || 0,
+									}
+								: null,
+							participants,
+						},
+					};
+				}),
+			);
+			threads.push(...got.filter(Boolean));
+		}
+		threads.sort((a, b) => (b.summary.latestReply?.createdAt || 0) - (a.summary.latestReply?.createdAt || 0));
+		threadCache.at = Date.now();
+		threadCache.key = key;
+		threadCache.threads = threads;
+		return json(200, { ok: true, threads });
+	} catch (err) {
+		return fail(502, "线程列表暂时取不到");
+	}
+}
+
+async function handleThreadDetail(c, url, base) {
+	const room = roomOf(c, url);
+	const rootUid = url.searchParams.get("rootUid") || "";
+	if (!/^\$[\w-]+$/.test(rootUid)) return fail(400, "线程标识不对");
+	try {
+		const members = await getMembers(c, room.id);
+		const t = await fetchThread(c, room.id, rootUid, members, base, null, 0);
+		if (!t) return fail(404, "这个线程找不到了");
+		return json(200, {
+			ok: true,
+			rootUid,
+			root: t.root,
+			messages: t.replies.map((m) => ({ ...m, reactions: [] })),
+			room: { key: room.key, name: room.name },
+		});
+	} catch (err) {
+		return fail(502, "线程暂时打不开");
+	}
+}
+
 async function handleSend(c, request, token, room) {
 	if (!token) return fail(401, "还没入座");
 	let body;
@@ -749,6 +883,7 @@ async function handleSend(c, request, token, room) {
 	}
 	const text = clean(body.text, LIMITS.text);
 	const replyTo = clean(body.replyTo, 120);
+	const threadRoot = clean(body.threadRoot, 120);
 	const imageUrl = clean(body.imageUrl, 400);
 	if (!text && !imageUrl) return fail(400, "空消息发不出去");
 
@@ -763,8 +898,17 @@ async function handleSend(c, request, token, room) {
 	} else {
 		content = { msgtype: "m.text", body: text };
 	}
-	// Matrix 原生回复关系，客户端按 body 的 "> <@user> 原文" 渲染引用块
-	if (replyTo && /^\$[\w-]+$/.test(replyTo)) {
+	// Matrix 原生线程（MSC3440）：rel_type=m.thread + is_falling_back + m.in_reply_to。
+	// 线程回复在主流不可见，客户端需按 threadRoot 单独拉取。
+	if (threadRoot && /^\$[\w-]+$/.test(threadRoot)) {
+		content["m.relates_to"] = {
+			rel_type: "m.thread",
+			event_id: threadRoot,
+			is_falling_back: true,
+			"m.in_reply_to": { event_id: threadRoot },
+		};
+	} else if (replyTo && /^\$[\w-]+$/.test(replyTo)) {
+		// 普通 Matrix 回复关系，客户端按 body 的 "> <@user> 原文" 渲染引用块
 		content["m.relates_to"] = { "m.in_reply_to": { event_id: replyTo } };
 	}
 	const txn = `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -891,6 +1035,10 @@ export async function handleRequest(request, env = {}) {
 			out = await handleMatrixLogin(c, request, ip);
 		} else if (path === "/api/room" && request.method === "GET") {
 			out = await handleRoom(c, url.origin, roomOf(c, url));
+		} else if (path === "/api/threads" && request.method === "GET") {
+			out = await handleThreads(c, url, url.origin);
+		} else if (path === "/api/thread" && request.method === "GET") {
+			out = await handleThreadDetail(c, url, url.origin);
 		} else if (path === "/api/history" && request.method === "GET") {
 			out = await handleHistory(c, url, url.origin, visitorToken || c.bridgeToken);
 		} else if (path === "/api/sync" && request.method === "GET") {

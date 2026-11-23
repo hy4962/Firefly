@@ -492,6 +492,31 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			<p class="tea-dialog__error" data-tea-poll-error hidden></p>
 		</form>
 	</dialog>
+
+	<!-- ── 成员名片 ─────────────────────────────────────────── -->
+	<dialog class="tea-membercard" data-tea-membercard aria-labelledby="tea-membercard-title">
+		<div class="tea-membercard__inner">
+			<header class="tea-membercard__head">
+				<h3 id="tea-membercard-title">成员名片</h3>
+				<button type="button" class="tea-icon-btn" data-tea-membercard-close aria-label="关闭">
+					<Icon is:inline name="material-symbols:close-rounded" />
+				</button>
+			</header>
+			<div class="tea-membercard__cols">
+				<div class="tea-membercard__left" data-tea-mc-left></div>
+				<div class="tea-membercard__right">
+					<div class="tea-membercard__songs-head">
+						<span>点过的歌 <em data-tea-mc-song-note></em></span>
+						<div class="tea-membercard__sort">
+							<button type="button" class="is-active" data-tea-mc-sort="time">按时间</button>
+							<button type="button" data-tea-mc-sort="count">按次数</button>
+						</div>
+					</div>
+					<ul class="tea-membercard__songs" data-tea-mc-songs></ul>
+				</div>
+			</div>
+		</div>
+	</dialog>
 </MainGridLayout>
 
 <style is:global>
@@ -867,6 +892,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		background-size: cover;
 		background-position: center;
 	}
+	.tea-member--clickable { cursor: pointer; }
+	.tea-member--clickable:hover { color: color-mix(in oklch, var(--primary) 70%, currentColor); }
 	.tea-member__copy {
 		min-width: 0;
 		display: grid;
@@ -1359,6 +1386,118 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		margin-bottom: 0.5rem;
 		font-size: 0.76rem;
 	}
+
+	/* 成员名片 */
+	.tea-membercard {
+		border: 0;
+		padding: 0;
+		margin: auto;
+		width: min(56rem, calc(100vw - 2rem));
+		max-height: calc(100dvh - 2rem);
+		border-radius: 1rem;
+		background: var(--card-bg, #fff);
+		color: inherit;
+		box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.5);
+		overflow: hidden;
+	}
+	.tea-membercard::backdrop { background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(6px); }
+	.tea-membercard__inner { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; max-height: calc(100dvh - 2rem); }
+	.tea-membercard__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.7rem 1rem;
+		border-bottom: 1px solid var(--tea-line);
+	}
+	.tea-membercard__head h3 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+	.tea-membercard__head .tea-icon-btn { width: 1.8rem; height: 1.8rem; }
+	.tea-membercard__head .tea-icon-btn svg { width: 1.1rem; height: 1.1rem; }
+	.tea-membercard__cols { display: grid; grid-template-columns: minmax(0, 38%) minmax(0, 62%); min-height: 0; }
+	.tea-membercard__left,
+	.tea-membercard__right { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+	.tea-membercard__left { padding: 0.85rem; display: grid; gap: 0.6rem; align-content: start; border-right: 1px solid var(--tea-line); }
+	.tea-membercard__right { padding: 0.85rem 1rem; display: grid; gap: 0.6rem; align-content: start; }
+	@media (max-width: 720px) {
+		.tea-membercard__cols { grid-template-columns: 1fr; }
+		.tea-membercard__left { border-right: 0; border-bottom: 1px solid var(--tea-line); }
+	}
+	.mc-card {
+		border-radius: 0.85rem;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08));
+		padding: 0.7rem;
+		display: grid;
+		gap: 0.6rem;
+	}
+	.mc-top { display: flex; align-items: center; gap: 0.6rem; }
+	.mc-avatar {
+		position: relative;
+		width: 3.2rem;
+		height: 3.2rem;
+		border-radius: 0.75rem;
+		flex: none;
+		background-size: cover;
+		background-position: center;
+		display: grid;
+		place-items: center;
+		font-weight: 600;
+	}
+	.mc-dot { position: absolute; right: -2px; bottom: -2px; width: 0.7rem; height: 0.7rem; border-radius: 50%; border: 2px solid var(--card-bg, #fff); background: #9ca3af; }
+	.mc-dot.is-on { background: #22c55e; }
+	.mc-ident { min-width: 0; display: grid; gap: 0.2rem; }
+	.mc-name { font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+	.mc-badge { font-size: 0.6rem; padding: 0.05rem 0.35rem; border-radius: 0.35rem; background: color-mix(in oklch, #eab308 25%, transparent); color: #a16207; font-weight: 600; }
+	.mc-meta { font-size: 0.7rem; color: var(--tea-muted); display: flex; gap: 0.3rem; flex-wrap: wrap; }
+	.mc-meta i { opacity: 0.5; font-style: normal; }
+	.mc-signature, .mc-site {
+		border: 1px solid var(--tea-line-strong);
+		border-radius: 0.55rem;
+		padding: 0.4rem 0.6rem;
+		font-size: 0.74rem;
+	}
+	.mc-signature { color: var(--tea-muted); }
+	.mc-site { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; color: color-mix(in oklch, var(--primary) 70%, currentColor); text-decoration: none; }
+	.mc-site span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.mc-site span:last-child { flex: none; font-size: 0.66rem; }
+	.mc-mx { font-size: 0.66rem; color: var(--tea-muted); display: grid; gap: 0.25rem; border-top: 1px solid var(--tea-line); padding-top: 0.5rem; }
+	.mc-mx > div { display: flex; justify-content: space-between; gap: 0.5rem; }
+	.mc-mx > div span:last-child { font-family: monospace; color: color-mix(in oklch, var(--primary) 68%, currentColor); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.mc-at {
+		display: block;
+		text-align: center;
+		padding: 0.55rem;
+		border-radius: 0.6rem;
+		background: color-mix(in oklch, var(--primary) 88%, #000);
+		color: #fff;
+		font-size: 0.78rem;
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.mc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+	.mc-stat { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; padding: 0.45rem 0.6rem; border-radius: 0.55rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); font-size: 0.68rem; color: var(--tea-muted); }
+	.mc-stat b { color: var(--deep-text, inherit); font-size: 0.76rem; }
+	.mc-stat b.is-away { color: #ea580c; }
+	.mc-block-title { font-size: 0.76rem; font-weight: 600; margin: 0.15rem 0 0; }
+	.mc-artists { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+	.mc-artist { font-size: 0.68rem; padding: 0.25rem 0.5rem; border-radius: 2rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); }
+	.mc-artist b { color: color-mix(in oklch, var(--primary) 70%, currentColor); margin-left: 0.2rem; }
+	.mc-recent { display: grid; gap: 0.35rem; }
+	.mc-recent-item { display: flex; justify-content: space-between; gap: 0.6rem; padding: 0.5rem 0.6rem; border-radius: 0.55rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); font-size: 0.7rem; }
+	.mc-recent-item span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.mc-recent-item span:last-child { flex: none; color: var(--tea-muted-soft); font-size: 0.64rem; }
+	.tea-membercard__songs-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--tea-line); font-size: 0.78rem; font-weight: 600; }
+	.tea-membercard__songs-head em { font-style: normal; font-size: 0.64rem; font-weight: 500; padding: 0.1rem 0.4rem; border-radius: 0.4rem; background: color-mix(in oklch, var(--primary) 16%, transparent); color: color-mix(in oklch, var(--primary) 70%, currentColor); margin-left: 0.3rem; }
+	.tea-membercard__sort { display: inline-flex; padding: 0.15rem; border-radius: 0.5rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); }
+	.tea-membercard__sort button { border: 0; background: none; color: var(--tea-muted); font-size: 0.68rem; padding: 0.25rem 0.6rem; border-radius: 0.4rem; cursor: pointer; }
+	.tea-membercard__sort button.is-active { background: color-mix(in oklch, var(--primary) 85%, #000); color: #fff; }
+	.tea-membercard__songs { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+	.mc-song { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.55rem; border-radius: 0.6rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); }
+	.mc-song__idx { width: 1rem; flex: none; font-size: 0.72rem; color: var(--tea-muted); font-variant-numeric: tabular-nums; }
+	.mc-song__cover { width: 2.3rem; height: 2.3rem; border-radius: 0.45rem; object-fit: cover; flex: none; background: rgba(128,128,128,.15); }
+	.mc-song__copy { min-width: 0; flex: 1; display: grid; gap: 0.1rem; }
+	.mc-song__copy b { font-size: 0.76rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.mc-song__copy span { font-size: 0.65rem; color: var(--tea-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.mc-song__add { flex: none; border: 1px solid color-mix(in oklch, var(--primary) 45%, transparent); border-radius: 2rem; background: transparent; color: color-mix(in oklch, var(--primary) 70%, currentColor); font-size: 0.66rem; padding: 0.25rem 0.6rem; cursor: pointer; }
+	.mc-empty { font-size: 0.72rem; color: var(--tea-muted); padding: 1.5rem 0.5rem; text-align: center; }
 
 	.tea-msg__actions {
 		display: inline-flex;
@@ -2684,8 +2823,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-thread-pill b { font-size: 0.66rem; }
 
 	.tea-pop {
-		position: absolute;
-		top: calc(100% - 0.35rem);
+		position: fixed;
+		top: 6rem;
 		z-index: 120;
 		width: 20rem;
 		max-width: calc(100vw - 2rem);
@@ -2697,6 +2836,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-pop--sites { left: 4.5rem; }
 	.tea-pop--threads { right: 0.7rem; width: 22rem; }
+	.tea-pop--sites[data-anchored], .tea-pop--threads[data-anchored] { right: auto; left: auto; }
 	.tea-pop[hidden] { display: none; }
 	.tea-pop__head {
 		display: flex;
@@ -2863,7 +3003,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 </style>
 
-<script is:inline define:vars={{ API_BASE: CHAT_API, SITE_NAME }}>
+<script is:inline define:vars={{ API_BASE: CHAT_API, SITE_NAME, PEERS: peers, SELF_SITE: selfSite }}>
 	(() => {
 		const KEY = "__teaRoomRuntime";
 		const params0 = new URLSearchParams(location.search);
@@ -3010,6 +3150,30 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			bump() {
 				localStorage.setItem("tea.count", String(this.count + 1));
 			},
+			// 点歌历史：{ [matrixId]: [{ name, artist, pic, ts }] }
+			get songHistory() {
+				try {
+					return JSON.parse(localStorage.getItem("tea.songHistory") || "{}");
+				} catch {
+					return {};
+				}
+			},
+			set songHistory(v) {
+				localStorage.setItem("tea.songHistory", JSON.stringify(v));
+			},
+		};
+
+		// 记一首歌到当前访客名下（同曲累加时间，不重复堆条目）
+		const recordSong = (track) => {
+			const v = rt.visitor;
+			if (!v || !track || !track.name) return;
+			const all = store.songHistory;
+			const list = all[v.id] || [];
+			const found = list.find((x) => x.name === track.name && x.artist === track.artist);
+			if (found) found.ts = Date.now();
+			else list.unshift({ name: track.name, artist: track.artist, pic: track.pic || "", ts: Date.now() });
+			all[v.id] = list.slice(0, 80);
+			store.songHistory = all;
 		};
 
 		// ── 实例状态 ──────────────────────────────────────────────
@@ -3256,7 +3420,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					const badge = on
 						? `<span class="tea-member__badge is-online">在线</span>`
 						: `<span class="tea-member__badge is-away">离开</span>`;
-					return `<li class="tea-member${on ? "" : " tea-member--idle"}" title="${esc(m.nick)}${m.site ? " · " + esc(m.site) : ""}">
+					const idx = members.indexOf(m);
+					return `<li class="tea-member tea-member--clickable${on ? "" : " tea-member--idle"}" data-tea-member="${idx}" role="button" tabindex="0" title="查看 ${esc(m.nick)} 的名片">
 					<span class="tea-member__avatar" ${av}>${m.avatar ? "" : esc(initials(m.nick))}</span>
 					<span class="tea-member__copy">
 						<span class="tea-member__name">${esc(m.nick)}</span>
@@ -3271,6 +3436,101 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				more.hidden = members.length <= LIMIT;
 				more.textContent = rt.rosterAll ? "收起" : `显示全部（${members.length}）`;
 			}
+		};
+
+		// ── 成员名片 ────────────────────────────────────────────
+		const mcState = { member: null, sort: "time" };
+		const mcSongs = () => {
+			const m = mcState.member;
+			if (!m) return [];
+			const list = (store.songHistory[m.id] || []).map((s) => ({ ...s }));
+			// 同名同歌手合并次数，记录里 ts 是最近一次
+			const map = new Map();
+			for (const s of list) {
+				const key = `${s.name}|${s.artist}`;
+				const prev = map.get(key);
+				if (prev) { prev.count++; if (s.ts > prev.ts) { prev.ts = s.ts; prev.pic = s.pic || prev.pic; } }
+				else map.set(key, { ...s, count: 1 });
+			}
+			const all = [...map.values()];
+			all.sort((a, b) => mcState.sort === "count" ? b.count - a.count : b.ts - a.ts);
+			return all;
+		};
+		const mcRenderSongs = () => {
+			const box = q("[data-tea-mc-songs]");
+			const note = q("[data-tea-mc-song-note]");
+			if (!box) return;
+			const songs = mcSongs();
+			if (note) note.textContent = songs.length ? `${songs.length} 首` : "正在统计";
+			if (!songs.length) {
+				box.innerHTML = `<li class="mc-empty">TA 还没点过歌，点歌台点一首试试~</li>`;
+				return;
+			}
+			box.innerHTML = songs
+				.map((s, i) => {
+					const day = new Date(s.ts);
+					const when = day.toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }) + " " + day.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+					return `<li class="mc-song">
+						<span class="mc-song__idx">${i + 1}</span>
+						${s.pic ? `<img class="mc-song__cover" src="${esc(s.pic)}" alt="" loading="lazy" />` : `<span class="mc-song__cover"></span>`}
+						<span class="mc-song__copy"><b>${esc(s.name)}</b><span>${esc(s.artist || "未知歌手")} · ${when}${s.count > 1 ? ` · 点过 ${s.count} 次` : ""}</span></span>
+						<button type="button" class="mc-song__add" data-mc-add="${esc(s.name)}" data-mc-artist="${esc(s.artist || "")}">+ 点歌</button>
+					</li>`;
+				})
+				.join("");
+		};
+		const openMemberCard = (m) => {
+			if (!m) return;
+			mcState.member = m;
+			mcState.sort = "time";
+			for (const b of document.querySelectorAll("[data-tea-mc-sort]")) b.classList.toggle("is-active", b.dataset.teaMcSort === "time");
+			const left = q("[data-tea-mc-left]");
+			if (!left) return;
+			const on = m.online !== false || !!(rt.visitor && m.id === rt.visitor.id);
+			const domain = (m.id || "").split(":")[1] || "";
+			const server = domain ? `matrix.${domain}` : "";
+			const isSelf = rt.visitor && m.id === rt.visitor.id;
+			const role = isSelf ? "我" : (m.site === SITE_NAME ? "站长" : "茶友");
+			const badge = `<span class="mc-badge">${esc(role)}</span>`;
+			const av = m.avatar ? `background-image:url('${esc(m.avatar)}')` : avatarStyle(m.nick, m.site);
+			const site = m.site || (domain === "matrix.0dm.cn" ? SITE_NAME : domain ? "Matrix" : "");
+			const website = m.website || (store.identity && store.identity.id === m.id ? store.identity.website : "");
+			const bio = m.bio || "这个人很懒，还没留下签名~";
+			const songList = store.songHistory[m.id] || [];
+			const artists = new Map();
+			const statsSongs = mcSongs();
+			for (const s of statsSongs) artists.set(s.artist || "未知歌手", (artists.get(s.artist || "未知歌手") || 0) + s.count);
+			const topArtists = [...artists.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+			const msgCount = (rt.messages || []).filter((x) => x.sender === m.id).length;
+			const recent = (rt.messages || []).filter((x) => x.sender === m.id).slice(-2).reverse();
+			left.innerHTML = `
+				<div class="mc-card">
+					<div class="mc-top">
+						<span class="mc-avatar" style="${av}">${m.avatar ? "" : esc(initials(m.nick))}<i class="mc-dot${on ? " is-on" : ""}"></i></span>
+						<span class="mc-ident">
+							<span class="mc-name">${esc(m.nick)}${badge}</span>
+							<span class="mc-meta"><span>${on ? "在线" : "离开"}</span><i>·</i><span>${esc(site || "本站 Matrix 节点")}</span></span>
+						</span>
+					</div>
+					<div class="mc-signature">${esc(bio)}</div>
+					${website ? `<a class="mc-site" href="${esc(/^https?:\/\//i.test(website) ? website : "https://" + website)}" target="_blank" rel="noopener noreferrer nofollow"><span>${esc(website)}</span><span>访问主页 ↗</span></a>` : ""}
+					<div class="mc-mx">
+						<div><span>Matrix 账号:</span><span>${esc(m.id || "待分配")}</span></div>
+						<div><span>服务器:</span><span>${esc(server)}</span></div>
+					</div>
+				</div>
+				<a class="mc-at" href="https://matrix.to/#/${encodeURIComponent(m.id || "")}" target="_blank" rel="noopener noreferrer">@ ${esc(m.nick)}</a>
+				<div class="mc-stats">
+					<div class="mc-stat"><span>聊天发言</span><b>${msgCount || "—"}</b></div>
+					<div class="mc-stat"><span>点过的歌</span><b>${songList.length || "—"}</b></div>
+					<div class="mc-stat"><span>初次来访</span><b>${esc(new Date().toLocaleDateString("zh-CN"))}</b></div>
+					<div class="mc-stat"><span>最近活跃</span><b class="${on ? "" : "is-away"}">${on ? "在线" : "离开"}</b></div>
+				</div>
+				${topArtists.length ? `<div><h4 class="mc-block-title">常点歌手</h4><div class="mc-artists">${topArtists.map(([n, c]) => `<span class="mc-artist">${esc(n)}<b>${c} 次</b></span>`).join("")}</div></div>` : ""}
+				${recent.length ? `<div><h4 class="mc-block-title">最近发言</h4><div class="mc-recent">${recent.map((x) => `<div class="mc-recent-item"><span>${esc((x.text || "图片").slice(0, 40))}</span><span>${esc(fmtTime(x.ts))}</span></div>`).join("")}</div></div>` : ""}`;
+			mcRenderSongs();
+			const dlg = document.querySelector("[data-tea-membercard]");
+			if (dlg && typeof dlg.showModal === "function") dlg.showModal();
 		};
 
 		const renderSelf = () => {
@@ -3359,6 +3619,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				if (f) f.innerHTML = "";
 				const msgs = [...(hist.messages || []), ...(sync.messages || [])];
 				msgs.sort((a, b) => a.ts - b.ts);
+				rt.messages = msgs;
 				if (!msgs.length) {
 					feedStatus(`<div class="tea-empty"><b>茶室里还没人说话</b><span>要不你先开个话头？</span></div>`);
 				} else {
@@ -3445,6 +3706,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				const list = data.messages || [];
 				if (list.length) {
 					const stick = atBottom();
+					rt.messages = (rt.messages || []).concat(list).slice(-120);
 					for (const m of list) renderMessage({ ...m, scroll: false });
 					if (stick) scrollBottom(true);
 					else {
@@ -3934,6 +4196,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				const song = e.target.closest("[data-juke-index]");
 				if (song && m()) {
 					m().playTrackByIndex(Number(song.dataset.jukeIndex));
+					recordSong(m().getState().playlist[Number(song.dataset.jukeIndex)]);
 					setTimeout(renderJuke, 150);
 					return;
 				}
@@ -3997,6 +4260,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						: "公开房间，消息会同步到 Matrix 大厅和已接入的友站。";
 			}
 			if (peers) peers.style.display = rt.room === "chat" ? "none" : "";
+			const threadPill = q("[data-tea-threads-trigger]");
+			if (threadPill && rt.room === "chat") threadPill.hidden = true;
 			for (const b of document.querySelectorAll("[data-room]")) {
 				b.classList.toggle("is-active", b.dataset.room === rt.room);
 			}
@@ -4008,6 +4273,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			rt.room = key;
 			rt.since = null;
 			rt.seen.clear();
+			// 线程只在互联茶室有意义，切房时收起相关浮层
+			if (rt.closePops) rt.closePops();
+			if (rt.closeThread) rt.closeThread();
+			const tt = q("[data-tea-threads-trigger]");
+			if (tt) tt.hidden = key !== "lobby";
 			const f = feedEl();
 			if (f) {
 				f.innerHTML = "";
@@ -4253,7 +4523,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					const btn = e.target.closest("[data-act]");
 					if (!btn) return;
 					const id = btn.dataset.id;
-					if (btn.dataset.act === "reply") {
+					if (btn.dataset.act === "thread") {
+						if (typeof rt.openThread === "function") rt.openThread(id);
+					} else if (btn.dataset.act === "reply") {
 						setReply({ id, nick: btn.dataset.nick, text: btn.dataset.text });
 					} else if (btn.dataset.act === "react") {
 						try {
@@ -4471,10 +4743,286 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					renderMembers(rt.members || []);
 				});
 			}
+			// 成员名片
+			const roster = q("[data-tea-members]");
+			if (roster && roster.dataset.cardBound !== "1") {
+				roster.dataset.cardBound = "1";
+				const pick = (e) => {
+					const li = e.target.closest("[data-tea-member]");
+					if (li) openMemberCard((rt.members || [])[Number(li.dataset.teaMember)]);
+				};
+				roster.addEventListener("click", pick);
+				roster.addEventListener("keydown", (e) => {
+					if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(e); }
+				});
+			}
+			const mcDialog = document.querySelector("[data-tea-membercard]");
+			document.querySelector("[data-tea-membercard-close]")?.addEventListener("click", () => mcDialog?.close());
+			if (mcDialog && mcDialog.dataset.sortBound !== "1") {
+				mcDialog.dataset.sortBound = "1";
+				mcDialog.addEventListener("click", async (e) => {
+					const sortBtn = e.target.closest("[data-tea-mc-sort]");
+					if (sortBtn) {
+						mcState.sort = sortBtn.dataset.teaMcSort;
+						for (const b of mcDialog.querySelectorAll("[data-tea-mc-sort]")) b.classList.toggle("is-active", b === sortBtn);
+						mcRenderSongs();
+						return;
+					}
+					const add = e.target.closest("[data-mc-add]");
+					if (add) {
+						const m = musicApi();
+						const st = m && m.getState();
+						const idx = st && st.playlist.findIndex((t) => t.name === add.dataset.mcAdd && t.artist === add.dataset.mcArtist);
+						if (idx >= 0 && m) {
+							m.playTrackByIndex(idx);
+							recordSong(st.playlist[idx]);
+							setTimeout(renderJuke, 150);
+						}
+					}
+				});
+			}
 			const jukeScrim = q("[data-juke-scrim]");
 			if (jukeScrim) jukeScrim.addEventListener("click", () => shell.classList.remove("is-juke-open"));
 			bindJuke();
 			bindReceipts();
+
+			// ── 互联友站浮层 ──────────────────────────────────────
+			const sitesTrigger = q("[data-tea-sites-trigger]");
+			const sitesPop = q("[data-tea-sites-pop]");
+			const sitesList = q("[data-tea-sites-list]");
+		const threadsTrigger = q("[data-tea-threads-trigger]");
+		const threadsPop = q("[data-tea-threads-pop]");
+		// 浮层用 fixed 定位，打开时对齐触发按钮，避免被上层容器的 fixed/overflow 影响
+		const positionPop = (pop, trigger, align) => {
+			if (!pop || !trigger) return;
+			const r = trigger.getBoundingClientRect();
+			const w = pop.offsetWidth || pop.getBoundingClientRect().width;
+			const left = align === "right" ? r.right - w : r.left;
+			const maxLeft = Math.max(8, window.innerWidth - w - 8);
+			pop.style.left = Math.min(Math.max(8, left), maxLeft) + "px";
+			pop.style.top = r.bottom + 6 + "px";
+			pop.dataset.anchored = "1";
+		};
+		const closePops = (except) => {
+				if (sitesPop && except !== sitesPop) {
+					sitesPop.hidden = true;
+					if (sitesTrigger) sitesTrigger.setAttribute("aria-expanded", "false");
+				}
+				if (threadsPop && except !== threadsPop) {
+					threadsPop.hidden = true;
+					if (threadsTrigger) threadsTrigger.setAttribute("aria-expanded", "false");
+				}
+			};
+
+			if (sitesList) {
+				const allSites = [SELF_SITE, ...PEERS];
+				sitesList.innerHTML = allSites
+					.map((s) => {
+						const av = s.avatar
+							? `<img class="tea-site-card__avatar" src="${esc(s.avatar)}" alt="" loading="lazy" onerror="this.style.display='none'" />`
+							: `<span class="tea-site-card__avatar" style="${avatarStyle(s.owner || s.name, "")}"></span>`;
+						return `<a class="tea-site-card" href="${esc(s.url)}" ${s.isSelf ? "" : 'target="_blank" rel="noopener noreferrer"'}>
+							${av}
+							<span class="tea-site-card__copy">
+								<span class="tea-site-card__name">${esc(s.name)}${s.isSelf ? '<em class="tea-site-card__self">本站</em>' : ""}</span>
+								<span class="tea-site-card__desc">${esc(s.desc || s.owner || "")}</span>
+							</span>
+						</a>`;
+					})
+					.join("");
+			}
+			if (sitesTrigger && sitesPop) {
+				sitesTrigger.addEventListener("click", (e) => {
+					e.stopPropagation();
+					const open = sitesPop.hidden;
+					closePops(open ? sitesPop : null);
+					sitesPop.hidden = !open;
+					sitesTrigger.setAttribute("aria-expanded", String(open));
+					if (open) positionPop(sitesPop, sitesTrigger, "left");
+				});
+			}
+			if (threadsTrigger && threadsPop) {
+				threadsTrigger.addEventListener("click", (e) => {
+					e.stopPropagation();
+					const open = threadsPop.hidden;
+					closePops(open ? threadsPop : null);
+					threadsPop.hidden = !open;
+					threadsTrigger.setAttribute("aria-expanded", String(open));
+					if (open) {
+						positionPop(threadsPop, threadsTrigger, "right");
+						loadThreads();
+					}
+				});
+			}
+			document.addEventListener("click", (e) => {
+				if (!e.target.closest("[data-tea-sites-pop]") && !e.target.closest("[data-tea-sites-trigger]")) {
+					if (sitesPop && !sitesPop.hidden) closePops();
+				}
+				if (!e.target.closest("[data-tea-threads-pop]") && !e.target.closest("[data-tea-threads-trigger]")) {
+					if (threadsPop && !threadsPop.hidden) closePops();
+				}
+			});
+			rt.closePops = closePops;
+			document.addEventListener("keydown", (e) => {
+				if (e.key === "Escape") { closePops(); if (rt.closeThread) rt.closeThread(); }
+			});
+			window.addEventListener("resize", () => {
+				if (sitesPop && !sitesPop.hidden) positionPop(sitesPop, sitesTrigger, "left");
+				if (threadsPop && !threadsPop.hidden) positionPop(threadsPop, threadsTrigger, "right");
+			});
+			sitesPop?.querySelectorAll("[data-tea-pop-close]").forEach((b) => b.addEventListener("click", () => closePops()));
+			threadsPop?.querySelectorAll("[data-tea-pop-close]").forEach((b) => b.addEventListener("click", () => closePops()));
+
+			// ── 活跃线程列表 ──────────────────────────────────────
+			const threadCountEl = q("[data-tea-threads-count]");
+			const threadsTotalEl = q("[data-tea-threads-total]");
+			const threadsListEl = q("[data-tea-threads-list]");
+			const setThreadCount = (n) => {
+				if (threadCountEl) threadCountEl.textContent = String(n);
+				if (threadsTotalEl) threadsTotalEl.textContent = n + " 个";
+				if (threadsTrigger) threadsTrigger.hidden = false;
+			};
+
+			const loadThreads = async () => {
+				if (!threadsListEl) return;
+				threadsListEl.innerHTML = `<div class="tea-thread__loading">正在找活跃线程…</div>`;
+				try {
+					const data = await api(`/api/threads?room=${rt.room}`);
+					const threads = data.threads || [];
+					setThreadCount(threads.length);
+					if (!threads.length) {
+						threadsListEl.innerHTML = `<div class="tea-pop__empty">还没有线程回复。在任意消息上点「线程回复」就能开一个。</div>`;
+						return;
+					}
+					threadsListEl.innerHTML = threads
+						.map((t) => {
+							const root = t.root || {};
+							const latest = t.summary?.latestReply || null;
+							const av = root.avatar
+								? `<img class="tea-thread-item__avatar" src="${esc(root.avatar)}" alt="" loading="lazy" />`
+								: `<span class="tea-thread-item__avatar" style="${avatarStyle(root.nick, root.site)}"></span>`;
+							const rootText = root.text || root.image || "点击查看线程";
+							return `<button type="button" class="tea-thread-item" data-thread-root="${esc(t.rootUid)}">
+								${av}
+								<span class="tea-thread-item__copy">
+									<span class="tea-thread-item__row">
+										<span class="tea-thread-item__who">${esc(root.nick || "茶友")}${root.site ? " · " + esc(root.site) : ""}</span>
+										<span class="tea-thread-item__count">${Number(t.summary?.count) || 0} 条回复</span>
+									</span>
+									<span class="tea-thread-item__text">${esc(String(rootText).slice(0, 80))}</span>
+									${latest ? `<span class="tea-thread-item__latest">最新 ${esc(latest.name || "茶友")}：${esc(String(latest.content || "").slice(0, 60))}</span>` : ""}
+								</span>
+							</button>`;
+						})
+						.join("");
+				} catch (e) {
+					threadsListEl.innerHTML = `<div class="tea-pop__empty">线程列表暂时打不开${e.message ? "：" + esc(e.message) : ""}</div>`;
+				}
+			};
+			rt.refreshThreads = loadThreads;
+			// 进房后拉一次线程数（失败则静默，按钮保持隐藏）
+			if (rt.room === "lobby") {
+				api(`/api/threads?room=${rt.room}`)
+					.then((d) => setThreadCount((d.threads || []).length))
+					.catch(() => {});
+			}
+
+			threadsListEl?.addEventListener("click", (e) => {
+				const item = e.target.closest("[data-thread-root]");
+				if (item) {
+					closePops();
+					openThread(item.dataset.threadRoot);
+				}
+			});
+
+			// ── 线程详情弹层 ──────────────────────────────────────
+			const threadView = q("[data-tea-thread-view]");
+			const threadBody = q("[data-tea-thread-body]");
+			const threadSub = q("[data-tea-thread-sub]");
+			const threadInput = q("[data-tea-thread-input]");
+			const threadSend = q("[data-tea-thread-send]");
+			let currentThreadRoot = "";
+
+			const threadMsgHtml = (m) => {
+				const av = m.avatar
+					? `<img src="${esc(m.avatar)}" alt="" loading="lazy" />`
+					: `<span style="${avatarStyle(m.nick, m.site)}">${esc(initials(m.nick))}</span>`;
+				const body = m.image
+					? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" loading="lazy" style="max-width:100%;border-radius:0.5rem;" data-zoom />`
+					: fmtText(m.text || "");
+				return `<div class="tea-msg tea-thread__msg" data-id="${esc(m.id || "")}">
+					<div class="tea-msg__avatar" aria-hidden="true">${av}</div>
+					<div class="tea-msg__body">
+						<div class="tea-msg__head">
+							<span class="tea-msg__nick">${esc(m.nick || "茶友")}</span>
+							${m.site ? `<span class="tea-msg__site">来自 ${esc(m.site)}</span>` : ""}
+							<time class="tea-msg__time">${esc(fmtTime(m.ts))}</time>
+						</div>
+						<div class="tea-msg__text">${body}</div>
+					</div>
+				</div>`;
+			};
+
+			const openThread = async (rootUid) => {
+				if (!threadView || !threadBody || !rootUid) return;
+				currentThreadRoot = rootUid;
+				threadView.hidden = false;
+				threadBody.innerHTML = `<div class="tea-thread__loading">正在打开线程…</div>`;
+				if (threadSub) threadSub.textContent = "Matrix 线程 · 加载中";
+				(threadInput?.closest(".tea-thread__footer"))?.removeAttribute("hidden");
+				try {
+					const data = await api(`/api/thread?room=${rt.room}&rootUid=${encodeURIComponent(rootUid)}`);
+					const replies = data.messages || [];
+					(threadSub && (threadSub.textContent = `Matrix 线程 · 共 ${replies.length} 条回复`));
+					threadBody.innerHTML = `
+						${data.root ? `<div class="tea-thread__root-label">主题原消息</div>${threadMsgHtml(data.root)}` : ""}
+						<div class="tea-thread__divider">${replies.length} 条线程回复</div>
+						${replies.length ? replies.map(threadMsgHtml).join("") : `<div class="tea-thread__empty">还没有回复，来开个头吧。</div>`}
+					`;
+					threadBody.scrollTop = threadBody.scrollHeight;
+				} catch (e) {
+					threadBody.innerHTML = `<div class="tea-thread__empty">线程暂时打不开：${esc(e.message || "网络异常")}</div>`;
+				}
+			};
+			rt.openThread = openThread;
+			const closeThread = () => {
+				if (threadView) threadView.hidden = true;
+				currentThreadRoot = "";
+			};
+			rt.closeThread = closeThread;
+			threadView?.querySelectorAll("[data-tea-thread-close]").forEach((b) => b.addEventListener("click", closeThread));
+
+			const doThreadSend = async () => {
+				if (!threadInput || !currentThreadRoot) return;
+				const text = threadInput.value.trim();
+				if (!text) return;
+				if (!rt.visitor) {
+					showError("先入座才能回复线程");
+					openDialog();
+					return;
+				}
+				threadInput.disabled = true;
+				if (threadSend) threadSend.disabled = true;
+				try {
+					await sendText(text, null, currentThreadRoot);
+					threadInput.value = "";
+					await openThread(currentThreadRoot);
+					if (rt.refreshThreads) rt.refreshThreads();
+				} catch (e) {
+					showError(e.message || "发送失败");
+				} finally {
+					threadInput.disabled = false;
+					if (threadSend) threadSend.disabled = false;
+					threadInput.focus();
+				}
+			};
+			threadSend?.addEventListener("click", doThreadSend);
+			threadInput?.addEventListener("keydown", (e) => {
+				if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+					e.preventDefault();
+					doThreadSend();
+				}
+			});
 		};
 
 		if (!rt.bound) {
