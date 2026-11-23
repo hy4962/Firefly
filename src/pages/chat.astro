@@ -4932,30 +4932,64 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			rt.seen.clear();
 		};
 
+		const hydrateProfile = () => {
+			if (!rt.visitor || !rt.visitor.token) return;
+			api("/api/profile").then((d) => {
+				if (d && d.profile) {
+					Object.assign(rt.visitor, d.profile);
+					if (!rt.visitor.avatar && d.profile.avatarUrl) rt.visitor.avatar = d.profile.avatarUrl;
+					store.identity = rt.visitor;
+					renderSelf();
+				}
+			}).catch(() => {});
+		};
+
 		const loadHistory = async () => {
 			feedStatus(`<span class="tea-spinner"></span> 正在看看大家聊到哪儿了…`);
+			const histP = api(`/api/history?limit=60&room=${rt.room}`);
+			const syncP = api(`/api/sync?room=${rt.room}`).catch(() => null);
 			try {
-				const [hist, sync] = await Promise.all([
-					api(`/api/history?limit=60&room=${rt.room}`),
-					api(`/api/sync?room=${rt.room}`),
-				]);
+				// 1. 先画历史记录，不被 sync 和在线名单阻塞
+				const hist = await histP;
 				feedStatus("");
 				const f = feedEl();
 				if (f) f.innerHTML = "";
-				const msgs = [...(hist.messages || []), ...(sync.messages || [])];
+				const msgs = [...(hist.messages || [])];
 				msgs.sort((a, b) => a.ts - b.ts);
 				rt.messages = msgs;
+				const seen = new Set(msgs.map((m) => m.id));
 				if (!msgs.length) {
 					feedStatus(`<div class="tea-empty"><b>茶室里还没人说话</b><span>要不你先开个话头？</span></div>`);
 				} else {
 					for (const m of msgs) renderMessage({ ...m, scroll: false });
-					applyRedactions([...(hist.redactions || []), ...(sync.redactions || [])]);
+					applyRedactions(hist.redactions || []);
 					markUnreadDivider();
 					scrollBottom(false);
 				}
-				rt.since = sync.next || null;
 				setConn("live");
-				loadRoom();
+
+				// 2. 登录资料随后补，不阻塞历史
+				hydrateProfile();
+
+				// 3. 合并初始 sync 的最新消息
+				const sync = await syncP;
+				if (sync) {
+					const fresh = (sync.messages || []).filter((m) => !seen.has(m.id));
+					if (fresh.length) {
+						rt.messages = [...rt.messages, ...fresh].sort((a, b) => a.ts - b.ts);
+						const stick = atBottom();
+						for (const m of fresh) renderMessage({ ...m, scroll: false });
+						applyRedactions(sync.redactions || []);
+						if (stick) scrollBottom(false);
+					}
+					rt.since = sync.next || null;
+				}
+				startLoop();
+
+				// 4. 在线名单
+				await loadRoom();
+				// 5. 房间头像等次要内容
+				syncRoomAvatars();
 			} catch (e) {
 				feedStatus(
 					`<b>茶室暂时打不开</b><span>${esc(e.message || "网络异常")}</span><button type="button" class="tea-btn tea-btn--ghost" data-tea-retry>重试</button>`,
@@ -6001,23 +6035,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			window.addEventListener("resize", measure);
 
 			renderSelf();
-			if (rt.visitor && rt.visitor.token) {
-				api("/api/profile").then((d) => {
-					if (d && d.profile) {
-						Object.assign(rt.visitor, d.profile);
-						if (!rt.visitor.avatar && d.profile.avatarUrl) rt.visitor.avatar = d.profile.avatarUrl;
-						store.identity = rt.visitor;
-						renderSelf();
-					}
-				}).catch(() => {});
-			}
 			setGate(!!rt.visitor);
 			killChrome();
 			setTimeout(killChrome, 300);
 			setTimeout(killChrome, 1200);
 			loadHistory();
-			startLoop();
-			syncRoomAvatars();
 
 			// 图片选择 / 粘贴
 			const imageFile = q("[data-tea-image-file]");
