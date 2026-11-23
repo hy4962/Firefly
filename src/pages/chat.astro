@@ -237,7 +237,7 @@ const peers = [
 		<form method="dialog" class="tea-dialog__inner" data-tea-identity>
 			<header class="tea-dialog__head">
 				<span class="tea-dialog__icon"><Icon is:inline name="material-symbols:local-cafe-rounded" /></span>
-				<button type="submit" class="tea-icon-btn tea-dialog__close" value="cancel" aria-label="关闭">
+				<button type="button" class="tea-icon-btn tea-dialog__close" data-tea-dialog-close aria-label="关闭">
 					<Icon is:inline name="material-symbols:close-rounded" />
 				</button>
 			</header>
@@ -1547,12 +1547,14 @@ const peers = [
 	.tea-dialog {
 		border: 0;
 		padding: 0;
+		margin: auto;
 		width: min(24rem, calc(100vw - 2rem));
+		max-height: calc(100dvh - 2rem);
 		border-radius: 1.1rem;
 		background: var(--card-bg, #fff);
 		color: inherit;
 		box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.5);
-		overflow: visible;
+		overflow: auto;
 	}
 	.tea-dialog::backdrop {
 		background: rgba(20, 24, 18, 0.36);
@@ -2538,11 +2540,21 @@ const peers = [
 			}
 			const form = document.querySelector("[data-tea-identity]");
 			if (form) {
-				form.addEventListener("submit", (e) => {
-					if (e.submitter && e.submitter.value === "cancel") return;
-					submitIdentity(e);
-				});
+				form.addEventListener("submit", (e) => submitIdentity(e));
 				form.elements.nick.addEventListener("input", updatePreview);
+			}
+			const dlgClose = document.querySelector("[data-tea-dialog-close]");
+			if (dlgClose) {
+				dlgClose.addEventListener("click", () => {
+					const dlg = document.querySelector("[data-tea-dialog]");
+					if (dlg) dlg.close();
+				});
+			}
+			const dlgEl = document.querySelector("[data-tea-dialog]");
+			if (dlgEl) {
+				dlgEl.addEventListener("click", (e) => {
+					if (e.target === dlgEl) dlgEl.close();
+				});
 			}
 
 			// 输入框
