@@ -333,7 +333,7 @@ function siteLabel(url, c) {
 	}
 }
 
-function normalize(ev, members, c, base) {
+function normalize(ev, members, c, base, eventMap) {
 	const content = ev.content || {};
 	if (!content.body && !content.url) return null;
 	if (!["m.text", "m.image", "m.emote"].includes(content.msgtype)) return null;
@@ -392,6 +392,25 @@ function normalize(ev, members, c, base) {
 		}
 		reply = { id: content["m.relates_to"]?.["m.in_reply_to"]?.event_id || "", who: who || "茶友", text: quotedText };
 		text = lines.slice(qi).join("\n").replace(/^\n+/, "");
+	}
+	// Element 有时不带 Matrix 文本回退，只剩 m.relates_to：按 event_id 反查目标事件
+	if (!reply) {
+		const targetId = content["m.relates_to"]?.["m.in_reply_to"]?.event_id;
+		const target = targetId && eventMap?.get(targetId);
+		if (target) {
+			const tc = target.content || {};
+			const targetMember = members.get(target.sender) || {};
+			let who = targetMember.nick || String(target.sender || "").split(":")[0].replace(/^@/, "");
+			const dot = who.indexOf(" · ");
+			if (dot > 0) who = who.slice(0, dot).trim();
+			const raw = typeof tc.body === "string" ? tc.body : "";
+			const quote = raw
+				.split("\n")
+				.filter((line) => !line.startsWith(">"))
+				.join(" ")
+				.trim() || (tc.msgtype === "m.image" ? "图片" : "");
+			reply = { id: targetId, who: who || "茶友", text: quote.slice(0, 160) };
+		}
 	}
 
 	if (content.msgtype === "m.image" && content.url) {
@@ -786,8 +805,9 @@ async function handleHistory(c, url, base, token) {
 		const snap = await snapP;
 		if (snap?.ok) mergeReceiptCache(room.id, readReceipts(await snap.json(), room.id, members, c, base));
 	} catch (_) {}
+	const eventMap = new Map((data.chunk || []).map((ev) => [ev.event_id, ev]));
 	const messages = (data.chunk || [])
-		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
+		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base, eventMap) : null))
 		.filter(Boolean)
 		.reverse()
 		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender) }));
@@ -814,8 +834,9 @@ async function handleSync(c, url, base, token) {
 	mergeReceiptCache(room.id, readReceipts(data, room.id, members, c, base));
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
 	const reactions = collectReactions(timeline, members);
+	const eventMap = new Map(timeline.map((ev) => [ev.event_id, ev]));
 	const messages = timeline
-		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
+		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base, eventMap) : null))
 		.filter(Boolean)
 		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender), reactions: reactions.get(m.id) || [] }));
 	// reaction 更新可能指向历史消息，单独返回让前端就地合并
@@ -959,9 +980,11 @@ async function fetchThread(c, roomId, rootId, members, base, rootHint, countHint
 	const rootEv =
 		rootHint ||
 		(rootRes && rootRes.ok ? await rootRes.json().catch(() => null) : null);
-	const root = rootEv ? normalize(rootEv, members, c, base) : null;
+	const threadEvents = [rootEv, ...(relData.chunk || [])].filter(Boolean);
+	const eventMap = new Map(threadEvents.map((ev) => [ev.event_id, ev]));
+	const root = rootEv ? normalize(rootEv, members, c, base, eventMap) : null;
 	const replies = (relData.chunk || [])
-		.map((ev) => normalize(ev, members, c, base))
+		.map((ev) => normalize(ev, members, c, base, eventMap))
 		.filter(Boolean)
 		.sort((a, b) => a.ts - b.ts);
 	if (!root && !replies.length) return null;
@@ -1077,9 +1100,10 @@ async function handlePins(c, url, base) {
 			const q = `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=500${from ? `&from=${enc(from)}` : ""}`;
 			const res = await mx(c, q, { token: c.bridgeToken });
 			const data = await res.json().catch(() => ({}));
+			const eventMap = new Map((data.chunk || []).map((ev) => [ev.event_id, ev]));
 			for (const ev of data.chunk || []) {
 				if (wanted.has(ev.event_id)) {
-					const m = normalize(ev, members, c, base);
+					const m = normalize(ev, members, c, base, eventMap);
 					if (m) found.set(m.id, m);
 				}
 			}
