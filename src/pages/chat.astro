@@ -35,8 +35,6 @@ const peers = [
 				<div class="tea-me__cover" aria-hidden="true">
 					<span class="tea-me__glow"></span>
 					<span class="tea-me__glow tea-me__glow--b"></span>
-					<span class="tea-me__line"></span>
-					<span class="tea-me__line tea-me__line--b"></span>
 				</div>
 				<div class="tea-me__body">
 					<div class="tea-me__avatar" data-tea-me-avatar aria-hidden="true">?</div>
@@ -395,16 +393,11 @@ const peers = [
 		background: color-mix(in oklch, var(--primary) 26%, transparent);
 	}
 	.tea-me__line {
-		position: absolute;
-		inset: auto 0 1.1rem 0;
-		height: 1px;
-		background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--primary) 40%, transparent), transparent);
-	}
-	.tea-me__line--b {
-		bottom: 2.2rem;
-		opacity: 0.5;
+		display: none;
 	}
 	.tea-me__body {
+		position: relative;
+		z-index: 1;
 		padding: 0 1rem 1rem;
 		margin-top: -1.75rem;
 		display: grid;
