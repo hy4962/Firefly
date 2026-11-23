@@ -216,6 +216,15 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		icon: "material-symbols:train-rounded",
 	});
 
+	// 十年之约「虫洞」：随机跳到一位还在更新的成员博客，要求入口放在显眼位置，
+	// 与「开往」同级放顶级入口。图标用旋涡，和虫洞的意象一致。
+	links.push({
+		name: "虫洞",
+		url: "https://www.foreverblog.cn/go.html",
+		external: true,
+		icon: "material-symbols:cyclone",
+	});
+
 	// 自定义导航栏链接示例（已合并到"关于"菜单，保留作为参考）
 	// links.push({
 	// 	name: "链接",
