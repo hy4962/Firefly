@@ -52,6 +52,7 @@ const cfg = (env) => ({
 	siteName: env.SITE_NAME || DEFAULTS.SITE_NAME,
 	siteUrl: env.SITE_URL || DEFAULTS.SITE_URL,
 	prefix: env.IDENTITY_PREFIX || DEFAULTS.IDENTITY_PREFIX,
+	walineApi: env.WALINE_API || "", 
 	origins: (env.ALLOW_ORIGINS || DEFAULTS.ALLOW_ORIGINS).split(",").map((s) => s.trim()).filter(Boolean),
 });
 
@@ -309,22 +310,62 @@ async function uploadAvatar(c, email) {
 	}
 }
 
-async function handleEnter(c, env, request, ip) {
-	let body;
+const WALINE_DEFAULT = "https://waline.0dm.cn";
+
+const idKey = (email) => "id:" + md5Hex(email.trim().toLowerCase());
+
+async function readIdentity(env, email) {
+	if (!env.TEA_KV || !email) return null;
 	try {
-		body = await request.json();
+		return await env.TEA_KV.get(idKey(email), "json");
 	} catch {
-		return fail(400, "请求格式不对");
+		return null;
 	}
-	const nick = clean(body.nick, LIMITS.nick);
-	const email = clean(body.email, LIMITS.email);
+}
 
-	if (!nick) return fail(400, "先起个昵称");
-	if (email && !isEmail(email)) return fail(400, "邮箱格式不对");
-	if (!c.adminToken) return fail(500, "bridge 未配置 ADMIN_TOKEN");
+async function writeIdentity(env, email, data) {
+	if (!env.TEA_KV || !email) return;
+	try {
+		await env.TEA_KV.put(idKey(email), JSON.stringify(data), { expirationTtl: 60 * 60 * 24 * 365 });
+	} catch (_) {}
+}
 
-	const denied = await rateCheck(env, ip, "enter");
-	if (denied) return fail(429, denied);
+/** 同一邮箱复用同一个 Matrix 账号；没有就新建。 */
+async function provisionIdentity(c, env, profile, base) {
+	const { nick, email, website } = profile;
+	if (!c.adminToken) throw new Error("bridge 未配置 ADMIN_TOKEN");
+
+	const stored = await readIdentity(env, email);
+	if (stored && stored.uid && stored.pw) {
+		const login = await mxJson(c, "/_matrix/client/v3/login", {
+			token: "",
+			method: "POST",
+			body: {
+				type: "m.login.password",
+				identifier: { type: "m.id.user", user: stored.uid },
+				password: stored.pw,
+				initial_device_display_name: "茶室网页",
+			},
+		});
+		if (login.ok && login.data.access_token) {
+			if (stored.nick !== nick || (website && stored.website !== website)) {
+				await mxJson(c, `/_synapse/admin/v2/users/${enc(stored.uid)}`, {
+					token: c.adminToken,
+					method: "PUT",
+					body: { displayname: `${nick} · ${c.siteName}` },
+				});
+				await writeIdentity(env, email, { ...stored, nick, website: website || stored.website });
+			}
+			return {
+				user: {
+					id: stored.uid,
+					nick,
+					avatar: stored.mxc ? `${base}/api/media?u=${enc(stored.mxc)}` : "",
+				},
+				token: login.data.access_token,
+			};
+		}
+	}
 
 	const localpart = randomLocalpart(c.prefix);
 	const userId = `@${localpart}:matrix.0dm.cn`;
@@ -336,7 +377,7 @@ async function handleEnter(c, env, request, ip) {
 		method: "PUT",
 		body: { password, displayname, admin: false },
 	});
-	if (!created.ok) return fail(502, `开号失败：${created.data.error || created.status}`);
+	if (!created.ok) throw new Error(`开号失败：${created.data.error || created.status}`);
 
 	const avatarUrl = await uploadAvatar(c, email);
 	if (avatarUrl) {
@@ -347,7 +388,6 @@ async function handleEnter(c, env, request, ip) {
 		});
 	}
 
-	// 大厅是邀请制：用房间管理员令牌发邀请，再用访客自己身份加入
 	await mxJson(c, `/_matrix/client/v3/rooms/${enc(c.room)}/invite`, {
 		token: c.bridgeToken,
 		method: "POST",
@@ -364,20 +404,89 @@ async function handleEnter(c, env, request, ip) {
 			initial_device_display_name: "茶室网页",
 		},
 	});
-	if (!login.ok || !login.data.access_token) return fail(502, "登录新账号失败");
+	if (!login.ok || !login.data.access_token) throw new Error("登录新账号失败");
 	const token = login.data.access_token;
 
 	await mxJson(c, `/_matrix/client/v3/join/${enc(c.room)}`, { token, method: "POST", body: {} });
 
-	return json(200, {
-		ok: true,
-		user: {
-			id: userId,
-			nick,
-			avatar: avatarUrl ? `${new URL(request.url).origin}/api/media?u=${enc(avatarUrl)}` : "",
-		},
+	await writeIdentity(env, email, { uid: userId, pw: password, nick, website, mxc: avatarUrl || "", ts: Date.now() });
+
+	return {
+		user: { id: userId, nick, avatar: avatarUrl ? `${base}/api/media?u=${enc(avatarUrl)}` : "" },
 		token,
-	});
+	};
+}
+
+async function handleEnter(c, env, request, ip) {
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const nick = clean(body.nick, LIMITS.nick);
+	const email = clean(body.email, LIMITS.email);
+	const website = clean(body.website, LIMITS.website);
+
+	if (!nick) return fail(400, "先起个昵称");
+	if (email && !isEmail(email)) return fail(400, "邮箱格式不对");
+
+	const denied = await rateCheck(env, ip, "enter");
+	if (denied) return fail(429, denied);
+
+	try {
+		const out = await provisionIdentity(c, env, { nick, email, website }, new URL(request.url).origin);
+		return json(200, { ok: true, ...out });
+	} catch (e) {
+		return fail(502, e.message || "开座位失败");
+	}
+}
+
+async function handleWaline(c, env, request, ip, base) {
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const email = clean(body.email, LIMITS.email);
+	const password = String(body.password || "");
+	if (!email || !isEmail(email)) return fail(400, "邮箱格式不对");
+	if (!password) return fail(400, "请输入 Waline 密码");
+
+	const denied = await rateCheck(env, ip, "enter");
+	if (denied) return fail(429, denied);
+
+	const api = (c.walineApi || WALINE_DEFAULT).replace(/\/$/, "");
+	let payload;
+	try {
+		const res = await fetch(`${api}/api/token`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email, password }),
+		});
+		payload = await res.json();
+	} catch {
+		return fail(502, "Waline 暂时连不上");
+	}
+
+	if (payload.errno !== 0) {
+		const err = String(payload.errmsg || "");
+		if (err === "LOGIN_FAILED") return fail(401, "邮箱或密码不对，或者这个邮箱还没在留言板注册过");
+		if (err === "TWO_FACTOR_AUTH_ERROR") return fail(401, "这个账号开了两步验证，请用昵称方式进入");
+		return fail(401, err || "Waline 登录失败");
+	}
+
+	const data = payload.data || {};
+	const nick = clean(data.display_name || data.nick || email.split("@")[0], LIMITS.nick);
+	const website = clean(data.url || data.link || "", LIMITS.website);
+
+	try {
+		const out = await provisionIdentity(c, env, { nick, email, website }, base);
+		return json(200, { ok: true, ...out, waline: { nick } });
+	} catch (e) {
+		return fail(502, e.message || "开座位失败");
+	}
 }
 
 // ── 接口 ────────────────────────────────────────────────────────────
@@ -505,6 +614,8 @@ export async function handleRequest(request, env = {}) {
 			out = json(200, { ok: true, room: c.room, site: c.siteName, mode: "individual", time: Math.floor(Date.now() / 1000) });
 		} else if (path === "/api/enter" && request.method === "POST") {
 			out = await handleEnter(c, env, request, ip);
+		} else if (path === "/api/waline" && request.method === "POST") {
+			out = await handleWaline(c, env, request, ip, url.origin);
 		} else if (path === "/api/room" && request.method === "GET") {
 			out = await handleRoom(c, url.origin);
 		} else if (path === "/api/history" && request.method === "GET") {

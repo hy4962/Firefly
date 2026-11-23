@@ -271,6 +271,43 @@ const peers = [
 				<Icon is:inline name="material-symbols:arrow-forward-rounded" />
 			</button>
 			<p class="tea-dialog__error" data-tea-dialog-error hidden></p>
+
+			<div class="tea-dialog__divider"><span>也可以使用 Waline 账号</span></div>
+			<button type="button" class="tea-btn tea-btn--ghost tea-dialog__waline" data-tea-waline-open>
+				<Icon is:inline name="material-symbols:forum-outline-rounded" />
+				Waline 账号登录 / 注册
+			</button>
+			<p class="tea-dialog__hint">同一邮箱共用茶室资料、聊天记录和网站绑定，切换登录方式无需重复填写。</p>
+		</form>
+
+		<form method="dialog" class="tea-dialog__inner" data-tea-waline hidden>
+			<header class="tea-dialog__head">
+				<span class="tea-dialog__icon"><Icon is:inline name="material-symbols:forum-outline-rounded" /></span>
+				<button type="button" class="tea-icon-btn tea-dialog__close" data-tea-waline-close aria-label="关闭">
+					<Icon is:inline name="material-symbols:close-rounded" />
+				</button>
+			</header>
+			<h3>用 Waline 账号进茶室</h3>
+			<p class="tea-dialog__desc">用留言板那个账号登录，昵称、头像和网站直接沿用。</p>
+
+			<label class="tea-field">
+				<span>邮箱</span>
+				<input type="email" name="email" autocomplete="email" maxlength="120" placeholder="you@example.com" required />
+			</label>
+			<label class="tea-field">
+				<span>密码</span>
+				<input type="password" name="password" autocomplete="current-password" maxlength="120" placeholder="Waline 密码" required />
+			</label>
+
+			<button type="submit" class="tea-btn tea-btn--primary tea-dialog__submit" data-tea-waline-submit>
+				<span data-tea-waline-label>登录并进入</span>
+				<Icon is:inline name="material-symbols:arrow-forward-rounded" />
+			</button>
+			<p class="tea-dialog__error" data-tea-waline-error hidden></p>
+			<button type="button" class="tea-dialog__back" data-tea-waline-back>
+				<Icon is:inline name="material-symbols:arrow-back-rounded" /> 用昵称和邮箱进入
+			</button>
+			<p class="tea-dialog__hint">还没注册过？先去留言板发一条评论注册，再回来登录。</p>
 		</form>
 	</dialog>
 </MainGridLayout>
@@ -300,15 +337,17 @@ const peers = [
 		background: var(--page-bg, #f6f6f1) !important;
 	}
 
-	.tea-app {
-		--tea-top: 5rem;
-		--tea-gap: 1rem;
+	html:has(.tea-app) {
 		--tea-line: var(--line-divider, rgba(0, 0, 0, 0.08));
 		--tea-line-strong: var(--line-color, rgba(0, 0, 0, 0.12));
 		--tea-muted: color-mix(in oklch, currentColor 58%, transparent);
 		--tea-muted-soft: color-mix(in oklch, currentColor 42%, transparent);
 		--tea-surface: var(--card-bg, #fff);
 		--tea-surface-2: color-mix(in oklch, var(--primary) 5%, var(--card-bg, #fff));
+	}
+	.tea-app {
+		--tea-top: 5rem;
+		--tea-gap: 1rem;
 		position: fixed;
 		z-index: 28;
 		top: var(--tea-top);
@@ -1723,6 +1762,56 @@ const peers = [
 		font-size: 0.72rem;
 		color: #c0563f;
 	}
+	.tea-dialog__inner[hidden] {
+		display: none;
+	}
+	.tea-dialog__divider {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0.3rem 0 0.1rem;
+		font-size: 0.68rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-dialog__divider::before,
+	.tea-dialog__divider::after {
+		content: "";
+		height: 1px;
+		flex: 1;
+		background: var(--tea-line-strong);
+		opacity: 0.7;
+	}
+	.tea-dialog__waline {
+		width: 100%;
+		padding: 0.55rem 1rem;
+		border-color: var(--tea-line);
+	}
+	.tea-dialog__hint {
+		margin: 0;
+		font-size: 0.66rem;
+		line-height: 1.6;
+		color: var(--tea-muted-soft);
+	}
+	.tea-dialog__back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		align-self: center;
+		border: 0;
+		background: none;
+		color: var(--tea-muted);
+		font: inherit;
+		font-size: 0.72rem;
+		cursor: pointer;
+		padding: 0.2rem;
+	}
+	.tea-dialog__back:hover {
+		color: inherit;
+	}
+	.tea-dialog__back svg {
+		width: 0.9rem;
+		height: 0.9rem;
+	}
 
 	/* 遮罩（移动端抽屉） */
 	.tea-scrim {
@@ -2280,6 +2369,7 @@ const peers = [
 				form.elements.website.value = v.website || "";
 				updatePreview();
 			}
+			showWaline(false);
 			if (typeof dlg.showModal === "function") dlg.showModal();
 		};
 
@@ -2294,6 +2384,59 @@ const peers = [
 				av.setAttribute("style", nick ? avatarStyle(nick, SITE_NAME) : "");
 			}
 			if (name) name.textContent = nick ? `${nick} · ${SITE_NAME}` : "还没填昵称";
+		};
+
+		const applyIdentity = (res, extra = {}) => {
+			if (!res || !res.user || !res.token) throw new Error("返回数据不完整");
+			rt.visitor = {
+				id: res.user.id,
+				nick: res.user.nick,
+				avatar: res.user.avatar || "",
+				email: extra.email || "",
+				website: extra.website || "",
+				token: res.token,
+			};
+			store.identity = rt.visitor;
+			renderSelf();
+			setGate(true);
+			const dlg = document.querySelector("[data-tea-dialog]");
+			if (dlg) dlg.close();
+			const ta = q("[data-tea-text]");
+			if (ta) ta.focus();
+		};
+
+		const showWaline = (on) => {
+			const a = document.querySelector("[data-tea-identity]");
+			const b = document.querySelector("[data-tea-waline]");
+			if (a) a.hidden = !!on;
+			if (b) b.hidden = !on;
+			if (on && b) setTimeout(() => b.elements.email && b.elements.email.focus(), 60);
+		};
+
+		const submitWaline = async (e) => {
+			e.preventDefault();
+			const form = document.querySelector("[data-tea-waline]");
+			if (!form) return;
+			const email = (form.elements.email.value || "").trim();
+			const password = form.elements.password.value || "";
+			const err = document.querySelector("[data-tea-waline-error]");
+			const btn = document.querySelector("[data-tea-waline-submit]");
+			const label = btn ? btn.querySelector("[data-tea-waline-label]") : null;
+			if (err) err.hidden = true;
+			if (btn) btn.disabled = true;
+			if (label) label.textContent = "正在登录…";
+			try {
+				const res = await api("/api/waline", { method: "POST", body: JSON.stringify({ email, password }) });
+				applyIdentity(res, { email });
+			} catch (e2) {
+				if (err) {
+					err.textContent = e2.message || "登录失败";
+					err.hidden = false;
+				}
+			} finally {
+				if (btn) btn.disabled = false;
+				if (label) label.textContent = "登录并进入";
+			}
 		};
 
 		const submitIdentity = async (e) => {
@@ -2323,21 +2466,7 @@ const peers = [
 					method: "POST",
 					body: JSON.stringify({ nick, email, website }),
 				});
-				rt.visitor = {
-					id: res.user.id,
-					nick: res.user.nick,
-					avatar: res.user.avatar || "",
-					email,
-					website,
-					token: res.token,
-				};
-				store.identity = rt.visitor;
-				renderSelf();
-				setGate(true);
-				const dlg = document.querySelector("[data-tea-dialog]");
-				if (dlg) dlg.close();
-				const ta = q("[data-tea-text]");
-				if (ta) ta.focus();
+				applyIdentity(res, { email, website });
 			} catch (e2) {
 				if (err) {
 					err.textContent = e2.message || "开座位失败，稍后再试";
@@ -2605,6 +2734,29 @@ const peers = [
 			if (form) {
 				form.addEventListener("submit", (e) => submitIdentity(e));
 				form.elements.nick.addEventListener("input", updatePreview);
+			}
+			const walineOpen = document.querySelector("[data-tea-waline-open]");
+			if (walineOpen && walineOpen.dataset.bound !== "1") {
+				walineOpen.dataset.bound = "1";
+				walineOpen.addEventListener("click", () => showWaline(true));
+			}
+			const walineBack = document.querySelector("[data-tea-waline-back]");
+			if (walineBack && walineBack.dataset.bound !== "1") {
+				walineBack.dataset.bound = "1";
+				walineBack.addEventListener("click", () => showWaline(false));
+			}
+			const walineForm = document.querySelector("[data-tea-waline]");
+			if (walineForm && walineForm.dataset.bound !== "1") {
+				walineForm.dataset.bound = "1";
+				walineForm.addEventListener("submit", submitWaline);
+			}
+			const walineClose = document.querySelector("[data-tea-waline-close]");
+			if (walineClose && walineClose.dataset.bound !== "1") {
+				walineClose.dataset.bound = "1";
+				walineClose.addEventListener("click", () => {
+					const dlg = document.querySelector("[data-tea-dialog]");
+					if (dlg) dlg.close();
+				});
 			}
 			const dlgClose = document.querySelector("[data-tea-dialog-close]");
 			if (dlgClose) {
