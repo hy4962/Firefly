@@ -495,6 +495,54 @@ async function handleWaline(c, env, request, ip, base) {
 	}
 }
 
+/** 用已有的 Matrix 账号登录（比如站长自己的管理员号） */
+async function handleMatrixLogin(c, request, ip) {
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const hs = String(body.homeserver || "").replace(/\/$/, "");
+	if (hs !== c.hs) return fail(400, "目前只支持本站服务器");
+
+	const denied = await rateCheck({}, ip, "enter");
+	if (denied) return fail(429, denied);
+
+	const username = clean(body.username, 120);
+	const password = String(body.password || "");
+	if (!username || !password) return fail(400, "服务器、用户名和密码都要填");
+
+	const login = await mxJson(c, "/_matrix/client/v3/login", {
+		token: "",
+		method: "POST",
+		body: {
+			type: "m.login.password",
+			identifier: { type: "m.id.user", user: username },
+			password,
+			initial_device_display_name: "茶室网页",
+		},
+	});
+	if (!login.ok || !login.data.access_token) {
+		return fail(login.status === 403 ? 401 : 502, login.data.error || "登录失败");
+	}
+
+	const uid = login.data.user_id;
+	const profile = await mxJson(c, `/_matrix/client/v3/profile/${enc(uid)}`, { token: login.data.access_token });
+	const rawAvatar = profile.data?.avatar_url || "";
+	return json(200, {
+		ok: true,
+		token: login.data.access_token,
+		user: {
+			id: uid,
+			nick: clean(profile.data?.displayname || username, 60),
+			avatar: rawAvatar.startsWith("mxc://")
+				? `${new URL(request.url).origin}/api/media?u=${enc(rawAvatar)}`
+				: "",
+		},
+	});
+}
+
 // ── 接口 ────────────────────────────────────────────────────────────
 async function handleHistory(c, url, base, token) {
 	const room = roomOf(c, url);
@@ -629,6 +677,8 @@ export async function handleRequest(request, env = {}) {
 			out = await handleEnter(c, env, request, ip);
 		} else if (path === "/api/waline" && request.method === "POST") {
 			out = await handleWaline(c, env, request, ip, url.origin);
+		} else if (path === "/api/matrix-login" && request.method === "POST") {
+			out = await handleMatrixLogin(c, request, ip);
 		} else if (path === "/api/room" && request.method === "GET") {
 			out = await handleRoom(c, url.origin, roomOf(c, url));
 		} else if (path === "/api/history" && request.method === "GET") {
