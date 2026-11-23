@@ -13,6 +13,7 @@
 const DEFAULTS = {
 	MATRIX_HS: "https://matrix.0dm.cn",
 	ROOM_ID: "!CKQYQ95MT69FlskJmkcEbSmkd72I6CTgnf_nITckm4I",
+	CHAT_ROOM_ID: "!SKwkPyDSYsvMsjJWCi:matrix.0dm.cn",
 	SITE_NAME: "折腾进行时",
 	SITE_URL: "https://www.0dm.cn",
 	ALLOW_ORIGINS: "https://www.0dm.cn,https://0dm.cn,https://www.9ll.uk,https://9ll.uk,http://localhost:4399,http://127.0.0.1:4399",
@@ -47,6 +48,7 @@ const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
 const cfg = (env) => ({
 	hs: (env.MATRIX_HS || DEFAULTS.MATRIX_HS).replace(/\/$/, ""),
 	room: env.ROOM_ID || DEFAULTS.ROOM_ID,
+	chatRoom: env.CHAT_ROOM_ID || DEFAULTS.CHAT_ROOM_ID,
 	adminToken: env.ADMIN_TOKEN || "",
 	bridgeToken: env.BRIDGE_TOKEN || "",
 	siteName: env.SITE_NAME || DEFAULTS.SITE_NAME,
@@ -55,6 +57,17 @@ const cfg = (env) => ({
 	walineApi: env.WALINE_API || "", 
 	origins: (env.ALLOW_ORIGINS || DEFAULTS.ALLOW_ORIGINS).split(",").map((s) => s.trim()).filter(Boolean),
 });
+
+const ROOM_META = {
+	chat: { name: "闲聊", desc: "随便聊聊日常与折腾", local: true },
+	lobby: { name: "互联茶室", desc: "和其他站点的朋友一起聊天", local: false },
+};
+
+function roomOf(c, url) {
+	const key = url.searchParams.get("room");
+	const k = key && ROOM_META[key] ? key : "chat";
+	return { key: k, id: k === "chat" ? c.chatRoom : c.room, ...ROOM_META[k] };
+}
 
 const json = (status, data, headers = {}) =>
 	new Response(JSON.stringify(data), {
@@ -142,11 +155,11 @@ async function mxJson(c, path, opts) {
 
 let memberCache = { at: 0, map: new Map(), room: "" };
 
-async function getMembers(c, force = false) {
-	if (!force && Date.now() - memberCache.at < 60_000 && memberCache.room === c.room && memberCache.map.size) {
+async function getMembers(c, roomId, force = false) {
+	if (!force && Date.now() - memberCache.at < 60_000 && memberCache.room === roomId && memberCache.map.size) {
 		return memberCache.map;
 	}
-	const { ok, data } = await mxJson(c, `/_matrix/client/v3/rooms/${enc(c.room)}/members`);
+	const { ok, data } = await mxJson(c, `/_matrix/client/v3/rooms/${enc(roomId)}/members`);
 	if (!ok) throw new Error(data.error || "members failed");
 	const map = new Map();
 	for (const ev of data.chunk || []) {
@@ -156,15 +169,15 @@ async function getMembers(c, force = false) {
 			avatar: ev.content.avatar_url || "",
 		});
 	}
-	memberCache = { at: Date.now(), map, room: c.room };
+	memberCache = { at: Date.now(), map, room: roomId };
 	return map;
 }
 
 let activeCache = { at: 0, set: new Set(), room: "" };
 
-async function getActiveSenders(c) {
-	if (Date.now() - activeCache.at < 60_000 && activeCache.room === c.room) return activeCache.set;
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/messages?dir=b&limit=120`);
+async function getActiveSenders(c, roomId) {
+	if (Date.now() - activeCache.at < 60_000 && activeCache.room === roomId) return activeCache.set;
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(roomId)}/messages?dir=b&limit=120`);
 	const data = await res.json();
 	const cutoff = Date.now() - 30 * 60 * 1000;
 	const set = new Set();
@@ -173,7 +186,7 @@ async function getActiveSenders(c) {
 		if (!ev.origin_server_ts || ev.origin_server_ts < cutoff) continue;
 		set.add(ev.sender);
 	}
-	activeCache = { at: Date.now(), set, room: c.room };
+	activeCache = { at: Date.now(), set, room: roomId };
 	return set;
 }
 
@@ -388,6 +401,7 @@ async function provisionIdentity(c, env, profile, base) {
 		});
 	}
 
+	// 互联茶室：邀请制，由房间管理员发邀请
 	await mxJson(c, `/_matrix/client/v3/rooms/${enc(c.room)}/invite`, {
 		token: c.bridgeToken,
 		method: "POST",
@@ -407,6 +421,8 @@ async function provisionIdentity(c, env, profile, base) {
 	if (!login.ok || !login.data.access_token) throw new Error("登录新账号失败");
 	const token = login.data.access_token;
 
+	// 本站闲聊房是公开的，直接进；互联茶室已收到邀请，再 join
+	await mxJson(c, `/_matrix/client/v3/join/${enc(c.chatRoom)}`, { token, method: "POST", body: {} });
 	await mxJson(c, `/_matrix/client/v3/join/${enc(c.room)}`, { token, method: "POST", body: {} });
 
 	await writeIdentity(env, email, { uid: userId, pw: password, nick, website, mxc: avatarUrl || "", ts: Date.now() });
@@ -491,35 +507,37 @@ async function handleWaline(c, env, request, ip, base) {
 
 // ── 接口 ────────────────────────────────────────────────────────────
 async function handleHistory(c, url, base, token) {
+	const room = roomOf(c, url);
 	const limit = Math.min(Number(url.searchParams.get("limit") || 50) || 50, LIMITS.history);
-	const members = await getMembers(c);
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/messages?dir=b&limit=${limit}`, { token });
+	const members = await getMembers(c, room.id);
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}`, { token });
 	const data = await res.json();
 	const messages = (data.chunk || [])
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean)
 		.reverse();
-	return json(200, { ok: true, messages, end: data.end || null });
+	return json(200, { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, end: data.end || null });
 }
 
 async function handleSync(c, url, base, token) {
+	const room = roomOf(c, url);
 	const since = url.searchParams.get("since") || "";
 	const filter = JSON.stringify({
-		room: { rooms: [c.room], timeline: { limit: 50 }, state: { lazy_load_members: true } },
+		room: { rooms: [room.id], timeline: { limit: 50 }, state: { lazy_load_members: true } },
 	});
 	const path = `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}` + (since ? `&since=${enc(since)}` : "");
 	const res = await mx(c, path, { token });
 	const data = await res.json();
-	const members = await getMembers(c);
-	const timeline = data.rooms?.join?.[c.room]?.timeline?.events || [];
+	const members = await getMembers(c, room.id);
+	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
 	const messages = timeline
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean);
 	return json(200, { ok: true, messages, next: data.next_batch || since || null });
 }
 
-async function handleRoom(c, base) {
-	const [members, active] = await Promise.all([getMembers(c), getActiveSenders(c)]);
+async function handleRoom(c, base, room) {
+	const [members, active] = await Promise.all([getMembers(c, room.id), getActiveSenders(c, room.id)]);
 	const list = [...members.entries()].map(([id, m]) => {
 		const domain = id.split(":")[1] || "";
 		const dot = m.nick.indexOf(" · ");
@@ -547,10 +565,15 @@ async function handleRoom(c, base) {
 		return a.nick.localeCompare(b.nick, "zh");
 	});
 
-	return json(200, { ok: true, room: { name: "大厅" }, members: unique, online: unique.filter((m) => m.online).length });
+	return json(200, {
+		ok: true,
+		room: { key: room.key, name: room.name, desc: room.desc, id: room.id },
+		members: unique,
+		online: unique.filter((m) => m.online).length,
+	});
 }
 
-async function handleSend(c, request, token) {
+async function handleSend(c, request, token, room) {
 	if (!token) return fail(401, "还没入座");
 	let body;
 	try {
@@ -562,7 +585,7 @@ async function handleSend(c, request, token) {
 	if (!text) return fail(400, "空消息发不出去");
 
 	const txn = `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.room)}/send/m.room.message/${txn}`, {
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/send/m.room.message/${txn}`, {
 		token,
 		method: "PUT",
 		body: { msgtype: "m.text", body: text },
@@ -617,7 +640,7 @@ export async function handleRequest(request, env = {}) {
 		} else if (path === "/api/waline" && request.method === "POST") {
 			out = await handleWaline(c, env, request, ip, url.origin);
 		} else if (path === "/api/room" && request.method === "GET") {
-			out = await handleRoom(c, url.origin);
+			out = await handleRoom(c, url.origin, roomOf(c, url));
 		} else if (path === "/api/history" && request.method === "GET") {
 			out = await handleHistory(c, url, url.origin, visitorToken || c.bridgeToken);
 		} else if (path === "/api/sync" && request.method === "GET") {
@@ -626,7 +649,7 @@ export async function handleRequest(request, env = {}) {
 			out = await handleMedia(c, url);
 		} else if (path === "/api/send" && request.method === "POST") {
 			const denied = await rateCheck(env, ip, "send");
-			out = denied ? fail(429, denied) : await handleSend(c, request, visitorToken);
+			out = denied ? fail(429, denied) : await handleSend(c, request, visitorToken, roomOf(c, url));
 		} else {
 			out = fail(404, "not found");
 		}

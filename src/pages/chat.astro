@@ -51,6 +51,36 @@ const peers = [
 				</div>
 			</div>
 
+			<div class="tea-card tea-rooms">
+				<header class="tea-card__head">
+					<span class="tea-card__title">
+						<Icon is:inline name="material-symbols:forum-outline-rounded" /> 房间与成员
+					</span>
+				</header>
+				<ul class="tea-rooms__list" data-tea-rooms>
+					<li class="tea-rooms__group">本站</li>
+					<li>
+						<button type="button" class="tea-room-item is-active" data-room="chat">
+							<span class="tea-room-item__hash">#</span>
+							<span class="tea-room-item__copy">
+								<b>闲聊</b>
+								<span>随便聊聊日常与折腾</span>
+							</span>
+						</button>
+					</li>
+					<li class="tea-rooms__group">互联房间</li>
+					<li>
+						<button type="button" class="tea-room-item" data-room="lobby">
+							<span class="tea-room-item__hash">#</span>
+							<span class="tea-room-item__copy">
+								<b>互联茶室</b>
+								<span>和其他站点的朋友一起聊天</span>
+							</span>
+						</button>
+					</li>
+				</ul>
+			</div>
+
 			<div class="tea-card tea-roster">
 				<header class="tea-card__head">
 					<span class="tea-card__title">
@@ -103,7 +133,7 @@ const peers = [
 			<div class="tea-banner">
 				<Icon is:inline name="material-symbols:public" />
 				<p>
-					公开房间，消息会同步到 Matrix 大厅和已接入的友站。
+					<span data-tea-banner-text>公开房间，消息会同步到 Matrix 大厅和已接入的友站。</span>
 					<span class="tea-banner__peers" data-tea-peers>
 						{peers.map((p, i) => (
 							<>
@@ -503,6 +533,74 @@ const peers = [
 		margin-top: 0.35rem;
 		font-size: 0.75rem;
 		padding: 0.35rem 0.9rem;
+	}
+
+	/* 房间列表 */
+	.tea-rooms {
+		flex: none;
+	}
+	.tea-rooms__list {
+		list-style: none;
+		margin: 0;
+		padding: 0 0.45rem 0.55rem;
+		display: grid;
+		gap: 0.15rem;
+	}
+	.tea-rooms__group {
+		font-size: 0.62rem;
+		letter-spacing: 0.04em;
+		color: var(--tea-muted-soft);
+		padding: 0.35rem 0.45rem 0.15rem;
+	}
+	.tea-room-item {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		width: 100%;
+		padding: 0.38rem 0.45rem;
+		border: 1px solid transparent;
+		border-radius: 0.6rem;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		transition: background 0.15s ease, border-color 0.15s ease;
+	}
+	.tea-room-item:hover {
+		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
+	}
+	.tea-room-item.is-active {
+		background: color-mix(in oklch, var(--primary) 10%, transparent);
+		border-color: color-mix(in oklch, var(--primary) 22%, transparent);
+	}
+	.tea-room-item__hash {
+		width: 1.5rem;
+		height: 1.5rem;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 0.5rem;
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: color-mix(in oklch, var(--primary) 72%, currentColor);
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+	}
+	.tea-room-item__copy {
+		min-width: 0;
+		display: grid;
+		gap: 0.05rem;
+	}
+	.tea-room-item__copy b {
+		font-size: 0.76rem;
+		font-weight: 600;
+	}
+	.tea-room-item__copy span {
+		font-size: 0.64rem;
+		color: var(--tea-muted-soft);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	/* 在线列表 */
@@ -1928,7 +2026,12 @@ const peers = [
 <script is:inline define:vars={{ API_BASE: CHAT_API, SITE_NAME }}>
 	(() => {
 		const KEY = "__teaRoomRuntime";
-		const api0 = new URLSearchParams(location.search).get("api") || API_BASE;
+		const params0 = new URLSearchParams(location.search);
+		const api0 = params0.get("api") || API_BASE;
+		const ROOMS = {
+			chat: { name: "闲聊", desc: "随便聊聊日常与折腾" },
+			lobby: { name: "互联茶室", desc: "和其他站点的朋友一起聊天" },
+		};
 
 		const esc = (s) =>
 			String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -2039,6 +2142,7 @@ const peers = [
 				jukeTimer: null,
 				rosterAll: false,
 				members: [],
+				room: params0.get("room") === "lobby" ? "lobby" : "chat",
 				visitor: store.identity,
 			});
 
@@ -2238,7 +2342,10 @@ const peers = [
 		const loadHistory = async () => {
 			feedStatus(`<span class="tea-spinner"></span> 正在看看大家聊到哪儿了…`);
 			try {
-				const [hist, sync] = await Promise.all([api("/api/history?limit=60"), api("/api/sync")]);
+				const [hist, sync] = await Promise.all([
+					api(`/api/history?limit=60&room=${rt.room}`),
+					api(`/api/sync?room=${rt.room}`),
+				]);
 				feedStatus("");
 				const f = feedEl();
 				if (f) f.innerHTML = "";
@@ -2269,7 +2376,7 @@ const peers = [
 
 		const loadRoom = async () => {
 			try {
-				const data = await api("/api/room");
+				const data = await api(`/api/room?room=${rt.room}`);
 				renderMembers(data.members || []);
 			} catch (_) {}
 		};
@@ -2277,7 +2384,9 @@ const peers = [
 		const poll = async () => {
 			if (!root()) return;
 			try {
-				const data = await api("/api/sync" + (rt.since ? `?since=${encodeURIComponent(rt.since)}` : ""));
+				const data = await api(
+					`/api/sync?room=${rt.room}` + (rt.since ? `&since=${encodeURIComponent(rt.since)}` : ""),
+				);
 				if (data.next) rt.since = data.next;
 				const list = data.messages || [];
 				if (list.length) {
@@ -2312,7 +2421,7 @@ const peers = [
 				target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
 			}
 			try {
-				const res = await api("/api/send", {
+				const res = await api(`/api/send?room=${rt.room}`, {
 					method: "POST",
 					body: JSON.stringify({ text }),
 				});
@@ -2662,6 +2771,47 @@ const peers = [
 		};
 
 		// ── 图片预览 ─────────────────────────────────────────────
+		const setRoomUI = () => {
+			const r = ROOMS[rt.room] || ROOMS.chat;
+			const t = q(".tea-bar__title");
+			if (t) t.textContent = r.name;
+			const d = q(".tea-bar__sub");
+			if (d) d.textContent = r.desc;
+			const lead = q("[data-tea-banner-text]");
+			const peers = q("[data-tea-peers]");
+			if (lead) {
+				lead.textContent =
+					rt.room === "chat"
+						? "这是本站的房间，聊什么都可以；互联茶室那边的消息不在这儿。"
+						: "公开房间，消息会同步到 Matrix 大厅和已接入的友站。";
+			}
+			if (peers) peers.style.display = rt.room === "chat" ? "none" : "";
+			for (const b of document.querySelectorAll("[data-room]")) {
+				b.classList.toggle("is-active", b.dataset.room === rt.room);
+			}
+		};
+
+		const switchRoom = (key) => {
+			if (!ROOMS[key] || key === rt.room) return;
+			rt.room = key;
+			rt.since = null;
+			rt.seen.clear();
+			const f = feedEl();
+			if (f) {
+				f.innerHTML = "";
+				f.dataset.day = "";
+			}
+			setRoomUI();
+			try {
+				const u = new URL(location.href);
+				u.searchParams.set("room", key);
+				history.replaceState(null, "", u);
+			} catch (_) {}
+			clearTimeout(rt.timer);
+			loadHistory();
+			startLoop();
+		};
+
 		const openZoom = (src) => {
 			const box = q("[data-tea-zoom]");
 			if (!box || !src) return;
@@ -2879,6 +3029,15 @@ const peers = [
 					setTimeout(renderJuke, 60);
 				});
 			}
+			const roomsList = q("[data-tea-rooms]");
+			if (roomsList && roomsList.dataset.bound !== "1") {
+				roomsList.dataset.bound = "1";
+				roomsList.addEventListener("click", (e) => {
+					const btn = e.target.closest("[data-room]");
+					if (btn) switchRoom(btn.dataset.room);
+				});
+			}
+			setRoomUI();
 			const rosterAllBtn = q("[data-tea-roster-all]");
 			if (rosterAllBtn && rosterAllBtn.dataset.bound !== "1") {
 				rosterAllBtn.dataset.bound = "1";

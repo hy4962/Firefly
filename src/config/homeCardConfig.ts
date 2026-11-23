@@ -112,7 +112,7 @@ export const homeCardConfig = {
 		{ name: "文章", url: "/archive/" },
 		{ name: "友链", url: "/friends/" },
 		{ name: "动态", url: "/dynamic/" },
-		{ name: "留言", url: "/guestbook/" },
+		{ name: "茶室", url: "/chat/" },
 		{ name: "关于", url: "/about/" },
 	] satisfies HomeCardNavLink[],
 

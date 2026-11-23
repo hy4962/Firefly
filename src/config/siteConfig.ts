@@ -12,8 +12,8 @@ const pages = resolvePageToggles({
 
 	// 友链页面开关
 	friends: true,
-	// 留言板页面开关，需要配置评论系统
-	guestbook: true,
+	// 留言板页面开关（已关：留言改用 /chat/ 的「闲聊」房间）
+	guestbook: false,
 
 	// ── 我的 (My) ──────────────────────────────────
 

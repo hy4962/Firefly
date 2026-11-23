@@ -492,7 +492,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 						</div>
 						<div class="analytics-comments__header-meta">
 							<span class="analytics-panel__badge">Waline · 最新 8 条</span>
-							<a href="/guestbook/">去留言板</a>
+							<a href="/chat/">去茶室</a>
 						</div>
 					</header>
 					<ul class="analytics-comments__list" data-comments-list aria-live="polite">
@@ -645,7 +645,7 @@ const walineServerUrl = commentConfig.type === "waline" ? commentConfig.waline?.
 		};
 		const getCommentPage = (value) => {
 			const rawPath = String(value || "").trim();
-			if (!rawPath) return { label: "留言板", href: "/guestbook/" };
+			if (!rawPath) return { label: "茶室", href: "/chat/" };
 			try {
 				const url = new URL(rawPath, window.location.origin);
 				if (url.origin !== window.location.origin) return { label: "站点页面", href: "/" };
