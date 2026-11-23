@@ -142,21 +142,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				</div>
 			</header>
 
-			<div class="tea-banner">
-				<Icon is:inline name="material-symbols:public" />
-				<p>
-					<span data-tea-banner-text>公开房间，消息会同步到 Matrix 大厅和已接入的友站。</span>
-					<span class="tea-banner__peers" data-tea-peers>
-						{peers.map((p, i) => (
-							<>
-								{i > 0 && <span class="tea-banner__sep">、</span>}
-								<a href={p.url} target="_blank" rel="noopener noreferrer">{p.name}</a>
-							</>
-						))}
-					</span>
-				</p>
-			</div>
-
 			<!-- ── 置顶消息 ───────────────────────────────────────── -->
 			<div class="tea-pins" data-tea-pins hidden>
 				<span class="tea-pins__icon"><Icon is:inline name="material-symbols:push-pin" /></span>
@@ -4794,15 +4779,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			if (t) t.textContent = r.name;
 			const d = q(".tea-bar__sub");
 			if (d) d.textContent = r.desc;
-			const lead = q("[data-tea-banner-text]");
-			const peers = q("[data-tea-peers]");
-			if (lead) {
-				lead.textContent =
-					rt.room === "chat"
-						? "这是本站的房间，聊什么都可以；互联茶室那边的消息不在这儿。"
-						: "公开房间，消息会同步到 Matrix 大厅和已接入的友站。";
-			}
-			if (peers) peers.style.display = rt.room === "chat" ? "none" : "";
 			const threadPill = q("[data-tea-threads-trigger]");
 			if (threadPill && rt.room === "chat") threadPill.hidden = true;
 			for (const b of document.querySelectorAll("[data-room]")) {
