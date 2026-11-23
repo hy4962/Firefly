@@ -238,6 +238,37 @@ function readWatermarks(data, roomId, members, c, base) {
 	return [...byUser.values()];
 }
 
+// 精确回执：eventId -> 实际在该事件上留下 m.read 的人。
+// 各客户端（Element）就是这样显示的；不要用时间水位倒推，否则会多算。
+const receiptCache = new Map();
+
+function mergeReceiptCache(roomId, map) {
+	for (const [eventId, rec] of map) {
+		const key = `${roomId}|${eventId}`;
+		const prev = receiptCache.get(key);
+		if (!prev) {
+			receiptCache.set(key, { ...rec, updatedAt: Date.now() });
+			continue;
+		}
+		const byId = new Map(prev.readers.map((r) => [r.id, r]));
+		for (const r of rec.readers) if (!byId.has(r.id)) byId.set(r.id, r);
+		const readers = [...byId.values()].sort((a, b) => b.ts - a.ts);
+		receiptCache.set(key, { count: readers.length, readers: readers.slice(0, 12), updatedAt: Date.now() });
+	}
+	if (receiptCache.size > 3000) {
+		const oldest = [...receiptCache.entries()].sort((a, b) => a[1].updatedAt - b[1].updatedAt).slice(0, 1000);
+		for (const [k] of oldest) receiptCache.delete(k);
+	}
+}
+
+function exactReceipt(roomId, eventId, sender) {
+	const rec = receiptCache.get(`${roomId}|${eventId}`);
+	if (!rec) return null;
+	const readers = rec.readers.filter((r) => r.id !== sender);
+	if (!readers.length) return null;
+	return { count: readers.length, readers: readers.slice(0, 12) };
+}
+
 function receiptForMessage(m, watermarks) {
 	if (!m || !m.ts || !watermarks.length) return null;
 	const readers = watermarks
@@ -262,6 +293,22 @@ async function getActiveSenders(c, roomId) {
 	}
 	activeCache = { at: Date.now(), set, room: roomId };
 	return set;
+}
+
+// 真实在线状态：只探测本站成员 + 最近发言的人，避免 100+ 成员逐个请求拖慢房间接口。
+async function getPresenceMap(c, ids) {
+	const out = new Map();
+	await Promise.all(
+		ids.map(async (id) => {
+			try {
+				const { ok, data } = await mxJson(c, `/_matrix/client/v3/presence/${enc(id)}/status`, {
+					token: c.bridgeToken,
+				});
+				if (ok && data && typeof data === "object") out.set(id, data);
+			} catch (_) {}
+		}),
+	);
+	return out;
 }
 
 function siteLabel(url, c) {
@@ -694,17 +741,16 @@ async function handleHistory(c, url, base, token) {
 	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}`, { token });
 	const data = await res.json();
 	// 回执只在 sync 的 ephemeral 里；这里单独取一次全量快照，给历史消息带上已读名单。
-	let watermarks = [];
 	try {
 		const filter = JSON.stringify({ room: { rooms: [room.id], ephemeral: { types: ["m.receipt"] } } });
 		const sync = await mx(c, `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}`, { token });
-		watermarks = readWatermarks(await sync.json(), room.id, members, c, base);
+		mergeReceiptCache(room.id, readReceipts(await sync.json(), room.id, members, c, base));
 	} catch (_) {}
 	const messages = (data.chunk || [])
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean)
 		.reverse()
-		.map((m) => ({ ...m, receipt: receiptForMessage(m, watermarks) }));
+		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender) }));
 	const redactions = collectRedactions(data.chunk || [], members);
 	return json(200, { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, redactions, end: data.end || null });
 }
@@ -724,13 +770,13 @@ async function handleSync(c, url, base, token) {
 	const res = await mx(c, path, { token });
 	const data = await res.json();
 	const members = await getMembers(c, room.id);
-	const watermarks = readWatermarks(data, room.id, members, c, base);
+	mergeReceiptCache(room.id, readReceipts(data, room.id, members, c, base));
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
 	const reactions = collectReactions(timeline, members);
 	const messages = timeline
 		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base) : null))
 		.filter(Boolean)
-		.map((m) => ({ ...m, receipt: receiptForMessage(m, watermarks), reactions: reactions.get(m.id) || [] }));
+		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender), reactions: reactions.get(m.id) || [] }));
 	// reaction 更新可能指向历史消息，单独返回让前端就地合并
 	const reactionUpdates = Object.fromEntries(reactions.entries());
 	const redactions = collectRedactions(timeline, members);
@@ -766,6 +812,16 @@ async function handleRoom(c, base, room) {
 		getActiveSenders(c, room.id),
 		roomAvatar(c, base, room.id),
 	]);
+	const localIds = [...members.keys()].filter((id) => id.endsWith(":matrix.0dm.cn"));
+	const probeIds = [...new Set([...localIds, ...active])].slice(0, 30);
+	const presence = await getPresenceMap(c, probeIds);
+	const isPresent = (id) => {
+		const p = presence.get(id);
+		if (!p) return false;
+		if (p.presence === "online") return true;
+		if (p.currently_active === true) return true;
+		return Number(p.last_active_ago) > 0 && Number(p.last_active_ago) < 5 * 60 * 1000;
+	};
 	const list = [...members.entries()].map(([id, m]) => {
 		const domain = id.split(":")[1] || "";
 		const dot = m.nick.indexOf(" · ");
@@ -774,7 +830,7 @@ async function handleRoom(c, base, room) {
 			nick: dot > 0 ? m.nick.slice(0, dot) : m.nick,
 			site: dot > 0 ? m.nick.slice(dot + 3) : SITE_BY_SERVER[domain] || (domain === "matrix.0dm.cn" ? c.siteName : ""),
 			avatar: m.avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(m.avatar)}` : m.avatar,
-			online: active.has(id),
+			online: active.has(id) || isPresent(id),
 		};
 	});
 

@@ -4356,23 +4356,30 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				</li>`;
 			};
 
-			// 按站点归属分组：本站 / 其他站点，各组显示在线人数
+			// 在线 / 离线分开：在线按站点分组，离线单独一栏，避免“在线人数”和列表对不上
 			const isSelfSite = (m) => !m.site || m.site === SITE_NAME;
-			const local = members.filter(isSelfSite);
-			const others = members.filter((m) => !isSelfSite(m));
-			const localOnline = local.filter(isOn).length;
-			const othersOnline = others.filter(isOn).length;
-			const groupHtml = (label, list, online, extra = "") => {
+			const onlineMembers = members.filter(isOn);
+			const local = onlineMembers.filter(isSelfSite);
+			const others = onlineMembers.filter((m) => !isSelfSite(m));
+			const offline = members.filter((m) => !isOn(m));
+			const groupHtml = (label, list, count, extra = "") => {
 				if (!list.length && !extra) return "";
 				const rows = rt.rosterAll ? list : list.slice(0, LIMIT);
-				return `<li class="tea-roster__group" role="presentation"><span>${label}</span><span class="tea-roster__group-count">${online} 人在线</span></li>` +
+				return `<li class="tea-roster__group" role="presentation"><span>${label}</span><span class="tea-roster__group-count">${count} 人在线</span></li>` +
 					rows.map(rowHtml).join("") + extra;
 			};
-			list.innerHTML = groupHtml("本站在线", local, localOnline, observerHtml) + groupHtml("其他站点", others, othersOnline);
+			const offlineHtml = offline.length
+				? `<li class="tea-roster__group" role="presentation"><span>离线成员</span><span class="tea-roster__group-count">${offline.length} 人</span></li>` +
+					(rt.rosterAll ? offline.map(rowHtml).join("") : "")
+				: "";
+			list.innerHTML =
+				groupHtml("本站在线", local, local.length, observerHtml) +
+				groupHtml("其他站点", others, others.length) +
+				offlineHtml;
 
 			if (more) {
-				more.hidden = members.length <= LIMIT;
-				more.textContent = rt.rosterAll ? "收起" : `显示全部（${members.length}）`;
+				more.hidden = members.length <= LIMIT && !offline.length;
+				more.textContent = rt.rosterAll ? "收起离线成员" : `显示全部（${members.length}）`;
 			}
 		};
 
