@@ -182,7 +182,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	links.push({
 		name: "聊天茶室",
 		url: "/chat/",
-		icon: "material-symbols:forum-rounded",
+		icon: "material-symbols:emoji-food-beverage-outline-rounded",
 	});
 
 	// 站点统计：独立顶级入口，放在最后，不打断「内容 → 互动 → 我的」的分组

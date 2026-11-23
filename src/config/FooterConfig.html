@@ -2808,4 +2808,15 @@
 		color: color-mix(in oklch, var(--primary) 55%, black) !important;
 		opacity: 1 !important;
 	}
+
+	/* 「聊天茶室」的茶杯图标：1024–1599px 紧凑模式会隐藏所有顶级项图标，这里单独把茶室图标放回来 */
+	@media (min-width: 1024px) and (max-width: 1599px) {
+		#navbar .dropdown-container > a[href="/chat/"] > div > .navbar-icon {
+			display: inline-flex !important;
+			flex: none;
+			margin-right: 0.25rem !important;
+			font-size: 1rem;
+			opacity: 1 !important;
+		}
+	}
 </style>
