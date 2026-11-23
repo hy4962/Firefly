@@ -159,6 +159,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					<Icon is:inline name="material-symbols:arrow-downward-rounded" /> 有新消息
 				</button>
 				<button type="button" class="tea-readjump" data-tea-readjump hidden>回到上次阅读位置 ↑</button>
+				<div class="tea-typing" data-tea-typing hidden aria-live="polite"><span class="tea-typing__dots"><i></i><i></i><i></i></span><span data-tea-typing-text></span></div>
 			</div>
 
 			<form class="tea-composer" data-tea-composer autocomplete="off">
@@ -170,7 +171,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					</div>
 					<button type="button" class="tea-btn tea-btn--primary" data-tea-enter>进入茶室</button>
 				</div>
-				<div class="tea-typing" data-tea-typing hidden aria-live="polite"><span class="tea-typing__dots"><i></i><i></i><i></i></span><span data-tea-typing-text></span></div>
 				<div class="tea-replybar" data-tea-replybar hidden>
 					<span class="tea-replybar__icon"><Icon is:inline name="material-symbols:reply-rounded" /></span>
 					<span class="tea-replybar__copy"><b data-tea-reply-who></b><span data-tea-reply-text></span></span>
@@ -1204,7 +1204,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		height: 100%;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding: 0.9rem 1rem 1rem;
+		padding: 0.9rem 1rem 2.6rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.95rem;
@@ -2145,12 +2145,21 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		padding: 0.4rem;
 	}
 	.tea-typing {
-		display: flex;
+		position: absolute;
+		left: 1rem;
+		bottom: 0.45rem;
+		z-index: 4;
+		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
-		padding: 0.25rem 0.4rem;
+		padding: 0.3rem 0.65rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 999px;
+		background: var(--card-bg, #fff);
+		box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
 		font-size: 0.7rem;
 		color: var(--tea-muted);
+		pointer-events: none;
 	}
 	.tea-typing[hidden] {
 		display: none;
@@ -2956,7 +2965,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			font-size: 0.68rem;
 		}
 		.tea-feed {
-			padding: 0.75rem 0.75rem 0.85rem;
+			padding: 0.75rem 0.75rem 2.4rem;
 		}
 		.tea-composer {
 			padding: 0.6rem 0.7rem 0.7rem;
