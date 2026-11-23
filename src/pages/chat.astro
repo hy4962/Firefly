@@ -48,9 +48,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					<Icon is:inline name="material-symbols:notifications-outline-rounded" />
 					<span class="tea-me__dot" data-tea-notify-dot hidden></span>
 				</button>
-				<button type="button" class="tea-btn tea-btn--ghost tea-me__act" data-tea-enter>
-					<Icon is:inline name="material-symbols:login-rounded" /> 入座
-				</button>
 			</div>
 
 			<div class="tea-card tea-rooms">
@@ -4437,7 +4434,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			const status = q("[data-tea-me-status]");
 			const badge = q("[data-tea-me-badge]");
 			const count = q("[data-tea-me-count]");
-			const act = q("[data-tea-enter]");
 			if (!av || !name) return;
 			if (v) {
 				if (v.avatar) {
@@ -4451,15 +4447,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				if (badge) badge.hidden = false;
 				if (status) status.textContent = v.status || "点击设置状态…";
 				if (count) count.textContent = String(store.count);
-				if (act) act.textContent = "换身份";
 			} else {
 				av.textContent = "?";
 				av.removeAttribute("style");
 				name.textContent = "还没入座";
 				if (badge) badge.hidden = true;
-				if (status) status.textContent = "填个昵称就能坐下";
+				if (status) status.textContent = "点一下登录，开始聊天";
 				if (count) count.textContent = "0";
-				if (act) act.textContent = "入座";
 			}
 			const since = q("[data-tea-me-since]");
 			if (since) since.textContent = v ? "已入座" : "今天刚到";
