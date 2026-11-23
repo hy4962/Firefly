@@ -2483,6 +2483,31 @@ const peers = [
 			if (img) img.removeAttribute("src");
 		};
 
+		// ── 藏掉上游的壁纸/分类栏（CSS 打不过某些模式的 !important，这里补内联） ──
+		const CHROME_SELECTORS = ["#wallpaper-wrapper", "#category-bar-wrapper"];
+
+		const killChrome = () => {
+			if (!root()) return;
+			for (const sel of CHROME_SELECTORS) {
+				const el = document.querySelector(sel);
+				if (!el) continue;
+				if (el.dataset.teaPrev === undefined) el.dataset.teaPrev = el.getAttribute("style") || "";
+				if (el.style.getPropertyValue("display") !== "none" || el.style.getPropertyPriority("display") !== "important") {
+					el.style.setProperty("display", "none", "important");
+				}
+			}
+			document.body.classList.remove("enable-banner");
+		};
+
+		const restoreChrome = () => {
+			for (const sel of CHROME_SELECTORS) {
+				const el = document.querySelector(sel);
+				if (!el || el.dataset.teaPrev === undefined) continue;
+				el.setAttribute("style", el.dataset.teaPrev);
+				delete el.dataset.teaPrev;
+			}
+		};
+
 		const setup = () => {
 			const shell = root();
 			if (!shell || shell.dataset.ready === "1") return;
@@ -2501,6 +2526,9 @@ const peers = [
 
 			renderSelf();
 			setGate(!!rt.visitor);
+			killChrome();
+			setTimeout(killChrome, 300);
+			setTimeout(killChrome, 1200);
 			loadHistory();
 			startLoop();
 
@@ -2633,7 +2661,10 @@ const peers = [
 			for (const name of ["astro:page-load", "astro:after-swap", "swup:contentReplaced", "swup:page:view"]) {
 				document.addEventListener(name, () => {
 					if (root()) setup();
-					else clearTimeout(rt.timer);
+					else {
+						clearTimeout(rt.timer);
+						restoreChrome();
+					}
 				});
 			}
 			rt.bound = true;
