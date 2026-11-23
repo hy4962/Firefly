@@ -455,6 +455,29 @@ const randomLocalpart = (prefix) => {
 	return prefix + [...bytes].map((b) => ALPHABET[b % ALPHABET.length]).join("");
 };
 
+// 访客账号统一 user0001、user0002… 递增；从 Synapse 用户列表里取当前最大编号。
+async function nextUserLocalpart(c) {
+	let max = 0;
+	let from = 0;
+	for (let page = 0; page < 20; page++) {
+		const { ok, data } = await mxJson(
+			c,
+			`/_synapse/admin/v1/users?from=${from}&limit=100&guests=false&deactivated=false`,
+			{ token: c.adminToken },
+		);
+		if (!ok) break;
+		for (const u of data.users || []) {
+			const m = String(u.name || "").match(/^@user(\d+):/);
+			if (m) max = Math.max(max, Number(m[1]) || 0);
+		}
+		const next = Number(data.next_token || 0);
+		const total = Number(data.total || 0);
+		if (!next || (total && next >= total)) break;
+		from = next;
+	}
+	return `user${String(max + 1).padStart(4, "0")}`;
+}
+
 async function uploadAvatar(c, email) {
 	if (!email) return "";
 	try {
@@ -543,17 +566,23 @@ async function provisionIdentity(c, env, profile, base) {
 		}
 	}
 
-	const localpart = randomLocalpart(c.prefix);
-	const userId = `@${localpart}:matrix.0dm.cn`;
+	let localpart = await nextUserLocalpart(c);
 	const password = crypto.randomUUID().replace(/-/g, "") + "Aa1!";
 	const displayname = `${nick} · ${c.siteName}`;
-
-	const created = await mxJson(c, `/_synapse/admin/v2/users/${enc(userId)}`, {
-		token: c.adminToken,
-		method: "PUT",
-		body: { password, displayname, admin: false },
-	});
-	if (!created.ok) throw new Error(`开号失败：${created.data.error || created.status}`);
+	let userId = `@${localpart}:matrix.0dm.cn`;
+	let created = null;
+	for (let i = 0; i < 8; i++) {
+		userId = `@${localpart}:matrix.0dm.cn`;
+		created = await mxJson(c, `/_synapse/admin/v2/users/${enc(userId)}`, {
+			token: c.adminToken,
+			method: "PUT",
+			body: { password, displayname, admin: false },
+		});
+		if (created.ok) break;
+		const next = Number(String(localpart).replace(/^user/, "")) || 0;
+		localpart = `user${String(next + 1).padStart(4, "0")}`;
+	}
+	if (!created || !created.ok) throw new Error(`开号失败：${created?.data?.error || created?.status || "unknown"}`);
 
 	const avatarUrl = await uploadAvatar(c, email);
 	if (avatarUrl) {
