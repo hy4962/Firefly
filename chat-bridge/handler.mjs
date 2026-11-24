@@ -826,7 +826,10 @@ async function handleSync(c, url, base, token) {
 			ephemeral: { types: ["m.receipt", "m.typing"] },
 		},
 	});
-	const path = `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}` + (since ? `&since=${enc(since)}` : "");
+	// 长轮询：客户端传 timeout（毫秒）表示「没新消息就挂起等，最多等这么久」，
+	// 上限 30 秒；不传或传 0 保持老行为（立即返回），兼容旧前端。
+	const want = Math.min(Math.max(Number(url.searchParams.get("timeout")) || 0, 0), 30_000);
+	const path = `/_matrix/client/v3/sync?timeout=${want}&filter=${enc(filter)}` + (since ? `&since=${enc(since)}` : "");
 	const membersP = getMembers(c, room.id);
 	const res = await mx(c, path, { token });
 	const data = await res.json();

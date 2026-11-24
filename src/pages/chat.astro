@@ -7,7 +7,7 @@ const description = "一个连着 Matrix 公共大厅的聊天室，消息会同
 
 // ── 桥接服务地址（Cloudflare Worker，见仓库 chat-bridge/ ）────────────
 // 调试时可用 ?api=http://127.0.0.1:8787 覆盖，方便本地联调。
-const CHAT_API = "https://tea.9ll.uk";
+const CHAT_API = "https://tea.0dm.cn";
 
 // 站点署名，后缀会拼到访客昵称后面同步到大厅
 const SITE_NAME = "折腾进行时";
@@ -4770,7 +4770,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						push: profileForm.elements.push.checked,
 					};
 					if (!body.nick) throw new Error("昵称不能为空");
-					const data = await api("/api/profile", { method: "POST", body: JSON.stringify(body) });
+				const data = await api("/api/profile", { method: "POST", body: JSON.stringify(body) });
 					const v = rt.visitor || {};
 					Object.assign(v, {
 						nick: body.nick,
@@ -4961,7 +4961,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		const loadHistory = async () => {
 			feedStatus(`<span class="tea-spinner"></span> 正在看看大家聊到哪儿了…`);
 			const histP = api(`/api/history?limit=60&room=${rt.room}`);
-			const syncP = api(`/api/sync?room=${rt.room}`).catch(() => null);
+			const syncP = api(`/api/sync?room=${rt.room}&timeout=0`).catch(() => null);
 			try {
 				// 1. 先画历史记录，不被 sync 和在线名单阻塞
 				const hist = await histP;
@@ -5048,12 +5048,22 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			} catch (_) {}
 		};
 
+		// 长轮询：一次请求没新消息就在服务端挂着等（最多 30 秒），有消息立刻返回，
+		// 不再每 3 秒打一发；失败才退避重试，避免断网时狂刷请求。
+		const SYNC_WAIT = 30_000;
 		const poll = async () => {
+			let delay = 300;
+			const gen = rt.gen || 0;
 			if (!root()) return;
 			try {
+				const t0 = Date.now();
 				const data = await api(
-					`/api/sync?room=${rt.room}` + (rt.since ? `&since=${encodeURIComponent(rt.since)}` : ""),
+					`/api/sync?room=${rt.room}&timeout=${SYNC_WAIT}` + (rt.since ? `&since=${encodeURIComponent(rt.since)}` : ""),
+					{ timeout: SYNC_WAIT + 15_000 },
 				);
+				// 旧版后端不认 timeout 参数会「秒回」；空返回太快时退回 3 秒间隔，防止请求风暴
+				if (Date.now() - t0 < 1000 && !(data.messages || []).length && !(data.redactions || []).length) delay = 3000;
+				rt.pollFails = 0;
 				if (data.next) rt.since = data.next;
 				renderTyping(data.typing || []);
 				if (data.reactions) {
@@ -5100,12 +5110,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				}
 			} catch (_) {
 				setConn("down", "连接中断");
+				rt.pollFails = (rt.pollFails || 0) + 1;
+				delay = Math.min(30_000, rt.pollFails * 3000);
 			}
-			rt.timer = setTimeout(poll, 3000);
+			if (gen === rt.gen) rt.timer = setTimeout(poll, delay);
 		};
 
 		const startLoop = () => {
+			// 换房/重连会再次 startLoop：递增代数让旧轮询链自然停掉，避免两条链同时挂着
 			clearTimeout(rt.timer);
+			rt.gen = (rt.gen || 0) + 1;
 			poll();
 		};
 
@@ -5895,7 +5909,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			} catch (_) {}
 			clearTimeout(rt.timer);
 			loadHistory();
-			startLoop();
 		};
 		rt.switchRoom = switchRoom;
 
