@@ -54,16 +54,30 @@
 
 		// 正文里的 @显示名 高亮：只走文本节点，不碰标签和属性，
 		// 所以成员表晚到（历史先渲染、名单后到）时可以再跑一遍补上。
+		// 撞名消歧后成员昵称是「鹤渊 (@uid:server)」，正文里只会写 @鹤渊，
+		// 所以匹配和展示都用去掉消歧后缀的基础名。
+		const baseNick = (s) => String(s || "").replace(/\s*\(@[^)]*\)\s*$/, "").trim();
 		const MENTION_ROOM_ALIASES = ["room", "全体成员", "所有人"];
 		const applyMentions = (rootEl) => {
 			const members = rt.members || [];
 			if (!rootEl || !members.length) return;
 			const me = rt.visitor && rt.visitor.id;
-			const names = [...new Set(members.map((m) => m && m.nick).filter(Boolean))].sort((a, b) => b.length - a.length);
-			const aliases = MENTION_ROOM_ALIASES.filter((a) => !names.includes(a));
+			// 完整昵称和基础名都进表，同名多人时点开第一个人的名片
+			const speakers = new Set((rt.messages || []).map((x) => x && x.sender));
+			const idOf = new Map();
+			for (const m of members) {
+				if (!m || !m.nick) continue;
+				for (const key of [m.nick, baseNick(m.nick)]) {
+					if (!key) continue;
+					const prev = idOf.get(key);
+					// 同名多人时，优先认「在这个房间里说过话」的那个，别开错人
+					if (prev === undefined || (speakers.has(m.id) && !speakers.has(prev))) idOf.set(key, m.id || "");
+				}
+			}
+			const names = [...idOf.keys()].filter(Boolean).sort((a, b) => b.length - a.length);
+			const aliases = MENTION_ROOM_ALIASES.filter((a) => !idOf.has(a));
 			const all = [...names, ...aliases];
 			if (!all.length) return;
-			const idOf = new Map(names.map((n) => [n, (members.find((m) => m && m.nick === n) || {}).id || ""]));
 			const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
 				acceptNode(node) {
 					if (!node.nodeValue || node.nodeValue.indexOf("@") < 0) return NodeFilter.FILTER_REJECT;
@@ -95,8 +109,17 @@
 					}
 					if (best > 0) frag.appendChild(document.createTextNode(rest.slice(0, best)));
 					const span = document.createElement("span");
-					span.className = "tea-at" + (me && idOf.get(bestName) === me ? " tea-at--me" : "");
+					const targetId = idOf.get(bestName) || "";
+					span.className = "tea-at" + (me && targetId === me ? " tea-at--me" : "");
 					span.textContent = "@" + bestName;
+					// 有 user id 的 @ 才可点，点开就是这个人的名片
+					if (targetId) {
+						span.className += " tea-at--link";
+						span.dataset.atId = targetId;
+						span.setAttribute("role", "button");
+						span.setAttribute("tabindex", "0");
+						span.title = `查看 ${bestName} 的名片`;
+					}
 					frag.appendChild(span);
 					rest = rest.slice(best + 1 + bestName.length);
 					changed = true;
@@ -833,7 +856,15 @@
 			const domain = (m.id || "").split(":")[1] || "";
 			const server = domain ? (domain.startsWith("matrix.") ? domain : `matrix.${domain}`) : "";
 			const isSelf = rt.visitor && m.id === rt.visitor.id;
-			const role = isSelf ? "我" : (m.site === SITE_NAME ? "站长" : "茶友");
+			const role = isSelf
+				? "我"
+				: m.badge === "admin"
+					? "站长"
+					: m.badge === "waline"
+						? "认证"
+						: m.site && m.site !== SITE_NAME
+							? "互联茶友"
+							: "茶友";
 			const badge = `<span class="mc-badge">${esc(role)}</span>`;
 			const av = m.avatar ? `background-image:url('${esc(m.avatar)}')` : avatarStyle(m.nick, m.site);
 			const site = m.site || (domain === "matrix.0dm.cn" ? SITE_NAME : domain ? "Matrix" : "");
@@ -846,12 +877,37 @@
 			const topArtists = [...artists.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
 			const msgCount = (rt.messages || []).filter((x) => x.sender === m.id).length;
 			const recent = (rt.messages || []).filter((x) => x.sender === m.id).slice(-2).reverse();
+			// 归属互联茶室：把成员的站点名对回互联列表
+			const peers = (() => {
+				try {
+					return JSON.parse(appData("peers") || "[]");
+				} catch (_) {
+					return [];
+				}
+			})();
+			const peer = peers.find((p) => p && (p.name === site || p.owner === m.nick)) || null;
+			const isHomeSite = !!(site && site === SITE_NAME);
+			const homeUrl = peer ? String(peer.url || "").replace(/\/chat\/?$/, "/") : isHomeSite ? "/" : "";
+			const chatUrl = peer ? peer.url || "" : isHomeSite ? "/chat/" : "";
+			const homeBlock = homeUrl
+				? `<div class="mc-home">
+					<div class="mc-home__head"><h4 class="mc-block-title">归属互联茶室</h4>${peer && peer.owner ? `<span class="mc-home__owner">站长: ${esc(peer.owner)}</span>` : ""}</div>
+					<div class="mc-home__row">
+						<span class="mc-home__avatar" style="${peer && peer.avatar ? `background-image:url('${esc(peer.avatar)}')` : avatarStyle(site || m.nick, site)}"></span>
+						<span class="mc-home__copy"><b>${esc(isHomeSite ? SITE_NAME : peer ? peer.name : site)}</b><span>${esc(peer && peer.desc ? peer.desc : isHomeSite ? "折腾进行时" : "")}</span></span>
+						<span class="mc-home__links">
+							<a class="mc-home__btn" href="${esc(homeUrl)}" target="_blank" rel="noopener noreferrer">访问主页 ↗</a>
+							<a class="mc-home__btn is-primary" href="${esc(chatUrl)}" target="_blank" rel="noopener noreferrer">前往茶室 ↗</a>
+						</span>
+					</div>
+				</div>`
+				: "";
 			left.innerHTML = `
 				<div class="mc-card">
 					<div class="mc-top">
 						<span class="mc-avatar" style="${av}">${m.avatar ? "" : esc(initials(m.nick))}<i class="mc-dot${on ? " is-on" : ""}"></i></span>
 						<span class="mc-ident">
-							<span class="mc-name">${esc(m.nick)}${badge}</span>
+							<span class="mc-name">${esc(baseNick(m.nick) || m.nick)}${badge}</span>
 							<span class="mc-meta"><span>${on ? "在线" : "离开"}</span><i>·</i><span>${esc(site || "本站 Matrix 节点")}</span></span>
 						</span>
 					</div>
@@ -862,9 +918,10 @@
 						<div><span>服务器:</span><span title="${esc(server)}">${esc(server)}</span></div>
 					</div>
 				</div>
-				<a class="mc-at" href="https://matrix.to/#/${encodeURIComponent(m.id || "")}" target="_blank" rel="noopener noreferrer">@ ${esc(m.nick)}</a>
+				<a class="mc-at" href="https://matrix.to/#/${encodeURIComponent(m.id || "")}" target="_blank" rel="noopener noreferrer">@ ${esc(baseNick(m.nick) || m.nick)}</a>
+				${homeBlock}
 				<div class="mc-stats">
-					<div class="mc-stat"><span>聊天发言</span><b>${msgCount || "—"}</b></div>
+					<div class="mc-stat"><span>茶室发言</span><b>${msgCount || "—"}</b></div>
 					<div class="mc-stat"><span>点过的歌</span><b>${songList.length || "—"}</b></div>
 					<div class="mc-stat"><span title="本机第一次见到 TA 的日期">初见</span><b>${esc(new Date(firstSeenAt(m.id)).toLocaleDateString("zh-CN"))}</b></div>
 					<div class="mc-stat"><span>最近活跃</span><b class="${on ? "" : "is-away"}">${on ? "在线" : "离开"}</b></div>
@@ -4746,15 +4803,37 @@
 			}
 
 			// 身份弹窗
-			// 引用块点击：跳回原消息
+			// 引用块 → 跳回原消息；@名字 → 打开名片
 			const feedNode = feedEl();
 			if (feedNode && feedNode.dataset.jumpBound !== "1") {
 				feedNode.dataset.jumpBound = "1";
+				const openAt = (el) => {
+					const id = el && el.dataset ? el.dataset.atId : "";
+					if (!id) return;
+					const member =
+						(rt.members || []).find((m) => m && m.id === id) ||
+						{ id, nick: (el.textContent || "").replace(/^@/, ""), online: false, site: "" };
+					openMemberCard(member);
+				};
 				feedNode.addEventListener("click", (e) => {
 					const quote = e.target.closest(".tea-msg__reply[data-jump-id]");
-					if (!quote) return;
-					e.stopPropagation();
-					jumpToMessage(quote.dataset.jumpId);
+					if (quote) {
+						e.stopPropagation();
+						jumpToMessage(quote.dataset.jumpId);
+						return;
+					}
+					const at = e.target.closest(".tea-at[data-at-id]");
+					if (at) {
+						e.stopPropagation();
+						openAt(at);
+					}
+				});
+				feedNode.addEventListener("keydown", (e) => {
+					if (e.key !== "Enter" && e.key !== " ") return;
+					const at = e.target.closest && e.target.closest(".tea-at[data-at-id]");
+					if (!at) return;
+					e.preventDefault();
+					openAt(at);
 				});
 			}
 			// 翻聊天记录
