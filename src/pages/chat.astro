@@ -1594,6 +1594,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-pins {
 		display: flex;
 		align-items: flex-start;
+		min-width: 0;
 		gap: 0.5rem;
 		margin: 0.5rem 0.95rem 0;
 		padding: 0.4rem 0.65rem;
@@ -1645,9 +1646,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-feed-wrap {
 		position: relative;
 		min-height: 0;
+		/* 不锁住的话，置顶栏 nowrap 的最小内容宽度会把整条 grid 列撑出视口 */
+		min-width: 0;
 	}
 	.tea-feed {
 		height: 100%;
+		/* 悬停操作按钮是 absolute 挂在气泡外侧的，别让它给消息区撑出横向滚动条 */
+		overflow-x: hidden;
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		padding: 0.9rem 1rem 2.6rem;
