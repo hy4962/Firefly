@@ -55,6 +55,10 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 				text: "工具岛新加 position: relative 后成了搜索面板与主题面板的定位包含块，锚点下移 12px，用 top: 3.5rem / 3.75rem 补回原位",
 			},
 			{
+				category: "视觉",
+				text: "外壳那条 1px「顶部高光 + 底部暗线」的描边也去掉了：主题是拿 --navbar-glass-highlight / --navbar-glass-hairline 画的，直接用变量置空，壁纸边缘不再有一圈突兀的方框",
+			},
+			{
 				category: "维护",
 				text: "参数复用 navbarGlassBlur / navbarGlassScale / navbarGlassFrequency 三个 localStorage 键，默认 4px / 150 / 0.01；html[data-glass-distortion] 总开关保证无玻璃面时不折射",
 			},

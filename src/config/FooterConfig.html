@@ -2368,6 +2368,10 @@
 		--ff-island-fg: var(--deep-text);
 		--ff-island-muted: color-mix(in oklch, var(--deep-text) 88%, transparent);
 		--ff-glass-shine: rgba(255, 255, 255, 0.35);
+		/* 外壳不再需要主题那条「1px 高光 + 1px 暗线」的描边：
+		   它靠 CSS 变量画，直接把这俩变量置空比跟主题规则抢优先级稳 */
+		--navbar-glass-highlight: transparent;
+		--navbar-glass-hairline: transparent;
 		border-radius: 0 !important;
 		box-shadow: none !important;
 	}
