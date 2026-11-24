@@ -4495,22 +4495,51 @@
 			}
 			const toggle = q("[data-tea-roster-toggle]");
 			const scrim = q("[data-tea-scrim]");
+			const drawerMode = () => window.matchMedia("(max-width: 900px)").matches;
 			const closeDrawer = () => {
 				shell.classList.remove("is-drawer-open");
 				if (scrim) scrim.hidden = true;
 			};
-			if (toggle) {
+			if (toggle && toggle.dataset.bound !== "1") {
+				toggle.dataset.bound = "1";
 				toggle.addEventListener("click", () => {
+					// 宽屏下左栏是常驻网格列，is-drawer-open 没有任何视觉作用，
+					// 只显示遮罩会把整页盖住却什么都不出现 -> 改为滚动 + 高亮在线列表
+					if (!drawerMode()) {
+						closeDrawer();
+						const card = q(".tea-roster");
+						const side = q("[data-tea-side]");
+						if (card && side) {
+							const top = card.getBoundingClientRect().top - side.getBoundingClientRect().top + side.scrollTop - 8;
+							side.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+						}
+						if (card) {
+							card.classList.remove("is-flash");
+							void card.offsetWidth; // 强制重排，让动画能重复触发
+							card.classList.add("is-flash");
+							clearTimeout(card._flashTimer);
+							card._flashTimer = setTimeout(() => card.classList.remove("is-flash"), 1300);
+						}
+						return;
+					}
 					const open = !shell.classList.contains("is-drawer-open");
 					shell.classList.toggle("is-drawer-open", open);
 					if (scrim) scrim.hidden = !open;
 				});
 			}
-			if (scrim) scrim.addEventListener("click", closeDrawer);
+			if (scrim && scrim.dataset.bound !== "1") {
+				scrim.dataset.bound = "1";
+				scrim.addEventListener("click", closeDrawer);
+				// 从窄屏拉宽后别把遮罩留在屏幕上
+				window.addEventListener("resize", () => {
+					if (!drawerMode() && shell.classList.contains("is-drawer-open")) closeDrawer();
+				});
+			}
 
 			// 点歌台开关
 			const jukeToggle = q("[data-tea-juke-toggle]");
-			if (jukeToggle) {
+			if (jukeToggle && jukeToggle.dataset.bound !== "1") {
+				jukeToggle.dataset.bound = "1";
 				jukeToggle.addEventListener("click", () => {
 					if (window.matchMedia("(min-width: 1241px)").matches) shell.classList.toggle("is-juke-hidden");
 					else shell.classList.toggle("is-juke-open");

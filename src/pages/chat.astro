@@ -1253,6 +1253,19 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		flex-direction: column;
 		min-height: 9rem;
 	}
+	/* 宽屏点「在线列表」图标时闪一下，替代移动端抽屉 */
+	.tea-roster.is-flash {
+		animation: tea-roster-flash 1.2s ease;
+	}
+	@keyframes tea-roster-flash {
+		0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 0%, transparent); }
+		12% { box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 72%, transparent); }
+		68% { box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 72%, transparent); }
+		100% { box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 0%, transparent); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tea-roster.is-flash { animation-duration: 0.01s; }
+	}
 	.tea-roster__count {
 		display: inline-flex;
 		align-items: center;
