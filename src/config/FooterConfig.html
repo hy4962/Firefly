@@ -3022,3 +3022,121 @@
 		}
 	}
 </style>
+
+<!-- ===== 切页时别把没样式的页面画出来 =====
+     @swup/astro 的 head 插件配了 awaitAssets，但它只把 page:view 往后推，
+     内容在 content:replace 那一刻就已经进 DOM 并可能被绘制了。新页面的 CSS 有
+     80~90KB，冷缓存时这段空窗足够看见「整页裸 HTML」，刷新（CSS 变成渲染阻塞）
+     才好。这里用 MutationObserver 只盯「新加进 head 且还没加载完的 stylesheet」，
+     命中就先把 #swup-container 藏起来，样式到位立刻显示。
+     没新增样式（走缓存、同款页面）时一帧都不会藏。 -->
+<script>
+	(function () {
+		if (window.__ffStyleGuard) return;
+		window.__ffStyleGuard = true;
+
+		var container = function () {
+			return document.getElementById("swup-container");
+		};
+		var hide = function () {
+			var el = container();
+			if (el) el.style.visibility = "hidden";
+		};
+		var show = function () {
+			var el = container();
+			if (el) el.style.visibility = "";
+		};
+
+		/* 只等「这次新加进来的」样式表；已经在 document 里的不算，
+		   否则跨域样式（unpkg 的 waline.css）sheet 拿不到会一直空等。 */
+		var watch = function (links) {
+			var deadline = Date.now() + 2500;
+			var revealed = false;
+			var settled = [];
+			var reveal = function () {
+				if (revealed) return;
+				revealed = true;
+				show();
+			};
+			/* 404 / 断网时 sheet 永远是 null，靠 error 事件提前放行，别白等 2.5 秒 */
+			for (var i = 0; i < links.length; i++) {
+				(function (link) {
+					var done = function () {
+						settled.push(link);
+					};
+					link.addEventListener("load", done, { once: true });
+					link.addEventListener("error", done, { once: true });
+				})(links[i]);
+			}
+			var poll = function () {
+				var left = 0;
+				for (var j = 0; j < links.length; j++) {
+					var link = links[j];
+					if (settled.indexOf(link) !== -1) continue;
+					if (!link.sheet && link.parentNode) left++;
+				}
+				if (!left || Date.now() > deadline) {
+					reveal();
+					return;
+				}
+				setTimeout(poll, 50);
+			};
+			poll();
+			setTimeout(reveal, 2600);
+		};
+
+		/* 只在 swup 切页期间生效：首屏（包括 /dynamic/ 这类进页才注入 CSS 的页面）
+		   本来就没有「先画裸 HTML 再补样式」的问题，别去动它，否则会闪一下。 */
+		var armed = false;
+		document.addEventListener("swup:visit:start", function () {
+			armed = true;
+		});
+
+		var onAdded = function (nodes) {
+			if (!armed) return;
+			var fresh = [];
+			for (var i = 0; i < nodes.length; i++) {
+				var n = nodes[i];
+				if (!n || n.nodeType !== 1) continue;
+				if (n.tagName !== "LINK") continue;
+				if (!/(^|\s)stylesheet(\s|$)/i.test(n.getAttribute && n.getAttribute("rel"))) continue;
+				if (!n.sheet) fresh.push(n);
+			}
+			if (!fresh.length) return;
+			/* rAF 在绘制之前，CSS 已经命中缓存的话这里就发现加载完了，不必藏 */
+			requestAnimationFrame(function () {
+				var pending = [];
+				for (var j = 0; j < fresh.length; j++) {
+					if (!fresh[j].sheet && fresh[j].parentNode) pending.push(fresh[j]);
+				}
+				if (!pending.length) return;
+				hide();
+				watch(pending);
+			});
+		};
+
+		var observer = new MutationObserver(function (mutations) {
+			for (var i = 0; i < mutations.length; i++) {
+				var added = mutations[i].addedNodes;
+				if (added && added.length) onAdded(added);
+			}
+		});
+
+		var start = function () {
+			var head = document.head || document.documentElement;
+			if (!head) return;
+			observer.observe(head, { childList: true });
+		};
+		if (document.head) start();
+		else document.addEventListener("DOMContentLoaded", start, { once: true });
+
+		/* 兜底：任何时候离开/回到页面都别让内容一直藏着 */
+		window.addEventListener("pageshow", show);
+		document.addEventListener("swup:visit:end", function () {
+			setTimeout(function () {
+				var el = container();
+				if (el && el.style.visibility === "hidden") show();
+			}, 2800);
+		});
+	})();
+</script>
