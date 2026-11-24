@@ -676,7 +676,7 @@ async function handleEnter(c, env, request, ip) {
 	if (denied) return fail(429, denied);
 
 	try {
-		const out = await provisionIdentity(c, env, { nick, email, website }, new URL(request.url).origin);
+		const out = await provisionIdentity(c, env, { nick, email, website }, requestOrigin(request));
 		return json(200, { ok: true, ...out });
 	} catch (e) {
 		return fail(502, e.message || "开座位失败");
@@ -772,7 +772,7 @@ async function handleMatrixLogin(c, request, ip) {
 			id: uid,
 			nick: clean(profile.data?.displayname || username, 60),
 			avatar: rawAvatar.startsWith("mxc://")
-				? `${new URL(request.url).origin}/api/media?u=${enc(rawAvatar)}`
+				? `${requestOrigin(request)}/api/media?u=${enc(rawAvatar)}`
 				: "",
 		},
 	});
@@ -1353,7 +1353,7 @@ async function handleProfile(c, request, token) {
 			id: uid,
 			nick,
 			status,
-			avatar: avatarMxc ? `${new URL(request.url).origin}/api/media?u=${enc(avatarMxc)}` : "",
+			avatar: avatarMxc ? `${requestOrigin(request)}/api/media?u=${enc(avatarMxc)}` : "",
 		},
 		profile,
 	});
@@ -1744,7 +1744,7 @@ async function handleJukeLink(request, url, ip, env) {
 	if (!track) return fail(400, "缺少歌曲信息");
 	try {
 		const got = await resolveTrack(track);
-		const origin = new URL(request.url).origin;
+		const origin = requestOrigin(request);
 		const secret = env.MUSIC_SECRET || env.BRIDGE_TOKEN || "";
 		const local = got.source === "local" || /^\/assets\//.test(got.url);
 		const proxied = local ? "" : await proxyUrl(got.url, secret, origin);
@@ -2003,6 +2003,18 @@ async function handleJukeWrite(c, request, url, token, ip, env, room) {
 	return json(200, { ok: true, state, serverNow: Date.now(), admin: !!who.admin, vote });
 }
 
+// 反代（ESA → Lucky → 本容器）之后，Node 侧看到的请求永远是 http://，
+// 直接拿 origin 拼媒体地址会得到 http://tea.0dm.cn/...，https 页面会被混合内容拦掉。
+// 优先用反代给的 x-forwarded-proto；没有就按 Host 判断：本机/内网走 http，其余按 https。
+function requestOrigin(request) {
+	const u = new URL(request.url);
+	const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || u.host;
+	const fwd = (request.headers.get("x-forwarded-proto") || "").split(",")[0].trim().toLowerCase();
+	const local = /^(localhost|127\.0\.0\.1|\[::1\]|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(host);
+	const proto = fwd === "https" || fwd === "http" ? fwd : local ? "http" : "https";
+	return `${proto}://${host}`;
+}
+
 // ── 入口 ────────────────────────────────────────────────────────────
 export async function handleRequest(request, env = {}) {
 	const c = cfg(env);
@@ -2026,6 +2038,7 @@ export async function handleRequest(request, env = {}) {
 		"unknown";
 	const auth = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
 	const visitorToken = auth && auth !== c.bridgeToken ? auth : "";
+	const base = requestOrigin(request);
 
 	let out;
 	try {
@@ -2034,21 +2047,21 @@ export async function handleRequest(request, env = {}) {
 		} else if (path === "/api/enter" && request.method === "POST") {
 			out = await handleEnter(c, env, request, ip);
 		} else if (path === "/api/waline" && request.method === "POST") {
-			out = await handleWaline(c, env, request, ip, url.origin);
+			out = await handleWaline(c, env, request, ip, base);
 		} else if (path === "/api/matrix-login" && request.method === "POST") {
 			out = await handleMatrixLogin(c, request, ip);
 		} else if (path === "/api/room" && request.method === "GET") {
-			out = await handleRoom(c, url.origin, roomOf(c, url), url);
+			out = await handleRoom(c, base, roomOf(c, url), url);
 		} else if (path === "/api/pins" && request.method === "GET") {
-			out = await handlePins(c, url, url.origin);
+			out = await handlePins(c, url, base);
 		} else if (path === "/api/threads" && request.method === "GET") {
-			out = await handleThreads(c, url, url.origin);
+			out = await handleThreads(c, url, base);
 		} else if (path === "/api/thread" && request.method === "GET") {
-			out = await handleThreadDetail(c, url, url.origin);
+			out = await handleThreadDetail(c, url, base);
 		} else if (path === "/api/history" && request.method === "GET") {
-			out = await handleHistory(c, url, url.origin, visitorToken || c.bridgeToken);
+			out = await handleHistory(c, url, base, visitorToken || c.bridgeToken);
 		} else if (path === "/api/sync" && request.method === "GET") {
-			out = await handleSync(c, url, url.origin, visitorToken || c.bridgeToken);
+			out = await handleSync(c, url, base, visitorToken || c.bridgeToken);
 		} else if (path === "/api/media" && request.method === "GET") {
 			out = await handleMedia(c, url);
 		} else if (path === "/api/recall" && request.method === "POST") {
