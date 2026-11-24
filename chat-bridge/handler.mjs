@@ -330,7 +330,8 @@ async function getActiveSenders(c, roomId) {
 	if (Date.now() - activeCache.at < 60_000 && activeCache.room === roomId) return activeCache.set;
 	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(roomId)}/messages?dir=b&limit=120`);
 	const data = await res.json();
-	const cutoff = Date.now() - 30 * 60 * 1000;
+	// 只看最近 3 分钟：这条以前被当成「在线」，于是说过话的人半小时内都挂着在线
+	const cutoff = Date.now() - 3 * 60 * 1000;
 	const set = new Set();
 	for (const ev of data.chunk || []) {
 		if (ev.type !== "m.room.message") continue;
@@ -344,18 +345,39 @@ async function getActiveSenders(c, roomId) {
 // 真实在线状态：只探测本站成员 + 最近发言的人，避免 100+ 成员逐个请求拖慢房间接口。
 let presenceCache = { at: 0, room: "", key: "", map: new Map() };
 
+// 「人还在不在」自己算一份：只要客户端还在轮询，桥接就一定看得见。
+// 茶室的访客全靠桥接代发 /sync，Synapse 那边的 presence 状态不可靠。
+const seenAt = new Map();
+const SEEN_TTL = 90_000;
+let seenSweepAt = 0;
+function touchSeen(uid) {
+	if (!uid) return;
+	seenAt.set(uid, Date.now());
+	if (Date.now() - seenSweepAt > 120_000) {
+		seenSweepAt = Date.now();
+		const cutoff = Date.now() - 30 * 60_000;
+		for (const [k, v] of seenAt) if (v < cutoff) seenAt.delete(k);
+	}
+}
+
 async function getPresenceMap(c, roomId, ids) {
 	const key = ids.join("|");
 	if (Date.now() - presenceCache.at < 20_000 && presenceCache.room === roomId && presenceCache.key === key) {
 		return presenceCache.map;
 	}
 	const out = new Map();
+	const withTimeout = (p, ms) =>
+		Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
 	await Promise.all(
 		ids.map(async (id) => {
 			try {
-				const { ok, data } = await mxJson(c, `/_matrix/client/v3/presence/${enc(id)}/status`, {
-					token: c.bridgeToken,
-				});
+				// 联邦 presence 是尽力而为：对方服务器不响应时不能把房间接口一起拖死
+				const { ok, data } = await withTimeout(
+					mxJson(c, `/_matrix/client/v3/presence/${enc(id)}/status`, {
+						token: c.bridgeToken,
+					}),
+					2500,
+				);
 				if (ok && data && typeof data === "object") out.set(id, data);
 			} catch (_) {}
 		}),
@@ -1418,16 +1440,24 @@ async function handleRoom(c, base, room, url) {
 		roomAvatar(c, base, room.id),
 		readBadges(c).catch(() => new Map()),
 	]);
-	// 只探本站账号：外站 presence 常被对方服务器拖到超时，外站成员用“最近发言”判断在线
+	// 在线判定优先级：桥接心跳 > Synapse presence > 刚说过话。
+	// 以前是「30 分钟内说过话」一律在线，于是人走了半小时还挂着；
+	// Synapse 的 currently_active 关页后也能挂很久，只能在确实活跃时才信。
 	const localIds = [...members.keys()].filter((id) => id.endsWith(":matrix.0dm.cn"));
-	const probeIds = localIds.slice(0, 30);
+	const recentIds = [...active].filter((id) => !localIds.includes(id));
+	const probeIds = [...localIds.slice(0, 30), ...recentIds.slice(0, 20)];
 	const presence = await getPresenceMap(c, room.id, probeIds);
 	const isPresent = (id) => {
+		const seen = seenAt.get(id);
+		if (seen && Date.now() - seen < SEEN_TTL) return true;
 		const p = presence.get(id);
-		if (!p) return false;
-		if (p.presence === "online") return true;
-		if (p.currently_active === true) return true;
-		return Number(p.last_active_ago) > 0 && Number(p.last_active_ago) < 5 * 60 * 1000;
+		if (p) {
+			// last_active_ago 超过 2 分钟就当走了，别管 currently_active
+			if (Number(p.last_active_ago) > 2 * 60 * 1000) return false;
+			if (p.presence === "online" || p.currently_active === true) return true;
+		}
+		// 外站账号没有心跳可看（人家在自己站点上聊天），最多拿「刚说过话」兜底
+		return active.has(id);
 	};
 	const list = [...members.entries()].map(([id, m]) => {
 		const domain = id.split(":")[1] || "";
@@ -1436,7 +1466,7 @@ async function handleRoom(c, base, room, url) {
 			nick: m.nick,
 			site: m.site || SITE_BY_SERVER[domain] || (domain === "matrix.0dm.cn" ? c.siteName : ""),
 			avatar: m.avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(m.avatar)}` : m.avatar,
-			online: active.has(id) || isPresent(id),
+			online: isPresent(id),
 			badge: (badges.get(id) || {}).a || "",
 		};
 	});
@@ -1450,12 +1480,31 @@ async function handleRoom(c, base, room, url) {
 		return a.nick.localeCompare(b.nick, "zh");
 	});
 
-	return json(200, {
+	const out = {
 		ok: true,
 		room: { key: room.key, name: room.name, desc: room.desc, id: room.id, avatar },
 		members: list,
 		online: list.filter((m) => m.online).length,
-	});
+	};
+	// ?debug=1 时把在线判定依据带出来，排查「人走了还显示在线」用
+	if (url?.searchParams.get("debug") === "1") {
+		const now = Date.now();
+		out.debug = list.map((m) => {
+			const p = presence.get(m.id) || {};
+			const seen = seenAt.get(m.id) || 0;
+			return {
+				id: m.id,
+				nick: m.nick,
+				online: m.online,
+				local: m.id.endsWith(":matrix.0dm.cn"),
+				presence: p.presence || "",
+				last_ago: p.last_active_ago ?? null,
+				spoke: active.has(m.id),
+				seen_ago_s: seen ? Math.round((now - seen) / 1000) : null,
+			};
+		});
+	}
+	return json(200, out);
 }
 
 /**
@@ -2642,6 +2691,8 @@ export async function handleRequest(request, env = {}) {
 		"unknown";
 	const auth = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
 	const visitorToken = auth && auth !== c.bridgeToken ? auth : "";
+	// 任何带访客 token 的请求都算一次心跳；whoami 有 5 分钟缓存，不额外打请求
+	if (visitorToken) whoAmI(c, visitorToken).then(touchSeen).catch(() => {});
 	const base = requestOrigin(request);
 
 	let out;
