@@ -819,6 +819,9 @@
 					artist: t.artist || "",
 					pic: t.cover || "",
 					ts: Number(t.playedAt) || Number(t.addedAt) || 0,
+					// 保留点歌台原始 track：里面有 source/sourceId/key，点歌时可直接入队，
+					// 不必再靠「歌名+歌手」现搜（搜不到就静默失败）。
+					_track: t,
 				});
 			}
 			return out;
@@ -835,7 +838,7 @@
 			for (const s of list) {
 				const key = `${s.name}|${s.artist}`;
 				const prev = map.get(key);
-				if (prev) { prev.count++; if (s.ts > prev.ts) { prev.ts = s.ts; prev.pic = s.pic || prev.pic; } }
+				if (prev) { prev.count++; if (s.ts > prev.ts) { prev.ts = s.ts; prev.pic = s.pic || prev.pic; prev._track = s._track || prev._track; } }
 				else map.set(key, { ...s, count: 1 });
 			}
 			const all = [...map.values()];
@@ -860,7 +863,7 @@
 						<span class="mc-song__idx">${i + 1}</span>
 						${s.pic ? `<img class="mc-song__cover" src="${esc(s.pic)}" alt="" loading="lazy" />` : `<span class="mc-song__cover"></span>`}
 						<span class="mc-song__copy"><b>${esc(s.name)}</b><span>${esc(s.artist || "未知歌手")} · ${when}${s.count > 1 ? ` · 点过 ${s.count} 次` : ""}</span></span>
-						<button type="button" class="mc-song__add" data-mc-add="${esc(s.name)}" data-mc-artist="${esc(s.artist || "")}">+ 点歌</button>
+						<button type="button" class="mc-song__add" data-mc-add="${esc(s.name)}" data-mc-artist="${esc(s.artist || "")}" data-mc-pic="${esc(s.pic || "")}">+ 点歌</button>
 					</li>`;
 				})
 				.join("");
@@ -5247,14 +5250,49 @@
 						return;
 					}
 					const add = e.target.closest("[data-mc-add]");
-					if (add) {
-						const m = musicApi();
-						const st = m && m.getState();
-						const idx = st && st.playlist.findIndex((t) => t.name === add.dataset.mcAdd && t.artist === add.dataset.mcArtist);
-						if (idx >= 0 && m) {
-							m.playTrackByIndex(idx);
-							recordSong(st.playlist[idx]);
-							setTimeout(jukeLoad, 150);
+					if (add && !add.disabled) {
+						const name = add.dataset.mcAdd || "";
+						const artist = add.dataset.mcArtist || "";
+						const pic = add.dataset.mcPic || "";
+						add.disabled = true;
+						const label = add.textContent;
+						add.textContent = "点歌中…";
+						try {
+							// 远端历史带着原始 track（含 source/sourceId/key），直接入队即可；
+							// 本机 localStorage 里只有名字，先去曲库搜一首匹配的同名歌。
+							let track = null;
+							const songs = mcSongs();
+							const hit = songs.find((s) => s.name === name && (s.artist || "") === artist);
+							if (hit && hit._track) track = hit._track;
+							if (!track) {
+								const q = `${name} ${artist}`.trim();
+								const data = await api(`/api/juke/search?q=${encodeURIComponent(q)}&source=all&limit=6`, { timeout: 20_000 });
+								const items = data.items || [];
+								track = items.find((t) => (t.title || "").toLowerCase() === name.toLowerCase()) || items[0];
+							}
+							if (!track) {
+								jukeSay("没搜到这首歌的音源，去点歌台手动搜一下。", true);
+								return;
+							}
+							// jukePick 走 /api/juke/action 的 enqueue，成功后 jukeApply 会立刻刷新点歌台队列
+							await jukePick(track);
+							recordSong({ name: track.title || name, artist: track.artist || artist, pic: track.cover || pic });
+							// 关掉名片 modal，否则点歌台被挡在后面看不见
+							mcDialog?.close?.();
+							// 顺手把点歌台亮出来，让用户直接看到刚点的歌进了待播队列
+							const shell = root();
+							const juke = shell && shell.querySelector("[data-tea-juke]");
+							if (shell && juke) {
+								if (window.matchMedia("(min-width: 1241px)").matches) shell.classList.remove("is-juke-hidden");
+								else shell.classList.add("is-juke-open");
+								if (typeof bindJuke === "function") bindJuke();
+								setTimeout(jukeLoad, 80);
+							}
+						} catch (err) {
+							jukeSay(err && err.message ? err.message : "点歌失败，稍后再试", true);
+						} finally {
+							add.disabled = false;
+							add.textContent = label;
 						}
 					}
 				});

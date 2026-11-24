@@ -2529,9 +2529,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 
 	/* 成员名片 */
 	.tea-membercard {
-		/* 与点歌台一致的冷汐青绿主题，仅作用于名片自身 */
-		--primary: oklch(0.47 0.115 175);
-		--juke-accent-text: oklch(0.44 0.12 175);
+		/* 强调色跟随站点主题色，不再写死冷汐青绿 */
+		--juke-accent-text: color-mix(in oklch, var(--primary) 68%, black);
 		border: 0;
 		padding: 0;
 		margin: auto;
@@ -2544,8 +2543,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		overflow: hidden;
 	}
 	.dark .tea-membercard {
-		--primary: oklch(0.8 0.13 175);
-		--juke-accent-text: oklch(0.84 0.13 175);
+		--juke-accent-text: color-mix(in oklch, var(--primary) 85%, white);
 	}
 	.tea-membercard::backdrop { background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(6px); }
 	.tea-membercard__inner { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; max-height: calc(100dvh - 2rem); }
@@ -3660,12 +3658,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 
 	/* ─── 点歌台 ───────────────────────────────────────────── */
-	/* 冷汐点歌台视觉复刻：在其作用域内把强调色换成 hue 175 青绿主题，
-	   只影响点歌台自身，不动聊天区 / 站点全局主题。 */
+	/* 强调色跟随站点主题色，只影响点歌台自身，不动聊天区 / 站点全局主题。 */
 	.tea-juke {
-		--primary: oklch(0.47 0.115 175);
 		--juke-accent: var(--primary);
-		--juke-accent-text: oklch(0.44 0.12 175);
+		--juke-accent-text: color-mix(in oklch, var(--primary) 68%, black);
 		--juke-soft: color-mix(in oklch, var(--primary) 12%, transparent);
 		display: flex;
 		flex-direction: column;
@@ -3676,8 +3672,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		overflow: hidden;
 	}
 	.dark .tea-juke {
-		--primary: oklch(0.8 0.13 175);
-		--juke-accent-text: oklch(0.84 0.13 175);
+		--juke-accent-text: color-mix(in oklch, var(--primary) 85%, white);
 	}
 	.tea-juke__head {
 		display: flex;
