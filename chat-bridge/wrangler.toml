@@ -1,4 +1,10 @@
-# 茶室桥接 Worker
+# ⚠️ 已弃用：生产茶室桥接跑在 fnOS 的 tea-bridge Docker 容器里。
+#   宿主机 /vol1/1000/Docker/tea-bridge → 容器 /app，命令 `node /app/dev.mjs`，端口 8787，
+#   再由 Lucky 反代成 tea.0dm.cn。tea.9ll.uk 上那个 Worker 已停更，不要再 wrangler deploy 到这里。
+#   部署流程：fnos-cli file upload 覆盖 handler.mjs → docker container restart tea-bridge。
+#
+# 以下配置仅作历史备份。
+#
 # 部署：npx wrangler deploy -c chat-bridge/wrangler.toml
 # 密钥：npx wrangler secret put BRIDGE_TOKEN -c chat-bridge/wrangler.toml
 # 点歌台音频代理签名（可选，不设则复用 BRIDGE_TOKEN）：
