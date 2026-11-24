@@ -3,10 +3,22 @@
  *   BRIDGE_TOKEN=xxx node chat-bridge/dev.mjs
  */
 import http from "node:http";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { handleRequest } from "./handler.mjs";
 
 const PORT = Number(process.env.PORT || 8787);
 const env = { ...process.env };
+
+// CYAPI 联调凭据不进源码仓库：优先读环境变量，其次读挂载目录里的 .cyapi-key。
+// 容器把宿主 /vol1/1000/Docker/tea-bridge 挂到 /app，所以生产只需放一个 .cyapi-key 文件。
+if (!env.CYAPI_KEY) {
+	try {
+		const keyPath = fileURLToPath(new URL("./.cyapi-key", import.meta.url));
+		const key = readFileSync(keyPath, "utf8").trim();
+		if (key) env.CYAPI_KEY = key;
+	} catch (_) {}
+}
 
 http
 	.createServer(async (req, res) => {
