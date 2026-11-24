@@ -3514,7 +3514,7 @@
 					if (window.matchMedia("(min-width: 1241px)").matches) shell.classList.toggle("is-juke-hidden");
 					else shell.classList.toggle("is-juke-open");
 					bindJuke();
-					setTimeout(renderJuke, 60);
+					setTimeout(jukeLoad, 60);
 				});
 			}
 			const roomsList = q("[data-tea-rooms]");
@@ -3567,7 +3567,7 @@
 						if (idx >= 0 && m) {
 							m.playTrackByIndex(idx);
 							recordSong(st.playlist[idx]);
-							setTimeout(renderJuke, 150);
+							setTimeout(jukeLoad, 150);
 						}
 					}
 				});
