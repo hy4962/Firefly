@@ -708,6 +708,12 @@
 			}
 
 			const LIMIT = 6;
+			// 站长 = 留言板管理员；认证 = 用留言板账号登录的注册用户
+			const memberTag = (m) => {
+				if (m.badge === "admin") return `<em class="tea-member__tag is-host">站长</em>`;
+				if (m.badge === "waline") return `<em class="tea-member__tag is-auth">认证</em>`;
+				return "";
+			};
 			const rowHtml = (m) => {
 				const av = m.avatar
 					? `style="background-image:url('${esc(m.avatar)}')"`
@@ -717,10 +723,11 @@
 					? `<span class="tea-member__badge is-online">在线</span>`
 					: `<span class="tea-member__badge is-away">离开</span>`;
 				const idx = members.indexOf(m);
+				const tag = memberTag(m);
 				return `<li class="tea-member tea-member--clickable${on ? "" : " tea-member--idle"}" data-tea-member="${idx}" role="button" tabindex="0" title="查看 ${esc(m.nick)} 的名片">
 					<span class="tea-member__avatar" ${av}>${m.avatar ? "" : esc(initials(m.nick))}</span>
 					<span class="tea-member__copy">
-						<span class="tea-member__name">${esc(m.nick)}</span>
+						<span class="tea-member__name"><b>${esc(m.nick)}</b>${tag}</span>
 						<span class="tea-member__site">${esc(m.site ? "来自 " + m.site : "Matrix")}</span>
 					</span>
 					${badge}
@@ -983,7 +990,13 @@
 			}
 
 			const badge = document.querySelector("[data-tea-profile-badge]");
-			if (badge) badge.hidden = !(rt.visitor && rt.visitor.admin);
+			if (badge) {
+				const me = rt.visitor;
+				const isAdmin = !!(me && me.admin);
+				const isAuth = !!(me && (me.sso === "waline" || me.email));
+				badge.hidden = !isAdmin && !isAuth;
+				badge.textContent = isAdmin ? "站长" : "认证";
+			}
 			const reset = document.querySelector("[data-tea-avatar-reset]");
 			if (reset) reset.hidden = !avatar;
 		};

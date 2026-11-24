@@ -1796,10 +1796,34 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		gap: 0.05rem;
 	}
 	.tea-member__name {
+		display: flex;
+		align-items: center;
+		gap: 0.28rem;
+		min-width: 0;
 		font-weight: 500;
+	}
+	.tea-member__name b {
+		font-weight: inherit;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+	.tea-member__tag {
+		flex: none;
+		font-style: normal;
+		font-size: 0.56rem;
+		font-weight: 600;
+		line-height: 1;
+		padding: 0.14rem 0.3rem;
+		border-radius: 0.28rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 28%, transparent);
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+		color: color-mix(in oklch, var(--primary) 74%, currentColor);
+	}
+	.tea-member__tag.is-host {
+		border-color: color-mix(in oklch, var(--primary) 46%, transparent);
+		background: color-mix(in oklch, var(--primary) 26%, transparent);
+		color: color-mix(in oklch, var(--primary) 90%, currentColor);
 	}
 	.tea-member__site {
 		font-size: 0.66rem;

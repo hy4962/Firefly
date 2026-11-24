@@ -669,6 +669,46 @@ const ID_EVENT_TYPE = "cn.0dm.tea.identity";
 const LEGACY_ID_EVENT_TYPE = "com.0dm.tea.identity";
 const idKey = (email) => md5Hex(email.trim().toLowerCase());
 
+// ── 成员标识 ────────────────────────────────────────────────────────
+// 站长 / 认证 不是 Matrix 自带的概念，得自己记：在索引房间放一份 uid → 标识
+// 的聚合状态事件（一次读全量，别给每个成员单独发一条 state）。
+//   admin  —— 留言板管理员（Waline type=administrator）或 OWNER_ID
+//   waline —— 用留言板账号登录的注册用户（等价「认证」，实名审核不存在）
+const BADGE_EVENT_TYPE = "cn.0dm.tea.badges";
+const BADGE_STATE_KEY = "v1";
+let badgeCache = { at: 0, index: "", map: new Map() };
+
+async function readBadges(c, force = false) {
+	if (!c.indexRoom) return new Map();
+	if (!force && Date.now() - badgeCache.at < 60_000 && badgeCache.index === c.indexRoom) return badgeCache.map;
+	const res = await mxJson(c, `/_matrix/client/v3/rooms/${enc(c.indexRoom)}/state/${BADGE_EVENT_TYPE}/${BADGE_STATE_KEY}`, {
+		token: c.adminToken,
+	});
+	const map = new Map();
+	if (res.ok && res.data && typeof res.data === "object") {
+		for (const [uid, v] of Object.entries(res.data)) if (v && typeof v === "object") map.set(uid, v);
+	}
+	badgeCache = { at: Date.now(), index: c.indexRoom, map };
+	return map;
+}
+
+async function markBadge(c, uid, kind) {
+	if (!uid || !kind || !c.adminToken || !c.indexRoom) return;
+	try {
+		const map = await readBadges(c, true);
+		const cur = map.get(uid) || {};
+		if (cur.a === kind) return;
+		map.set(uid, { ...cur, a: kind, t: Date.now() });
+		const body = Object.fromEntries(map);
+		const res = await mxJson(c, `/_matrix/client/v3/rooms/${enc(c.indexRoom)}/state/${BADGE_EVENT_TYPE}/${BADGE_STATE_KEY}`, {
+			token: c.adminToken,
+			method: "PUT",
+			body,
+		});
+		if (res.ok) badgeCache = { at: Date.now(), index: c.indexRoom, map };
+	} catch (_) {}
+}
+
 async function readIdentity(c, email) {
 	if (!email || !c.indexRoom) return null;
 	for (const type of [ID_EVENT_TYPE, LEGACY_ID_EVENT_TYPE]) {
@@ -696,7 +736,8 @@ async function writeIdentity(c, email, data) {
 
 /** 同一邮箱复用同一个 Matrix 账号；没有就新建。 */
 async function provisionIdentity(c, env, profile, base) {
-	const { nick, email, website, admin } = profile;
+	const { nick, email, website, admin, auth } = profile;
+	const badgeKind = admin ? "admin" : auth === "waline" ? "waline" : "";
 	if (!c.adminToken) throw new Error("bridge 未配置 ADMIN_TOKEN");
 
 	const stored = await readIdentity(c, email);
@@ -720,6 +761,7 @@ async function provisionIdentity(c, env, profile, base) {
 				});
 				await writeIdentity(c, email, { ...stored, nick, website: website || stored.website });
 			}
+			if (badgeKind) await markBadge(c, stored.uid, badgeKind);
 			return {
 				user: {
 					id: stored.uid,
@@ -784,6 +826,7 @@ async function provisionIdentity(c, env, profile, base) {
 	await mxJson(c, `/_matrix/client/v3/join/${enc(c.room)}`, { token, method: "POST", body: {} });
 
 	await writeIdentity(c, email, { uid: userId, pw: password, nick, website, mxc: avatarUrl || "", ts: Date.now() });
+	if (badgeKind) await markBadge(c, userId, badgeKind);
 
 	return {
 		user: { id: userId, nick, avatar: avatarUrl ? `${base}/api/media?u=${enc(avatarUrl)}` : "", admin: !!admin },
@@ -856,7 +899,7 @@ async function handleWaline(c, env, request, ip, base) {
 	const website = clean(data.url || data.link || "", LIMITS.website);
 
 	try {
-		const out = await provisionIdentity(c, env, { nick, email, website, admin: data.type === "administrator" }, base);
+		const out = await provisionIdentity(c, env, { nick, email, website, admin: data.type === "administrator", auth: "waline" }, base);
 		// 把 Waline 自己的 token 一起回给前端：茶室登录完顺手写进评论区的存储键，
 		// 同一浏览器下博客那边直接就是已登录状态（两边同源，共用 localStorage）。
 		return json(200, { ok: true, ...out, waline: { token: data.token || "", user: walineUser(data, email, nick, website) } });
@@ -911,7 +954,7 @@ async function handleWalineSso(c, env, request, ip, base) {
 	const nick = clean(data.display_name || data.nick || email.split("@")[0], LIMITS.nick);
 	const website = clean(data.url || data.link || "", LIMITS.website);
 	try {
-		const out = await provisionIdentity(c, env, { nick, email, website, admin: data.type === "administrator" }, base);
+		const out = await provisionIdentity(c, env, { nick, email, website, admin: data.type === "administrator", auth: "waline" }, base);
 		return json(200, { ok: true, ...out, waline: { token, user: walineUser(data, email, nick, website) } });
 	} catch (e) {
 		return fail(502, e.message || "开座位失败");
@@ -1369,10 +1412,11 @@ async function handleRoom(c, base, room, url) {
 			online: 0,
 		});
 	}
-	const [members, active, avatar] = await Promise.all([
+	const [members, active, avatar, badges] = await Promise.all([
 		getMembers(c, room.id),
 		getActiveSenders(c, room.id),
 		roomAvatar(c, base, room.id),
+		readBadges(c).catch(() => new Map()),
 	]);
 	// 只探本站账号：外站 presence 常被对方服务器拖到超时，外站成员用“最近发言”判断在线
 	const localIds = [...members.keys()].filter((id) => id.endsWith(":matrix.0dm.cn"));
@@ -1393,6 +1437,7 @@ async function handleRoom(c, base, room, url) {
 			site: m.site || SITE_BY_SERVER[domain] || (domain === "matrix.0dm.cn" ? c.siteName : ""),
 			avatar: m.avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(m.avatar)}` : m.avatar,
 			online: active.has(id) || isPresent(id),
+			badge: (badges.get(id) || {}).a || "",
 		};
 	});
 
