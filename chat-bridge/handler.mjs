@@ -81,7 +81,7 @@ const cfg = (env) => ({
 });
 
 const ROOM_META = {
-	chat: { name: "闲聊", desc: "随便聊聊日常与折腾", local: true },
+	chat: { name: "闲聊/站点留言板", desc: "随便聊聊日常与折腾", local: true },
 	lobby: { name: "互联茶室", desc: "和其他站点的朋友一起聊天", local: false },
 };
 
