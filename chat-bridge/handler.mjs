@@ -883,6 +883,25 @@ function collectRedactions(events, members) {
 	return list;
 }
 
+// 引用回复：v1.13+ 不再要求 body 里带 "> <@user>" 回退文本，只能靠 m.in_reply_to
+// 反查目标事件。sync 一次只带 50 条 timeline，被回复的老消息常常不在里面，
+// 结果引用气泡要刷新走 /api/history 才出现。按房间缓存近期事件供反查。
+const replyEventCache = new Map();
+function cacheRoomEvents(roomId, events) {
+	let map = replyEventCache.get(roomId);
+	if (!map) {
+		map = new Map();
+		replyEventCache.set(roomId, map);
+	}
+	for (const ev of events || []) {
+		if (ev && ev.event_id) map.set(ev.event_id, ev);
+	}
+	if (map.size > 600) {
+		for (const k of [...map.keys()].slice(0, map.size - 600)) map.delete(k);
+	}
+	return map;
+}
+
 // ── 接口 ────────────────────────────────────────────────────────────
 async function handleHistory(c, url, base, token) {
 	const room = roomOf(c, url);
@@ -900,7 +919,8 @@ async function handleHistory(c, url, base, token) {
 		const snap = await snapP;
 		if (snap?.ok) mergeReceiptCache(room.id, readReceipts(await snap.json(), room.id, members, c, base));
 	} catch (_) {}
-	const eventMap = new Map((data.chunk || []).map((ev) => [ev.event_id, ev]));
+	const cached = cacheRoomEvents(room.id, data.chunk);
+	const eventMap = new Map([...cached, ...(data.chunk || []).map((ev) => [ev.event_id, ev])]);
 	const messages = (data.chunk || [])
 		.map((ev) => (ev.type === "m.room.message" || ev.type === "m.sticker" ? normalize(ev, members, c, base, eventMap) : null))
 		.filter(Boolean)
@@ -940,7 +960,8 @@ async function handleSync(c, url, base, token) {
 	}
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
 	const reactions = collectReactions(timeline, members);
-	const eventMap = new Map(timeline.map((ev) => [ev.event_id, ev]));
+	const cached = cacheRoomEvents(room.id, timeline);
+	const eventMap = new Map([...cached, ...timeline.map((ev) => [ev.event_id, ev])]);
 	const messages = timeline
 		.map((ev) => (ev.type === "m.room.message" || ev.type === "m.sticker" ? normalize(ev, members, c, base, eventMap) : null))
 		.filter(Boolean)

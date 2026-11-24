@@ -1238,7 +1238,12 @@
 			let target = node;
 			if (!target && !threadRoot) {
 				const ts = Date.now();
-				renderMessage({ id: "tmp-" + ts, ts, sender: v.id, nick: v.nick, site: SITE_NAME, avatar: v.avatar, text, self: true, pending: true });
+				// 本地回显也要带引用气泡，否则发出去那一刻看着就是条普通消息，
+				// 得等刷新走 history 才补出来。
+				const localReply = rt.replyTo
+					? { id: rt.replyTo.id || "", who: rt.replyTo.nick || "茶友", text: rt.replyTo.text || "" }
+					: null;
+				renderMessage({ id: "tmp-" + ts, ts, sender: v.id, nick: v.nick, site: SITE_NAME, avatar: v.avatar, text, reply: localReply, self: true, pending: true });
 				target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
 			}
 			try {
@@ -1301,9 +1306,12 @@
 			}
 			const ts = Date.now();
 			const localUrl = URL.createObjectURL(blob);
+			const imageReply = rt.replyTo
+				? { id: rt.replyTo.id || "", who: rt.replyTo.nick || "茶友", text: rt.replyTo.text || "" }
+				: null;
 			renderMessage({
 				id: "tmp-" + ts, ts, sender: v.id, nick: v.nick, site: SITE_NAME, avatar: v.avatar,
-				image: localUrl, emoticon, text: "", self: true, pending: true,
+				image: localUrl, emoticon, text: "", reply: imageReply, self: true, pending: true,
 			});
 			const target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
 			try {
@@ -3341,7 +3349,10 @@
 			// 回复 / 回应 / 取消回复
 			const replybar = q("[data-tea-replybar]");
 			const setReply = (msg) => {
-				rt.replyTo = msg;
+				// 按钮上的 data-text 只带了前 80 字，引用气泡要用完整正文，
+				// 跟刷新后从服务端反查出来的样子保持一致。
+				const full = msg && msg.id && (rt.messages || []).find((m) => m.id === msg.id);
+				rt.replyTo = full ? { id: msg.id, nick: full.nick || msg.nick, text: full.text || msg.text } : msg;
 				if (!replybar) return;
 				if (!msg) {
 					replybar.hidden = true;
@@ -3349,8 +3360,8 @@
 				}
 				const who = q("[data-tea-reply-who]");
 				const txt = q("[data-tea-reply-text]");
-				if (who) who.textContent = msg.nick || "茶友";
-				if (txt) txt.textContent = msg.text || "图片";
+				if (who) who.textContent = rt.replyTo.nick || "茶友";
+				if (txt) txt.textContent = rt.replyTo.text || "图片";
 				replybar.hidden = false;
 				if (ta) ta.focus();
 			};
