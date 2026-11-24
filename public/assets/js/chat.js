@@ -51,6 +51,90 @@
 		// 没有这份元数据就只能按 16:9 估，播放器尺寸会跳一下。
 		const videoMeta = new Map();
 
+		// 正文里的 @显示名 高亮：只走文本节点，不碰标签和属性，
+		// 所以成员表晚到（历史先渲染、名单后到）时可以再跑一遍补上。
+		const MENTION_ROOM_ALIASES = ["room", "全体成员", "所有人"];
+		const applyMentions = (rootEl) => {
+			const members = rt.members || [];
+			if (!rootEl || !members.length) return;
+			const me = rt.visitor && rt.visitor.id;
+			const names = [...new Set(members.map((m) => m && m.nick).filter(Boolean))].sort((a, b) => b.length - a.length);
+			const aliases = MENTION_ROOM_ALIASES.filter((a) => !names.includes(a));
+			const all = [...names, ...aliases];
+			if (!all.length) return;
+			const idOf = new Map(names.map((n) => [n, (members.find((m) => m && m.nick === n) || {}).id || ""]));
+			const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
+				acceptNode(node) {
+					if (!node.nodeValue || node.nodeValue.indexOf("@") < 0) return NodeFilter.FILTER_REJECT;
+					if (node.parentElement && node.parentElement.closest("a, pre, code, .tea-at")) return NodeFilter.FILTER_REJECT;
+					return NodeFilter.FILTER_ACCEPT;
+				},
+			});
+			const nodes = [];
+			while (walker.nextNode()) nodes.push(walker.currentNode);
+			for (const node of nodes) {
+				const frag = document.createDocumentFragment();
+				let rest = node.nodeValue;
+				let changed = false;
+				while (rest) {
+					// 每次挑最靠前的命中；同一位置取更长的名字，免得「小明」吃掉「小明明」
+					let best = -1;
+					let bestName = "";
+					for (const n of all) {
+						const at = rest.indexOf("@" + n);
+						if (at < 0) continue;
+						if (best < 0 || at < best || (at === best && n.length > bestName.length)) {
+							best = at;
+							bestName = n;
+						}
+					}
+					if (best < 0) {
+						frag.appendChild(document.createTextNode(rest));
+						break;
+					}
+					if (best > 0) frag.appendChild(document.createTextNode(rest.slice(0, best)));
+					const span = document.createElement("span");
+					span.className = "tea-at" + (me && idOf.get(bestName) === me ? " tea-at--me" : "");
+					span.textContent = "@" + bestName;
+					frag.appendChild(span);
+					rest = rest.slice(best + 1 + bestName.length);
+					changed = true;
+				}
+				if (changed) node.parentNode.replaceChild(frag, node);
+			}
+		};
+
+		// 发送前把正文里的 @显示名 还原成 user_id（规范 MSC3952 的 m.mentions）
+		const findMentions = (text) => {
+			const src = String(text || "");
+			if (!src.includes("@")) return { ids: [], room: false };
+			const me = rt.visitor && rt.visitor.id;
+			const list = (rt.members || [])
+				.filter((m) => m && m.id && m.nick)
+				.slice()
+				.sort((a, b) => b.nick.length - a.nick.length);
+			const taken = [];
+			const ids = [];
+			for (const m of list) {
+				if (m.id === me) continue;
+				const token = `@${m.nick}`;
+				let at = src.indexOf(token);
+				while (at >= 0) {
+					const end = at + token.length;
+					// 长的名字优先占位，避免「小明」把「小明明」一起吃掉
+					if (!taken.some(([s, e]) => at < e && end > s)) {
+						taken.push([at, end]);
+						ids.push(m.id);
+						break;
+					}
+					at = src.indexOf(token, at + 1);
+				}
+			}
+			// @room / @全体成员 是房间广播，规范里用 m.mentions.room
+			const room = /(?:^|[\s(（【\[])@(room|全体成员|所有人)(?=$|[\s，。,.!！?？)）】\]])/i.test(src);
+			return { ids, room };
+		};
+
 		// 极简 markdown：只认图片、视频、链接、粗体、代码块，够大厅里的分享消息用
 		const inlineFmt = (raw) => {
 			const re = /(!video|!)?\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>"'）)，。]+)/g;
@@ -490,6 +574,7 @@
 				</div>`;
 
 			f.appendChild(el);
+			applyMentions(el.querySelector(".tea-msg__text"));
 			markRead(m);
 			if (m.scroll !== false) scrollBottom(!m.pending);
 		};
@@ -623,6 +708,8 @@
 				more.hidden = members.length <= LIMIT && !offline.length;
 				more.textContent = rt.rosterAll ? "收起离线成员" : `显示全部（${members.length}）`;
 			}
+			// 历史消息比成员名单先到，这里补一次 @ 高亮
+			applyMentions(feedEl());
 		};
 
 		// 成员“初次来访”只能记在本机：没记过的按今天算，之后就一直沿用那次的时间。
@@ -1269,10 +1356,19 @@
 				renderMessage({ id: "tmp-" + ts, ts, sender: v.id, nick: v.nick, site: SITE_NAME, avatar: v.avatar, text, reply: localReply, self: true, pending: true });
 				target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
 			}
+			const at = findMentions(text);
 			try {
 				const res = await api(`/api/send?room=${rt.room}`, {
 					method: "POST",
-					body: JSON.stringify({ text, replyTo: threadRoot ? "" : (rt.replyTo?.id || ""), threadRoot, threadLatest, txnId: txn }),
+					body: JSON.stringify({
+						text,
+						replyTo: threadRoot ? "" : (rt.replyTo?.id || ""),
+						threadRoot,
+						threadLatest,
+						txnId: txn,
+						mentions: at.ids,
+						mentionRoom: at.room,
+					}),
 				});
 				if (threadRoot && rt.refreshThreads) rt.refreshThreads();
 				sendTyping(false);
@@ -1403,6 +1499,7 @@
 				video: mediaUrl, videoInfo: meta, text: caption || "", reply: videoReply, self: true, pending: true,
 			});
 			const target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
+			const at = findMentions(caption || "");
 			try {
 				const res = await api(`/api/send?room=${rt.room}`, {
 					method: "POST",
@@ -1411,6 +1508,8 @@
 						videoUrl: mxcOf(mediaUrl),
 						filename: name || "视频",
 						info: meta,
+						mentions: at.ids,
+						mentionRoom: at.room,
 						replyTo: rt.replyTo?.id || "",
 						txnId: newTxn("vid"),
 					}),
@@ -3522,6 +3621,181 @@
 				});
 			}
 
+			// ── @ 提及 ──────────────────────────────────────────────
+			// 输入框里打 @ 就弹出成员面板：上下键选、回车/空格插入、Esc 关掉。
+			// 插入的是「@显示名」，发送时再按成员表反查 user_id，写进规范的 m.mentions。
+			const mentionEl = q("[data-tea-mention]");
+			const mention = { open: false, idx: 0, items: [], all: false, start: 0, query: "" };
+			const MENTION_LIMIT = 8;
+
+			const closeMention = () => {
+				mention.open = false;
+				mention.idx = 0;
+				mention.items = [];
+				if (mentionEl) {
+					mentionEl.hidden = true;
+					mentionEl.innerHTML = "";
+				}
+			};
+
+			const positionMention = () => {
+				if (!mentionEl || mentionEl.hidden) return;
+				const composer = q("[data-tea-composer]");
+				const anchor = composer || taInput;
+				if (!anchor) return;
+				const r = anchor.getBoundingClientRect();
+				const h = mentionEl.offsetHeight || 260;
+				const w = mentionEl.offsetWidth || 320;
+				const top = Math.max(8, r.top - h - 8);
+				const left = Math.min(Math.max(8, r.left + 8), Math.max(8, window.innerWidth - w - 8));
+				mentionEl.style.top = top + "px";
+				mentionEl.style.left = left + "px";
+				mentionEl.dataset.anchored = "1";
+			};
+
+			const mentionSource = () => (rt.members || []).filter((m) => m && m.id && m.nick);
+
+			const renderMention = () => {
+				if (!mentionEl) return;
+				const me = rt.visitor && rt.visitor.id;
+				const ql = mention.query.trim().toLowerCase();
+				const all = mentionSource();
+				const hits = ql
+					? all.filter(
+							(m) =>
+								m.nick.toLowerCase().includes(ql) ||
+								(m.site || "").toLowerCase().includes(ql) ||
+								m.id.toLowerCase().includes(ql),
+						)
+					: all;
+				const shown = mention.all ? hits : hits.slice(0, MENTION_LIMIT);
+				mention.items = shown;
+				if (mention.idx >= shown.length) mention.idx = 0;
+				const rows = shown
+					.map((m, i) => {
+						const av = m.avatar
+							? `style="background-image:url('${esc(m.avatar)}')"`
+							: `style="${avatarStyle(m.nick, m.site)}"`;
+						return `<button type="button" class="tea-mention__item${i === mention.idx ? " is-active" : ""}" role="option" aria-selected="${i === mention.idx}" data-mention-idx="${i}">
+							<span class="tea-mention__avatar" ${av}>${m.avatar ? "" : esc(initials(m.nick))}</span>
+							<span class="tea-mention__nick">${esc(m.nick)}${me && m.id === me ? '<span class="tea-mention__self">我</span>' : ""}</span>
+							<span class="tea-mention__site">${esc(m.site || "Matrix")}</span>
+						</button>`;
+					})
+					.join("");
+				const more = !mention.all && hits.length > MENTION_LIMIT;
+				mentionEl.innerHTML = `
+					<div class="tea-mention__head"><b>提及</b><span>被提到的人会收到提醒</span></div>
+					<div class="tea-mention__list">${rows || `<div class="tea-mention__empty">没找到这个人</div>`}</div>
+					${more || (mention.all && hits.length > MENTION_LIMIT) ? `<button type="button" class="tea-mention__foot" data-mention-more>${mention.all ? "收起" : `查看全部成员并 @ 提及（${hits.length}）`}</button>` : ""}`;
+			};
+
+			const pickMention = (m) => {
+				if (!m || !taInput) return;
+				const value = taInput.value;
+				const caret = taInput.selectionStart ?? value.length;
+				// 只替换掉「@ + 已经输入的筛选词」，前面的文字原样保留
+				const before = value.slice(0, mention.start);
+				const after = value.slice(caret);
+				const token = `@${m.nick} `;
+				taInput.value = before + token + after;
+				const pos = before.length + token.length;
+				taInput.focus();
+				taInput.setSelectionRange(pos, pos);
+				taInput.dispatchEvent(new Event("input", { bubbles: true }));
+				closeMention();
+			};
+
+			const detectMention = () => {
+				if (!taInput || !mentionEl) return;
+				if (!rt.visitor) {
+					closeMention();
+					return;
+				}
+				const caret = taInput.selectionStart ?? 0;
+				const upto = taInput.value.slice(0, caret);
+				// @ 只在开头或空白/左括号后面才算触发，邮箱那种不算
+				const m = /(?:^|[\s(（【\[])@([^\s@]{0,24})$/.exec(upto);
+				if (!m || !mentionSource().length) {
+					closeMention();
+					return;
+				}
+				mention.start = upto.length - m[1].length - 1;
+				mention.query = m[1];
+				if (!mention.open) {
+					mention.open = true;
+					mention.idx = 0;
+					mention.all = false;
+				}
+				renderMention();
+				mentionEl.hidden = false;
+				positionMention();
+			};
+
+			if (mentionEl) {
+				mentionEl.addEventListener("mousedown", (e) => {
+					// 用 mousedown 而不是 click，并且一开始就 preventDefault：
+					// 不然点面板会让 textarea 失焦，blur 又把面板关掉（「查看全部」就点不动）。
+					// stopPropagation 是必须的：重绘后 e.target 已经脱离文档，
+					// 冒泡到 document 时 contains() 会误判成「点在外面」把面板关掉。
+					e.preventDefault();
+					e.stopPropagation();
+					const item = e.target.closest("[data-mention-idx]");
+					if (item) {
+						pickMention(mention.items[Number(item.dataset.mentionIdx)]);
+						return;
+					}
+					if (e.target.closest("[data-mention-more]")) {
+						mention.all = !mention.all;
+						renderMention();
+						positionMention();
+					}
+				});
+				taInput?.addEventListener("input", detectMention);
+				taInput?.addEventListener("click", detectMention);
+				taInput?.addEventListener("blur", () => setTimeout(closeMention, 150));
+				document.addEventListener("mousedown", (e) => {
+					if (!mention.open) return;
+					if (mentionEl.contains(e.target) || e.target === taInput) return;
+					closeMention();
+				});
+				window.addEventListener("resize", () => {
+					if (mention.open) positionMention();
+				});
+			}
+
+			// 面板打开时抢在表单回车发送之前处理按键
+			const onMentionKey = (e) => {
+				if (!mention.open || e.isComposing) return;
+				const n = mention.items.length;
+				if (e.key === "ArrowDown") {
+					e.preventDefault();
+					e.stopPropagation();
+					if (n) mention.idx = (mention.idx + 1) % n;
+					renderMention();
+					return;
+				}
+				if (e.key === "ArrowUp") {
+					e.preventDefault();
+					e.stopPropagation();
+					if (n) mention.idx = (mention.idx - 1 + n) % n;
+					renderMention();
+					return;
+				}
+				// Shift+Enter 还是换行，别被「选中成员」吃掉
+				if ((e.key === "Enter" && !e.shiftKey) || e.key === "Tab") {
+					e.preventDefault();
+					e.stopPropagation();
+					if (n) pickMention(mention.items[mention.idx]);
+					return;
+				}
+				if (e.key === "Escape") {
+					e.preventDefault();
+					e.stopPropagation();
+					closeMention();
+				}
+			};
+
 			// 回复 / 回应 / 取消回复
 			const replybar = q("[data-tea-replybar]");
 			const setReply = (msg) => {
@@ -3895,6 +4169,8 @@
 			}
 			const composer = q("[data-tea-composer]");
 			if (composer) {
+				// 捕获阶段：@ 面板打开时回车是「选中成员」，别让它顺手把消息发出去
+				composer.addEventListener("keydown", onMentionKey, true);
 				composer.addEventListener("submit", async (e) => {
 					e.preventDefault();
 					if (!ta) return;
@@ -4358,6 +4634,7 @@
 						<div class="tea-thread__divider">${replies.length} 条线程回复</div>
 						${replies.length ? replies.map(threadMsgHtml).join("") : `<div class="tea-thread__empty">还没有回复，来开个头吧。</div>`}
 					`;
+					applyMentions(threadBody);
 					threadBody.scrollTop = threadBody.scrollHeight;
 				} catch (e) {
 					threadBody.innerHTML = `<div class="tea-thread__empty">线程暂时打不开：${esc(e.message || "网络异常")}</div>`;

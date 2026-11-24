@@ -221,6 +221,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						</button>
 					</div>
 					<div class="tea-emoji-panel" data-tea-emoji-panel hidden></div>
+					<div class="tea-mention" data-tea-mention hidden></div>
 				</div>
 				<p class="tea-form-error" data-tea-error hidden></p>
 			</form>
@@ -2743,6 +2744,139 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-md-preview__body code { font-size: 0.8em; }
 	.tea-md-preview__body a { color: color-mix(in oklch, var(--primary) 70%, currentColor); }
 	.tea-md-preview__body .tea-poll-card { margin: 0; }
+	/* @ 提及面板：跟表情面板一样浮在输入框上方，键盘上下键可选 */
+	.tea-mention {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		z-index: 130;
+		display: flex;
+		flex-direction: column;
+		width: 20rem;
+		max-width: calc(100vw - 1.5rem);
+		max-height: min(19rem, 52vh);
+		overflow: hidden;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.85rem;
+		background: var(--card-bg, #fff);
+		box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
+	}
+	.tea-mention[data-anchored] {
+		bottom: auto;
+		left: auto;
+	}
+	.tea-mention[hidden] {
+		display: none;
+	}
+	.tea-mention__head {
+		flex: none;
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.5rem 0.7rem 0.35rem;
+		border-bottom: 1px solid var(--tea-line);
+	}
+	.tea-mention__head b {
+		font-size: 0.78rem;
+	}
+	.tea-mention__head span {
+		font-size: 0.66rem;
+		color: var(--tea-muted);
+	}
+	.tea-mention__list {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		/* min-height:0 才肯真的收缩，否则列表撑满把「查看全部」那行顶出去 */
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 0.25rem;
+	}
+	.tea-mention__item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.32rem 0.4rem;
+		border: 0;
+		border-radius: 0.55rem;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 0.8rem;
+		text-align: left;
+		cursor: pointer;
+	}
+	.tea-mention__item:hover,
+	.tea-mention__item.is-active {
+		background: color-mix(in oklch, var(--primary) 13%, transparent);
+	}
+	.tea-mention__avatar {
+		flex: none;
+		width: 1.55rem;
+		height: 1.55rem;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		background-size: cover;
+		background-position: center;
+		color: #fff;
+		font-size: 0.68rem;
+		line-height: 1;
+	}
+	.tea-mention__nick {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.tea-mention__self {
+		margin-left: 0.25rem;
+		padding: 0 0.25rem;
+		border-radius: 0.3rem;
+		background: color-mix(in oklch, var(--primary) 16%, transparent);
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		font-size: 0.64rem;
+	}
+	.tea-mention__site {
+		flex: none;
+		max-width: 42%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.66rem;
+		color: var(--tea-muted);
+	}
+	.tea-mention__foot {
+		flex: none;
+		padding: 0.4rem;
+		border: 0;
+		border-top: 1px solid var(--tea-line);
+		background: transparent;
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		font: inherit;
+		font-size: 0.72rem;
+		cursor: pointer;
+	}
+	.tea-mention__empty {
+		padding: 0.9rem 0.5rem;
+		text-align: center;
+		font-size: 0.74rem;
+		color: var(--tea-muted);
+	}
+	/* 消息正文里的 @ 高亮；提到自己时更显眼一点 */
+	.tea-at {
+		color: color-mix(in oklch, var(--primary) 82%, currentColor);
+		font-weight: 600;
+	}
+	.tea-at--me {
+		padding: 0 0.18rem;
+		border-radius: 0.3rem;
+		background: color-mix(in oklch, var(--primary) 16%, transparent);
+	}
 	.tea-emoji-panel {
 		position: fixed;
 		bottom: 0;

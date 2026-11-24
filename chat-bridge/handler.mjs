@@ -1354,6 +1354,19 @@ async function handleSend(c, request, token, room) {
 	} else {
 		content = { msgtype: "m.text", body: text };
 	}
+	// 提及：规范（MSC3952 / m.mentions）把被点名的人放进 content["m.mentions"]，
+	// 客户端靠它决定要不要给这个人加提醒；正文里的 "@某人" 只是给人看的。
+	// 只收合法 user id，别把前端传的脏串原样写进事件。
+	const mentionIds = Array.isArray(body.mentions)
+		? [...new Set(body.mentions.filter((x) => typeof x === "string" && /^@[^\s:]+:[^\s]+$/.test(x)))].slice(0, 50)
+		: [];
+	const mentionRoom = body.mentionRoom === true;
+	if (mentionIds.length || mentionRoom) {
+		const mentions = {};
+		if (mentionIds.length) mentions.user_ids = mentionIds;
+		if (mentionRoom) mentions.room = true;
+		content["m.mentions"] = mentions;
+	}
 	// Matrix 原生线程：rel_type=m.thread + is_falling_back + m.in_reply_to。
 	// 规范（Fallback for unthreaded clients）：is_falling_back 为 true 时，
 	// m.in_reply_to MUST 指向「客户端已知的线程内最新一条消息」，而不是线程根。
