@@ -2698,10 +2698,15 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.mc-artists { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 	.mc-artist { font-size: 0.68rem; padding: 0.25rem 0.5rem; border-radius: 2rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); }
 	.mc-artist b { color: color-mix(in oklch, var(--primary) 70%, currentColor); margin-left: 0.2rem; }
-	.mc-recent { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }
-	.mc-recent-item { display: flex; justify-content: space-between; gap: 0.6rem; min-width: 0; padding: 0.5rem 0.6rem; border-radius: 0.55rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); font-size: 0.7rem; }
-	.mc-recent-item span:first-child { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.mc-recent-item span:last-child { flex: none; color: var(--tea-muted-soft); font-size: 0.64rem; }
+	.mc-recent-box { display: grid; gap: 0.4rem; }
+	.mc-recent-box .mc-block-title { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+	.mc-recent-box .mc-block-title small { color: var(--tea-muted-soft); font-weight: 400; font-size: 0.68rem; }
+	.mc-recent__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
+	.mc-recent-item { display: flex; align-items: center; gap: 0.5rem; min-width: 0; padding: 0.5rem 0.6rem; border-radius: 0.55rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); font-size: 0.7rem; }
+	.mc-recent-item__text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.mc-recent-item__time { flex: none; color: var(--tea-muted-soft); font-size: 0.64rem; }
+	.mc-recent-item__locate { flex: none; border: 0; background: none; color: color-mix(in oklch, var(--primary) 70%, currentColor); font-size: 0.68rem; font-weight: 600; cursor: pointer; padding: 0.15rem 0.2rem; border-radius: 0.3rem; }
+	.mc-recent-item__locate:hover { background: color-mix(in oklch, var(--primary) 14%, transparent); }
 	.tea-membercard__songs-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--tea-line); font-size: 0.78rem; font-weight: 600; }
 	.tea-membercard__songs-head em { font-style: normal; font-size: 0.64rem; font-weight: 500; padding: 0.1rem 0.4rem; border-radius: 0.4rem; background: color-mix(in oklch, var(--primary) 16%, transparent); color: color-mix(in oklch, var(--primary) 70%, currentColor); margin-left: 0.3rem; }
 	.tea-membercard__sort { display: inline-flex; padding: 0.15rem; border-radius: 0.5rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); }
@@ -3082,6 +3087,24 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-receipt__list li:hover {
 		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1));
+	}
+	.tea-receipt__reader {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		width: 100%;
+		border: 0;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		padding: 0;
+		cursor: pointer;
+	}
+	.tea-receipt__reader:hover,
+	.tea-receipt__reader:focus-visible {
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+		outline: none;
 	}
 	.tea-receipt__list img,
 	.tea-receipt__list span.tea-receipt__ph {

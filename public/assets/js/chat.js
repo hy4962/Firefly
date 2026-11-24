@@ -437,8 +437,10 @@
 			const rows = readers
 				.map(
 					(r) => `<li>
+						<button type="button" class="tea-receipt__reader" data-reader-id="${esc(r.id)}" data-reader-nick="${esc(r.nick || "茶友")}" data-reader-site="${esc(r.site || "")}"${r.avatar ? ` data-reader-avatar="${esc(r.avatar)}"` : ""} title="查看 ${esc(r.nick || "茶友")} 的名片">
 						${readerFace(r)}
 						<span class="tea-receipt__who"><b>${esc(r.nick || "茶友")}</b>${r.site ? `<small>来自 ${esc(r.site)}</small>` : ""}</span>
+						</button>
 					</li>`,
 				)
 				.join("");
@@ -502,6 +504,22 @@
 				}
 			};
 			f.addEventListener("click", (e) => {
+				// 点已读名单里的人 → 打开 TA 的名片（和点头像/成员列表一致）
+				const reader = e.target.closest("[data-reader-id]");
+				if (reader && f.contains(reader)) {
+					e.preventDefault();
+					const d = reader.dataset;
+					const m = (rt.members || []).find((x) => x && x.id === d.readerId) || {
+						id: d.readerId,
+						nick: d.readerNick || "茶友",
+						site: d.readerSite || "",
+						avatar: d.readerAvatar || "",
+						online: false,
+					};
+					close();
+					openMemberCard(m);
+					return;
+				}
 				const btn = e.target.closest("[data-receipt]");
 				if (!btn || !f.contains(btn)) {
 					if (!e.target.closest("[data-receipt-pop]")) close();
@@ -898,8 +916,8 @@
 			const artists = new Map();
 			for (const s of statsSongs) artists.set(s.artist || "未知歌手", (artists.get(s.artist || "未知歌手") || 0) + s.count);
 			const topArtists = [...artists.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
-			const msgCount = (rt.messages || []).filter((x) => x.sender === m.id).length;
-			const recent = (rt.messages || []).filter((x) => x.sender === m.id).slice(-2).reverse();
+			const myMsgs = (rt.messages || []).filter((x) => x.sender === m.id);
+			const msgCount = myMsgs.length;
 			// 归属互联茶室：把成员的站点名对回互联列表
 			// 本站成员要连 selfSite 一起找，否则头像/站点信息会退成渐变占位。
 			const peers = (() => {
@@ -949,13 +967,44 @@
 				<a class="mc-at" href="https://matrix.to/#/${encodeURIComponent(m.id || "")}" target="_blank" rel="noopener noreferrer">@ ${esc(baseNick(m.nick) || m.nick)}</a>
 				${homeBlock}
 				<div class="mc-stats">
-					<div class="mc-stat"><span>茶室发言</span><b>${msgCount || "—"}</b></div>
+					<div class="mc-stat"><span>茶室发言</span><b data-tea-mc-msgcount>${msgCount || "—"}</b></div>
 					<div class="mc-stat"><span>点过的歌</span><b data-tea-mc-songcount>${songList.length || "—"}</b></div>
 					<div class="mc-stat"><span title="本机第一次见到 TA 的日期">初见</span><b>${esc(new Date(firstSeenAt(m.id)).toLocaleDateString("zh-CN"))}</b></div>
 					<div class="mc-stat"><span>最近活跃</span><b class="${on ? "" : "is-away"}">${on ? "在线" : "离开"}</b></div>
 				</div>
 				${topArtists.length ? `<div><h4 class="mc-block-title">常点歌手</h4><div class="mc-artists">${topArtists.map(([n, c]) => `<span class="mc-artist">${esc(n)}<b>${c} 次</b></span>`).join("")}</div></div>` : ""}
-				${recent.length ? `<div><h4 class="mc-block-title">最近发言</h4><div class="mc-recent">${recent.map((x) => `<div class="mc-recent-item"><span>${esc((x.text || "图片").slice(0, 40))}</span><span>${esc(fmtTime(x.ts))}</span></div>`).join("")}</div></div>` : ""}`;
+				<div class="mc-recent-box" data-tea-mc-recent>
+					<h4 class="mc-block-title">最近在茶室说了什么 <small data-tea-mc-recent-total>共 ${msgCount} 条</small></h4>
+					<ul class="mc-recent__list" data-tea-mc-recent-list></ul>
+				</div>`;
+			// 先用内存里的消息渲染，再异步拉服务端历史补全。每条都带事件 id，才能定位。
+			const renderMcRecent = (list, total) => {
+				if (!mcState.member || mcState.member.id !== m.id) return;
+				const box = document.querySelector("[data-tea-mc-recent]");
+				if (!box) return;
+				const totalEl = box.querySelector("[data-tea-mc-recent-total]");
+				if (totalEl) totalEl.textContent = `共 ${total} 条`;
+				const statEl = document.querySelector("[data-tea-mc-msgcount]");
+				if (statEl && total) statEl.textContent = String(total);
+				const ul = box.querySelector("[data-tea-mc-recent-list]");
+				if (!ul) return;
+				if (!list.length) {
+					ul.innerHTML = `<li class="mc-empty">TA 还没在茶室说过话~</li>`;
+					return;
+				}
+				ul.innerHTML = list.slice(-6).reverse().map((x) => `<li class="mc-recent-item">
+					<span class="mc-recent-item__text" title="${esc((x.text || "图片").slice(0, 120))}">${esc((x.text || "图片").slice(0, 60))}</span>
+					<span class="mc-recent-item__time">${esc(fmtTime(x.ts))}</span>
+					<button type="button" class="mc-recent-item__locate" data-mc-locate="${esc(x.id)}" title="定位到这条消息">定位 ↑</button>
+				</li>`).join("");
+			};
+			renderMcRecent(myMsgs, msgCount);
+			api(`/api/history?limit=80&room=${rt.room}`)
+				.then((data) => {
+					const all = (data.messages || []).filter((x) => x.sender === m.id);
+					renderMcRecent(all, all.length);
+				})
+				.catch(() => {});
 			left.scrollTop = 0;
 			const rightPane = document.querySelector(".tea-membercard__right");
 			if (rightPane) rightPane.scrollTop = 0;
@@ -5242,6 +5291,13 @@
 			if (mcDialog && mcDialog.dataset.sortBound !== "1") {
 				mcDialog.dataset.sortBound = "1";
 				mcDialog.addEventListener("click", async (e) => {
+					// 「定位」→ 跳到聊天区那条消息（不在当前时间线就走历史定位）
+					const locate = e.target.closest("[data-mc-locate]");
+					if (locate) {
+						mcDialog.close();
+						jumpToMessage(locate.dataset.mcLocate);
+						return;
+					}
 					const sortBtn = e.target.closest("[data-tea-mc-sort]");
 					if (sortBtn) {
 						mcState.sort = sortBtn.dataset.teaMcSort;
