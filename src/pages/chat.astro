@@ -2529,6 +2529,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 
 	/* 成员名片 */
 	.tea-membercard {
+		/* 与点歌台一致的冷汐青绿主题，仅作用于名片自身 */
+		--primary: oklch(0.47 0.115 175);
+		--juke-accent-text: oklch(0.44 0.12 175);
 		border: 0;
 		padding: 0;
 		margin: auto;
@@ -2539,6 +2542,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		color: inherit;
 		box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.5);
 		overflow: hidden;
+	}
+	.dark .tea-membercard {
+		--primary: oklch(0.8 0.13 175);
+		--juke-accent-text: oklch(0.84 0.13 175);
 	}
 	.tea-membercard::backdrop { background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(6px); }
 	.tea-membercard__inner { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; max-height: calc(100dvh - 2rem); }
@@ -2704,7 +2711,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-membercard__sort button.is-active { background: color-mix(in oklch, var(--primary) 85%, #000); color: #fff; }
 	.tea-membercard__songs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.45rem; }
 	.mc-song { display: flex; align-items: center; gap: 0.6rem; min-width: 0; padding: 0.45rem 0.55rem; border-radius: 0.6rem; background: var(--btn-regular-bg, rgba(128, 128, 128, 0.08)); }
-	.mc-song__idx { width: 1rem; flex: none; font-size: 0.72rem; color: var(--tea-muted); font-variant-numeric: tabular-nums; }
+	.mc-song__idx { width: 1.35rem; flex: none; font-size: 0.72rem; color: var(--tea-muted); font-variant-numeric: tabular-nums; text-align: center; }
+	/* 冷汐式排行：前三名序号用强调色高亮 */
+	.tea-membercard__songs .mc-song:nth-child(-n+3) .mc-song__idx { color: var(--juke-accent-text); font-weight: 700; }
 	.mc-song__cover { width: 2.3rem; height: 2.3rem; border-radius: 0.45rem; object-fit: cover; flex: none; background: rgba(128,128,128,.15); }
 	.mc-song__copy { min-width: 0; flex: 1; display: grid; gap: 0.1rem; }
 	.mc-song__copy b { font-size: 0.76rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3651,7 +3660,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 
 	/* ─── 点歌台 ───────────────────────────────────────────── */
+	/* 冷汐点歌台视觉复刻：在其作用域内把强调色换成 hue 175 青绿主题，
+	   只影响点歌台自身，不动聊天区 / 站点全局主题。 */
 	.tea-juke {
+		--primary: oklch(0.47 0.115 175);
+		--juke-accent: var(--primary);
+		--juke-accent-text: oklch(0.44 0.12 175);
+		--juke-soft: color-mix(in oklch, var(--primary) 12%, transparent);
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
@@ -3659,6 +3674,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		border: 1px solid var(--tea-line);
 		border-radius: 1.1rem;
 		overflow: hidden;
+	}
+	.dark .tea-juke {
+		--primary: oklch(0.8 0.13 175);
+		--juke-accent-text: oklch(0.84 0.13 175);
 	}
 	.tea-juke__head {
 		display: flex;
@@ -3916,26 +3935,33 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 
 	.tea-juke__tabs {
-		display: flex;
-		gap: 0.2rem;
-		padding: 0 0.7rem;
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.35rem;
+		padding: 0.4rem 0.6rem;
 		border-top: 1px solid var(--tea-line);
 		flex: none;
 	}
 	.tea-juke__tabs button {
 		border: 0;
-		background: none;
+		background: transparent;
 		color: var(--tea-muted);
 		font: inherit;
 		font-size: 0.72rem;
-		padding: 0.5rem 0.4rem 0.45rem;
+		padding: 0.42rem 0.25rem;
 		cursor: pointer;
-		border-bottom: 2px solid transparent;
+		border-radius: 0.5rem;
+		transition: background-color 0.16s ease, color 0.16s ease;
+		white-space: nowrap;
+	}
+	.tea-juke__tabs button:hover {
+		background: color-mix(in oklch, var(--primary) 6%, transparent);
+		color: inherit;
 	}
 	.tea-juke__tabs button.is-active {
-		color: inherit;
+		color: var(--juke-accent-text);
 		font-weight: 600;
-		border-bottom-color: var(--primary);
+		background: color-mix(in oklch, var(--primary) 11%, transparent);
 	}
 	.tea-juke__panel {
 		flex: 1 1 auto;

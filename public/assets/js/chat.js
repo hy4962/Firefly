@@ -806,10 +806,30 @@
 
 		// ── 成员名片 ────────────────────────────────────────────
 		const mcState = { member: null, sort: "time" };
+		// 服务端全局播放历史（juke.state.history）按 requesterId 归属；
+		// 本机 localStorage 只作兜底，避免换设备/换浏览器后「点过的歌」一片空白。
+		const mcRemoteSongs = (id) => {
+			const hist = (jukeSig.state && jukeSig.state.history) || [];
+			const out = [];
+			for (const t of hist) {
+				if (!t || !t.title) continue;
+				if (!id || (t.requesterId || "") !== id) continue; // 轮播曲 requesterId 为空，不归到任何人
+				out.push({
+					name: t.title,
+					artist: t.artist || "",
+					pic: t.cover || "",
+					ts: Number(t.playedAt) || Number(t.addedAt) || 0,
+				});
+			}
+			return out;
+		};
 		const mcSongs = () => {
 			const m = mcState.member;
 			if (!m) return [];
-			const list = (store.songHistory[m.id] || []).map((s) => ({ ...s }));
+			// 远端全局记录优先，本机记录合并进来（远端没有时全靠本机）
+			const remote = mcRemoteSongs(m.id);
+			const local = (store.songHistory[m.id] || []).map((s) => ({ ...s }));
+			const list = remote.length ? [...remote, ...local] : local;
 			// 同名同歌手合并次数，记录里 ts 是最近一次
 			const map = new Map();
 			for (const s of list) {
@@ -870,22 +890,27 @@
 			const site = m.site || (domain === "matrix.0dm.cn" ? SITE_NAME : domain ? "Matrix" : "");
 			const website = m.website || (store.identity && store.identity.id === m.id ? store.identity.website : "");
 			const bio = m.bio || "这个人很懒，还没留下签名~";
-			const songList = store.songHistory[m.id] || [];
-			const artists = new Map();
 			const statsSongs = mcSongs();
+			const songList = statsSongs;
+			const artists = new Map();
 			for (const s of statsSongs) artists.set(s.artist || "未知歌手", (artists.get(s.artist || "未知歌手") || 0) + s.count);
 			const topArtists = [...artists.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
 			const msgCount = (rt.messages || []).filter((x) => x.sender === m.id).length;
 			const recent = (rt.messages || []).filter((x) => x.sender === m.id).slice(-2).reverse();
 			// 归属互联茶室：把成员的站点名对回互联列表
+			// 本站成员要连 selfSite 一起找，否则头像/站点信息会退成渐变占位。
 			const peers = (() => {
 				try {
-					return JSON.parse(appData("peers") || "[]");
+					const list = JSON.parse(appData("peers") || "[]");
+					const self = JSON.parse(appData("selfSite") || "null");
+					return self ? [self, ...list] : list;
 				} catch (_) {
 					return [];
 				}
 			})();
-			const peer = peers.find((p) => p && (p.name === site || p.owner === m.nick)) || null;
+			let peer = peers.find((p) => p && (p.name === site || p.owner === m.nick)) || null;
+			// site 用 Matrix 域名兜底时，本站节点（matrix.0dm.cn）直接认作 selfSite。
+			if (!peer && isSelf) peer = peers.find((p) => p && p.isSelf) || null;
 			const isHomeSite = !!(site && site === SITE_NAME);
 			const homeUrl = peer ? String(peer.url || "").replace(/\/chat\/?$/, "/") : isHomeSite ? "/" : "";
 			const chatUrl = peer ? peer.url || "" : isHomeSite ? "/chat/" : "";
@@ -922,7 +947,7 @@
 				${homeBlock}
 				<div class="mc-stats">
 					<div class="mc-stat"><span>茶室发言</span><b>${msgCount || "—"}</b></div>
-					<div class="mc-stat"><span>点过的歌</span><b>${songList.length || "—"}</b></div>
+					<div class="mc-stat"><span>点过的歌</span><b data-tea-mc-songcount>${songList.length || "—"}</b></div>
 					<div class="mc-stat"><span title="本机第一次见到 TA 的日期">初见</span><b>${esc(new Date(firstSeenAt(m.id)).toLocaleDateString("zh-CN"))}</b></div>
 					<div class="mc-stat"><span>最近活跃</span><b class="${on ? "" : "is-away"}">${on ? "在线" : "离开"}</b></div>
 				</div>
@@ -932,6 +957,17 @@
 			const rightPane = document.querySelector(".tea-membercard__right");
 			if (rightPane) rightPane.scrollTop = 0;
 			mcRenderSongs();
+			// 打开名片时静默刷新一次服务端全局历史，回来后若名片仍是这位成员就重绘
+			if (typeof jukeLoad === "function") {
+				const who = m.id;
+				jukeLoad().then(() => {
+					if (mcState.member && mcState.member.id === who) {
+						mcRenderSongs();
+						const num = document.querySelector("[data-tea-mc-songcount]");
+						if (num) num.textContent = String(mcSongs().length || "—");
+					}
+				}).catch(() => {});
+			}
 			const dlg = document.querySelector("[data-tea-membercard]");
 			if (!dlg) return;
 			if (dlg.open) return;
