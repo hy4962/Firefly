@@ -410,7 +410,10 @@
 
 			const mine = !!(rt.visitor && m.sender && m.sender === rt.visitor.id);
 			const el = document.createElement("article");
-			el.className = "tea-msg" + (mine ? " tea-msg--mine" : "");
+			// 纯图片消息不套气泡：图片本身就是内容，再包一层框只会又大又空。
+			// 有引用/回应时保留气泡，免得那些附属块失去背景。
+			const bareMedia = !!m.image && !m.reply && !(m.reactions && m.reactions.length);
+			el.className = "tea-msg" + (mine ? " tea-msg--mine" : "") + (bareMedia ? " tea-msg--media" : "");
 			el.dataset.nick = m.nick || "";
 			el.dataset.site = m.site || "";
 			if (m.sender) el.dataset.sender = m.sender;
@@ -428,9 +431,11 @@
 			// 消息图片不要 lazy：Chrome 会在 overflow 容器里把未加载的图压成 2×2，
 			// 懒加载又因元素太小不触发，结果只露出 alt「图片」，图永远不出来。
 			// 顺带用 Matrix info.w/h 给真实尺寸，避免布局跳动。
-			const dims = m.imageW && m.imageH ? ` width="${Number(m.imageW)}" height="${Number(m.imageH)}"` : "";
+			// 这里不要给 img 加 width/height/aspect-ratio：气泡是 inline-block，
+			// HTML 尺寸属性会让它按原图宽度算 shrink-to-fit，图片却被 CSS 限到 272px，
+			// 右边空出一大块。宽度只交给 CSS max-width 管。
 			const body = m.image
-				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async"${dims} ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
+				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async" ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
 				: poll
 					? renderPollCard(poll, m.reactions, m.id)
 					: fmtText(m.text || "");
@@ -4150,9 +4155,8 @@
 				const av = m.avatar
 					? `<img src="${esc(m.avatar)}" alt="" loading="lazy" />`
 					: `<span style="${avatarStyle(m.nick, m.site)}">${esc(initials(m.nick))}</span>`;
-				const tDims = m.imageW && m.imageH ? ` width="${Number(m.imageW)}" height="${Number(m.imageH)}"` : "";
 				const body = m.image
-					? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async"${tDims} style="max-width:100%;border-radius:0.5rem;" data-zoom />`
+					? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async" style="max-width:100%;border-radius:0.5rem;" data-zoom />`
 					: fmtText(m.text || "");
 				return `<div class="tea-msg tea-thread__msg" data-id="${esc(m.id || "")}">
 					<div class="tea-msg__avatar" aria-hidden="true">${av}</div>

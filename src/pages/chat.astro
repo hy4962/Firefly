@@ -1886,6 +1886,17 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		text-decoration-color: color-mix(in oklch, var(--primary) 35%, transparent);
 		text-underline-offset: 2px;
 	}
+	/* 纯图片消息：去掉气泡外框，图片直接贴在消息流里 */
+	.tea-msg--media .tea-msg__text {
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+	.tea-msg--media .tea-msg__text img {
+		margin-top: 0;
+	}
 	.tea-msg__text img {
 		display: block;
 		max-width: min(100%, 17rem);
