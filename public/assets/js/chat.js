@@ -3653,6 +3653,87 @@
 				mentionEl.dataset.anchored = "1";
 			};
 
+			// ── 拼音搜索 ───────────────────────────────────────────
+			// 字典是一份静态文件（6739 个常用字，多音字给多个读音），
+			// 第一次用到才加载，加载好之后再重绘一次列表面板。
+			let pinyinDict = null;
+			let pinyinLoading = null;
+			let pinyinFailed = false;
+			const pinyinIndex = new Map();
+
+			const buildPinyinDict = () => {
+				const packed = self.__teaPinyinDict;
+				if (typeof packed !== "string") return null;
+				const map = new Map();
+				for (const token of packed.split(" ")) {
+					if (token.length > 1) map.set(token.slice(0, 1), token.slice(1));
+				}
+				return map;
+			};
+
+			const loadPinyin = () => {
+				if (pinyinDict) return Promise.resolve(true);
+				if (pinyinLoading) return pinyinLoading;
+				pinyinLoading = new Promise((resolve) => {
+					const s = document.createElement("script");
+					s.src = "/assets/js/pinyin-dict.js?v=1";
+					s.async = true;
+					s.onload = () => {
+						pinyinDict = buildPinyinDict();
+						pinyinLoading = null;
+						resolve(!!pinyinDict);
+					};
+					s.onerror = () => {
+						// 拉不到就别每次按键都重试了，退回按昵称/站点/ID 搜
+						pinyinFailed = true;
+						pinyinLoading = null;
+						resolve(false);
+					};
+					document.head.appendChild(s);
+				});
+				return pinyinLoading;
+			};
+
+			// 昵称里每个汉字取一组读音，把多音字的组合都展开成候选串：
+			// 鹤渊 → ["heyuan"]，首字母 → ["hy"]；曾阿牛 → ["zenganiu","cenganiu"]
+			// 匹配用「查询串是不是候选串的前缀」，所以打 he / heyuan / hy 都命中。
+			const expandReadings = (segs, cap) => {
+				let out = [""];
+				for (const readings of segs) {
+					const next = [];
+					for (const pre of out) for (const r of readings) next.push(pre + r);
+					out = next;
+					// 多音字组合爆炸时退回主读音，别为了极少数名字把内存撑爆
+					if (out.length > cap) return null;
+				}
+				return out;
+			};
+
+			const pinyinOf = (nick) => {
+				if (!pinyinDict) return null;
+				const key = String(nick || "");
+				if (pinyinIndex.has(key)) return pinyinIndex.get(key);
+				const segs = [];
+				for (const ch of key) {
+					const code = ch.charCodeAt(0);
+					if (code < 0x3400 || code > 0x9fff) continue;
+					const py = pinyinDict.get(ch);
+					if (!py) continue;
+					segs.push(py.split("/"));
+				}
+				let out = null;
+				if (segs.length) {
+					const primary = segs.map((r) => r[0]).join("");
+					const inits = segs.map((r) => [...new Set(r.map((p) => p[0]))]);
+					out = {
+						full: expandReadings(segs, 128) || [primary],
+						initial: expandReadings(inits, 128) || [segs.map((r) => r[0][0]).join("")],
+					};
+				}
+				pinyinIndex.set(key, out);
+				return out;
+			};
+
 			const mentionSource = () => (rt.members || []).filter((m) => m && m.id && m.nick);
 
 			const renderMention = () => {
@@ -3660,13 +3741,17 @@
 				const me = rt.visitor && rt.visitor.id;
 				const ql = mention.query.trim().toLowerCase();
 				const all = mentionSource();
+				const isAlpha = /^[a-z]+$/.test(ql);
 				const hits = ql
-					? all.filter(
-							(m) =>
-								m.nick.toLowerCase().includes(ql) ||
-								(m.site || "").toLowerCase().includes(ql) ||
-								m.id.toLowerCase().includes(ql),
-						)
+					? all.filter((m) => {
+							if (m.nick.toLowerCase().includes(ql)) return true;
+							if ((m.site || "").toLowerCase().includes(ql)) return true;
+							if (m.id.toLowerCase().includes(ql)) return true;
+							// 纯字母再试拼音：全拼 heyuan / 首字母 hy 都算命中
+							if (!isAlpha) return false;
+							const py = pinyinOf(m.nick);
+							return !!py && (py.full.some((x) => x.startsWith(ql)) || py.initial.some((x) => x.startsWith(ql)));
+						})
 					: all;
 				const shown = mention.all ? hits : hits.slice(0, MENTION_LIMIT);
 				mention.items = shown;
@@ -3722,6 +3807,15 @@
 				}
 				mention.start = upto.length - m[1].length - 1;
 				mention.query = m[1];
+				// 首次用到拼音字典才去拉，拉回来把当前这次筛选重算一遍
+				if (!pinyinDict && !pinyinFailed && /^[a-z]+$/i.test(m[1])) {
+					loadPinyin().then((ok) => {
+						if (ok && mention.open) {
+							renderMention();
+							positionMention();
+						}
+					});
+				}
 				if (!mention.open) {
 					mention.open = true;
 					mention.idx = 0;
@@ -3751,6 +3845,8 @@
 						positionMention();
 					}
 				});
+				// 摸到输入框就预取字典，等真打出 @ 时拼音搜索是现成的
+				taInput?.addEventListener("focus", () => { if (!pinyinDict) loadPinyin(); }, { once: true });
 				taInput?.addEventListener("input", detectMention);
 				taInput?.addEventListener("click", detectMention);
 				taInput?.addEventListener("blur", () => setTimeout(closeMention, 150));
