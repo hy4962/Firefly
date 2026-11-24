@@ -297,6 +297,18 @@
 			set songHistory(v) {
 				localStorage.setItem("tea.songHistory", JSON.stringify(v));
 			},
+			// 本地收藏的曲目（点歌台复刻目标站｜收藏星，纯前端，不依赖后端）
+			get favorites() {
+				try {
+					const v = JSON.parse(localStorage.getItem("tea.juke.favorites") || "[]");
+					return Array.isArray(v) ? v : [];
+				} catch {
+					return [];
+				}
+			},
+			set favorites(v) {
+				localStorage.setItem("tea.juke.favorites", JSON.stringify(v));
+			},
 		};
 
 		// ── 留言板 SSO ───────────────────────────────────────────
@@ -440,6 +452,44 @@
 			};
 			if (afterMs) bottomStickDelay = setTimeout(start, afterMs);
 			else start();
+		};
+
+		// ── 线程回复横条（消息下方，仿互联茶室） ────────────────
+		const threadBadgeHtml = (t) => {
+			if (!t) return "";
+			const s = t.summary || {};
+			const count = Number(s.count) || 0;
+			if (!count) return "";
+			const faces = (s.participants || []).slice(0, 4)
+				.map((p) =>
+					p.avatar
+						? `<img src="${esc(p.avatar)}" alt="" loading="lazy" />`
+						: `<span style="${avatarStyle(p.name || "茶友", "")}"></span>`,
+				)
+				.join("");
+			const latest = s.latestReply;
+			const tail = latest
+				? `<span class="tea-threadbadge__latest">${esc(latest.name || "茶友")}：${esc(String(latest.content || "").slice(0, 40))}</span>`
+				: "";
+			return `<button type="button" class="tea-threadbadge" data-thread-badge="${esc(t.rootUid)}" title="查看线程回复">
+				<span class="tea-threadbadge__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.2-4.2A8 8 0 1 1 21 12Z"/></svg></span>
+				${faces ? `<span class="tea-threadbadge__faces">${faces}</span>` : ""}
+				<b>${count} 条线程回复</b>
+				${tail}
+				<span class="tea-threadbadge__caret">›</span>
+			</button>`;
+		};
+
+		// 线程列表异步到达，可能晚于消息渲染 → 回填横条
+		const syncThreadBadges = () => {
+			const f = feedEl();
+			if (!f || !rt.threadMap) return;
+			f.querySelectorAll(".tea-msg[data-id]").forEach((el) => {
+				const t = rt.threadMap.get(el.dataset.id);
+				if (!t || el.querySelector(".tea-threadbadge")) return;
+				const body = el.querySelector(".tea-msg__body");
+				if (body) body.insertAdjacentHTML("beforeend", threadBadgeHtml(t));
+			});
 		};
 
 		const renderReactions = (m) => {
@@ -690,6 +740,7 @@
 				</div>
 				<div class="tea-msg__text">${reply}${body}${reactions}${actions}</div>
 					${receipt}
+					${threadBadgeHtml(rt.threadMap?.get(m.id))}
 				</div>`;
 
 			f.appendChild(el);
@@ -2732,7 +2783,7 @@
 		};
 
 		const jukeTrackRow = (t, i, attr, curKey) => `<button type="button" class="tea-song${curKey && curKey === t.key ? " is-current" : ""}" ${attr}>
-			<span class="tea-song__idx">${curKey === t.key ? "♪" : i + 1}</span>
+			${t.cover ? `<span class="tea-song__cover" style="background-image:url('${jukeSafeUrl(t.cover)}')"></span>` : `<span class="tea-song__idx">${curKey === t.key ? "♪" : i + 1}</span>`}
 			<span class="tea-song__copy">
 				<span class="tea-song__name"><span>${esc(t.title)}</span><em class="tea-juke__src">${esc(jukeSourceLabel(t))}</em><span class="tea-juke__dur">${t.durationSec ? jukeDur(t.durationSec) : ""}</span></span>
 				<span class="tea-song__artist">${esc(t.artist || "未知歌手")}${t.requester ? " · " + esc(t.requester) : ""}</span>
@@ -2744,7 +2795,7 @@
 			const canDel = mine || !!(jukeSig.state && jukeSig.state.admin);
 			return `<div class="tea-juke__qrow${curKey === t.key ? " is-current" : ""}">
 				<button type="button" class="tea-song" data-juke-qplay="${esc(t.uid)}">
-					<span class="tea-song__idx">♪</span>
+					${t.cover ? `<span class="tea-song__cover" style="background-image:url('${jukeSafeUrl(t.cover)}')"></span>` : `<span class="tea-song__idx">♪</span>`}
 					<span class="tea-song__copy">
 						<span class="tea-song__name"><span>${esc(t.title)}</span><em class="tea-juke__src">${esc(jukeSourceLabel(t))}</em><span class="tea-juke__dur">${t.durationSec ? jukeDur(t.durationSec) : ""}</span></span>
 						<span class="tea-song__artist">${esc(t.artist || "未知歌手")} · ${esc(t.requester || "茶友")}</span>
@@ -3177,23 +3228,43 @@
 			const title = jukeNode("[data-juke-title]");
 			const artist = jukeNode("[data-juke-artist]");
 			const cover = jukeNode("[data-juke-cover]");
+			const srcpill = jukeNode("[data-juke-srcpill]");
 			if (title) title.textContent = cur ? cur.title : "还没开始听";
 			if (artist) {
+				// 目标站风格：副标题直接写「歌手 - 歌名」
 				artist.textContent = cur
-					? `${cur.artist || "未知歌手"}${cur.kind === "rotation" ? " · 背景轮播" : cur.requester ? " · " + cur.requester + " 点的" : ""}`
+					? `${cur.artist || "未知歌手"} - ${cur.title || ""}`
 					: "从下面挑一首，或者让茶室随便放";
+			}
+			if (srcpill) {
+				if (cur) {
+					const src = jukeSourceLabel(cur);
+					const tail = cur.kind === "rotation" ? "轮播" : cur.requester ? `${cur.requester} 点的` : "点播";
+					srcpill.innerHTML = `<i></i><span>${esc(src)} · ${esc(tail)}</span>`;
+					srcpill.hidden = false;
+				} else {
+					srcpill.hidden = true;
+				}
 			}
 			if (cover) cover.style.backgroundImage = cur && cur.cover ? jukeCover(cur.cover) : "";
 			if (live) {
 				live.classList.toggle("is-listening", jukeSig.listening);
 				live.classList.toggle("is-playing", playing);
 				const label = live.querySelector("b");
-				if (label) label.textContent = jukeSig.listening ? (playing ? "收听中" : "已加入") : "未开始";
+				if (label) label.textContent = jukeSig.listening ? (playing ? "收听中" : "已加入") : "未收听";
 			}
 			const listenBtn = jukeNode("[data-juke-listen]");
 			if (listenBtn) {
 				listenBtn.classList.toggle("is-on", jukeSig.listening);
-				listenBtn.title = jukeSig.listening ? "退出收听" : "开始收听";
+				listenBtn.title = jukeSig.listening ? "正在收听（点击停止）" : "开始收听";
+				const label = listenBtn.querySelector("[data-juke-listen-label]");
+				if (label) label.textContent = jukeSig.listening ? "正在收听" : "开始收听";
+			}
+			const favBtn = jukeNode("[data-juke-fav]");
+			if (favBtn) {
+				const faved = !!(cur && store.favorites.some((f) => f.key === cur.key));
+				favBtn.classList.toggle("is-on", faved);
+				favBtn.title = faved ? "取消收藏" : "收藏这首歌";
 			}
 			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
 			if (juke) juke.classList.toggle("is-playing", playing);
@@ -3772,6 +3843,23 @@
 					jukeToggleListen();
 					return;
 				}
+				const fav = e.target.closest("[data-juke-fav]");
+				if (fav) {
+					const cur = jukeSig.state?.current;
+					if (!cur) { jukeSay("还没有正在播放的歌，先挑一首吧。", true); return; }
+					const all = store.favorites;
+					const at = all.findIndex((f) => f.key === cur.key);
+					if (at >= 0) {
+						all.splice(at, 1);
+						jukeSay(`已取消收藏《${cur.title}》`);
+					} else {
+						all.unshift({ key: cur.key, title: cur.title, artist: cur.artist || "", cover: cur.cover || "", source: cur.source || "", sourceId: cur.sourceId || "", platform: cur.platform || "" });
+						jukeSay(`已收藏《${cur.title}》`);
+					}
+					store.favorites = all.slice(0, 100);
+					jukeRenderTrack();
+					return;
+				}
 				if (e.target.closest("[data-juke-next]")) { jukeSkip(); return; }
 				if (e.target.closest("[data-juke-play]")) {
 					if (!jukeSig.listening) {
@@ -3934,6 +4022,8 @@
 			const bj = q("[data-tea-bottomjump]");
 			if (bj) bj.hidden = true;
 			cancelBottomStick();
+			rt.threadMap = null;
+			if (key === "lobby" && rt.refreshThreads) rt.refreshThreads();
 			// 线程只在互联茶室有意义，切房时收起相关浮层
 			if (rt.closePops) rt.closePops();
 			if (rt.closeThread) rt.closeThread();
@@ -5124,6 +5214,11 @@
 					syncBottomJump();
 				});
 				feed.addEventListener("click", (e) => {
+					const badge = e.target.closest("[data-thread-badge]");
+					if (badge) {
+						rt.openThread?.(badge.dataset.threadBadge);
+						return;
+					}
 					const img = e.target.closest("img[data-zoom]");
 					if (img) openZoom(img.currentSrc || img.getAttribute("src"), img);
 				});
@@ -5519,6 +5614,8 @@
 					const data = await api(`/api/threads?room=${rt.room}`);
 					const threads = data.threads || [];
 					setThreadCount(threads.length);
+					rt.threadMap = new Map(threads.map((t) => [t.rootUid, t]));
+					syncThreadBadges();
 					if (!threads.length) {
 						threadsListEl.innerHTML = `<div class="tea-pop__empty">还没有线程回复。在任意消息上点「线程回复」就能开一个。</div>`;
 						return;
@@ -5549,10 +5646,15 @@
 				}
 			};
 			rt.refreshThreads = loadThreads;
-			// 进房后拉一次线程数（失败则静默，按钮保持隐藏）
+			// 进房后拉一次线程：既设顶栏数量，也缓存给消息下方的横条用
 			if (rt.room === "lobby") {
 				api(`/api/threads?room=${rt.room}`)
-					.then((d) => setThreadCount((d.threads || []).length))
+					.then((d) => {
+						const list = d.threads || [];
+						setThreadCount(list.length);
+						rt.threadMap = new Map(list.map((t) => [t.rootUid, t]));
+						syncThreadBadges();
+					})
 					.catch(() => {});
 			}
 
