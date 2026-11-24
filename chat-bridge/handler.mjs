@@ -856,10 +856,75 @@ async function handleWaline(c, env, request, ip, base) {
 
 	try {
 		const out = await provisionIdentity(c, env, { nick, email, website }, base);
-		return json(200, { ok: true, ...out, waline: { nick } });
+		// 把 Waline 自己的 token 一起回给前端：茶室登录完顺手写进评论区的存储键，
+		// 同一浏览器下博客那边直接就是已登录状态（两边同源，共用 localStorage）。
+		return json(200, { ok: true, ...out, waline: { token: data.token || "", user: walineUser(data, email, nick, website) } });
 	} catch (e) {
 		return fail(502, e.message || "开座位失败");
 	}
+}
+
+/** 只保留客户端要用的字段，别把 2fa、密码哈希之类的塞进 localStorage。 */
+function walineUser(data, email, nick, website) {
+	return {
+		objectId: data.objectId || "",
+		email,
+		display_name: nick,
+		url: website,
+		avatar: data.avatar || "",
+		type: data.type || "guest",
+		label: data.label || "",
+	};
+}
+
+/**
+ * 留言板已登录 → 茶室免密入座。
+ * Waline 没有「校验 token」的专用接口，但 GET /api/token 带上 Authorization
+ * 返回的就是当前账号（见服务端 logic/base.js 的 userInfo 解析），拿它验票最稳。
+ */
+async function handleWalineSso(c, env, request, ip, base) {
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const token = String(body.token || "").trim().slice(0, 2000);
+	if (!token) return fail(400, "缺少留言板登录凭证");
+
+	const api = (c.walineApi || WALINE_DEFAULT).replace(/\/$/, "");
+	let payload;
+	try {
+		const res = await fetch(`${api}/api/token`, {
+			headers: { Authorization: `Bearer ${token}`, "User-Agent": "tea-bridge/sso" },
+		});
+		payload = await res.json();
+	} catch {
+		return fail(502, "Waline 暂时连不上");
+	}
+
+	const data = payload?.errno === 0 ? payload.data || {} : {};
+	const email = clean(data.email, LIMITS.email);
+	if (!email || !isEmail(email)) return fail(401, "留言板登录已失效，请重新登录");
+
+	const nick = clean(data.display_name || data.nick || email.split("@")[0], LIMITS.nick);
+	const website = clean(data.url || data.link || "", LIMITS.website);
+	try {
+		const out = await provisionIdentity(c, env, { nick, email, website }, base);
+		return json(200, { ok: true, ...out, waline: { token, user: walineUser(data, email, nick, website) } });
+	} catch (e) {
+		return fail(502, e.message || "开座位失败");
+	}
+}
+
+/** 退出：把 Matrix 上的设备 token 一起废掉，前端再清本地存储。 */
+async function handleLogout(c, request) {
+	const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+	if (!token || token === c.bridgeToken) return json(200, { ok: true });
+	try {
+		await mxJson(c, "/_matrix/client/v3/logout", { token, method: "POST", body: {} });
+	} catch (_) {}
+	return json(200, { ok: true });
 }
 
 /** 用已有的 Matrix 账号登录（比如站长自己的管理员号） */
@@ -2284,6 +2349,10 @@ export async function handleRequest(request, env = {}) {
 			out = await handleEnter(c, env, request, ip);
 		} else if (path === "/api/waline" && request.method === "POST") {
 			out = await handleWaline(c, env, request, ip, base);
+		} else if (path === "/api/waline-sso" && request.method === "POST") {
+			out = await handleWalineSso(c, env, request, ip, base);
+		} else if (path === "/api/logout" && request.method === "POST") {
+			out = await handleLogout(c, request);
 		} else if (path === "/api/matrix-login" && request.method === "POST") {
 			out = await handleMatrixLogin(c, request, ip);
 		} else if (path === "/api/room" && request.method === "GET") {

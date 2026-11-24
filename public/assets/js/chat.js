@@ -275,6 +275,45 @@
 			},
 		};
 
+		// ── 留言板 SSO ───────────────────────────────────────────
+		// 评论区（Waline 客户端）把账号放在 WALINE_USER，茶室把座位放在 tea.identity。
+		// 两个页面同源，localStorage 就是天然的会话中枢：
+		// 任意一边登录都往 WALINE_USER 写，另一边读它自动跟上；退出时一起清。
+		const WALINE_USER_KEY = "WALINE_USER";
+		const WALINE_META_KEY = "WALINE_USER_META";
+
+		const walineUser = () => {
+			try {
+				const v = JSON.parse(localStorage.getItem(WALINE_USER_KEY) || "null");
+				return v && v.token ? v : null;
+			} catch (_) {
+				return null;
+			}
+		};
+
+		const saveWalineUser = (payload) => {
+			if (!payload || !payload.token) return;
+			const user = { ...(payload.user || {}), token: payload.token };
+			try {
+				localStorage.setItem(WALINE_USER_KEY, JSON.stringify(user));
+				localStorage.setItem(
+					WALINE_META_KEY,
+					JSON.stringify({
+						nick: user.display_name || user.nick || "",
+						mail: user.email || "",
+						link: user.url || user.link || "",
+					}),
+				);
+			} catch (_) {}
+		};
+
+		const dropWalineUser = () => {
+			try {
+				localStorage.removeItem(WALINE_USER_KEY);
+				localStorage.removeItem(WALINE_META_KEY);
+			} catch (_) {}
+		};
+
 		// 记一首歌到当前访客名下（同曲累加时间，不重复堆条目）
 		const recordSong = (track) => {
 			const v = rt.visitor;
@@ -941,6 +980,19 @@
 			document.querySelector("[data-tea-profile-close]")?.addEventListener("click", closeProfile);
 			document.querySelector("[data-tea-profile-cancel]")?.addEventListener("click", closeProfile);
 			document.querySelector("[data-tea-profile-logout]")?.addEventListener("click", () => {
+				const v = rt.visitor;
+				// 先把 Matrix 设备 token 废掉，再清本地；两边一起退
+				try {
+					if (v && v.token) {
+						fetch(api0.replace(/\/$/, "") + "/api/logout", {
+							method: "POST",
+							headers: { Authorization: `Bearer ${v.token}` },
+							keepalive: true,
+						}).catch(() => {});
+					}
+				} catch (_) {}
+				dropWalineUser();
+				rt.visitor = null;
 				store.identity = null;
 				location.reload();
 			});
@@ -1741,14 +1793,77 @@
 				email: extra.email || "",
 				website: extra.website || "",
 				token: res.token,
+				// 只有走留言板凭证开出来的座位才算 SSO 绑定：
+				// 昵称表单里手填的邮箱不算，免得留言板没登录时把人踢下线。
+				sso: res.waline && res.waline.token ? "waline" : "",
 			};
 			store.identity = rt.visitor;
+			// 茶室用留言板账号登录的，顺手把这套会话写回评论区存储
+			if (res.waline && res.waline.token) saveWalineUser(res.waline);
 			renderSelf();
 			setGate(true);
 			const dlg = document.querySelector("[data-tea-dialog]");
-			if (dlg) dlg.close();
-			const ta = q("[data-tea-text]");
+			const wasOpen = !!(dlg && dlg.open);
+			if (wasOpen && dlg) dlg.close();
+			// 自动入座时别抢焦点，否则刚打开页面就被拽到输入框
+			const ta = wasOpen ? q("[data-tea-text]") : null;
 			if (ta) ta.focus();
+		};
+
+		// 评论区已登录、茶室还没座位 → 拿留言板 token 换座位，不弹登录框
+		let ssoBusy = false;
+		const seatFromWaline = async () => {
+			const w = walineUser();
+			if (!w || ssoBusy) return false;
+			ssoBusy = true;
+			try {
+				const res = await api("/api/waline-sso", {
+					method: "POST",
+					body: JSON.stringify({ token: w.token }),
+				});
+				applyIdentity(res, {
+					email: (res.waline && res.waline.user && res.waline.user.email) || w.email || "",
+					website: (res.waline && res.waline.user && res.waline.user.url) || w.url || "",
+				});
+				return true;
+			} catch (e2) {
+				// 凭证过期：把评论区的死会话清掉，别让它一直挡着下次登录
+				const msg = e2.message || "";
+				if (msg.includes("失效") || msg.includes("重新登录")) dropWalineUser();
+				return false;
+			} finally {
+				ssoBusy = false;
+			}
+		};
+
+		// 别的标签页动了留言板登录态 → 这边跟着登入/登出
+		const watchWaline = () => {
+			if (rt.ssoWatch) return;
+			rt.ssoWatch = true;
+			window.addEventListener("storage", (e) => {
+				if (e.key !== WALINE_USER_KEY && e.key !== WALINE_META_KEY && e.key !== null) return;
+				if (!root()) return;
+				if (!walineUser()) {
+					if (rt.visitor && rt.visitor.sso === "waline") {
+						rt.visitor = null;
+						store.identity = null;
+						renderSelf();
+						setGate(false);
+						showError("留言板那边退出了，茶室座位也一起退出。");
+					}
+					return;
+				}
+				if (!rt.visitor) seatFromWaline();
+				else if (rt.visitor.sso === "waline") {
+					// 换了个留言板账号登录 → 座位也得跟着换
+					const w = walineUser();
+					if (w && w.email && rt.visitor.email && w.email !== rt.visitor.email) {
+						rt.visitor = null;
+						store.identity = null;
+						seatFromWaline();
+					}
+				}
+			});
 		};
 
 		const showForm = (which) => {
@@ -3398,8 +3513,18 @@
 			measure();
 			window.addEventListener("resize", measure);
 
+			// 登录态对账：留言板那边退出过 / 换过账号 → 这张座位作废
+			if (rt.visitor && rt.visitor.sso === "waline") {
+				const w = walineUser();
+				if (!w || (w.email && rt.visitor.email && w.email !== rt.visitor.email)) {
+					rt.visitor = null;
+					store.identity = null;
+				}
+			}
 			renderSelf();
 			setGate(!!rt.visitor);
+			watchWaline();
+			if (!rt.visitor) seatFromWaline();
 			killChrome();
 			setTimeout(killChrome, 300);
 			setTimeout(killChrome, 1200);
