@@ -34,29 +34,33 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		title: "液态玻璃顶栏",
 		date: "2026-11-24",
 		summary:
-			"顶栏的玻璃胶囊叠上了 SVG 噪声折射；菜单项从套娃小胶囊改成平铺文字，最后连那层外壳也直接去掉，只剩当前项一枚浅色胶囊",
+			"顶栏照参考站重做成三座岛：壁纸先被磨砂、再被噪声揉出波纹；中间那版「去掉外壳、文字浮在壁纸上」在亮壁纸下糊成一团，已回退",
 		description:
-			"按 Muyu 那篇教程给三块胶囊补上了 Apple Liquid Glass 的折射层。原理是把 backdrop-filter 的磨砂结果交给同一个元素上的 filter:url(#...) 做位移：造分形噪声 → 高斯磨平 → 线性拉伸拉满量程 → feDisplacementMap 挪像素。最容易踩的坑是 backdrop root——本体一旦带 backdrop-filter，内部搜索面板和下拉菜单的毛玻璃就废了，所以磨砂和折射全部下沉到 ::before，本体只留底色、内衬白圈和投影；再补 clip-path 收拾滤镜溢出的方角、will-change 治淡入闪烁。实现全在页脚配置里：0×0 SVG 滤镜 + 277 行纯新增 CSS/脚本，上游主题一个文件没碰。菜单区最后连外壳也去掉了：菜单岛的底色、边框、投影和玻璃伪元素全部清空，普通项撤掉自己的小胶囊底色/描边/玻璃层，改成文字直接浮在壁纸上；hover 只留淡白洗过，当前项才是那枚浅色实心胶囊，两个自定义入口也退回主题色文字。没有底色垫底，补了一圈很淡的文字光晕保证可读。默认 10px 模糊 / 120 折射 / 0.01 波纹密度（面板模糊保底 16px），三个 localStorage 键沿用教程的命名，想换手感直接改值刷新即可。",
+			"按 Muyu 那篇教程把顶栏复刻成三座独立玻璃岛（站名 / 菜单 / 工具簇）。原理是把 backdrop-filter 的磨砂结果交给同一元素上的 filter:url(#...) 做位移：造分形噪声 → 高斯磨平 → 线性拉伸拉满量程 → feDisplacementMap 挪像素。最容易踩的坑是 backdrop root——本体一旦带 backdrop-filter，内部搜索面板和下拉面板的毛玻璃就废了，所以磨砂和折射全下沉到 ::before，本体只留底色、1.5px 白圈内衬和投影；再补 clip-path 收掉滤镜溢出的方角、will-change 治淡入闪烁。上游 Navbar.astro / DropdownMenu.astro / navbar.css 一个字节没动，三座岛是从现有 grid 的三列里用 nth-child 认出来的。中途试过把菜单岛外壳整个拿掉、只留文字浮在壁纸上，在接近纯白的壁纸上完全不成立，已回退成完整玻璃，并改成参考站的做法：岛内所有元素透明，当前项和 hover 由一枚会平移的浅色胶囊负责。四处按自己情况调整：底色 26%→30%（本站壁纸更亮）、模糊 3px→4px、折射 150、一级菜单 10 项所以 ≥1600px 才显示图标、1024–1151px 再紧一档并收掉下拉箭头；高光胶囊改 46% 白 + 85% 白边 + 淡投影，靠边缘而不是填充色区分。",
 		items: [
 			{
 				category: "视觉",
-				text: "三块玻璃岛（站名 / 菜单 / 工具簇）、搜索框与首页横幅图标叠加 SVG 位移折射：壁纸被揉出波纹，文字始终锐利；折射关掉即退回普通毛玻璃",
+				text: "三座玻璃岛（站名 / 菜单 / 工具簇）+ 下拉面板叠加 SVG 位移折射：壁纸被揉出波纹，文字始终锐利；折射关掉即退回普通毛玻璃",
 			},
 			{
 				category: "视觉",
-				text: "下拉菜单与浮动面板单独一档模糊（保底 16px），磨砂与折射同样放在 ::before，面板文字不被壁纸吃掉，展开淡入不闪烁",
+				text: "岛内菜单项、搜索框、工具按钮全部透明，不再各自叠小胶囊；当前项与 hover 由一枚带亮边的浅色胶囊在项之间平移（560ms 缓动），指针离开整岛弹回当前页",
 			},
 			{
 				category: "实现",
-				text: "FooterConfig.html 末尾追加 0×0 SVG 滤镜（feTurbulence → feGaussianBlur → feComponentTransfer 斜率 3.5/截距 -1.25 → feDisplacementMap）与配置层 CSS，本体 backdrop-filter 全部撤掉；追加高特异性覆盖清掉菜单项的小胶囊与整个菜单岛外壳，只留当前项浅色实心 + 文字光晕；277 行纯新增、0 删除",
+				text: "FooterConfig.html 里顶栏样式整段重写：0×0 SVG 滤镜（feTurbulence → feGaussianBlur → feComponentTransfer 斜率 3.5/截距 -1.25 → feDisplacementMap）与岛/面板两层 CSS，本体 backdrop-filter 全部撤掉；上游 src/** 0 改动",
+			},
+			{
+				category: "修复",
+				text: "工具岛新加 position: relative 后成了搜索面板与主题面板的定位包含块，锚点下移 12px，用 top: 3.5rem / 3.75rem 补回原位",
 			},
 			{
 				category: "维护",
-				text: "参数复用 navbarGlassBlur / navbarGlassScale / navbarGlassFrequency 三个 localStorage 键，默认 10px / 120 / 0.01；html[data-glass-distortion] 总开关保证无玻璃面时不折射",
+				text: "参数复用 navbarGlassBlur / navbarGlassScale / navbarGlassFrequency 三个 localStorage 键，默认 4px / 150 / 0.01；html[data-glass-distortion] 总开关保证无玻璃面时不折射",
 			},
 			{
 				category: "验证",
-				text: "1280 / 1440 / 390 三档 + 亮暗主题 + hover + 下拉展开 + 切页后核对计算样式与截图，控制台零报错；6 段内联脚本过 new Function 语法检查",
+				text: "1024 / 1280 / 1440 / 1600 / 1920 / 390 六档 + 亮暗主题 + hover + 下拉展开 + 切页后核对计算样式与截图，控制台零报错；scale 临时拉到 600 确认滤镜链路真的在跑",
 			},
 		],
 		tags: ["导航", "液态玻璃", "毛玻璃", "视觉"],

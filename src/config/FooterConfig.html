@@ -2348,42 +2348,58 @@
 </style>
 
 <style>
-	/* ===== 胶囊玻璃导航栏（视觉抄自 rainzt.cn，实现只走配置层） =====
-	   参考站的顶栏是由三块独立玻璃胶囊组成：左边站点名、中间菜单、右边操作簇，
-	   每块都有自己的半透明底 + 背景模糊 + 细描边 + 柔光投影；菜单项再套一层小胶囊，
-	   当前项用主题色淡底。这里不改上游 Navbar.astro / DropdownMenu.astro / navbar.css，
-	   全部靠页脚注入的未分层 CSS 覆盖；DOM 结构用 #navbar 的直接层级定位，
-	   避免依赖参考站那些本地不存在的 class（firefly-nav-shell / nav-brand 等）。 */
+	/* ===== Apple Liquid Glass 导航栏（岛式三段胶囊）=====
+	   视觉与结构对齐 muyudada.dpdns.org 的液态玻璃方案：外壳完全透明，
+	   三座独立玻璃岛（站点名 / 菜单 / 工具）浮在壁纸上。
+	   每座岛的本体只负责底色、1.5px 白圈内衬、投影；
+	   磨砂 + 折射全部下沉到 ::before —— 本体一旦带 backdrop-filter 就会成为
+	   backdrop root，岛内搜索面板、主题面板的毛玻璃就采不到真实背景了。
+	   上游 Navbar.astro / DropdownMenu.astro / navbar.css 一个字节没动，
+	   全部走页脚注入的未分层 CSS（未分层 > @layer，天然压过 utilities）。 */
 	html body #navbar {
-		--ff-np-bg: color-mix(in oklch, var(--card-bg) 42%, transparent);
-		--ff-np-border: color-mix(in oklch, var(--primary) 18%, transparent);
-		--ff-np-shadow: 0 6px 18px rgba(15, 35, 60, 0.08);
-		--ff-np-fg: var(--deep-text);
-		--ff-np-muted: color-mix(in oklch, var(--deep-text) 84%, transparent);
-		--ff-np-active-bg: color-mix(in oklch, var(--primary) 16%, var(--card-bg));
+		/* 岛（参数与参考站一致，可用 localStorage 覆盖） */
+		--ff-island-bg: color-mix(in oklch, var(--card-bg) 30%, transparent);
+		--ff-island-pill: color-mix(in oklch, var(--card-bg) 42%, transparent);
+		/* 当前项 / hover 的那枚抬起的胶囊：比岛亮一档，暗色下比岛再亮一点 */
+		--ff-hl-bg: rgba(255, 255, 255, 0.46);
+		--ff-hl-ring: rgba(255, 255, 255, 0.85);
+		--ff-island-ring: rgba(255, 255, 255, 0.5);
+		--ff-island-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+		--ff-island-fg: var(--deep-text);
+		--ff-island-muted: color-mix(in oklch, var(--deep-text) 88%, transparent);
+		--ff-glass-shine: rgba(255, 255, 255, 0.35);
+		border-radius: 0 !important;
+		box-shadow: none !important;
+	}
+
+	/* 玻璃参数由页脚脚本按 localStorage 写到 :root；
+	   这里的值只是脚本没跑时的兜底 */
+	:root {
+		--ff-lg-blur: 4px;
+		--ff-lg-panel-blur: 8px;
 	}
 
 	html.dark body #navbar {
-		--ff-np-bg: color-mix(in oklch, var(--card-bg) 34%, transparent);
-		--ff-np-border: color-mix(in oklch, var(--primary) 22%, transparent);
-		--ff-np-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-		/* 主题的 --deep-text 在暗色下仍是深色，直接拿来当导航文字会糊成一片 */
-		--ff-np-fg: oklch(0.95 0.01 var(--hue));
-		--ff-np-muted: color-mix(in oklch, var(--ff-np-fg) 82%, transparent);
-		--ff-np-active-bg: color-mix(in oklch, var(--primary) 24%, var(--card-bg));
+		--ff-island-ring: rgba(255, 255, 255, 0.28);
+		--ff-hl-bg: rgba(255, 255, 255, 0.14);
+		--ff-hl-ring: rgba(255, 255, 255, 0.4);
+		--ff-island-fg: oklch(0.95 0.01 var(--hue));
+		--ff-island-muted: color-mix(in oklch, var(--ff-island-fg) 86%, transparent);
+		--ff-glass-shine: rgba(255, 255, 255, 0.08);
 	}
 
-	/* 外壳整条透明，玻璃感交给下面三块模块；顺手关掉主题自带的 ::before 模糊层 */
+	/* 外壳：只留定位与高度，所有视觉交给三座岛 */
 	html body #navbar[data-transparent-mode] > div:first-of-type {
-		height: auto !important;
-		min-height: 0 !important;
-		padding: 0.5rem 1rem !important;
+		height: 4.5rem !important;
+		min-height: 4.5rem !important;
+		padding: 0 1rem !important;
 		background: transparent !important;
 		border: 0 !important;
 		border-radius: 0 !important;
 		box-shadow: none !important;
 		backdrop-filter: none !important;
 		-webkit-backdrop-filter: none !important;
+		overflow: visible !important;
 	}
 
 	html body #navbar[data-transparent-mode] > div:first-of-type::before {
@@ -2391,276 +2407,486 @@
 	}
 
 	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child {
-		/* 中间列必须可压缩：三列按 auto / 1fr / auto 分配，否则 1024–1440px
-		   下菜单的 max-content 会把左右两块挤到重叠（实测 1024px 重叠 163px） */
 		grid-template-columns: auto minmax(0, 1fr) auto !important;
-		gap: clamp(0.25rem, 0.8vw, 0.75rem);
+		gap: 0.5rem;
 		width: 100% !important;
 		max-width: none !important;
-		height: auto !important;
+		height: 100% !important;
 		padding-inline: 0 !important;
 	}
 
-	/* 左侧站点名胶囊 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child {
+	/* ---------- 三座岛的本体 ---------- */
+	html body #navbar[data-transparent-mode] > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3)) {
+		position: relative !important;
+		height: 3rem !important;
+		min-height: 3rem !important;
+		border: 0 !important;
+		border-radius: 9999px !important;
+		background: var(--ff-island-bg) !important;
+		box-shadow:
+			inset 0 0 0 1.5px var(--ff-island-ring),
+			var(--ff-island-shadow) !important;
+		/* 玻璃只在 ::before，本体不许有滤镜 */
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		overflow: visible !important;
+		transition:
+			background-color 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+			box-shadow 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	/* ---------- 玻璃层 ---------- */
+	html body #navbar[data-transparent-mode] > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3))::before {
+		content: "" !important;
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		border-radius: inherit;
+		pointer-events: none;
+		backdrop-filter: blur(var(--ff-lg-blur)) saturate(1.6);
+		-webkit-backdrop-filter: blur(var(--ff-lg-blur)) saturate(1.6);
+		/* 位移会把像素推到圆角外，滤镜链末端再裁一次 */
+		clip-path: inset(0 round 9999px);
+		will-change: backdrop-filter;
+	}
+
+	/* 折射总开关：没有玻璃面（blur:0）或折射强度 0 时只留普通毛玻璃 */
+	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3))::before {
+		filter: url(#navbar-glass-distortion);
+	}
+
+	/* ---------- 站点名岛 ---------- */
+	html body #navbar[data-transparent-mode] > div > div:first-child > a:first-child {
 		display: inline-flex !important;
 		align-items: center;
 		justify-self: start;
-		height: 48px !important;
-		min-height: 48px !important;
-		padding: 0 1rem !important;
-		border: 1px solid var(--ff-np-border) !important;
-		border-radius: 9999px !important;
-		background: var(--ff-np-bg) !important;
-		box-shadow: var(--ff-np-shadow) !important;
-		color: var(--ff-np-fg) !important;
+		width: auto !important;
+		padding: 0 0.8rem !important;
+		color: var(--ff-island-fg) !important;
 		font-weight: 750;
 		white-space: nowrap;
-		backdrop-filter: blur(24px) saturate(1.25);
-		-webkit-backdrop-filter: blur(24px) saturate(1.25);
-		transition: background-color 0.2s, border-color 0.2s, transform 0.18s;
 	}
 
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child::after {
+	/* btn-plain 自带的 hover 底盘会在玻璃上叠出第二层色块 */
+	html body #navbar[data-transparent-mode] > div > div:first-child > a:first-child::after {
 		content: none !important;
 	}
 
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child > div {
+	html body #navbar[data-transparent-mode] > div > div:first-child > a:first-child > div {
 		gap: 0.4rem;
-		font-size: 1.05rem;
+		font-size: 1.02rem;
 	}
 
-	/* 右侧操作簇：搜索框 + 各功能按钮都做成独立圆形胶囊 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) {
-		display: flex !important;
-		align-items: center;
-		justify-self: end;
-		gap: 0.4rem;
-		min-width: 0;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button {
-		display: inline-flex !important;
-		align-items: center;
-		justify-content: center;
-		flex: 0 0 44px;
-		width: 44px !important;
-		height: 44px !important;
-		padding: 0 !important;
-		border: 1px solid var(--ff-np-border) !important;
-		border-radius: 9999px !important;
-		background: var(--ff-np-bg) !important;
-		box-shadow: var(--ff-np-shadow) !important;
-		color: var(--ff-np-fg) !important;
-		backdrop-filter: blur(14px) saturate(1.12);
-		-webkit-backdrop-filter: blur(14px) saturate(1.12);
-		transition: color 0.18s, background-color 0.18s, border-color 0.18s;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button::after,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button::after {
-		content: none !important;
-	}
-
-	html body #navbar #search-bar {
-		width: auto !important;
-		height: 44px !important;
-		margin-right: 0 !important;
-		padding-right: 0.5rem;
-		border: 1px solid var(--ff-np-border) !important;
-		border-radius: 9999px !important;
-		background: var(--ff-np-bg) !important;
-		box-shadow: var(--ff-np-shadow) !important;
-		backdrop-filter: blur(14px) saturate(1.12);
-		-webkit-backdrop-filter: blur(14px) saturate(1.12);
-	}
-
-	html body #navbar #search-input-desktop {
-		width: 7.5rem !important;
-		color: var(--ff-np-muted) !important;
-	}
-
-	html body #navbar #search-input-desktop:focus {
-		width: 10rem !important;
-	}
-
-	/* 桌面菜单：外层玻璃胶囊 + 内层小胶囊。窄屏沿用上游隐藏逻辑，不走这里 */
+	/* ---------- 菜单岛 ---------- */
 	@media (min-width: 1024px) {
-		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) {
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) {
 			display: flex !important;
 			align-items: center;
 			justify-self: center;
-			gap: 0.125rem;
-			min-width: 0;
+			width: fit-content;
 			max-width: 100%;
-			height: 50px;
-			padding: 0.25rem !important;
-			border: 1px solid var(--ff-np-border) !important;
-			border-radius: 9999px !important;
-			background: var(--ff-np-bg) !important;
-			box-shadow: var(--ff-np-shadow) !important;
-			backdrop-filter: blur(24px) saturate(1.25);
-			-webkit-backdrop-filter: blur(24px) saturate(1.25);
-			overflow: visible !important;
+			padding: 0 0.3rem;
 		}
 
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
+		/* 滑动高光（脚本注入）：当前/hover 项背后那枚浅色胶囊 */
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) > .ff-nav-hl {
+			position: absolute;
+			top: 0;
+			left: 0;
+			z-index: 0;
+			width: 0;
+			height: 2.5rem;
+			border-radius: 9999px;
+			background: var(--ff-hl-bg);
+			backdrop-filter: blur(2px) saturate(1.4);
+			-webkit-backdrop-filter: blur(2px) saturate(1.4);
+			box-shadow:
+				inset 0 0 0 1.5px var(--ff-hl-ring),
+				0 2px 6px rgba(0, 0, 0, 0.12);
+			opacity: 0;
+			pointer-events: none;
+			transform: translate3d(0, 0, 0);
+		}
+
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) > .ff-nav-hl[data-ready="true"] {
+			transition:
+				transform 560ms cubic-bezier(0.2, 1.45, 0.45, 1),
+				width 420ms cubic-bezier(0.2, 1.45, 0.45, 1),
+				opacity 140ms ease;
+		}
+
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) > .dropdown-container {
+			z-index: 1;
+			flex: 0 0 auto;
+		}
+
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button {
 			display: inline-flex !important;
 			align-items: center;
 			justify-content: center;
-			height: 40px !important;
-			min-height: 40px !important;
-			padding: 0 0.68rem !important;
-			border: 1px solid transparent !important;
+			height: 2.5rem !important;
+			min-height: 2.5rem !important;
+			padding: 0 0.7rem !important;
+			border: 0 !important;
 			border-radius: 9999px !important;
-			background: color-mix(in oklch, var(--card-bg) 16%, transparent) !important;
+			background: transparent !important;
 			box-shadow: none !important;
-			color: var(--ff-np-muted) !important;
-			font-size: 0.95rem;
+			color: var(--ff-island-muted) !important;
+			font-size: 0.92rem;
 			font-weight: 600;
 			white-space: nowrap;
-			backdrop-filter: blur(18px) saturate(1.2);
-			-webkit-backdrop-filter: blur(18px) saturate(1.2);
-			transition: color 0.18s, background-color 0.18s, border-color 0.18s;
+			transition: color 0.18s ease;
 		}
 
-		/* 上游下拉箭头绝对定位在右侧，触发按钮要留出位置 */
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
-			padding-right: 1.85rem !important;
+		/* 有下拉箭头的项要留出右侧空间（上游 pr-8 被上面的 padding 覆盖） */
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button {
+			padding-right: 1.9rem !important;
 		}
 
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a::before,
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a::after,
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button::before,
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button::after {
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a::before,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a::after,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button::before,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button::after {
 			content: none !important;
 		}
 
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a > div,
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button > div {
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a > div,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button > div {
 			display: inline-flex;
 			align-items: center;
 			gap: 0.3rem;
 			white-space: nowrap;
 		}
 
-		/* 参考站菜单项带图标；本站顶级项更多，1600px 以下放不下，
-		   所以只在宽屏把图标放回来，窄屏沿用上游隐藏逻辑（下拉面板里的图标不受影响） */
-		@media (min-width: 1600px) {
-			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a > div > .navbar-icon,
-			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button > div > .navbar-icon {
-				display: inline-flex !important;
-				flex: none;
-				margin-right: 0 !important;
-				font-size: 1.02rem;
-				opacity: 0.82;
-			}
+		/* 高光未接管时（脚本没跑）退化成纯 CSS 的 hover / 当前项胶囊 */
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2):not(.ff-nav-hl-on) .dropdown-container > a:hover,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2):not(.ff-nav-hl-on) .dropdown-container > button:hover,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2):not(.ff-nav-hl-on) .dropdown-container > a.ff-np-active,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2):not(.ff-nav-hl-on) .dropdown-container > button.ff-np-active {
+			background: var(--ff-hl-bg) !important;
+			box-shadow:
+				inset 0 0 0 1.5px var(--ff-hl-ring),
+				0 2px 6px rgba(0, 0, 0, 0.12) !important;
 		}
 
-		@media (max-width: 1599px) {
-			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
-			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
-				padding-inline: 0.5rem !important;
-				font-size: 0.9rem;
-			}
-
-			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
-				padding-right: 1.6rem !important;
-			}
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a:hover,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button:hover,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a.ff-np-active,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button.ff-np-active {
+			color: var(--ff-island-fg) !important;
 		}
 
-		@media (max-width: 1279px) {
-			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
-			html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button {
-				padding-inline: 0.38rem !important;
-				font-size: 0.85rem;
-			}
-
-			html body #navbar #search-input-desktop {
-				width: 6rem !important;
-			}
-
-			html body #navbar #search-input-desktop:focus {
-				width: 8rem !important;
-			}
-		}
-
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a:hover:not(.ff-np-active),
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button:hover:not(.ff-np-active) {
-			border-color: color-mix(in oklch, var(--primary) 24%, transparent) !important;
-			background: color-mix(in oklch, var(--primary) 12%, var(--card-bg)) !important;
-			color: var(--primary) !important;
-		}
-
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a.ff-np-active,
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button.ff-np-active {
-			border-color: color-mix(in oklch, var(--primary) 22%, transparent) !important;
-			background: var(--ff-np-active-bg) !important;
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a.ff-np-active,
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button.ff-np-active {
 			color: var(--primary) !important;
 			font-weight: 700;
 		}
 
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a.ff-np-active .navbar-icon,
-		html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button.ff-np-active .navbar-icon {
-			opacity: 1;
+		/* 「低价米饭」「聊天茶室」两个自定义入口：保留主题色文字强调 */
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"],
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"] {
+			color: var(--primary) !important;
+			font-weight: 700;
+		}
+
+		/* 顶级项图标：本站一级菜单有 10 个（参考站 7 个），加上图标就超出可用列宽，
+		   所以顶栏一律不显示图标，只留文字；下拉面板里的图标照旧 */
+
+		/* 本站一级菜单 10 项，列宽一旦吃紧就得缩排，否则会顶到工具岛上 */
+		@media (max-width: 1399px) {
+			html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a,
+			html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button {
+				padding-inline: 0.58rem !important;
+				font-size: 0.875rem;
+			}
+
+			html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button {
+				padding-right: 1.75rem !important;
+			}
+		}
+
+		/* 1024–1151：再紧一档，并收掉下拉箭头（悬停/聚焦照常展开） */
+		@media (max-width: 1151px) {
+			html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > a,
+			html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button {
+				padding-inline: 0.4rem !important;
+				font-size: 0.84rem;
+			}
+
+			html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-container > button {
+				padding-right: 0.4rem !important;
+			}
+
+			html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) .dropdown-arrow {
+				display: none !important;
+			}
 		}
 	}
 
-	/* 窄屏只留站点名 + 操作簇，胶囊高度收一档 */
-	@media (max-width: 1023px) {
-		html body #navbar[data-transparent-mode] > div:first-of-type {
-			padding: 0.4rem 0.75rem !important;
-		}
+	/* ---------- 工具岛 ---------- */
+	html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(3) {
+		display: flex !important;
+		align-items: center;
+		justify-self: end;
+		gap: 0;
+		min-width: 0;
+		padding: 0 0.3rem;
+	}
 
-		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child {
-			height: 40px !important;
-			min-height: 40px !important;
-			padding: 0 0.75rem !important;
-			font-size: 0.95rem;
-		}
+	html body #navbar #music-player-switch,
+	html body #navbar #bg-player-toggle,
+	html body #navbar #display-settings-switch,
+	html body #navbar #nav-menu-switch,
+	html body #navbar #search-switch,
+	html body #navbar #scheme-switch {
+		position: relative;
+		z-index: 1;
+		display: inline-flex !important;
+		align-items: center;
+		justify-content: center;
+		flex: 0 0 2.75rem;
+		width: 2.75rem !important;
+		height: 2.75rem !important;
+		padding: 0 !important;
+		border: 0 !important;
+		border-radius: 9999px !important;
+		background: transparent !important;
+		box-shadow: none !important;
+		color: var(--ff-island-muted) !important;
+		transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+	}
 
-		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button {
-			flex-basis: 38px;
-			width: 38px !important;
-			height: 38px !important;
-		}
+	html body #navbar #music-player-switch::before,
+	html body #navbar #music-player-switch::after,
+	html body #navbar #bg-player-toggle::before,
+	html body #navbar #bg-player-toggle::after,
+	html body #navbar #display-settings-switch::before,
+	html body #navbar #display-settings-switch::after,
+	html body #navbar #nav-menu-switch::before,
+	html body #navbar #nav-menu-switch::after,
+	html body #navbar #search-switch::before,
+	html body #navbar #search-switch::after,
+	html body #navbar #scheme-switch::before,
+	html body #navbar #scheme-switch::after {
+		content: none !important;
+	}
+
+	html body #navbar #music-player-switch:hover,
+	html body #navbar #bg-player-toggle:hover,
+	html body #navbar #display-settings-switch:hover,
+	html body #navbar #nav-menu-switch:hover,
+	html body #navbar #search-switch:hover,
+	html body #navbar #scheme-switch:hover,
+	html body #navbar #scheme-switch:focus-visible {
+		background: var(--ff-island-pill) !important;
+		box-shadow: inset 0 0 0 1.5px var(--ff-island-ring) !important;
+		color: var(--ff-island-fg) !important;
+	}
+
+	/* 面板原先相对外壳（#navbar > div）定位；工具岛现在成了定位包含块，
+	   锚点从外壳顶下移到岛顶，这里补回来，让面板落在岛下沿 8px 处 */
+	html body #navbar > div > div:first-child > div:nth-child(3) #search-panel {
+		top: 3.5rem !important;
+	}
+
+	html body #navbar > div > div:first-child > div:nth-child(3) #theme-mode-panel {
+		top: 3.75rem !important;
+	}
+
+	/* 搜索框：默认融入岛底，hover / 聚焦才浮起一枚磨砂药丸 */
+	html body #navbar #search-bar {
+		position: relative;
+		z-index: 1;
+		width: auto !important;
+		height: 2.75rem !important;
+		margin-right: 0 !important;
+		padding-right: 0.2rem !important;
+		border: 0 !important;
+		border-radius: 9999px !important;
+		background: transparent !important;
+		box-shadow: none !important;
+		transition: background-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	html body #navbar #search-bar:hover,
+	html body #navbar #search-bar:focus-within {
+		background: var(--ff-island-pill) !important;
+		box-shadow: inset 0 0 0 1.5px var(--ff-island-ring) !important;
+	}
+
+	html body #navbar #search-input-desktop {
+		width: 7.5rem !important;
+		color: var(--ff-island-muted) !important;
+	}
+
+	html body #navbar #search-input-desktop:focus {
+		width: 10rem !important;
+	}
+
+	/* ---------- 全透明阶段：整岛隐身（没有玻璃面就别折射） ---------- */
+	html[data-has-wallpaper] #navbar[data-transparent-mode="semifull"]:not(.scrolled) > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3)),
+	html[data-wallpaper-mode="fullscreen"] #navbar[data-transparent-mode="semifull"]:not(.scrolled) > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3)),
+	.is-page-transitioning[data-has-wallpaper] #navbar[data-transparent-mode="semifull"]:not(.scrolled) > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3)) {
+		background: transparent !important;
+		box-shadow: none !important;
+	}
+
+	html[data-has-wallpaper] #navbar[data-transparent-mode="semifull"]:not(.scrolled) > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3))::before,
+	html[data-wallpaper-mode="fullscreen"] #navbar[data-transparent-mode="semifull"]:not(.scrolled) > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3))::before,
+	.is-page-transitioning[data-has-wallpaper] #navbar[data-transparent-mode="semifull"]:not(.scrolled) > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3))::before {
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		filter: none;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child,
-		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button {
+		html body #navbar[data-transparent-mode] > div > div:first-child > :is(a:first-child, div:nth-child(2), div:nth-child(3)) {
+			transition: none;
+		}
+
+		html body #navbar[data-transparent-mode] > div > div:first-child > div:nth-child(2) > .ff-nav-hl[data-ready="true"] {
 			transition: none;
 		}
 	}
 </style>
 
+<svg id="ff-lg-defs" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+	<defs>
+		<filter id="navbar-glass-distortion" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+			<feTurbulence type="fractalNoise" baseFrequency="0.0100 0.0100" numOctaves="1" seed="5" result="noise" />
+			<feGaussianBlur in="noise" stdDeviation="3" result="soft-noise" />
+			<feComponentTransfer in="soft-noise" result="displacement-map">
+				<feFuncR type="linear" slope="3.5" intercept="-1.25" />
+				<feFuncG type="linear" slope="3.5" intercept="-1.25" />
+			</feComponentTransfer>
+			<feDisplacementMap in="SourceGraphic" in2="displacement-map" scale="150" xChannelSelector="R" yChannelSelector="G" />
+		</filter>
+	</defs>
+</svg>
+
+<style>
+	/* ===== 下拉菜单 / 浮动面板：同一套液态玻璃 =====
+	   本体撤掉 backdrop-filter（否则成为 backdrop root，把面板内子元素的毛玻璃吃掉），
+	   磨砂与折射下沉到 ::before；本体只留 55% 白 / 0.6 深灰的底色与斜向双内阴影。
+	   面板比岛实一些 —— 面板里要读文字，透太多看不清。 */
+	html body #navbar :is(.dropdown-content, .float-panel) {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+	}
+
+	html body #navbar :is(.dropdown-content, .float-panel) {
+		background: rgba(255, 255, 255, 0.55) !important;
+		border: 1px solid rgba(0, 0, 0, 0.06) !important;
+		box-shadow:
+			var(--shadow-md),
+			inset 0 1px 0 rgba(255, 255, 255, 0.18),
+			inset 2px 2px 1px 0 var(--ff-glass-shine),
+			inset -1px -1px 1px 1px var(--ff-glass-shine) !important;
+	}
+
+	html.dark body #navbar :is(.dropdown-content, .float-panel) {
+		background: rgba(23, 23, 23, 0.6) !important;
+		border: 1px solid rgba(255, 255, 255, 0.1) !important;
+		box-shadow:
+			var(--shadow-md),
+			inset 0 1px 0 rgba(255, 255, 255, 0.06),
+			inset 2px 2px 1px 0 var(--ff-glass-shine),
+			inset -1px -1px 1px 1px var(--ff-glass-shine) !important;
+	}
+
+	/* 首页横幅那排圆形图标按钮：同一套材质，但只有 2.75rem 见方，
+	   模糊固定 8px（4px 在这个尺寸上看不出来），面积小到不需要 clip-path */
+	html body .banner-link {
+		position: relative !important;
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+	}
+
+	html body #navbar :is(.dropdown-content, .float-panel)::before,
+	html body .banner-link::before {
+		content: "" !important;
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		border-radius: inherit;
+		pointer-events: none;
+		backdrop-filter: blur(var(--ff-lg-panel-blur)) saturate(1.5);
+		-webkit-backdrop-filter: blur(var(--ff-lg-panel-blur)) saturate(1.5);
+		clip-path: inset(0 round var(--radius-large, 16px));
+		will-change: backdrop-filter;
+	}
+
+	html body .banner-link::before {
+		backdrop-filter: blur(8px) saturate(1.4);
+		-webkit-backdrop-filter: blur(8px) saturate(1.4);
+		clip-path: inset(0 round 9999px);
+	}
+
+	html[data-glass-distortion="on"] body #navbar :is(.dropdown-content, .float-panel)::before,
+	html[data-glass-distortion="on"] body .banner-link::before {
+		filter: url(#navbar-glass-distortion);
+	}
+
+	/* 面板内的条目仍是上游的普通悬停底色，折射只作用在背景层，文字始终锐利 */
+	html body #navbar #search-bar-inside {
+		border-radius: 9999px;
+	}
+</style>
+
 <script>
-	/* 胶囊导航的当前项：上游 DropdownMenu 不输出 active/aria-current，
-	   这里按当前路径给顶级项和含命中子项的下拉按钮补 .ff-np-active。
-	   页脚在 swup 容器外，切页后要重新挂一次。 */
 	(function () {
+		/* 与参考站同一套 localStorage 键，方便按实测微调：
+		   navbarGlassBlur 0–30、navbarGlassScale 0–200、navbarGlassFrequency 0.002–0.03 */
+		var root = document.documentElement;
+		var clamp = function (v, min, max) { return Math.min(max, Math.max(min, v)); };
+		var read = function (key, fallback, min, max) {
+			try {
+				var v = parseFloat(localStorage.getItem(key));
+				return isFinite(v) ? clamp(v, min, max) : fallback;
+			} catch (_) { return fallback; }
+		};
+
+		var blur = read("navbarGlassBlur", 4, 0, 30);
+		var scale = read("navbarGlassScale", 150, 0, 200);
+		var freq = read("navbarGlassFrequency", 0.01, 0.002, 0.03);
+
+		function applyParams() {
+			root.style.setProperty("--ff-lg-blur", blur + "px");
+			/* 面板里要读文字，模糊留 8px 下限，避免壁纸把字吃掉 */
+			root.style.setProperty("--ff-lg-panel-blur", Math.max(blur, 8) + "px");
+
+			var turbulence = document.querySelector("#navbar-glass-distortion feTurbulence");
+			if (turbulence) {
+				turbulence.setAttribute("baseFrequency", freq.toFixed(4) + " " + freq.toFixed(4));
+			}
+			var displacement = document.querySelector("#navbar-glass-distortion feDisplacementMap");
+			if (displacement) {
+				displacement.setAttribute("scale", String(Math.round(scale)));
+			}
+
+			root.setAttribute("data-glass-distortion", blur > 0 && scale > 0 ? "on" : "off");
+			var navbar = document.getElementById("navbar");
+			if (navbar) navbar.setAttribute("data-glass", blur > 0 ? "on" : "off");
+		}
+
+		/* 上游 DropdownMenu 不输出 active / aria-current，
+		   这里按当前路径给顶级项和「含命中子项」的下拉按钮补 .ff-np-active。 */
 		function norm(path) {
 			if (!path || path === "#") return "";
 			try {
 				var u = new URL(path, location.href);
 				if (u.origin !== location.origin) return "";
 				return u.pathname.replace(/\/+$/, "") || "/";
-			} catch (_) {
-				return "";
-			}
+			} catch (_) { return ""; }
 		}
 
-		function apply() {
+		function markActive() {
 			var navbar = document.getElementById("navbar");
 			if (!navbar) return;
 			var current = norm(location.pathname);
 			var items = navbar.querySelectorAll(
-				":scope > div > div .dropdown-container > a, :scope > div > div .dropdown-container > button",
+				":scope > div > div:first-child .dropdown-container > a, :scope > div > div:first-child .dropdown-container > button",
 			);
 			items.forEach(function (item) {
 				var self = norm(item.getAttribute("href") || "");
@@ -2676,140 +2902,104 @@
 					}
 				}
 				item.classList.toggle("ff-np-active", active);
+				if (active) item.setAttribute("aria-current", "page");
+				else item.removeAttribute("aria-current");
 			});
 		}
 
-		apply();
+		/* 菜单岛的滑动高光：把一枚浅色胶囊在项之间平移，跟着 hover 走，
+		   指针离开整块岛再弹回当前项。DOM 动态注入，不动上游模板。 */
+		var hlIsland = null;
+		var hlEl = null;
+		var hlActive = null;
+
+		function hlItems() {
+			if (!hlIsland) return [];
+			return Array.prototype.slice.call(
+				hlIsland.querySelectorAll(":scope > .dropdown-container > a, :scope > .dropdown-container > button"),
+			);
+		}
+
+		function hlPlace(target) {
+			if (!hlIsland || !hlEl) return;
+			if (!target || !target.isConnected) {
+				hlEl.style.opacity = "0";
+				return;
+			}
+			var ir = hlIsland.getBoundingClientRect();
+			var tr = target.getBoundingClientRect();
+			hlEl.style.transform = "translate3d(" + (tr.left - ir.left).toFixed(2) + "px, " + (tr.top - ir.top).toFixed(2) + "px, 0)";
+			hlEl.style.width = tr.width.toFixed(2) + "px";
+			hlEl.style.height = tr.height.toFixed(2) + "px";
+			hlEl.style.opacity = "1";
+		}
+
+		function hlInit() {
+			var island = document.querySelector("#navbar > div > div:first-child > div:nth-child(2)");
+			if (!island) return;
+			hlIsland = island;
+			hlEl = island.querySelector(":scope > .ff-nav-hl");
+			if (!hlEl) {
+				hlEl = document.createElement("span");
+				hlEl.className = "ff-nav-hl";
+				hlEl.setAttribute("aria-hidden", "true");
+				island.insertBefore(hlEl, island.firstChild);
+			}
+			island.classList.add("ff-nav-hl-on");
+
+			if (!island.dataset.ffHlBound) {
+				island.dataset.ffHlBound = "1";
+				hlItems().forEach(function (item) {
+					item.addEventListener("pointerenter", function () { hlPlace(item); });
+					item.addEventListener("focus", function () { hlPlace(item); });
+				});
+				island.addEventListener("pointerleave", function () {
+					hlPlace(hlActive || hlItemActive());
+				});
+			}
+			hlActive = hlItemActive();
+			hlPlace(hlActive);
+			/* 首帧先定位再开过渡，避免从 (0,0) 滑进来 */
+			requestAnimationFrame(function () {
+				if (hlEl) hlEl.setAttribute("data-ready", "true");
+			});
+		}
+
+		function hlItemActive() {
+			var list = hlItems();
+			for (var i = 0; i < list.length; i++) {
+				if (list[i].classList.contains("ff-np-active")) return list[i];
+			}
+			return list[0] || null;
+		}
+
+		function boot() {
+			applyParams();
+			markActive();
+			hlInit();
+		}
+
+		boot();
 		document.addEventListener("swup:page:view", function () {
-			requestAnimationFrame(apply);
+			requestAnimationFrame(function () {
+				applyParams();
+				markActive();
+				/* 切页后导航栏节点可能被替换，高光要重新挂到新的岛上 */
+				hlInit();
+			});
 		});
+		window.addEventListener("resize", function () {
+			hlPlace(hlActive || hlItemActive());
+		});
+		/* 字体晚到会让文字宽度变化，高光胶囊需要重新对位 */
+		if (document.fonts && document.fonts.ready) {
+			document.fonts.ready.then(function () { hlPlace(hlActive || hlItemActive()); });
+		}
 	})();
 </script>
 
 <style>
-	/* ===== 「低价米饭」主题色高光 =====
-	   页脚早先有一条按 href 定位的强调规则，但胶囊导航那段的层级更深，
-	   把它的主题色渐变盖掉了。这里用同样的层级 + href 再压回来，
-	   亮色暗色都用主题色渐变底 + 同色系压深文字，外链角标同步压深。 */
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"] {
-		background: linear-gradient(
-			135deg,
-			color-mix(in oklch, var(--primary) 88%, white) 0%,
-			var(--primary) 100%
-		) !important;
-		border-color: color-mix(in oklch, var(--primary) 58%, transparent) !important;
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.4),
-			0 3px 12px color-mix(in oklch, var(--primary) 42%, transparent) !important;
-		color: color-mix(in oklch, var(--primary) 22%, black) !important;
-		font-weight: 700 !important;
-		isolation: isolate;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]::after {
-		content: none !important;
-		background: transparent !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]:hover,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]:active,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"]:focus-visible {
-		background: linear-gradient(
-			135deg,
-			color-mix(in oklch, var(--primary) 94%, white) 0%,
-			color-mix(in oklch, var(--primary) 92%, black) 100%
-		) !important;
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.6),
-			0 4px 16px color-mix(in oklch, var(--primary) 62%, transparent) !important;
-		color: color-mix(in oklch, var(--primary) 16%, black) !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="https://sukiai.cn/"] svg {
-		color: color-mix(in oklch, var(--primary) 55%, black) !important;
-		opacity: 1 !important;
-	}
-
-	/* ===== 「聊天茶室」主题色高光（与「低价米饭」同一套视觉） ===== */
-	#navbar .dropdown-container > a[href="/chat/"] {
-		background: linear-gradient(
-			135deg,
-			color-mix(in oklch, var(--primary) 86%, white) 0%,
-			var(--primary) 100%
-		) !important;
-		border-color: color-mix(in oklch, var(--primary) 58%, transparent) !important;
-		color: color-mix(in oklch, var(--primary) 22%, black) !important;
-		font-weight: 700 !important;
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.4),
-			0 3px 12px color-mix(in oklch, var(--primary) 42%, transparent) !important;
-		isolation: isolate;
-	}
-	#navbar .dropdown-container > a[href="/chat/"]::before,
-	#navbar .dropdown-container > a[href="/chat/"]::after {
-		content: none !important;
-		background: transparent !important;
-	}
-	#navbar .dropdown-container > a[href="/chat/"]:hover,
-	#navbar .dropdown-container > a[href="/chat/"]:active,
-	#navbar .dropdown-container > a[href="/chat/"]:focus-visible {
-		background: linear-gradient(
-			135deg,
-			color-mix(in oklch, var(--primary) 94%, white) 0%,
-			color-mix(in oklch, var(--primary) 92%, black) 100%
-		) !important;
-		color: color-mix(in oklch, var(--primary) 16%, black) !important;
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.6),
-			0 4px 16px color-mix(in oklch, var(--primary) 62%, transparent) !important;
-	}
-	#navbar .dropdown-container > a[href="/chat/"] svg {
-		color: color-mix(in oklch, var(--primary) 55%, black) !important;
-		opacity: 1 !important;
-	}
-	#nav-menu-panel a.mobile-menu-item[href="/chat/"] {
-		background: color-mix(in oklch, var(--primary) 16%, transparent) !important;
-		color: color-mix(in oklch, var(--primary) 60%, black) !important;
-	}
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"] {
-		background: linear-gradient(
-			135deg,
-			color-mix(in oklch, var(--primary) 88%, white) 0%,
-			var(--primary) 100%
-		) !important;
-		border-color: color-mix(in oklch, var(--primary) 58%, transparent) !important;
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.4),
-			0 3px 12px color-mix(in oklch, var(--primary) 42%, transparent) !important;
-		color: color-mix(in oklch, var(--primary) 22%, black) !important;
-		font-weight: 700 !important;
-		isolation: isolate;
-	}
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]::after {
-		content: none !important;
-		background: transparent !important;
-	}
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]:hover,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]:active,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"]:focus-visible {
-		background: linear-gradient(
-			135deg,
-			color-mix(in oklch, var(--primary) 94%, white) 0%,
-			color-mix(in oklch, var(--primary) 92%, black) 100%
-		) !important;
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.6),
-			0 4px 16px color-mix(in oklch, var(--primary) 62%, transparent) !important;
-		color: color-mix(in oklch, var(--primary) 16%, black) !important;
-	}
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a[href="/chat/"] svg {
-		color: color-mix(in oklch, var(--primary) 55%, black) !important;
-		opacity: 1 !important;
-	}
-
-	/* 「聊天茶室」的茶杯图标：1024–1599px 紧凑模式会隐藏所有顶级项图标，这里单独把茶室图标放回来 */
+	/* 「聊天茶室」的茶杯图标：顶尖项图标在 1600px 以下默认隐藏，这里单独放回来 */
 	@media (min-width: 1024px) and (max-width: 1599px) {
 		#navbar .dropdown-container > a[href="/chat/"] > div > .navbar-icon {
 			display: inline-flex !important;
@@ -2834,282 +3024,5 @@
 		height: 100%;
 		border-radius: inherit;
 		background: url("/assets/images/room-lobby.webp") center / cover no-repeat;
-	}
-</style>
-
-<svg id="ff-lg-defs" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
-	<defs>
-		<filter id="navbar-glass-distortion" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
-			<feTurbulence type="fractalNoise" baseFrequency="0.0100 0.0100" numOctaves="1" seed="5" result="noise" />
-			<feGaussianBlur in="noise" stdDeviation="3" result="soft-noise" />
-			<feComponentTransfer in="soft-noise" result="displacement-map">
-				<feFuncR type="linear" slope="3.5" intercept="-1.25" />
-				<feFuncG type="linear" slope="3.5" intercept="-1.25" />
-			</feComponentTransfer>
-			<feDisplacementMap in="SourceGraphic" in2="displacement-map" scale="120" xChannelSelector="R" yChannelSelector="G" />
-		</filter>
-	</defs>
-</svg>
-
-<style>
-	/* ===== Apple Liquid Glass 折射层 =====
-	   原理：backdrop-filter 先把岛背后的壁纸磨砂，filter:url(#...) 再把这张磨砂结果
-	   按噪声位移。两层都挂在 ::before 上，本体只留底色/描边/投影，文字始终锐利，
-	   也避免本体成为 backdrop root 把面板里的毛玻璃吃掉。
-	   参数：--ff-lg-blur / --ff-lg-panel-blur 由页脚脚本按 localStorage 写入。 */
-	:root {
-		--ff-lg-blur: 10px;
-		--ff-lg-panel-blur: 16px;
-	}
-
-	/* 本体撤掉原来的 backdrop-filter，避免和 ::before 叠成双层模糊 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2),
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button,
-	html body #navbar #search-bar,
-	html body .banner-link {
-		backdrop-filter: none !important;
-		-webkit-backdrop-filter: none !important;
-	}
-
-	/* ::before 需要定位包含块；面板本身已是 absolute，不能改 position */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2),
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button,
-	html body #navbar #search-bar,
-	html body .banner-link {
-		position: relative !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2)::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button::before,
-	html body #navbar #search-bar::before {
-		content: "" !important;
-		position: absolute;
-		inset: 0;
-		z-index: -1;
-		border-radius: inherit;
-		pointer-events: none;
-		backdrop-filter: blur(var(--ff-lg-blur)) saturate(1.6);
-		-webkit-backdrop-filter: blur(var(--ff-lg-blur)) saturate(1.6);
-		clip-path: inset(0 round 9999px);
-		will-change: backdrop-filter;
-	}
-
-	/* 下拉与浮动面板：面板本体撤掉模糊，磨砂/折射下沉到 ::before。
-	   纯色壁纸模式下没有可采样背景，但仍从滚动内容掠过，所以不排除。 */
-	html body #navbar :is(.dropdown-content, .float-panel) {
-		backdrop-filter: none !important;
-		-webkit-backdrop-filter: none !important;
-	}
-
-	html body #navbar :is(.dropdown-content, .float-panel)::before,
-	html body .banner-link::before {
-		content: "" !important;
-		position: absolute;
-		inset: 0;
-		z-index: -1;
-		border-radius: inherit;
-		pointer-events: none;
-		backdrop-filter: blur(var(--ff-lg-panel-blur)) saturate(1.5);
-		-webkit-backdrop-filter: blur(var(--ff-lg-panel-blur)) saturate(1.5);
-		clip-path: inset(0 round var(--radius-large, 12px));
-		will-change: backdrop-filter;
-	}
-
-	html body .banner-link::before {
-		backdrop-filter: blur(8px) saturate(1.4);
-		-webkit-backdrop-filter: blur(8px) saturate(1.4);
-		clip-path: inset(0 round 9999px);
-	}
-
-	/* 折射总开关：blur 或 scale 为 0 时只留普通毛玻璃 */
-	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > a:first-child::before,
-	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2)::before,
-	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > button::before,
-	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(3) > div > button::before,
-	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > a::before,
-	html[data-glass-distortion="on"] body #navbar[data-transparent-mode] > div:first-of-type .dropdown-container > button::before,
-	html[data-glass-distortion="on"] body #navbar #search-bar::before,
-	html[data-glass-distortion="on"] body #navbar :is(.dropdown-content, .float-panel)::before,
-	html[data-glass-distortion="on"] body .banner-link::before {
-		filter: url(#navbar-glass-distortion);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		html body #navbar::before,
-		html body #navbar *::before {
-			will-change: auto;
-		}
-	}
-</style>
-
-<script>
-	(function () {
-		/* 和上游文章同一套 localStorage 键，方便按实测微调：
-		   navbarGlassBlur 0–30、navbarGlassScale 0–200、navbarGlassFrequency 0.002–0.03 */
-		var root = document.documentElement;
-		var clamp = function (v, min, max) { return Math.min(max, Math.max(min, v)); };
-		var read = function (key, fallback, min, max) {
-			try {
-				var v = parseFloat(localStorage.getItem(key));
-				return isFinite(v) ? clamp(v, min, max) : fallback;
-			} catch (_) { return fallback; }
-		};
-
-		var blur = read("navbarGlassBlur", 10, 0, 30);
-		var scale = read("navbarGlassScale", 120, 0, 200);
-		var freq = read("navbarGlassFrequency", 0.01, 0.002, 0.03);
-
-		function apply() {
-			root.style.setProperty("--ff-lg-blur", blur + "px");
-			/* 面板文字多，模糊留 16px 下限，避免壁纸把字吃掉 */
-			root.style.setProperty("--ff-lg-panel-blur", Math.max(blur, 16) + "px");
-
-			var turbulence = document.querySelector("#navbar-glass-distortion feTurbulence");
-			if (turbulence) {
-				turbulence.setAttribute("baseFrequency", freq.toFixed(4) + " " + freq.toFixed(4));
-			}
-			var displacement = document.querySelector("#navbar-glass-distortion feDisplacementMap");
-			if (displacement) {
-				displacement.setAttribute("scale", String(Math.round(scale)));
-			}
-
-			root.setAttribute("data-glass-distortion", blur > 0 && scale > 0 ? "on" : "off");
-			var navbar = document.getElementById("navbar");
-			if (navbar) navbar.setAttribute("data-glass", blur > 0 ? "on" : "off");
-		}
-
-		apply();
-		document.addEventListener("swup:page:view", apply);
-	})();
-</script>
-
-<style>
-	/* ===== 菜单岛：一整块玻璃 + 平铺文字，不再每项再套一层胶囊 =====
-	   参考站的做法是外层一块玻璃岛，里面只有文字和图标；当前项是唯一
-	   的浅色实心胶囊。这里用更高特异性覆盖上面那套「小胶囊」样式，
-	   同时把液态玻璃那层 ::before 从菜单项上摘掉，避免又出现一层内嵌玻璃。 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button {
-		background: transparent !important;
-		border-color: transparent !important;
-		box-shadow: none !important;
-		color: var(--ff-np-fg) !important;
-		padding-inline: 0.75rem !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a::after,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button::after {
-		content: none !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a:hover:not(.ff-np-active),
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button:hover:not(.ff-np-active) {
-		background: rgba(255, 255, 255, 0.26) !important;
-		border-color: transparent !important;
-		color: var(--ff-np-fg) !important;
-	}
-
-	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a:hover:not(.ff-np-active),
-	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button:hover:not(.ff-np-active) {
-		background: rgba(255, 255, 255, 0.1) !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a.ff-np-active,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button.ff-np-active {
-		background: rgba(255, 255, 255, 0.88) !important;
-		border-color: transparent !important;
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14) !important;
-		color: color-mix(in oklch, var(--primary) 42%, black) !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a.ff-np-active .navbar-icon,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button.ff-np-active .navbar-icon {
-		color: inherit !important;
-		opacity: 1 !important;
-	}
-
-	/* 两个自定义高亮入口也退回平铺文字，只留主题色文字和图标 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"],
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"] {
-		background: transparent !important;
-		border-color: transparent !important;
-		box-shadow: none !important;
-		color: var(--primary) !important;
-		font-weight: 700 !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"]:hover,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"]:hover {
-		background: rgba(255, 255, 255, 0.26) !important;
-		color: var(--primary) !important;
-	}
-
-	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"]:hover,
-	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"]:hover {
-		background: rgba(255, 255, 255, 0.1) !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="https://sukiai.cn/"] svg,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a[href="/chat/"] svg {
-		color: inherit !important;
-		opacity: 1 !important;
-	}
-
-	@media (max-width: 1279px) {
-		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a,
-		html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button {
-			padding-inline: 0.5rem !important;
-		}
-	}
-</style>
-
-<style>
-	/* ===== 菜单岛外壳直接去掉 =====
-	   只保留菜单项本身：没有包裹条、没有底色、没有描边、没有投影、
-	   也没有液态玻璃伪元素。当前项仍是那枚浅色实心胶囊。 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) {
-		background: transparent !important;
-		border-color: transparent !important;
-		border-width: 0 !important;
-		box-shadow: none !important;
-		backdrop-filter: none !important;
-		-webkit-backdrop-filter: none !important;
-		padding: 0 !important;
-		gap: 0.25rem !important;
-	}
-
-	/* 没有外壳垫底，文字要靠一圈很淡的光晕跟壁纸分开 */
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button {
-		text-shadow: 0 1px 2px rgba(255, 255, 255, 0.92), 0 0 6px rgba(255, 255, 255, 0.6) !important;
-	}
-
-	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a,
-	html.dark body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button {
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.6) !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > a.ff-np-active,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2) .dropdown-container > button.ff-np-active {
-		text-shadow: none !important;
-	}
-
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2)::before,
-	html body #navbar[data-transparent-mode] > div:first-of-type > div:first-child > div:nth-child(2)::after {
-		content: none !important;
 	}
 </style>
