@@ -25,6 +25,17 @@ export const en: Translation = {
 	[Key.tags]: "Tags",
 	[Key.categories]: "Categories",
 	[Key.allCategories]: "All Categories",
+	[Key.categoriesSubtitle]:
+		"Visualize how posts are grouped by category and linked by tags",
+	[Key.categoriesCount]: "categories",
+	[Key.categoryRoseTitle]: "Post Categories",
+	[Key.tagGraphTitle]: "Tag Relationships",
+	[Key.tagGraphDescription]:
+		"Bigger nodes mean more posts; thicker links mean more co-occurrences. Drag or zoom to explore, click a tag to browse its archive.",
+	[Key.tagGraphEmpty]: "Not enough tag co-occurrence data yet",
+	[Key.tagGraphMore]: "View all tags",
+	[Key.tagGraphLinks]: "links",
+	[Key.cooccurrence]: "co-occurrences",
 	[Key.allTags]: "All Tags",
 	[Key.allSeries]: "All Series",
 	[Key.recentPosts]: "Recent Posts",

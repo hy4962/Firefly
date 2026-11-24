@@ -1,0 +1,324 @@
+/* 分类页：玫瑰图 + 标签关系图 */
+.categories-page {
+	width: 100%;
+	container-type: inline-size;
+}
+
+.categories-page__section-header {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.categories-page__section-title,
+.tag-graph__section-title {
+	margin: 0;
+	color: rgb(0 0 0 / 88%);
+	font-size: 1.25rem;
+	font-weight: 800;
+	line-height: 1.35;
+	letter-spacing: -0.02em;
+}
+
+:root.dark .categories-page__section-title,
+:root.dark .tag-graph__section-title {
+	color: rgb(255 255 255 / 90%);
+}
+
+.categories-page__section-meta,
+.tag-graph__meta {
+	margin: 0.2rem 0 0;
+	color: var(--content-meta);
+	font-size: 0.875rem;
+	line-height: 1.5;
+	font-variant-numeric: tabular-nums;
+}
+
+.categories-page__divider {
+	margin: 2.25rem 0;
+	border-top: 1px solid var(--line-divider);
+}
+
+.categories-page__empty {
+	display: flex;
+	min-height: 11rem;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem 1.25rem;
+	border: 1px solid
+		color-mix(in oklch, var(--primary) 12%, var(--line-divider));
+	border-radius: var(--radius-large);
+	background: color-mix(in oklch, var(--primary) 4%, var(--card-bg));
+	color: var(--content-meta);
+	font-size: 0.9375rem;
+	text-align: center;
+}
+
+.categories-page__empty svg {
+	margin-bottom: 0.6rem;
+	font-size: 2.6rem;
+	opacity: 0.45;
+}
+
+/* ===== 分类玫瑰图 ===== */
+.category-rose {
+	width: 100%;
+}
+
+.category-rose__layout {
+	display: flex;
+	align-items: stretch;
+	gap: 1.25rem;
+}
+
+.category-rose__chart {
+	height: 360px;
+	min-width: 0;
+	flex: 1;
+	overflow: hidden;
+	border: 1px solid
+		color-mix(in oklch, var(--primary) 12%, var(--line-divider));
+	border-radius: var(--radius-large);
+	background:
+		radial-gradient(
+			ellipse at 32% 18%,
+			color-mix(in oklch, var(--primary) 8%, transparent),
+			transparent 58%
+		),
+		var(--card-bg);
+}
+
+.category-rose__list {
+	display: flex;
+	width: 15rem;
+	flex: 0 0 15rem;
+	flex-direction: column;
+	gap: 0.2rem;
+	padding: 0.45rem;
+	border: 1px solid
+		color-mix(in oklch, var(--primary) 12%, var(--line-divider));
+	border-radius: var(--radius-large);
+	background: color-mix(in oklch, var(--primary) 3%, var(--card-bg));
+}
+
+.category-rose__list-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.5rem 0.65rem;
+	border-radius: calc(var(--radius-large) - 0.35rem);
+	color: rgb(0 0 0 / 82%);
+	font-size: 0.9375rem;
+	line-height: 1.4;
+	text-decoration: none;
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease,
+		transform 0.2s ease;
+}
+
+:root.dark .category-rose__list-item {
+	color: rgb(255 255 255 / 88%);
+}
+
+.category-rose__list-item:hover {
+	color: var(--primary);
+	background: color-mix(in oklch, var(--primary) 12%, transparent);
+	transform: translateX(2px);
+}
+
+.category-rose__list-item:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
+}
+
+.category-rose__list-name {
+	display: inline-flex;
+	min-width: 0;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 600;
+	text-transform: capitalize;
+}
+
+.category-rose__swatch {
+	width: 0.55rem;
+	height: 0.55rem;
+	flex-shrink: 0;
+	border-radius: 999px;
+	background: var(--swatch, var(--primary));
+	box-shadow: 0 0 0 2px
+		color-mix(in oklch, var(--swatch, var(--primary)) 22%, transparent);
+}
+
+.category-rose__list-count {
+	flex-shrink: 0;
+	color: var(--content-meta);
+	font-size: 0.8125rem;
+	font-variant-numeric: tabular-nums;
+	transition: color 0.2s ease;
+}
+
+.category-rose__list-item:hover .category-rose__list-count {
+	color: var(--primary);
+}
+
+.category-rose__list-total {
+	margin-top: 0.35rem;
+	padding: 0.6rem 0.65rem 0.4rem;
+	border-top: 1px solid var(--line-divider);
+	color: var(--content-meta);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ===== 标签关系图 ===== */
+.tag-graph {
+	position: relative;
+	width: 100%;
+}
+
+.tag-graph__container {
+	scroll-margin-top: 5.5rem;
+}
+
+.tag-graph__header {
+	margin-bottom: 1rem;
+}
+
+.tag-graph__heading {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.tag-graph__hint {
+	margin: 0.45rem 0 0;
+	color: var(--content-meta);
+	font-size: 0.8125rem;
+	line-height: 1.6;
+}
+
+.tag-graph__more {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.4rem 0.75rem;
+	border: 1px solid color-mix(in oklch, var(--primary) 20%, transparent);
+	border-radius: 9999px;
+	background: color-mix(in oklch, var(--primary) 8%, transparent);
+	color: var(--btn-content);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	white-space: nowrap;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease;
+}
+
+.tag-graph__more:hover {
+	border-color: color-mix(in oklch, var(--primary) 30%, transparent);
+	background: color-mix(in oklch, var(--primary) 16%, transparent);
+	color: var(--primary);
+}
+
+.tag-graph__chart {
+	width: 100%;
+	height: 520px;
+	overflow: hidden;
+	border: 1px solid
+		color-mix(in oklch, var(--primary) 12%, var(--line-divider));
+	border-radius: var(--radius-large);
+	background:
+		radial-gradient(
+			ellipse at 30% 20%,
+			color-mix(in oklch, var(--primary) 8%, transparent),
+			transparent 58%
+		),
+		var(--card-bg);
+}
+
+@container (max-width: 640px) {
+	.category-rose__layout {
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.category-rose__chart {
+		width: 100%;
+		height: 320px;
+		flex: 0 0 auto;
+	}
+
+	.category-rose__list {
+		display: grid;
+		width: 100%;
+		flex: 1 1 auto;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.category-rose__list-total {
+		grid-column: 1 / -1;
+	}
+}
+
+@media (max-width: 1023px) {
+	.tag-graph__chart {
+		height: 500px;
+	}
+}
+
+@media (max-width: 768px) {
+	.category-rose__layout {
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.category-rose__chart {
+		width: 100%;
+		height: 300px;
+		flex: 0 0 auto;
+	}
+
+	.category-rose__list {
+		width: 100%;
+		flex: 1 1 auto;
+	}
+
+	.tag-graph__heading {
+		flex-direction: column;
+	}
+
+	.tag-graph__chart {
+		height: 440px;
+	}
+}
+
+@media (max-width: 480px) {
+	.category-rose__chart {
+		height: 250px;
+	}
+
+	.tag-graph__chart {
+		height: 420px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.category-rose__list-item,
+	.tag-graph__more {
+		transition: none;
+	}
+
+	.category-rose__list-item:hover {
+		transform: none;
+	}
+}

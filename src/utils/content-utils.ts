@@ -1,6 +1,11 @@
 import { type CollectionEntry, getCollection } from "astro:content";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
+import {
+	type BuildTagGraphOptions,
+	buildTagGraphData,
+	type TagGraphData,
+} from "@utils/tag-graph-data";
 import { getCategoryUrl } from "@utils/url-utils";
 
 // // Retrieve posts and sort them by publication date
@@ -182,6 +187,27 @@ export type Category = {
 	count: number;
 	url: string;
 };
+
+/**
+ * 获取标签关系图数据（节点 + 共现连线）
+ * 供 /categories/ 的标签关系图使用
+ */
+export async function getTagGraphData(
+	options?: BuildTagGraphOptions,
+): Promise<TagGraphData> {
+	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
+		return import.meta.env.PROD ? data.draft !== true : true;
+	});
+
+	return buildTagGraphData(
+		allBlogPosts.map((post) => ({
+			id: post.id,
+			title: post.data.title,
+			tags: post.data.tags || [],
+		})),
+		options,
+	);
+}
 
 export async function getCategoryList(): Promise<Category[]> {
 	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {

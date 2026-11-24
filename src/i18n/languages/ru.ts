@@ -25,6 +25,17 @@ export const ru: Translation = {
 	[Key.tags]: "Теги",
 	[Key.categories]: "Категории",
 	[Key.allCategories]: "Все категории",
+	[Key.categoriesSubtitle]:
+		"Визуализация категорий статей и связей между тегами",
+	[Key.categoriesCount]: "категорий",
+	[Key.categoryRoseTitle]: "Категории статей",
+	[Key.tagGraphTitle]: "Связи тегов",
+	[Key.tagGraphDescription]:
+		"Чем больше узел, тем больше статей; чем толще линия, тем чаще теги встречаются вместе. Перетаскивайте, масштабируйте и нажимайте на тег, чтобы открыть архив.",
+	[Key.tagGraphEmpty]: "Пока недостаточно данных о совместном появлении тегов",
+	[Key.tagGraphMore]: "Все теги",
+	[Key.tagGraphLinks]: "связей",
+	[Key.cooccurrence]: "вместе",
 	[Key.allTags]: "Все теги",
 	[Key.allSeries]: "Все серии",
 	[Key.recentPosts]: "Последние посты",

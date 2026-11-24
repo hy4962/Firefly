@@ -1,0 +1,389 @@
+---
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { Category } from "@/utils/content-utils";
+import { url } from "@/utils/url-utils";
+
+interface Props {
+	categories: Category[];
+	totalPosts: number;
+}
+
+const { categories, totalPosts } = Astro.props;
+
+const articleUnit = i18n(I18nKey.postsCount);
+const chartData = categories.map((category) => ({
+	name: category.name,
+	value: category.count,
+	url: category.url,
+}));
+const chartAriaLabel = `${i18n(I18nKey.categoryRoseTitle)} · ${categories.length} ${i18n(I18nKey.categoriesCount)}`;
+const echartsSrc = url("/assets/js/echarts.min.js");
+---
+
+<section class="category-rose">
+	<div
+		id="category-rose-container"
+		class="category-rose__layout"
+		data-chart-data={JSON.stringify(chartData)}
+		data-article-unit={articleUnit}
+		data-echarts-src={echartsSrc}
+	>
+		<div
+			id="category-rose-chart"
+			class="category-rose__chart"
+			role="img"
+			aria-label={chartAriaLabel}
+		>
+		</div>
+		<div class="category-rose__list">
+			{
+				categories.map((category) => (
+					<a href={category.url} class="category-rose__list-item">
+						<span class="category-rose__list-name">
+							<span class="category-rose__swatch" aria-hidden="true" />
+							{category.name}
+						</span>
+						<span class="category-rose__list-count">
+							{category.count} {articleUnit}
+						</span>
+					</a>
+				))
+			}
+			<div class="category-rose__list-total">
+				{categories.length} {i18n(I18nKey.categoriesCount)} · {totalPosts}{" "}
+				{articleUnit}
+			</div>
+		</div>
+	</div>
+</section>
+
+<script is:inline>
+	(function () {
+		function prefersReducedMotion() {
+			return (
+				window.matchMedia &&
+				window.matchMedia("(prefers-reduced-motion: reduce)").matches
+			);
+		}
+
+		function getHue() {
+			var raw = getComputedStyle(document.documentElement)
+				.getPropertyValue("--hue")
+				.trim();
+			var parsed = parseFloat(raw);
+			return Number.isFinite(parsed) ? parsed : 250;
+		}
+
+		function isDark() {
+			return document.documentElement.classList.contains("dark");
+		}
+
+		function buildPalette(count) {
+			var baseHue = getHue();
+			var dark = isDark();
+			var colors = [];
+			var step = 360 / Math.max(count, 1);
+			for (var i = 0; i < count; i++) {
+				var hue = (baseHue + i * step) % 360;
+				var saturation = dark ? 46 : 52;
+				var lightness = dark ? 64 + (i % 3) * 4 : 48 + (i % 3) * 5;
+				colors.push(
+					"hsl(" +
+						hue.toFixed(1) +
+						" " +
+						saturation +
+						"% " +
+						lightness +
+						"%)",
+				);
+			}
+			return colors;
+		}
+
+		function getThemeColors() {
+			var dark = isDark();
+			return {
+				dark: dark,
+				text: dark ? "rgba(255,255,255,0.88)" : "rgba(24,24,27,0.88)",
+				subtext: dark ? "rgba(255,255,255,0.45)" : "rgba(63,63,70,0.5)",
+				tooltipBg: dark ? "rgba(24,24,27,0.96)" : "rgba(255,255,255,0.96)",
+				tooltipBorder: dark
+					? "rgba(255,255,255,0.14)"
+					: "rgba(0,0,0,0.08)",
+				shadow: dark ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.16)",
+			};
+		}
+
+		function escapeHtml(value) {
+			return String(value)
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;")
+				.replace(/'/g, "&#39;");
+		}
+
+		function loadECharts(src, callback) {
+			if (window.echarts) {
+				callback(window.echarts);
+				return;
+			}
+			var existing = document.querySelector("script[data-echarts-loader]");
+			if (existing) {
+				if (window.echarts) {
+					callback(window.echarts);
+				} else {
+					existing.addEventListener(
+						"load",
+						function () {
+							callback(window.echarts);
+						},
+						{ once: true },
+					);
+					existing.addEventListener(
+						"error",
+						function () {
+							console.warn("[CATEGORY-ROSE] Failed to load ECharts");
+						},
+						{ once: true },
+					);
+				}
+				return;
+			}
+			var script = document.createElement("script");
+			script.src = src;
+			script.async = true;
+			script.dataset.echartsLoader = "true";
+			script.onload = function () {
+				callback(window.echarts);
+			};
+			script.onerror = function () {
+				script.remove();
+				console.warn("[CATEGORY-ROSE] Failed to load ECharts");
+			};
+			document.head.appendChild(script);
+		}
+
+		function applySwatches(container, palette) {
+			var items = container.querySelectorAll(".category-rose__list-item");
+			for (var i = 0; i < items.length; i++) {
+				var swatch = items[i].querySelector(".category-rose__swatch");
+				if (swatch) {
+					swatch.style.setProperty(
+						"--swatch",
+						palette[i % palette.length],
+					);
+				}
+			}
+		}
+
+		var activeState = null;
+
+		function cleanup() {
+			if (!activeState) return;
+			window.removeEventListener("resize", activeState.resizeHandler);
+			if (activeState.observer) activeState.observer.disconnect();
+			activeState.chart.dispose();
+			activeState.chartDom.removeAttribute("data-echarts-initialized");
+			activeState = null;
+		}
+
+		function showLabelsForWidth(width) {
+			return width >= 420;
+		}
+
+		function initCategoryRose() {
+			var container = document.getElementById("category-rose-container");
+			if (!container) {
+				cleanup();
+				return;
+			}
+
+			var chartDom = document.getElementById("category-rose-chart");
+			if (!chartDom) return;
+			if (chartDom.getAttribute("data-echarts-initialized") === "true") {
+				return;
+			}
+
+			var chartData;
+			try {
+				chartData = JSON.parse(container.getAttribute("data-chart-data"));
+			} catch (error) {
+				return;
+			}
+			if (!chartData || !chartData.length) return;
+
+			var articleUnit = container.getAttribute("data-article-unit") || "";
+			var echartsSrc =
+				container.getAttribute("data-echarts-src") ||
+				"/assets/js/echarts.min.js";
+
+			loadECharts(echartsSrc, function (echarts) {
+				if (!echarts) return;
+				if (!document.documentElement.contains(container)) return;
+				if (!document.documentElement.contains(chartDom)) return;
+				if (chartDom.getAttribute("data-echarts-initialized") === "true") {
+					return;
+				}
+
+				cleanup();
+				chartDom.setAttribute("data-echarts-initialized", "true");
+
+				var palette = buildPalette(chartData.length);
+				applySwatches(container, palette);
+
+				var reduced = prefersReducedMotion();
+				var chart = echarts.init(chartDom, null, { renderer: "svg" });
+
+				function getOption(animate) {
+					var currentColors = getThemeColors();
+					var width = chartDom.clientWidth;
+					var showLabels = showLabelsForWidth(width);
+					return {
+						animation: animate && !prefersReducedMotion(),
+						animationDuration: animate ? 800 : 0,
+						animationEasing: "cubicOut",
+						animationDelay: function (index) {
+							return animate && !prefersReducedMotion()
+								? index * 60
+								: 0;
+						},
+						tooltip: {
+							trigger: "item",
+							formatter: function (params) {
+								return (
+									"<strong>" +
+									escapeHtml(params.name) +
+									"</strong><br/>" +
+									params.value +
+									" " +
+									escapeHtml(articleUnit) +
+									"<br/>" +
+									params.percent +
+									"%"
+								);
+							},
+							backgroundColor: currentColors.tooltipBg,
+							borderColor: currentColors.tooltipBorder,
+							borderWidth: 1,
+							textStyle: { color: currentColors.text },
+							extraCssText:
+								"border-radius:12px;box-shadow:0 10px 28px " +
+								currentColors.shadow +
+								";",
+						},
+						series: [
+							{
+								name: "categories",
+								type: "pie",
+								radius: ["24%", "68%"],
+								center: ["50%", "50%"],
+								roseType: "area",
+								color: palette,
+								itemStyle: {
+									borderRadius: 8,
+									borderColor: currentColors.tooltipBg,
+									borderWidth: 2,
+								},
+								label: {
+									show: showLabels,
+									color: currentColors.text,
+									fontSize: 12,
+									fontWeight: "bold",
+									formatter: "{b}",
+								},
+								labelLine: {
+									show: showLabels,
+									length: 8,
+									length2: 8,
+									lineStyle: { color: currentColors.subtext },
+								},
+								labelLayout: { hideOverlap: true },
+								emphasis: {
+									scale: false,
+									itemStyle: {
+										shadowBlur: reduced ? 0 : 14,
+										shadowOffsetX: 0,
+										shadowColor: currentColors.shadow,
+									},
+								},
+								data: chartData.map(function (item, index) {
+									return {
+										name: item.name,
+										value: item.value,
+										url: item.url,
+										itemStyle: { color: palette[index] },
+									};
+								}),
+							},
+						],
+					};
+				}
+
+				chart.setOption(getOption(true));
+
+				chart.on("click", function (params) {
+					for (var i = 0; i < chartData.length; i++) {
+						if (
+							chartData[i].name === params.name &&
+							chartData[i].url
+						) {
+							if (
+								window.swup &&
+								typeof window.swup.navigate === "function"
+							) {
+								window.swup.navigate(chartData[i].url);
+							} else {
+								window.location.href = chartData[i].url;
+							}
+							break;
+						}
+					}
+				});
+
+				var lastWidth = chartDom.clientWidth;
+				var state = {
+					chart: chart,
+					chartDom: chartDom,
+					resizeHandler: function () {
+						chart.resize();
+						var width = chartDom.clientWidth;
+						if (
+							showLabelsForWidth(width) !==
+							showLabelsForWidth(lastWidth)
+						) {
+							lastWidth = width;
+							chart.setOption({
+								series: [{ label: { show: showLabelsForWidth(width) }, labelLine: { show: showLabelsForWidth(width) } }],
+							});
+						}
+					},
+					observer: null,
+				};
+
+				// 主题色相或明暗模式变化时同步图表配色
+				state.observer = new MutationObserver(function () {
+					var nextPalette = buildPalette(chartData.length);
+					applySwatches(container, nextPalette);
+					chart.setOption(getOption(false));
+				});
+				state.observer.observe(document.documentElement, {
+					attributes: true,
+					attributeFilter: ["class", "style", "data-theme"],
+				});
+
+				activeState = state;
+				window.addEventListener("resize", state.resizeHandler);
+			});
+		}
+
+		initCategoryRose();
+
+		if (!window.__categoryRoseBound) {
+			window.__categoryRoseBound = true;
+			document.addEventListener("astro:before-swap", cleanup);
+			document.addEventListener("astro:page-load", initCategoryRose);
+		}
+	})();
+</script>

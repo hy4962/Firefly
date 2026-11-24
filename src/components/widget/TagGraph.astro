@@ -1,0 +1,799 @@
+---
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { TagGraphData } from "@/utils/tag-graph-data";
+import { url } from "@/utils/url-utils";
+
+interface Props {
+	graph: TagGraphData;
+}
+
+const { graph } = Astro.props;
+
+const articleUnit = i18n(I18nKey.postsCount);
+const cooccurLabel = i18n(I18nKey.cooccurrence);
+const chartAriaLabel = `${i18n(I18nKey.tagGraphTitle)} · ${graph.nodes.length} ${i18n(I18nKey.tagsCount)}`;
+const echartsSrc = url("/assets/js/echarts.min.js");
+---
+
+<div
+	id="tag-graph-container"
+	class="tag-graph__container"
+	data-graph={JSON.stringify(graph)}
+	data-article-unit={articleUnit}
+	data-cooccur-label={cooccurLabel}
+	data-echarts-src={echartsSrc}
+>
+	<div
+		id="tag-graph-chart"
+		class="tag-graph__chart"
+		role="img"
+		aria-label={chartAriaLabel}
+	>
+	</div>
+</div>
+
+<script is:inline>
+	(function () {
+		function prefersReducedMotion() {
+			return (
+				window.matchMedia &&
+				window.matchMedia("(prefers-reduced-motion: reduce)").matches
+			);
+		}
+
+		function getHue() {
+			var raw = getComputedStyle(document.documentElement)
+				.getPropertyValue("--hue")
+				.trim();
+			var parsed = parseFloat(raw);
+			return Number.isFinite(parsed) ? parsed : 250;
+		}
+
+		function isDark() {
+			return document.documentElement.classList.contains("dark");
+		}
+
+		function buildPalette(count) {
+			var baseHue = getHue();
+			var dark = isDark();
+			var colors = [];
+			var total = Math.max(count, 8);
+			var step = (360 / total) * 0.85;
+			for (var i = 0; i < total; i++) {
+				var hue = (baseHue + i * step) % 360;
+				var saturation = dark ? 48 : 52;
+				var lightness = dark ? 66 + (i % 4) * 3 : 46 + (i % 4) * 4;
+				colors.push(
+					"hsl(" +
+						hue.toFixed(1) +
+						" " +
+						saturation +
+						"% " +
+						lightness +
+						"%)",
+				);
+			}
+			return colors;
+		}
+
+		function getThemeColors() {
+			var dark = isDark();
+			var hue = getHue();
+			return {
+				dark: dark,
+				text: dark ? "rgba(255,255,255,0.9)" : "rgba(24,24,27,0.92)",
+				tooltipBg: dark ? "rgba(24,24,27,0.96)" : "rgba(255,255,255,0.96)",
+				tooltipBorder: dark
+					? "rgba(255,255,255,0.14)"
+					: "rgba(0,0,0,0.08)",
+				primary: "hsl(" + hue.toFixed(1) + " " + (dark ? "52% 68%" : "55% 48%") + ")",
+				border: dark ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.92)",
+				shadow: dark ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.14)",
+				labelBg: dark
+					? "rgba(24,24,27,0.82)"
+					: "rgba(255,255,255,0.86)",
+			};
+		}
+
+		function escapeHtml(value) {
+			return String(value)
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;")
+				.replace(/'/g, "&#39;");
+		}
+
+		function loadECharts(src, callback) {
+			if (window.echarts) {
+				callback(window.echarts);
+				return;
+			}
+			var existing = document.querySelector("script[data-echarts-loader]");
+			if (existing) {
+				if (window.echarts) {
+					callback(window.echarts);
+				} else {
+					existing.addEventListener(
+						"load",
+						function () {
+							callback(window.echarts);
+						},
+						{ once: true },
+					);
+				}
+				return;
+			}
+			var script = document.createElement("script");
+			script.src = src;
+			script.async = true;
+			script.dataset.echartsLoader = "true";
+			script.onload = function () {
+				callback(window.echarts);
+			};
+			script.onerror = function () {
+				script.remove();
+				console.warn("[TAG-GRAPH] Failed to load ECharts");
+			};
+			document.head.appendChild(script);
+		}
+
+		function getSymbolSize(value, minValue, maxValue) {
+			var minSize = 14;
+			var maxSize = 50;
+			if (maxValue === minValue) return 44;
+			return (
+				minSize +
+				((value - minValue) / (maxValue - minValue)) *
+					(maxSize - minSize)
+			);
+		}
+
+		var activeState = null;
+
+		function cleanup() {
+			if (!activeState) return;
+			window.removeEventListener("resize", activeState.resizeHandler);
+			if (activeState.forceTimer)
+				clearInterval(activeState.forceTimer);
+			if (activeState.resizeTimer)
+				clearTimeout(activeState.resizeTimer);
+			if (activeState.themeTimer)
+				clearTimeout(activeState.themeTimer);
+			if (activeState.observer) activeState.observer.disconnect();
+			if (activeState.chart) activeState.chart.dispose();
+			activeState.chartDom.removeAttribute("data-echarts-initialized");
+			activeState = null;
+		}
+
+		function initTagGraph() {
+			var container = document.getElementById("tag-graph-container");
+			if (!container) {
+				cleanup();
+				return;
+			}
+
+			var chartDom = document.getElementById("tag-graph-chart");
+			if (!chartDom) return;
+			if (chartDom.getAttribute("data-echarts-initialized") === "true") {
+				return;
+			}
+
+			var graph;
+			try {
+				graph = JSON.parse(container.getAttribute("data-graph"));
+			} catch (error) {
+				return;
+			}
+			if (!graph || !graph.nodes || !graph.nodes.length) return;
+
+			var articleUnit = container.getAttribute("data-article-unit") || "";
+			var cooccurLabel = container.getAttribute("data-cooccur-label") || "";
+			var echartsSrc =
+				container.getAttribute("data-echarts-src") ||
+				"/assets/js/echarts.min.js";
+
+			loadECharts(echartsSrc, function (echarts) {
+				if (!echarts) return;
+				if (!document.documentElement.contains(container)) return;
+				if (!document.documentElement.contains(chartDom)) return;
+				if (chartDom.getAttribute("data-echarts-initialized") === "true") {
+					return;
+				}
+
+				cleanup();
+				chartDom.setAttribute("data-echarts-initialized", "true");
+
+				var values = graph.nodes.map(function (node) {
+					return node.value;
+				});
+				var maxValue = Math.max.apply(null, values);
+				var minValue = Math.min.apply(null, values);
+				var maxLink = Math.max.apply(
+					null,
+					graph.links
+						.map(function (link) {
+							return link.value;
+						})
+						.concat([1]),
+				);
+				function getLabelThreshold(width) {
+					return Math.max(
+						2,
+						Math.ceil(maxValue * (width < 420 ? 0.35 : 0.18)),
+					);
+				}
+
+				var labelThreshold = getLabelThreshold(chartDom.clientWidth);
+				var reduced = prefersReducedMotion();
+
+				var labelPositions = [];
+				var labelGap = 6;
+				var edgePadding = 2;
+
+				var rawPositions = null;
+				var chart = null;
+				var forceChart = null;
+
+				var state = {
+					chart: null,
+					chartDom: chartDom,
+					resizeHandler: onResize,
+					observer: null,
+					forceTimer: null,
+					resizeTimer: null,
+					themeTimer: null,
+				};
+				activeState = state;
+				window.addEventListener("resize", onResize);
+
+				function buildNodes(
+					currentColors,
+					currentPalette,
+					positions,
+					showLabels,
+				) {
+					return graph.nodes.map(function (node, index) {
+						var color =
+							currentPalette[index % currentPalette.length];
+						var strong = node.value >= maxValue * 0.5;
+						var item = {
+							id: node.id,
+							name: node.name,
+							value: node.value,
+							url: node.url,
+							posts: node.posts,
+							symbolSize: getSymbolSize(
+								node.value,
+								minValue,
+								maxValue,
+							),
+							itemStyle: {
+								color: color,
+								borderColor: currentColors.border,
+								borderWidth: 2,
+								shadowBlur: reduced ? 0 : 12,
+								shadowColor: currentColors.shadow,
+							},
+							emphasis: {
+								itemStyle: { color: color },
+								label: { show: true },
+							},
+							label: {
+								show: showLabels && node.value >= labelThreshold,
+								position: "right",
+								distance: 6,
+								formatter: "{b}",
+								color: currentColors.text,
+								fontSize: strong ? 13 : 11,
+								fontWeight: strong ? "bold" : "normal",
+								backgroundColor: currentColors.labelBg,
+								borderRadius: 4,
+								padding: [2, 4],
+							},
+						};
+						if (positions && positions[index]) {
+							item.x = positions[index].x;
+							item.y = positions[index].y;
+						}
+						return item;
+					});
+				}
+
+				function buildLinks(currentColors) {
+					return graph.links.map(function (link) {
+						var weight = link.value / maxLink;
+						return {
+							source: link.source,
+							target: link.target,
+							value: link.value,
+							lineStyle: {
+								width: 1 + weight * 2.6,
+								color: currentColors.primary,
+								opacity: 0.26 + weight * 0.48,
+								curveness: 0.12,
+							},
+						};
+					});
+				}
+
+				function buildOption(
+					currentColors,
+					currentPalette,
+					positions,
+					showLabels,
+				) {
+					var staticLayout = Boolean(positions);
+					return {
+						animation: staticLayout ? false : !reduced,
+						animationDuration: staticLayout
+							? 0
+							: reduced
+								? 0
+								: 700,
+						animationEasing: "cubicOut",
+						tooltip: {
+							confine: true,
+							backgroundColor: currentColors.tooltipBg,
+							borderColor: currentColors.tooltipBorder,
+							borderWidth: 1,
+							textStyle: { color: currentColors.text },
+							extraCssText:
+								"border-radius:12px;box-shadow:0 10px 28px " +
+								currentColors.shadow +
+								";max-width:280px;white-space:normal;",
+							formatter: function (params) {
+								if (params.dataType === "edge") {
+									return (
+										escapeHtml(params.data.source) +
+										" ↔ " +
+										escapeHtml(params.data.target) +
+										"<br/>" +
+										escapeHtml(cooccurLabel) +
+										" " +
+										params.data.value +
+										" " +
+										escapeHtml(articleUnit)
+									);
+								}
+								var data = params.data || {};
+								var html =
+									"<strong>" +
+									escapeHtml(data.name) +
+									"</strong><br/>" +
+									data.value +
+									" " +
+									escapeHtml(articleUnit);
+								if (data.posts && data.posts.length) {
+									html +=
+										'<div style="margin-top:6px;opacity:.72;font-size:12px;line-height:1.6">' +
+										data.posts
+											.map(function (title) {
+												return escapeHtml(title);
+											})
+											.join("<br/>") +
+										"</div>";
+								}
+								return html;
+							},
+						},
+						series: [
+							{
+								type: "graph",
+								layout: staticLayout ? "none" : "force",
+								roam: true,
+								draggable: !staticLayout,
+								scaleLimit: { min: 0.45, max: 3 },
+								force: {
+									initLayout: "circular",
+									repulsion: Math.min(
+										200,
+										60 + graph.nodes.length * 1.6,
+									),
+									edgeLength: [22, 70],
+									gravity: 0.18,
+									friction: 0.65,
+									layoutAnimation: false,
+								},
+								emphasis: {
+									focus: "adjacency",
+									scale: false,
+								},
+								blur: {
+									itemStyle: { opacity: 0.28 },
+									lineStyle: { opacity: 0.08 },
+									label: { opacity: 0.18 },
+								},
+								labelLayout: staticLayout
+									? placeLabel
+									: undefined,
+								zoom: 1,
+								lineStyle: {
+									color: currentColors.primary,
+								},
+								data: buildNodes(
+									currentColors,
+									currentPalette,
+									positions,
+									showLabels,
+								),
+								links: buildLinks(currentColors),
+							},
+						],
+					};
+				}
+
+				function collectNodeBoxes(positions) {
+					return positions.map(function (point, index) {
+						var size = getSymbolSize(
+							graph.nodes[index].value,
+							minValue,
+							maxValue,
+						);
+						return {
+							index: index,
+							x: point.x - size / 2,
+							y: point.y - size / 2,
+							width: size,
+							height: size,
+						};
+					});
+				}
+
+				function measureLabelWidth(text, strong) {
+					if (!measureLabelWidth.canvas) {
+						measureLabelWidth.canvas =
+							document.createElement("canvas");
+					}
+					var context = measureLabelWidth.canvas.getContext("2d");
+					if (!context) return text.length * (strong ? 13 : 11);
+					context.font =
+						(strong ? "600 " : "") +
+						(strong ? 13 : 11) +
+						'px -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif';
+					return context.measureText(text).width;
+				}
+
+				// 在静态布局上一次性算好标签位置，避免力导向移动后标签错位
+				function computeLabelPositions(positions, chartWidth, chartHeight) {
+					var placed = [];
+					var boxes = collectNodeBoxes(positions);
+					var indexes = [];
+					for (var n = 0; n < graph.nodes.length; n++) {
+						if (graph.nodes[n].value >= labelThreshold) {
+							indexes.push(n);
+						}
+					}
+					indexes.sort(function (a, b) {
+						return graph.nodes[b].value - graph.nodes[a].value;
+					});
+
+					var result = [];
+					for (var i = 0; i < indexes.length; i++) {
+						var index = indexes[i];
+						var node = graph.nodes[index];
+						var box = boxes[index];
+						var strong = node.value >= maxValue * 0.5;
+						var width =
+							Math.ceil(measureLabelWidth(node.name, strong)) + 12;
+						var height = strong ? 22 : 19;
+
+						var centerY =
+							box.y + box.height / 2 - height / 2;
+						var centerX =
+							box.x + box.width / 2 - width / 2;
+						var candidates = [
+							{
+								x: box.x + box.width + labelGap,
+								y: centerY,
+							},
+							{
+								x: box.x - width - labelGap,
+								y: centerY,
+							},
+							{
+								x: centerX,
+								y: box.y - height - labelGap,
+							},
+							{
+								x: centerX,
+								y: box.y + box.height + labelGap,
+							},
+						];
+
+						function fits(candidate, avoidNodes) {
+							if (
+								candidate.x < edgePadding ||
+								candidate.y < edgePadding ||
+								candidate.x + width >
+									chartWidth - edgePadding ||
+								candidate.y + height >
+									chartHeight - edgePadding
+							) {
+								return false;
+							}
+							for (var p = 0; p < placed.length; p++) {
+								var other = placed[p];
+								if (
+									candidate.x < other.x + other.width &&
+									candidate.x + width > other.x &&
+									candidate.y < other.y + other.height &&
+									candidate.y + height > other.y
+								) {
+									return false;
+								}
+							}
+							if (!avoidNodes) return true;
+							for (var b = 0; b < boxes.length; b++) {
+								var nodeBox = boxes[b];
+								if (nodeBox.index === index) continue;
+								// 小节点可以被文字压住，避免标签无处可放
+								if (nodeBox.width < 26) continue;
+								if (
+									candidate.x <
+										nodeBox.x + nodeBox.width + 2 &&
+									candidate.x + width + 2 > nodeBox.x &&
+									candidate.y <
+										nodeBox.y + nodeBox.height + 2 &&
+									candidate.y + height + 2 > nodeBox.y
+								) {
+									return false;
+								}
+							}
+							return true;
+						}
+
+						var chosen = null;
+						for (var c = 0; c < candidates.length; c++) {
+							if (fits(candidates[c], true)) {
+								chosen = candidates[c];
+								break;
+							}
+						}
+						if (!chosen) {
+							// 密集区域退一步：选一个不压其他标签、压节点最少的位置
+							var bestCandidate = null;
+							var bestArea = Number.POSITIVE_INFINITY;
+							for (var c2 = 0; c2 < candidates.length; c2++) {
+								var relaxed = candidates[c2];
+								if (!fits(relaxed, false)) continue;
+								var overlapArea = 0;
+								for (var b2 = 0; b2 < boxes.length; b2++) {
+									var otherBox = boxes[b2];
+									if (otherBox.index === index) continue;
+									var ox =
+										Math.min(
+											relaxed.x + width,
+											otherBox.x + otherBox.width,
+										) - Math.max(relaxed.x, otherBox.x);
+									var oy =
+										Math.min(
+											relaxed.y + height,
+											otherBox.y + otherBox.height,
+										) - Math.max(relaxed.y, otherBox.y);
+									if (ox > 0 && oy > 0) overlapArea += ox * oy;
+								}
+								if (overlapArea < bestArea) {
+									bestArea = overlapArea;
+									bestCandidate = relaxed;
+								}
+							}
+							if (
+								!bestCandidate ||
+								bestArea > width * height * 0.55
+							) {
+								result[index] = { x: -9999, y: -9999 };
+								continue;
+							}
+							chosen = bestCandidate;
+						}
+
+						placed.push({
+							x: chosen.x,
+							y: chosen.y,
+							width: width,
+							height: height,
+						});
+						result[index] = {
+							x: chosen.x,
+							y: chosen.y,
+							align: "left",
+							verticalAlign: "top",
+						};
+					}
+					return result;
+				}
+
+				function placeLabel(params) {
+					return labelPositions[params.dataIndex];
+				}
+
+				function fitPositions(positions, width, height) {
+					var padX = Math.min(64, Math.max(28, width * 0.08));
+					var padY = 28;
+					var minX = Number.POSITIVE_INFINITY;
+					var maxX = Number.NEGATIVE_INFINITY;
+					var minY = Number.POSITIVE_INFINITY;
+					var maxY = Number.NEGATIVE_INFINITY;
+					for (var i = 0; i < positions.length; i++) {
+						var point = positions[i];
+						minX = Math.min(minX, point.x);
+						maxX = Math.max(maxX, point.x);
+						minY = Math.min(minY, point.y);
+						maxY = Math.max(maxY, point.y);
+					}
+					var spanX = Math.max(1, maxX - minX);
+					var spanY = Math.max(1, maxY - minY);
+					var scale = Math.min(
+						(width - padX * 2) / spanX,
+						(height - padY * 2) / spanY,
+						1.15,
+					);
+					var offsetX = (width - spanX * scale) / 2 - minX * scale;
+					var offsetY = (height - spanY * scale) / 2 - minY * scale;
+					return positions.map(function (point) {
+						return {
+							x: point.x * scale + offsetX,
+							y: point.y * scale + offsetY,
+						};
+					});
+				}
+
+				function renderStatic() {
+					if (!rawPositions) return;
+					var width = chartDom.clientWidth;
+					var height = chartDom.clientHeight;
+					if (!width || !height) return;
+
+					var positions = fitPositions(rawPositions, width, height);
+					labelThreshold = getLabelThreshold(width);
+					labelPositions = computeLabelPositions(
+						positions,
+						width,
+						height,
+					);
+
+					if (chart) {
+						chart.dispose();
+						chart = null;
+					}
+
+					var currentColors = getThemeColors();
+					var currentPalette = buildPalette(graph.nodes.length);
+					chart = echarts.init(chartDom, null, { renderer: "svg" });
+					state.chart = chart;
+					chart.setOption(
+						buildOption(
+							currentColors,
+							currentPalette,
+							positions,
+							true,
+						),
+					);
+					bindChartEvents(chart);
+				}
+
+				function bindChartEvents(target) {
+					target.on("click", function (params) {
+						if (
+							params.dataType !== "node" ||
+							!params.data ||
+							!params.data.url
+						) {
+							return;
+						}
+						if (
+							window.swup &&
+							typeof window.swup.navigate === "function"
+						) {
+							window.swup.navigate(params.data.url);
+						} else {
+							window.location.href = params.data.url;
+						}
+					});
+				}
+
+				function startForce() {
+					var currentColors = getThemeColors();
+					var currentPalette = buildPalette(graph.nodes.length);
+					forceChart = echarts.init(chartDom, null, {
+						renderer: "svg",
+					});
+					state.chart = forceChart;
+					forceChart.setOption(
+						buildOption(
+							currentColors,
+							currentPalette,
+							null,
+							false,
+						),
+					);
+					bindChartEvents(forceChart);
+
+					var passes = 0;
+					var stableTicks = 0;
+					var lastPositions = null;
+					state.forceTimer = setInterval(function () {
+						if (!forceChart) return;
+						passes += 1;
+						var seriesData = forceChart
+							.getModel()
+							.getSeriesByIndex(0)
+							.getData();
+						var positions = [];
+						var moved = 0;
+						for (var i = 0; i < seriesData.count(); i++) {
+							var point = seriesData.getItemLayout(i);
+							positions.push(
+								point ? { x: point[0], y: point[1] } : null,
+							);
+							if (lastPositions && point && lastPositions[i]) {
+								moved = Math.max(
+									moved,
+									Math.abs(
+										point[0] - lastPositions[i].x,
+									) +
+										Math.abs(
+											point[1] - lastPositions[i].y,
+										),
+								);
+							}
+						}
+						lastPositions = positions;
+
+						if (passes >= 4 && moved < 0.8) {
+							stableTicks += 1;
+						} else {
+							stableTicks = 0;
+						}
+						var settled =
+							(stableTicks >= 2 && passes >= 5) ||
+							passes >= 14;
+						if (!settled) return;
+
+						clearInterval(state.forceTimer);
+						state.forceTimer = null;
+						rawPositions = positions.map(function (point) {
+							return point || { x: 0, y: 0 };
+						});
+						var oldChart = forceChart;
+						forceChart = null;
+						oldChart.dispose();
+						renderStatic();
+					}, 250);
+				}
+
+				function onResize() {
+					if (!rawPositions) return;
+					clearTimeout(state.resizeTimer);
+					state.resizeTimer = setTimeout(function () {
+						if (!document.documentElement.contains(chartDom)) return;
+						renderStatic();
+					}, 180);
+				}
+
+				state.observer = new MutationObserver(function () {
+					if (!rawPositions) return;
+					clearTimeout(state.themeTimer);
+					state.themeTimer = setTimeout(function () {
+						renderStatic();
+					}, 120);
+				});
+				state.observer.observe(document.documentElement, {
+					attributes: true,
+					attributeFilter: ["class", "style", "data-theme"],
+				});
+
+				startForce();
+			});
+		}
+		initTagGraph();
+
+		if (!window.__tagGraphBound) {
+			window.__tagGraphBound = true;
+			document.addEventListener("astro:before-swap", cleanup);
+			document.addEventListener("astro:page-load", initTagGraph);
+		}
+	})();
+</script>
