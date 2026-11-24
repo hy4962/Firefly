@@ -4228,7 +4228,7 @@
 							const nick = p.nick || "茶友";
 							const site = p.site ? ` · ${esc(p.site)}` : "";
 							const text = fmtText(p.text || "");
-							return `<div class="tea-pins__item"><span class="tea-pins__who">📌 ${esc(nick)}${site}：</span><span class="tea-pins__text">${text}</span></div>`;
+							return `<div class="tea-pins__item"><span class="tea-pins__who">${esc(nick)}${site}：</span><span class="tea-pins__text">${text}</span></div>`;
 						})
 						.join("");
 					pinsBox.hidden = false;

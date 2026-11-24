@@ -1612,15 +1612,23 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-pins__icon svg { width: 0.9rem; height: 0.9rem; }
 	.tea-pins__body { flex: 1; min-width: 0; color: var(--tea-muted); }
-	.tea-pins__who { font-weight: 700; color: var(--primary); }
-	.tea-pins__text { white-space: pre-wrap; word-break: break-word; }
-	.tea-pins__text a { color: var(--primary); text-decoration: none; border-bottom: 1px solid color-mix(in oklch, var(--primary) 30%, transparent); }
-	.tea-pins--collapsed .tea-pins__text {
-		display: -webkit-box;
-		-webkit-box-orient: vertical;
-		-webkit-line-clamp: 1;
+	/* 名称 + 正文同一行；折叠时单行省略，别让多行置顶把整条撑高 */
+	.tea-pins__item { display: flex; align-items: baseline; gap: 0.35rem; min-width: 0; }
+	.tea-pins__who { flex: none; font-weight: 700; color: var(--primary); }
+	.tea-pins__text {
+		flex: 1;
+		min-width: 0;
+		white-space: nowrap;
+		word-break: normal;
 		overflow: hidden;
+		text-overflow: ellipsis;
 	}
+	.tea-pins__text pre,
+	.tea-pins__text p,
+	.tea-pins__text div { display: inline; }
+	.tea-pins__text a { color: var(--primary); text-decoration: none; border-bottom: 1px solid color-mix(in oklch, var(--primary) 30%, transparent); }
+	/* 点「展开」才恢复原文换行 */
+	.tea-pins:not(.tea-pins--collapsed) .tea-pins__text { white-space: pre-wrap; overflow: visible; text-overflow: clip; }
 	.tea-pins__toggle {
 		flex: none;
 		border: 0;
