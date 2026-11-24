@@ -523,7 +523,7 @@
 			if (!first) return;
 			const mark = document.createElement("div");
 			mark.className = "tea-readmark";
-			mark.dataset.readmark = "1";
+			mark.dataset.teaReadmark = "1";
 			mark.innerHTML = `<span>上次 ${fmtReadTime(since)} 阅读到这里</span>`;
 			first.parentElement.insertBefore(mark, first);
 			const jump = q("[data-tea-readjump]");
