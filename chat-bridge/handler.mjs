@@ -351,8 +351,29 @@ async function getActiveSenders(c, roomId) {
 	return set;
 }
 
-// 真实在线状态：只探测本站成员 + 最近发言的人，避免 100+ 成员逐个请求拖慢房间接口。
+// 真实在线状态：presenceCache 是主动探测的结果（有 20s 缓存）；
+// livePresence 是 /sync 里联邦推来的 presence 事件——外站账号在不发言时，
+// 只有这条流能看到人家在自己站点上还醒着。以前把它扔了，外站就永远离线。
 let presenceCache = { at: 0, room: "", key: "", map: new Map() };
+const livePresence = new Map(); // id -> { presence, last_active_ago, currently_active, at }
+const LIVE_TTL = 3 * 60_000;
+function applyPresenceEvents(events) {
+	for (const ev of events || []) {
+		if (!ev || ev.type !== "m.presence" || !ev.sender) continue;
+		const c = ev.content || {};
+		livePresence.set(ev.sender, {
+			presence: c.presence || "offline",
+			last_active_ago: Number(c.last_active_ago) || 0,
+			currently_active: c.currently_active === true,
+			at: Date.now(),
+		});
+	}
+	// 偶尔清一次过期项，别让它无限长
+	if (livePresence.size > 400) {
+		const cutoff = Date.now() - 30 * 60_000;
+		for (const [id, p] of livePresence) if (p.at < cutoff) livePresence.delete(id);
+	}
+}
 
 // 「人还在不在」自己算一份：只要客户端还在轮询，桥接就一定看得见。
 // 茶室的访客全靠桥接代发 /sync，Synapse 那边的 presence 状态不可靠。
@@ -1374,6 +1395,8 @@ async function handleSync(c, url, base, token) {
 			state: { lazy_load_members: true },
 			ephemeral: { types: ["m.receipt", "m.typing"] },
 		},
+		// 联邦 presence 事件：外站成员在线状态的唯一实时来源，别过滤掉
+		presence: { types: ["m.presence"] },
 	});
 	// 长轮询：客户端传 timeout（毫秒）表示「没新消息就挂起等，最多等这么久」，
 	// 上限 30 秒；不传或传 0 保持老行为（立即返回），兼容旧前端。
@@ -1383,6 +1406,8 @@ async function handleSync(c, url, base, token) {
 	const res = await mx(c, path, { token });
 	const data = await res.json();
 	const members = await membersP;
+	// 接住 /sync 带回的联邦 presence：外站在线状态全靠这条流
+	applyPresenceEvents(data.presence?.events);
 	const receiptMap = readReceipts(data, room.id, members, c, base);
 	const changedReceipts = mergeReceiptCache(room.id, receiptMap);
 	// 已读回执会随 sync 的 ephemeral 快照更新，但对应事件往往早就不在 timeline 里了。
@@ -1452,20 +1477,22 @@ async function handleRoom(c, base, room, url) {
 	// 在线判定优先级：桥接心跳 > Synapse presence > 刚说过话。
 	// 以前是「30 分钟内说过话」一律在线，于是人走了半小时还挂着；
 	// Synapse 的 currently_active 关页后也能挂很久，只能在确实活跃时才信。
-	const localIds = [...members.keys()].filter((id) => id.endsWith(":matrix.0dm.cn"));
-	const recentIds = [...active].filter((id) => !localIds.includes(id));
-	const probeIds = [...localIds.slice(0, 30), ...recentIds.slice(0, 20)];
+	// 探测名单：外站成员也要探，不能只探本站+刚发言的——
+	// 人家在自己站点挂着不说话，恰恰是「其他站点在线」最常见的样子。
+	// getPresenceMap 有 20s 缓存 + 单请求 2.5s 超时并行，100+ 人也不会拖死接口。
+	const probeIds = [...members.keys()].slice(0, 140);
 	const presence = await getPresenceMap(c, room.id, probeIds);
+	const isOnline = (p) =>
+		p && Number(p.last_active_ago) <= 2 * 60 * 1000 && (p.presence === "online" || p.currently_active === true);
 	const isPresent = (id) => {
 		const seen = seenAt.get(id);
 		if (seen && Date.now() - seen < SEEN_TTL) return true;
-		const p = presence.get(id);
-		if (p) {
-			// last_active_ago 超过 2 分钟就当走了，别管 currently_active
-			if (Number(p.last_active_ago) > 2 * 60 * 1000) return false;
-			if (p.presence === "online" || p.currently_active === true) return true;
-		}
-		// 外站账号没有心跳可看（人家在自己站点上聊天），最多拿「刚说过话」兜底
+		// 两个来源任一说「刚活跃且在线」就算在线。别因为其中一个过期就 return false，
+		// 否则会挡掉另一个来源的有效结果。
+		const live = livePresence.get(id);
+		if (live && Date.now() - live.at < LIVE_TTL && isOnline(live)) return true;
+		if (isOnline(presence.get(id))) return true;
+		// 都没有就退到「刚说过话」兜底
 		return active.has(id);
 	};
 	const list = [...members.entries()].map(([id, m]) => {
@@ -1500,6 +1527,7 @@ async function handleRoom(c, base, room, url) {
 		const now = Date.now();
 		out.debug = list.map((m) => {
 			const p = presence.get(m.id) || {};
+			const live = livePresence.get(m.id) || {};
 			const seen = seenAt.get(m.id) || 0;
 			return {
 				id: m.id,
@@ -1508,6 +1536,9 @@ async function handleRoom(c, base, room, url) {
 				local: m.id.endsWith(":matrix.0dm.cn"),
 				presence: p.presence || "",
 				last_ago: p.last_active_ago ?? null,
+				live_presence: live.presence || "",
+				live_ago: live.last_active_ago ?? null,
+				live_age_s: live.at ? Math.round((now - live.at) / 1000) : null,
 				spoke: active.has(m.id),
 				seen_ago_s: seen ? Math.round((now - seen) / 1000) : null,
 			};
