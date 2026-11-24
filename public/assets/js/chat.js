@@ -342,7 +342,9 @@
 		const renderMessage = (m) => {
 			const f = feedEl();
 			if (!f) return;
-			if (m.id && rt.seen.has(m.id)) return;
+			// 判重以 DOM 为准：单页切房/重载时 rt.seen 可能和真实 DOM 不同步，
+			// 只看 seen 会把整段历史当成“已渲染”全部跳过，页面上就只剩 sync 来的几条。
+			if (m.id && (rt.seen.has(m.id) || f.querySelector(`.tea-msg[data-id="${CSS.escape(m.id)}"]`))) return;
 			if (m.id) rt.seen.add(m.id);
 
 
@@ -989,6 +991,8 @@
 				feedStatus("");
 				const f = feedEl();
 				if (f) f.innerHTML = "";
+				// 历史重画前一定清掉判重表，避免“DOM 已空、seen 还有”时整段历史被跳过。
+				rt.seen.clear();
 				const msgs = [...(hist.messages || [])];
 				msgs.sort((a, b) => a.ts - b.ts);
 				rt.messages = msgs;
