@@ -391,8 +391,13 @@
 				: "";
 			const receipt = renderReceipt(m);
 
+			// 头像可点：点开就是这个人（或自己）的名片
+			const avatarHtml = m.sender
+				? `<button type="button" class="tea-msg__avatar" ${av} data-tea-msg-avatar="${esc(m.sender)}" data-tea-msg-nick="${esc(m.nick || "茶友")}" data-tea-msg-site="${esc(m.site || "")}"${m.avatar ? ` data-tea-msg-pic="${esc(m.avatar)}"` : ""} title="查看 ${esc(m.nick || "茶友")} 的名片" aria-label="查看 ${esc(m.nick || "茶友")} 的名片">${m.avatar ? "" : esc(initials(m.nick))}</button>`
+				: `<div class="tea-msg__avatar" ${av} aria-hidden="true">${m.avatar ? "" : esc(initials(m.nick))}</div>`;
+
 			el.innerHTML = `
-				<div class="tea-msg__avatar" ${av} aria-hidden="true">${m.avatar ? "" : esc(initials(m.nick))}</div>
+				${avatarHtml}
 				<div class="tea-msg__body">
 					<div class="tea-msg__head">
 						<span class="tea-msg__nick">${esc(m.nick || "茶友")}</span>
@@ -538,6 +543,24 @@
 			}
 		};
 
+		// 成员“初次来访”只能记在本机：没记过的按今天算，之后就一直沿用那次的时间。
+		const FIRST_SEEN_KEY = "tea.firstSeen";
+		const firstSeenAt = (id) => {
+			if (!id) return Date.now();
+			try {
+				const all = JSON.parse(localStorage.getItem(FIRST_SEEN_KEY) || "{}") || {};
+				if (!all[id]) {
+					all[id] = Date.now();
+					const keys = Object.keys(all);
+					if (keys.length > 300) keys.sort((a, b) => all[a] - all[b]).slice(0, keys.length - 300).forEach((k) => delete all[k]);
+					localStorage.setItem(FIRST_SEEN_KEY, JSON.stringify(all));
+				}
+				return all[id];
+			} catch (_) {
+				return Date.now();
+			}
+		};
+
 		// ── 成员名片 ────────────────────────────────────────────
 		const mcState = { member: null, sort: "time" };
 		const mcSongs = () => {
@@ -561,7 +584,7 @@
 			const note = document.querySelector("[data-tea-mc-song-note]");
 			if (!box) return;
 			const songs = mcSongs();
-			if (note) note.textContent = songs.length ? `${songs.length} 首` : "正在统计";
+			if (note) note.textContent = songs.length ? `${songs.length} 首` : "暂无记录";
 			if (!songs.length) {
 				box.innerHTML = `<li class="mc-empty">TA 还没点过歌，点歌台点一首试试~</li>`;
 				return;
@@ -615,22 +638,28 @@
 					<div class="mc-signature">${esc(bio)}</div>
 					${website ? `<a class="mc-site" href="${esc(/^https?:\/\//i.test(website) ? website : "https://" + website)}" target="_blank" rel="noopener noreferrer nofollow"><span>${esc(website)}</span><span>访问主页 ↗</span></a>` : ""}
 					<div class="mc-mx">
-						<div><span>Matrix 账号:</span><span>${esc(m.id || "待分配")}</span></div>
-						<div><span>服务器:</span><span>${esc(server)}</span></div>
+						<div><span>Matrix 账号:</span><span title="${esc(m.id || "")}">${esc(m.id || "待分配")}</span></div>
+						<div><span>服务器:</span><span title="${esc(server)}">${esc(server)}</span></div>
 					</div>
 				</div>
 				<a class="mc-at" href="https://matrix.to/#/${encodeURIComponent(m.id || "")}" target="_blank" rel="noopener noreferrer">@ ${esc(m.nick)}</a>
 				<div class="mc-stats">
 					<div class="mc-stat"><span>聊天发言</span><b>${msgCount || "—"}</b></div>
 					<div class="mc-stat"><span>点过的歌</span><b>${songList.length || "—"}</b></div>
-					<div class="mc-stat"><span>初次来访</span><b>${esc(new Date().toLocaleDateString("zh-CN"))}</b></div>
+					<div class="mc-stat"><span title="本机第一次见到 TA 的日期">初见</span><b>${esc(new Date(firstSeenAt(m.id)).toLocaleDateString("zh-CN"))}</b></div>
 					<div class="mc-stat"><span>最近活跃</span><b class="${on ? "" : "is-away"}">${on ? "在线" : "离开"}</b></div>
 				</div>
 				${topArtists.length ? `<div><h4 class="mc-block-title">常点歌手</h4><div class="mc-artists">${topArtists.map(([n, c]) => `<span class="mc-artist">${esc(n)}<b>${c} 次</b></span>`).join("")}</div></div>` : ""}
 				${recent.length ? `<div><h4 class="mc-block-title">最近发言</h4><div class="mc-recent">${recent.map((x) => `<div class="mc-recent-item"><span>${esc((x.text || "图片").slice(0, 40))}</span><span>${esc(fmtTime(x.ts))}</span></div>`).join("")}</div></div>` : ""}`;
+			left.scrollTop = 0;
+			const rightPane = document.querySelector(".tea-membercard__right");
+			if (rightPane) rightPane.scrollTop = 0;
 			mcRenderSongs();
 			const dlg = document.querySelector("[data-tea-membercard]");
-			if (dlg && typeof dlg.showModal === "function") dlg.showModal();
+			if (!dlg) return;
+			if (dlg.open) return;
+			if (typeof dlg.showModal === "function") dlg.showModal();
+			else dlg.setAttribute("open", "");
 		};
 
 		const renderSelf = () => {
@@ -3222,6 +3251,21 @@
 			}
 			if (f) {
 				f.addEventListener("click", async (e) => {
+					// 点消息头像看名片：名册里有的用人家的完整资料，
+					// 不在名册（离线/外站）就用这条消息里的昵称、站点、头像兜底。
+					const avBtn = e.target.closest("[data-tea-msg-avatar]");
+					if (avBtn) {
+						const id = avBtn.dataset.teaMsgAvatar || "";
+						const member = (rt.members || []).find((x) => x && x.id === id) || {
+							id,
+							nick: avBtn.dataset.teaMsgNick || "茶友",
+							site: avBtn.dataset.teaMsgSite || "",
+							avatar: avBtn.dataset.teaMsgPic || "",
+							online: false,
+						};
+						openMemberCard(member);
+						return;
+					}
 					const btn = e.target.closest("[data-act]");
 					if (!btn) return;
 					const id = btn.dataset.id;
