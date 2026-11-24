@@ -1363,7 +1363,11 @@ async function handleHistory(c, url, base, token) {
 	const limit = Math.min(Number(url.searchParams.get("limit") || 50) || 50, LIMITS.history);
 	// 成员、消息、回执快照并行拉，别串成三次公网往返
 	const membersP = getMembers(c, room.id);
-	const msgP = mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}`, { token });
+	// /messages 的 limit 算的是「事件数」，不是「消息数」。房间新成员加入会产生大量
+	// m.room.member，前端要 60 条消息时前面全被成员事件吃掉 → 返回空，聊天记录像凭空消失。
+	// 加 RoomEventFilter 只取消息类事件，limit 才真正对应可见的消息条数。
+	const msgFilter = JSON.stringify({ types: ["m.room.message", "m.sticker", "m.room.redaction"] });
+	const msgP = mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}&filter=${enc(msgFilter)}`, { token });
 	const filter = JSON.stringify({ room: { rooms: [room.id], ephemeral: { types: ["m.receipt"] } } });
 	const snapP = mx(c, `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}`, { token }).catch(() => null);
 	const members = await membersP;
