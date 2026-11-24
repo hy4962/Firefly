@@ -461,7 +461,7 @@
 				// 「正在看看大家聊到哪儿了…」。挪成外链后由这里按路径注入，切页也能跑。
 				path: /^\/chat\/?$/,
 				id: "ff-chat-js",
-				src: "/assets/js/chat.js?v=2",
+				src: "/assets/js/chat.js?v=3",
 			},
 			// 「最近评论」：全站加载 —— 桌面挂右栏、移动端挂底部栏，挂载逻辑在 js 里
 			// （备案审核期间曾暂停，2026-11-18 恢复）
@@ -3020,21 +3020,5 @@
 			font-size: 1rem;
 			opacity: 1 !important;
 		}
-	}
-
-	/* 茶室标题栏 mark：与左栏「互联茶室」的群头像一致，不动上游 chat.astro */
-	.tea-bar__mark {
-		background: transparent !important;
-		border-color: transparent !important;
-	}
-	.tea-bar__mark svg {
-		display: none !important;
-	}
-	.tea-bar__mark::before {
-		content: "";
-		width: 100%;
-		height: 100%;
-		border-radius: inherit;
-		background: url("/assets/images/room-lobby.webp") center / cover no-repeat;
 	}
 </style>

@@ -1010,6 +1010,21 @@
 			}
 		};
 
+		// 标题栏头像不写死：直接复用当前房间在列表里的头像，
+		// 列表拿到 Matrix 房间真实头像后，标题栏也跟着换。
+		const syncBarAvatar = () => {
+			const bar = document.querySelector("[data-tea-bar-avatar]");
+			const roomImg = document.querySelector(`[data-room-avatar="${rt.room}"]`);
+			if (!bar || !roomImg) return;
+			const src = roomImg.getAttribute("src");
+			if (!src || bar.getAttribute("src") === src) return;
+			bar.onerror = () => {
+				bar.onerror = null;
+				bar.src = rt.room === "chat" ? "/assets/images/room-chat.webp" : "/assets/images/room-lobby.webp";
+			};
+			bar.src = src;
+		};
+
 		const applyRoomAvatar = (key, avatar) => {
 			if (!avatar) return;
 			const img = document.querySelector(`[data-room-avatar="${key}"]`);
@@ -1018,8 +1033,13 @@
 			img.onerror = () => {
 				img.onerror = null;
 				img.src = key === "chat" ? "/assets/images/room-chat.webp" : "/assets/images/room-lobby.webp";
+				if (key === rt.room) syncBarAvatar();
 			};
+			img.addEventListener("load", () => {
+				if (key === rt.room) syncBarAvatar();
+			});
 			img.src = avatar;
+			if (key === rt.room) syncBarAvatar();
 		};
 
 		// 房间列表头像：优先用 Matrix 房间真实头像，加载不出来回退到本地副本
@@ -2627,6 +2647,7 @@
 				b.classList.toggle("is-active", b.dataset.room === rt.room);
 			}
 			updatePlaceholder();
+			syncBarAvatar();
 		};
 
 		const switchRoom = (key) => {
