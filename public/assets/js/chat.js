@@ -1564,6 +1564,14 @@
 			lastUid: "",
 			lastSeq: -1,
 			currentKey: "",
+			loadingUid: "",
+			// 用户拖过进度条后，本机以本地进度为准，不再每 2 秒被房间里
+			// 的墙钟位置拽回去；换一首歌时自动恢复同步。
+			manualSeek: false,
+			seeking: false,
+			seekAt: 0,
+			switching: false,
+			stateEpoch: 0,
 			directUrl: "",
 			proxyUrl: "",
 			proxyTried: false,
@@ -1579,8 +1587,15 @@
 			listSig: "",
 			rotationSig: "",
 		};
+		// 同页脚本被 swup 重跑时，用代次让旧闭包的在途请求失效。
+		let jukeGen = 0;
 
 		const musicApi = () => (window.__fireflyMusic ? window.__fireflyMusic : null);
+		// 点歌台开始出声时，把站点的背景播放器按掉，避免两套音源叠在一起。
+		const jukeStopBgm = () => {
+			const m = musicApi();
+			if (m && m.getState().isPlaying) m.togglePlay();
+		};
 		const jukeNode = (sel) => (root() ? root().querySelector("[data-tea-juke] " + sel) : null);
 		const jukeDur = (n) => {
 			const sec = Math.max(0, Math.round(Number(n) || 0));
@@ -1710,29 +1725,43 @@
 
 		const ensureJukeAudio = () => {
 			let a = rt.jukeAudio;
+			// swup 换页 / 脚本重复执行时可能留下没有登记的旧音频。
+			// 它们不在 rt.jukeAudio 上，进度条和状态都管不到，却会继续出声，
+			// 造成“两首歌一起播”。这里按标记把野音频全部清掉，只留一只。
+			for (const el of document.querySelectorAll("audio[data-tea-juke-audio]")) {
+				if (el === a) continue;
+				try {
+					el.pause();
+					el.remove();
+				} catch (_) {}
+			}
 			if (!a) {
 				a = new Audio();
+				a.dataset.teaJukeAudio = "1";
 				a.preload = "auto";
 				a.volume = Math.min(1, Math.max(0, Number(localStorage.getItem("tea.jukeVolume") ?? 0.7)));
 				document.body.appendChild(a);
 				rt.jukeAudio = a;
 			} else if (!a.isConnected) {
+				a.dataset.teaJukeAudio = "1";
 				document.body.appendChild(a);
 			}
 			if (!rt.jukeAudioBound) {
 				rt.jukeAudioBound = true;
 				a.addEventListener("play", () => {
-					const m = musicApi();
-					if (m && m.getState().isPlaying) m.togglePlay();
+					if (rt.jukeAudio !== a) return;
+					jukeStopBgm();
 					jukeRenderTrack();
 				});
 				a.addEventListener("pause", () => jukeRenderTrack());
 				a.addEventListener("timeupdate", () => {
+					if (rt.jukeAudio !== a) return;
 					jukeRenderProgress();
 					if (jukeSig.tab === "lyrics") jukeRenderLyrics(false);
 					jukeSetupPosition();
 				});
 				a.addEventListener("loadedmetadata", () => {
+					if (rt.jukeAudio !== a) return;
 					jukeRenderProgress();
 					jukeSync(true);
 				});
@@ -1756,12 +1785,14 @@
 					if (vol) vol.value = String(Math.round(a.volume * 100));
 				});
 				a.addEventListener("ended", () => {
+					if (rt.jukeAudio !== a) return;
 					if (!jukeSig.listening || !jukeSig.state?.current || jukeSig.ending) return;
 					jukeSig.ending = true;
 					const from = jukeSig.state.current.uid;
 					jukeAction("ended", { from }).finally(() => setTimeout(() => { jukeSig.ending = false; }, 2500));
 				});
 				a.addEventListener("error", () => {
+					if (rt.jukeAudio !== a) return;
 					if (!jukeSig.listening || !jukeSig.state?.current) return;
 					if (!jukeSig.proxyTried && jukeSig.proxyUrl) {
 						jukeUseProxy();
@@ -1779,13 +1810,17 @@
 			jukeSig.proxyTried = true;
 			const at = Number(a.currentTime) || 0;
 			const wasPlaying = !a.paused;
+			try { a.pause(); } catch (_) {}
 			a.src = jukeSig.proxyUrl;
 			const resume = () => {
-				try { if (at > 0) a.currentTime = at; } catch (_) {}
-				if (wasPlaying) a.play().catch(() => {});
+				if (a !== rt.jukeAudio) return;
+				const d = Number(a.duration);
+				const to = Number.isFinite(d) && d > 0 ? Math.min(at, Math.max(0, d - 1)) : at;
+				try { if (to > 0) a.currentTime = to; } catch (_) {}
+				if (wasPlaying && jukeSig.listening) a.play().catch(() => {});
 			};
-			if (a.readyState >= 1) resume();
-			else a.addEventListener("loadedmetadata", resume, { once: true });
+			a.addEventListener("loadedmetadata", resume, { once: true });
+			a.load();
 			jukeSay("直连有点慢，已经切到代理线路。");
 		};
 
@@ -1816,7 +1851,9 @@
 				navigator.mediaSession.setActionHandler("play", () => {
 					const a = ensureJukeAudio();
 					jukeSig.listening = true;
-					a.play().catch(() => {});
+					const cur = jukeSig.state?.current;
+					if (cur) jukePlayCurrent(cur);
+					else a.play().catch(() => {});
 				});
 				navigator.mediaSession.setActionHandler("pause", () => {
 					const a = rt.jukeAudio;
@@ -1825,21 +1862,68 @@
 				navigator.mediaSession.setActionHandler("nexttrack", () => jukeSkip());
 				navigator.mediaSession.setActionHandler("previoustrack", () => {
 					const a = rt.jukeAudio;
-					if (a) a.currentTime = 0;
+					if (!a) return;
+					jukeSig.manualSeek = true;
+					jukeSig.seekAt = Date.now();
+					a.currentTime = 0;
 				});
 				navigator.mediaSession.setActionHandler("seekto", (d) => {
 					const a = rt.jukeAudio;
-					if (a && d && Number.isFinite(d.seekTime)) a.currentTime = d.seekTime;
+					if (!a || !d || !Number.isFinite(d.seekTime)) return;
+					jukeSig.manualSeek = true;
+					jukeSig.seekAt = Date.now();
+					a.currentTime = d.seekTime;
 				});
 			} catch (_) {}
 		};
 
-		const jukeSeekTo = (track) => {
+		const jukeDuration = () => {
+			const d = Number(rt.jukeAudio?.duration);
+			return Number.isFinite(d) && d > 0 ? d : 0;
+		};
+
+		// 房间里的“现在放到哪了”：服务端记录 startAt，客户端按校准过的
+		// 服务端时钟推算。为负说明这首歌还没正式开始，按 0 处理。
+		const jukeLiveAt = (track) => {
+			if (!track || !track.startAt) return 0;
+			const at = (jukeClock.now() - Number(track.startAt)) / 1000;
+			return Number.isFinite(at) ? Math.max(0, at) : 0;
+		};
+
+		// 这首歌在房间里已经越过结尾（典型场景：房间里没人听，current 停在
+		// 上一首很久了）。此时绝不能把本地音频 seek 到 duration - 0.6，否则
+		// 刚点播放就会“0 秒直接跳到结束”。改为从本地 0 秒开始，并暂停墙钟
+		// 同步，让这一首完整播完；播完后照常上报 ended 推进房间队列。
+		const jukeIsOver = (track) => {
+			const d = jukeDuration();
+			return d > 0 && jukeLiveAt(track) >= d - 1;
+		};
+
+		const jukeEnterLocal = (track, autoplay) => {
+			const a = rt.jukeAudio;
+			if (!a) return;
+			const already = jukeSig.manualSeek;
+			const shouldPlay = autoplay === undefined ? !a.paused : !!autoplay;
+			jukeSig.manualSeek = true;
+			try {
+				a.pause();
+				a.currentTime = 0;
+				if (shouldPlay && jukeSig.listening) {
+					a.play().catch(() => jukeSay("浏览器拦住了自动播放，点一下播放键继续。", true));
+				}
+			} catch (_) {}
+			if (!already) jukeSay("这首歌在房间里已经放完了，先从本地从头播。");
+		};
+
+		const jukeSeekTo = (track, force) => {
 			const a = rt.jukeAudio;
 			if (!a || !track || !track.startAt) return;
-			const at = Math.max(0, (jukeClock.now() - Number(track.startAt)) / 1000);
-			if (!Number.isFinite(at)) return;
-			if (a.duration && at > a.duration - 0.8) return;
+			if (!force && jukeSig.manualSeek) return;
+			const at = jukeLiveAt(track);
+			if (jukeIsOver(track)) {
+				jukeEnterLocal(track);
+				return;
+			}
 			try {
 				if (Math.abs(a.currentTime - at) > 0.4) a.currentTime = at;
 			} catch (_) {}
@@ -1849,12 +1933,20 @@
 			const a = rt.jukeAudio;
 			const cur = jukeSig.state?.current;
 			if (!a || !cur || !jukeSig.listening || a.paused) return;
-			const expected = (jukeClock.now() - Number(cur.startAt || 0)) / 1000;
-			if (!Number.isFinite(expected) || expected < 0) return;
-			if (a.readyState < 2 || !a.duration || !isFinite(a.duration)) return;
+			// 用户正在拖进度条，或已经主动拖过：本机进度优先，别再每 2 秒
+			// 按墙钟把人家拽回去。
+			if (jukeSig.seeking || jukeSig.manualSeek) return;
+			if (!Number(cur.startAt)) return;
+			if (a.readyState < 2 || !isFinite(a.duration) || a.duration <= 0) return;
+			const expected = jukeLiveAt(cur);
+			if (expected >= a.duration - 1) {
+				jukeEnterLocal(cur, true);
+				return;
+			}
 			const diff = expected - a.currentTime;
 			if (Math.abs(diff) > 3 || force) {
-				try { a.currentTime = Math.min(Math.max(0, expected), Math.max(0, a.duration - 0.6)); } catch (_) {}
+				const at = Math.min(Math.max(0, expected), Math.max(0, a.duration - 1));
+				try { a.currentTime = at; } catch (_) {}
 				a.playbackRate = 1;
 			} else if (diff > 0.6) {
 				a.playbackRate = 1.04;
@@ -1866,22 +1958,41 @@
 		};
 
 		const jukePlayCurrent = async (track) => {
-			if (!track) return;
+			if (!track || (jukeGen && rt.jukeGen !== jukeGen)) return;
 			const a = ensureJukeAudio();
+			const uid = track.uid || track.key || "";
+			// 同一首的取链请求已经在路上，别因为状态轮询又发一次，
+			// 否则后一次会把前一次的 token 顶掉，白白多绕一圈。
+			if (jukeSig.loadingUid === uid) return;
 			if (jukeSig.currentKey === track.key && a.src && !a.error) {
+				// 同一首歌被轮播重新排到：startAt 会刷新，清掉本地进度锁；
+				// 但同一 uid 的轮询不能清，否则用户刚拖的进度又被拽回去。
+				if (jukeSig.currentUid !== uid) {
+					jukeSig.currentUid = uid;
+					jukeSig.manualSeek = false;
+					jukeSig.seeking = false;
+				}
 				jukeSeekTo(track);
 				if (a.paused) a.play().catch(() => {});
 				return;
 			}
 			const token = ++jukeSig.loadToken;
+			jukeStopBgm();
 			try { a.pause(); } catch (_) {}
-			jukeSig.currentKey = track.key;
+			// 先把“当前曲目”清掉：新音源还没接上之前，不能让后续轮询
+			// 把这只还装着上一首歌的 audio 当成新歌继续播。
+			jukeSig.currentKey = "";
+			jukeSig.currentUid = "";
+			jukeSig.manualSeek = false;
+			jukeSig.seeking = false;
+			jukeSig.seekAt = 0;
 			jukeSig.directUrl = "";
 			jukeSig.proxyUrl = "";
 			jukeSig.proxyTried = false;
 			jukeSig.lyrics = [];
 			jukeSig.lrcIndex = -2;
 			clearTimeout(jukeSig.stallTimer);
+			jukeSig.loadingUid = uid;
 			const params = new URLSearchParams();
 			params.set("key", track.key || "");
 			params.set("title", track.title || "");
@@ -1893,40 +2004,65 @@
 			jukeSay("正在找音源…");
 			try {
 				const data = await api(`/api/juke/link?${params.toString()}`, { timeout: 20_000 });
-				if (token !== jukeSig.loadToken) return;
+				if (token !== jukeSig.loadToken || a !== rt.jukeAudio) {
+					if (jukeSig.loadingUid === uid) jukeSig.loadingUid = "";
+					return;
+				}
 				jukeSig.directUrl = data.direct || "";
 				jukeSig.proxyUrl = data.proxy || "";
 				jukeSig.proxyTried = data.url === data.proxy;
 				jukeSig.lyrics = jukeParseLrc(data.lrc || "");
 				jukeSay("");
+				// 先把旧源停干净。只写 a.src 在部分浏览器里会等新源就绪才停，
+				// 这段时间旧歌还在响；这里直接 pause + 换源，保证任一时刻只有一首。
+				try { a.pause(); } catch (_) {}
+				jukeSig.switching = true;
 				a.src = data.url;
+				jukeSig.currentKey = track.key;
+				jukeSig.currentUid = uid;
+				jukeSig.loadingUid = "";
 				if (a.volume === 0 && Number(localStorage.getItem("tea.jukeVolume") ?? 0.7) > 0) {
 					a.volume = Number(localStorage.getItem("tea.jukeVolume") ?? 0.7);
 				}
 				const start = Number(track.startAt) || 0;
 				const wait = start ? Math.max(0, start - jukeClock.now()) : 0;
 				const begin = () => {
-					if (token !== jukeSig.loadToken) return;
-					jukeSeekTo(track);
+					jukeSig.switching = false;
+					if (token !== jukeSig.loadToken || a !== rt.jukeAudio) return;
 					if (!jukeSig.listening) return;
 					if (wait > 0) {
 						setTimeout(() => {
-							if (token === jukeSig.loadToken && jukeSig.listening) a.play().catch(() => {});
+							if (token === jukeSig.loadToken && a === rt.jukeAudio && jukeSig.listening) {
+								jukeSeekTo(track);
+								a.play().catch(() => {});
+							}
 						}, wait + 40);
-					} else {
-						a.play().catch(() => {
-							if (token !== jukeSig.loadToken) return;
-							jukeSay("浏览器拦住了自动播放，点一下播放键继续。", true);
-						});
+						return;
 					}
+					// 房间里已经播过结尾的歌不要 seek 到结尾自杀，从头本地播。
+					if (jukeIsOver(track)) {
+						jukeEnterLocal(track, true);
+						return;
+					}
+					jukeSeekTo(track);
+					a.play().catch(() => {
+						if (token !== jukeSig.loadToken || a !== rt.jukeAudio) return;
+						jukeSay("浏览器拦住了自动播放，点一下播放键继续。", true);
+					});
 				};
-				if (a.readyState >= 1) begin();
-				else a.addEventListener("loadedmetadata", begin, { once: true });
+				// 必须等新源自己的 metadata，不能拿上一首的 duration / readyState
+				// 直接 begin，否则会按旧时长判断进度，甚至把新歌直接送到结尾。
+				a.addEventListener("loadedmetadata", begin, { once: true });
+				a.load();
 				jukeSetupMediaSession(track);
 				jukeRenderLyrics(true);
 				jukeRenderTrack();
 			} catch (e) {
-				if (token !== jukeSig.loadToken) return;
+				jukeSig.switching = false;
+				if (token !== jukeSig.loadToken || a !== rt.jukeAudio) return;
+				jukeSig.currentKey = "";
+				jukeSig.currentUid = "";
+				jukeSig.loadingUid = "";
 				jukeSig.listening = false;
 				jukeSay(e.message || "找不到可播的音源", true);
 				jukeRenderTrack();
@@ -1949,6 +2085,7 @@
 					body: JSON.stringify({ action, room: rt.room, ...extra }),
 				});
 				if (data.state) {
+					jukeSig.stateEpoch += 1;
 					if (typeof data.admin === "boolean") data.state.admin = data.admin;
 					jukeApply(data.state);
 				}
@@ -1989,7 +2126,10 @@
 			const cur = a ? a.currentTime : 0;
 			const dur = a && isFinite(a.duration) ? a.duration : 0;
 			const p = dur > 0 ? Math.min(100, (cur / dur) * 100) : 0;
-			if (seek) {
+			// 拖动中或刚拖完的一小段时间里，timeupdate 不能把滑块抢回去，
+			// 否则手指还在拖、值已经被播放进度覆盖，松手就跳到别处。
+			const hold = jukeSig.seeking || Date.now() - Number(jukeSig.seekAt || 0) < 600;
+			if (seek && !hold) {
 				seek.value = String(Math.round(p * 10));
 				seek.style.setProperty("--p", p + "%");
 			}
@@ -2307,9 +2447,14 @@
 		};
 
 		const jukeApply = (s) => {
-			if (!s) return;
+			if (!s || (jukeGen && rt.jukeGen !== jukeGen)) return;
 			if (!s.room) s.room = jukeSig.room || rt.room;
 			const prev = jukeSig.state;
+			// 轮询和点歌响应可能乱序回来。旧状态会把正在播的歌“倒回去”，
+			// 甚至再触发一次切歌；用服务端 seq 丢掉比当前更旧的快照。
+			if (prev && prev.room === s.room && Number(s.seq) > 0 && Number(prev.seq) > 0 && Number(s.seq) < Number(prev.seq)) {
+				return;
+			}
 			if (jukeSig.room !== s.room) {
 				jukeSig.room = s.room;
 				jukeSig.lastUid = "";
@@ -2329,12 +2474,16 @@
 				const cur = s.current;
 				if (cur && cur.uid !== jukeSig.lastUid) {
 					jukeSig.lastUid = cur.uid;
+					jukeSig.manualSeek = false;
+					jukeSig.seeking = false;
 					jukePlayCurrent(cur);
 				} else if (!cur) {
 					jukeSig.lastUid = "";
+					jukeSig.manualSeek = false;
 					const a = rt.jukeAudio;
 					if (a) a.pause();
 				} else if (cur && cur.uid === jukeSig.lastUid) {
+					// 用户拖过进度就不要再按墙钟拽回去；只做轻量追帧。
 					jukeSeekTo(cur);
 				}
 			}
@@ -2350,8 +2499,12 @@
 		const jukeLoad = async () => {
 			if (jukeSig.loading) return;
 			jukeSig.loading = true;
+			const epoch = jukeSig.stateEpoch;
 			try {
 				const data = await api(`/api/juke/state?room=${encodeURIComponent(rt.room)}`, { timeout: 15_000 });
+				// 拉状态期间有点歌/切歌操作回来了，以更新的那份为准，
+				// 不要让这次慢轮询把队列倒回去。
+				if (epoch !== jukeSig.stateEpoch) return;
 				jukeApply(data);
 			} catch (_) {
 				// 轮询失败不打断正在播的歌，下一轮再试
@@ -2450,10 +2603,12 @@
 			if (jukeSig.listening) {
 				await jukeLoad();
 				const cur = jukeSig.state?.current;
-				if (cur && jukeSig.currentKey !== cur.key) {
+				if (cur) {
 					jukeSig.lastUid = cur.uid;
+					// 不管 currentKey 是否相同都走一遍：同曲不同场次（uid 变了）
+					// 要重新对齐 startAt，音频被换掉/加载失败时也要能重新拉起。
 					await jukePlayCurrent(cur);
-				} else if (!cur) {
+				} else {
 					jukeSay("房间还没开始放歌，先点一首吧。");
 				}
 			} else {
@@ -2466,16 +2621,25 @@
 			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
 			if (!juke || juke.dataset.bound === "1") return;
 			juke.dataset.bound = "1";
+			jukeGen = rt.jukeGen = (Number(rt.jukeGen) || 0) + 1;
 			// 页面被 swup 换过一次后，旧 audio 的事件闭包还指着上一份 state，
 			// 重新绑定时直接换一只新的，避免出现“界面在动、播放器不听使唤”。
-			if (rt.jukeAudio) {
+			for (const el of document.querySelectorAll("audio[data-tea-juke-audio]")) {
 				try {
-					rt.jukeAudio.pause();
-					rt.jukeAudio.remove();
+					el.pause();
+					el.remove();
 				} catch (_) {}
-				rt.jukeAudio = null;
-				rt.jukeAudioBound = false;
 			}
+			rt.jukeAudio = null;
+			rt.jukeAudioBound = false;
+			// 让还在路上的旧取链请求作废，别让它回来操作新 audio。
+			jukeSig.loadToken += 1;
+			jukeSig.loadingUid = "";
+			jukeSig.currentKey = "";
+			jukeSig.currentUid = "";
+			jukeSig.manualSeek = false;
+			jukeSig.seeking = false;
+			jukeSig.seekAt = 0;
 			ensureJukeAudio();
 			jukeSampleClock();
 			jukeSig.playlistTracks = jukeCatalog();
@@ -2565,6 +2729,8 @@
 					const line = jukeSig.lyrics[Number(lyric.dataset.lrc)];
 					const a = rt.jukeAudio;
 					if (line && a) {
+						jukeSig.manualSeek = true;
+						jukeSig.seekAt = Date.now();
 						a.currentTime = line.time;
 						if (a.paused && jukeSig.listening) a.play().catch(() => {});
 					}
@@ -2581,8 +2747,13 @@
 						jukeToggleListen(true);
 					} else {
 						const a = ensureJukeAudio();
-						if (a.paused) a.play().catch(() => {});
-						else a.pause();
+						if (a.paused) {
+							const cur = jukeSig.state?.current;
+							if (cur) jukePlayCurrent(cur);
+							else a.play().catch(() => {});
+						} else {
+							a.pause();
+						}
 					}
 					return;
 				}
@@ -2590,6 +2761,8 @@
 				if (prev) {
 					const a = ensureJukeAudio();
 					if (a) {
+						jukeSig.manualSeek = true;
+						jukeSig.seekAt = Date.now();
 						a.currentTime = 0;
 						if (a.paused && jukeSig.listening) a.play().catch(() => {});
 					}
@@ -2627,10 +2800,35 @@
 			});
 
 			const seek = juke.querySelector("[data-juke-seek]");
-			if (seek) seek.addEventListener("input", (e) => {
-				const a = rt.jukeAudio;
-				if (a && a.duration) a.currentTime = (Number(e.target.value) / 1000) * a.duration;
-			});
+			if (seek) {
+				const seekByInput = (e) => {
+					const a = rt.jukeAudio;
+					if (!a || !isFinite(a.duration) || a.duration <= 0) return;
+					const pct = Math.max(0, Math.min(1, Number(e.target.value) / 1000));
+					const at = Math.min(pct * a.duration, Math.max(0, a.duration - 0.25));
+					const first = !jukeSig.manualSeek;
+					jukeSig.manualSeek = true;
+					jukeSig.seekAt = Date.now();
+					jukeStopBgm();
+					a.playbackRate = 1;
+					try { a.currentTime = at; } catch (_) {}
+					seek.style.setProperty("--p", pct * 100 + "%");
+					const ct = jukeNode("[data-juke-cur]");
+					if (ct) ct.textContent = jukeDur(at);
+					if (first) jukeSay("已切到本地进度，换歌后自动回到房间同步。");
+				};
+				seek.addEventListener("pointerdown", () => { jukeSig.seeking = true; });
+				const endSeek = () => {
+					if (!jukeSig.seeking) return;
+					jukeSig.seeking = false;
+					jukeSig.seekAt = Date.now();
+				};
+				seek.addEventListener("pointerup", endSeek);
+				seek.addEventListener("pointercancel", endSeek);
+				seek.addEventListener("blur", endSeek);
+				seek.addEventListener("input", seekByInput);
+				seek.addEventListener("change", seekByInput);
+			}
 
 			const vol = juke.querySelector("[data-juke-vol]");
 			if (vol) vol.addEventListener("input", (e) => {
@@ -2644,10 +2842,17 @@
 			});
 
 			if (rt.jukeTimer) clearInterval(rt.jukeTimer);
-			rt.jukeTimer = setInterval(() => {
+			// 只清自己的 timer：旧实例的间隔可能在新实例绑定后才醒过来，
+			// 不能让它把新实例的 rt.jukeTimer 清掉。
+			const jukeTimer = setInterval(() => {
+				if (jukeGen && rt.jukeGen !== jukeGen) {
+					clearInterval(jukeTimer);
+					if (rt.jukeTimer === jukeTimer) rt.jukeTimer = null;
+					return;
+				}
 				if (!root() || !root().querySelector("[data-tea-juke]")) {
-					clearInterval(rt.jukeTimer);
-					rt.jukeTimer = null;
+					clearInterval(jukeTimer);
+					if (rt.jukeTimer === jukeTimer) rt.jukeTimer = null;
 					if (rt.jukeAudio) rt.jukeAudio.pause();
 					return;
 				}
@@ -2661,6 +2866,7 @@
 				if (jukeSig.tab === "lyrics") jukeRenderLyrics(false);
 				if (jukeSig.tab === "list") jukeRenderList();
 			}, 2000);
+			rt.jukeTimer = jukeTimer;
 		};
 
 		// ── 图片预览 ─────────────────────────────────────────────
