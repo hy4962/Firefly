@@ -47,9 +47,13 @@
 			return /[\u4e00-\u9fa5]/.test(n[0]) ? n[0] : n.slice(0, 1).toUpperCase();
 		};
 
-		// 极简 markdown：只认图片、链接、粗体、代码块，够大厅里的分享消息用
+		// 自己刚上传的视频把尺寸/时长记下来：本地回显那一刻事件还没回来，
+		// 没有这份元数据就只能按 16:9 估，播放器尺寸会跳一下。
+		const videoMeta = new Map();
+
+		// 极简 markdown：只认图片、视频、链接、粗体、代码块，够大厅里的分享消息用
 		const inlineFmt = (raw) => {
-			const re = /(!?)\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>"'）)，。]+)/g;
+			const re = /(!video|!)?\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>"'）)，。]+)/g;
 			let out = "";
 			let last = 0;
 			let m;
@@ -59,9 +63,11 @@
 					const url = m[3];
 					const label = m[2] || "";
 					out +=
-						m[1] === "!"
-							? `<img src="${esc(url)}" alt="${esc(label)}" loading="lazy" data-zoom />`
-							: `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(label || url)}</a>`;
+						m[1] === "!video"
+							? videoTag(url, videoMeta.get(url))
+							: m[1] === "!"
+								? `<img src="${esc(url)}" alt="${esc(label)}" loading="lazy" data-zoom />`
+								: `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(label || url)}</a>`;
 				} else if (m[4]) {
 					const url = m[4];
 					out += `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(url.replace(/^https?:\/\//, ""))}</a>`;
@@ -83,6 +89,15 @@
 						: renderEmojiTags(inlineFmt(chunk)),
 				)
 				.join("");
+		};
+
+		// 视频播放器：规范（m.video）的 info 带 w/h，有就按真实比例占位，
+		// 没有就退回 16:9，别在 metadata 加载前塌成一条 150px 高的黑边。
+		const videoTag = (src, info, poster) => {
+			const w = Number(info && info.w) || 0;
+			const h = Number(info && info.h) || 0;
+			const ratio = w > 0 && h > 0 ? ` style="aspect-ratio:${w}/${h}"` : "";
+			return `<video class="tea-video" src="${esc(src)}" controls playsinline preload="metadata"${poster ? ` poster="${esc(poster)}"` : ""}${ratio}></video>`;
 		};
 
 		// 投票消息：正文用 📊 开头，选项用圈数字；投票本身走 Matrix reaction，跨站也能看到
@@ -410,9 +425,9 @@
 
 			const mine = !!(rt.visitor && m.sender && m.sender === rt.visitor.id);
 			const el = document.createElement("article");
-			// 纯图片消息不套气泡：图片本身就是内容，再包一层框只会又大又空。
+			// 纯媒体消息（图片 / 视频）不套气泡：媒体本身就是内容，再包一层框只会又大又空。
 			// 有引用/回应时保留气泡，免得那些附属块失去背景。
-			const bareMedia = !!m.image && !m.reply && !(m.reactions && m.reactions.length);
+			const bareMedia = !!(m.image || m.video) && !m.reply && !(m.reactions && m.reactions.length);
 			el.className = "tea-msg" + (mine ? " tea-msg--mine" : "") + (bareMedia ? " tea-msg--media" : "");
 			el.dataset.nick = m.nick || "";
 			el.dataset.site = m.site || "";
@@ -436,9 +451,12 @@
 			// 右边空出一大块。宽度只交给 CSS max-width 管。
 			const body = m.image
 				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async" ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
-				: poll
-					? renderPollCard(poll, m.reactions, m.id)
-					: fmtText(m.text || "");
+				: m.video
+					? videoTag(m.video, m.videoInfo, m.poster) +
+						(m.text ? `<div class="tea-video__cap">${fmtText(m.text)}</div>` : "")
+					: poll
+						? renderPollCard(poll, m.reactions, m.id)
+						: fmtText(m.text || "");
 			const reply = m.reply
 				? `<div class="tea-msg__reply"><b>${esc(m.reply.who || "茶友")}</b><span>${esc(m.reply.text || "")}</span></div>`
 				: "";
@@ -448,8 +466,8 @@
 			const actions = m.id
 				? `<span class="tea-msg__actions">
 						<button type="button" class="tea-msg__action" data-act="react" data-id="${esc(m.id)}" title="回应" aria-label="回应">${ICON_REACT}</button>
-						<button type="button" class="tea-msg__action" data-act="reply" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 80))}" title="回复" aria-label="回复">${ICON_REPLY}</button>
-						<button type="button" class="tea-msg__action" data-act="more" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || "图片").slice(0, 500))}" data-recall="${mine && Date.now() - Number(m.ts || 0) < 5 * 60 * 1000 ? "1" : "0"}" data-thread="${rt.room === "lobby" ? "1" : "0"}" title="更多" aria-label="更多">${ICON_MORE}</button>
+						<button type="button" class="tea-msg__action" data-act="reply" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || (m.video ? "视频" : "图片")).slice(0, 80))}" title="回复" aria-label="回复">${ICON_REPLY}</button>
+						<button type="button" class="tea-msg__action" data-act="more" data-id="${esc(m.id)}" data-nick="${esc(m.nick || "茶友")}" data-text="${esc((m.text || (m.video ? "视频" : "图片")).slice(0, 500))}" data-recall="${mine && Date.now() - Number(m.ts || 0) < 5 * 60 * 1000 ? "1" : "0"}" data-thread="${rt.room === "lobby" ? "1" : "0"}" title="更多" aria-label="更多">${ICON_MORE}</button>
 					</span>`
 				: "";
 			const receipt = renderReceipt(m);
@@ -1357,6 +1375,77 @@
 				}
 			} finally {
 				setTimeout(() => URL.revokeObjectURL(localUrl), 30_000);
+			}
+		};
+
+		// 视频走规范里的 m.video：url 放 mxc，info 是 VideoInfo（w/h/duration/mimetype/size），
+		// 说明文字进 body。这样 Element 之类的客户端也能直接播，而不是收到一串文件名。
+		const mxcOf = (u) => {
+			try {
+				const q = new URL(u, location.href).searchParams.get("u") || "";
+				return /^mxc:\/\//.test(q) ? q : "";
+			} catch (_) {
+				return "";
+			}
+		};
+		const sendVideo = async (mediaUrl, caption, name, meta = {}) => {
+			const v = rt.visitor;
+			if (!v) {
+				openDialog();
+				return;
+			}
+			const ts = Date.now();
+			const videoReply = rt.replyTo
+				? { id: rt.replyTo.id || "", who: rt.replyTo.nick || "茶友", text: rt.replyTo.text || "" }
+				: null;
+			renderMessage({
+				id: "tmp-" + ts, ts, sender: v.id, nick: v.nick, site: SITE_NAME, avatar: v.avatar,
+				video: mediaUrl, videoInfo: meta, text: caption || "", reply: videoReply, self: true, pending: true,
+			});
+			const target = feedEl().querySelector(`.tea-msg[data-id="tmp-${ts}"]`);
+			try {
+				const res = await api(`/api/send?room=${rt.room}`, {
+					method: "POST",
+					body: JSON.stringify({
+						text: caption || "",
+						videoUrl: mxcOf(mediaUrl),
+						filename: name || "视频",
+						info: meta,
+						replyTo: rt.replyTo?.id || "",
+						txnId: newTxn("vid"),
+					}),
+				});
+				if (rt.setReply) rt.setReply(null);
+				if (target) {
+					target.classList.remove("tea-msg--pending", "tea-msg--failed");
+					if (res.id) {
+						target.dataset.id = res.id;
+						// 按钮上的 data-id 同步成真实 event id，否则撤回/回应拿到 tmp-xxx
+						target.querySelectorAll("[data-id]").forEach((b) => { b.dataset.id = res.id; });
+						rt.seen.add(res.id);
+					}
+					const old = target.querySelector(".tea-msg__retry");
+					if (old) old.remove();
+				}
+				store.bump();
+				const c = q("[data-tea-me-count]");
+				if (c) c.textContent = String(store.count);
+			} catch (e) {
+				if (target) {
+					target.classList.remove("tea-msg--pending");
+					target.classList.add("tea-msg--failed");
+					const old = target.querySelector(".tea-msg__retry");
+					if (old) old.remove();
+					const retry = document.createElement("button");
+					retry.type = "button";
+					retry.className = "tea-msg__retry";
+					retry.textContent = "发送失败：" + (e.message || "网络异常") + "，点此重试";
+					retry.addEventListener("click", () => {
+						target.remove();
+						sendVideo(mediaUrl, caption, name, meta);
+					});
+					target.querySelector(".tea-msg__body").appendChild(retry);
+				}
 			}
 		};
 
@@ -3200,7 +3289,7 @@
 					imageFile.value = "";
 					if (!files.length) return;
 					(async () => {
-						for (const f of files) await insertImageAsMarkdown(f, f.name || "图片");
+						for (const f of files) await insertMediaAsMarkdown(f, f.name || "图片");
 					})();
 				});
 			}
@@ -3274,12 +3363,14 @@
 			const taInput = q("[data-tea-text]");
 			if (taInput) {
 				taInput.addEventListener("paste", (e) => {
-					const files = [...(e.clipboardData?.files || [])].filter((x) => x.type.startsWith("image/"));
+					// 图片和视频都走「先上传、再插 Markdown 标记」这条路，
+					// 这样粘贴完还能继续打字，最后一条消息连图文一起发。
+					const files = [...(e.clipboardData?.files || [])].filter((x) => /^(image|video)\//.test(x.type));
 					if (!files.length) return;
 					e.preventDefault();
-					// 串行上传，保证多张图片的插入顺序跟粘贴顺序一致
+					// 串行上传，保证多个附件的插入顺序跟粘贴顺序一致
 					(async () => {
-						for (const f of files) await insertImageAsMarkdown(f, f.name || "粘贴的图片");
+						for (const f of files) await insertMediaAsMarkdown(f, f.name || "粘贴的图片");
 					})();
 				});
 				taInput.addEventListener("input", () => {
@@ -3347,6 +3438,58 @@
 					showError(`图片上传失败：${e.message || "网络异常"}`);
 				}
 			};
+			// 视频同理：读一下真实宽高/时长再上传，元数据既给播放器定比例，
+			// 也让发送时能写进规范的 m.video info 里。
+			const probeVideo = (blob) =>
+				new Promise((resolve) => {
+					const objUrl = URL.createObjectURL(blob);
+					const v = document.createElement("video");
+					let settled = false;
+					const done = (info) => {
+						if (settled) return;
+						settled = true;
+						URL.revokeObjectURL(objUrl);
+						resolve(info || {});
+					};
+					v.preload = "metadata";
+					v.onloadedmetadata = () =>
+						done({
+							w: v.videoWidth || 0,
+							h: v.videoHeight || 0,
+							duration: Math.round((Number(v.duration) || 0) * 1000),
+						});
+					v.onerror = () => done({});
+					// 浏览器解不了这个容器（比如某些 webm）也别把上传卡死
+					setTimeout(() => done({}), 2500);
+					v.src = objUrl;
+				});
+
+			const insertVideoAsMarkdown = async (blob, name) => {
+				if (!rt.visitor) { openDialog(); return; }
+				const label = String(name || "视频").replace(/[\[\]\r\n()]/g, "").slice(0, 30) || "视频";
+				try {
+					showError("视频上传中…");
+					const meta = await probeVideo(blob);
+					const up = await api("/api/upload", {
+						method: "POST",
+						body: await blob.arrayBuffer(),
+						headers: { "Content-Type": blob.type || "video/mp4" },
+						// 家里上行慢，大视频留足时间
+						timeout: 300_000,
+					});
+					if (!up || !up.url) throw new Error("没拿到视频地址");
+					const mediaUrl = `${API_BASE}/api/media?u=${encodeURIComponent(up.url)}`;
+					videoMeta.set(mediaUrl, { ...meta, mimetype: blob.type || "", size: blob.size || 0 });
+					insertAtCursor(`!video[${label}](${mediaUrl})`);
+					showError("");
+				} catch (e) {
+					showError(`视频上传失败：${e.message || "网络异常"}`);
+				}
+			};
+
+			const insertMediaAsMarkdown = (blob, name) =>
+				/^video\//.test(blob.type || "") ? insertVideoAsMarkdown(blob, name) : insertImageAsMarkdown(blob, name);
+
 			if (emojiToggle && emojiPanel) {
 				emojiToggle.addEventListener("click", (e) => {
 					e.stopPropagation();
@@ -3765,6 +3908,14 @@
 					ta.value = "";
 					ta.style.height = "auto";
 					if (counter) counter.textContent = "0/500";
+					// 只贴了一个视频（可以配一段说明）→ 发规范的 m.video，别的客户端也能播；
+					// 混了别的内容就按普通 Markdown 文本发，本端照样渲染成播放器。
+					const vids = [...text.matchAll(/!video\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g)];
+					if (vids.length === 1 && mxcOf(vids[0][2])) {
+						const caption = text.replace(vids[0][0], " ").replace(/\s+/g, " ").trim();
+						await sendVideo(vids[0][2], caption, vids[0][1], videoMeta.get(vids[0][2]) || {});
+						return;
+					}
 					await sendText(text);
 				});
 			}
@@ -4157,7 +4308,10 @@
 					: `<span style="${avatarStyle(m.nick, m.site)}">${esc(initials(m.nick))}</span>`;
 				const body = m.image
 					? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async" style="max-width:100%;border-radius:0.5rem;" data-zoom />`
-					: fmtText(m.text || "");
+					: m.video
+						? videoTag(m.video, m.videoInfo, m.poster) +
+							(m.text ? `<div class="tea-video__cap">${fmtText(m.text)}</div>` : "")
+						: fmtText(m.text || "");
 				return `<div class="tea-msg tea-thread__msg" data-id="${esc(m.id || "")}">
 					<div class="tea-msg__avatar" aria-hidden="true">${av}</div>
 					<div class="tea-msg__body">

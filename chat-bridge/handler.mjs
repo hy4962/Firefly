@@ -429,8 +429,32 @@ function normalize(ev, members, c, base, eventMap) {
 	const info = content.info && typeof content.info === "object" ? content.info : {};
 	const imageW = Number(info.w) || 0;
 	const imageH = Number(info.h) || 0;
-	if (TYPE_ICON[msgtype] && content.url && /^mxc:\/\//.test(content.url)) {
-		// 文件/语音/视频先给一个可点开的链接提示，正文用 body 兜底
+
+	// 视频：规范（m.video）把播放地址放 url、元数据放 info（VideoInfo：
+	// w/h/duration/mimetype/size/thumbnail_url）。能拿到就交给前端出 <video> 预览，
+	// 拿不到再退回「🎬 文件名」的纯文本，别整条丢掉。
+	let video = "";
+	let poster = "";
+	let videoInfo = null;
+	if (msgtype === "m.video" && content.url && /^mxc:\/\//.test(content.url)) {
+		video = `${base}/api/media?u=${enc(content.url)}`;
+		const thumb =
+			typeof info.thumbnail_url === "string" && /^mxc:\/\//.test(info.thumbnail_url) ? info.thumbnail_url : "";
+		if (thumb) poster = `${base}/api/media?u=${enc(thumb)}`;
+		videoInfo = {
+			w: imageW,
+			h: imageH,
+			duration: Number(info.duration) || 0,
+			mimetype: typeof info.mimetype === "string" ? info.mimetype : "",
+			size: Number(info.size) || 0,
+		};
+		// v1.10 起 body 可以是「说明文字」：只有 filename 存在且和 body 不同，
+		// body 才是说明；否则 body 就是文件名，不该当正文显示。
+		const fn = typeof content.filename === "string" ? content.filename : "";
+		text = fn && fn !== text ? text : "";
+	}
+	if (!video && TYPE_ICON[msgtype] && content.url && /^mxc:\/\//.test(content.url)) {
+		// 文件/语音：先给一个可点开的链接提示，正文用 body 兜底
 		text = `${TYPE_ICON[msgtype]} ${text || msgtype}`;
 	}
 
@@ -517,7 +541,24 @@ function normalize(ev, members, c, base, eventMap) {
 	const relates = content["m.relates_to"];
 	const threadRoot = relates && relates.rel_type === "m.thread" && relates.event_id ? relates.event_id : "";
 
-	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image, imageW, imageH, reply, emoticon, threadRoot };
+	return {
+		id: ev.event_id,
+		sender,
+		ts: ev.origin_server_ts || Date.now(),
+		nick,
+		site,
+		avatar,
+		text,
+		image,
+		imageW,
+		imageH,
+		video,
+		poster,
+		videoInfo,
+		reply,
+		emoticon,
+		threadRoot,
+	};
 }
 
 // m.reaction 用 m.relates_to 指向目标事件，按 event_id 聚合后附给前端
@@ -1273,8 +1314,9 @@ async function handleSend(c, request, token, room) {
 	const threadRoot = clean(body.threadRoot, 120);
 	const threadLatest = clean(body.threadLatest, 120);
 	const imageUrl = clean(body.imageUrl, 400);
+	const videoUrl = clean(body.videoUrl, 400);
 	const filename = clean(body.filename, 120);
-	if (!text && !imageUrl) return fail(400, "空消息发不出去");
+	if (!text && !imageUrl && !videoUrl) return fail(400, "空消息发不出去");
 
 	let content;
 	if (imageUrl && body.emoticon === true) {
@@ -1290,6 +1332,25 @@ async function handleSend(c, request, token, room) {
 		};
 	} else if (imageUrl) {
 		content = { msgtype: "m.image", body: text || filename || "图片", url: imageUrl };
+	} else if (videoUrl) {
+		// 规范（m.video）：url 放视频本体，info 是 VideoInfo（w/h/duration/mimetype/size）。
+		// v1.10 起 body 可以是说明文字，原始文件名单独放 filename。
+		// 数值逐个夹一遍，别把前端传来的脏数据原样写进事件。
+		const vi = body.info && typeof body.info === "object" ? body.info : {};
+		const num = (v, cap) => {
+			const n = Math.round(Number(v));
+			return Number.isFinite(n) && n > 0 && n <= cap ? n : 0;
+		};
+		const info = {};
+		if (num(vi.w, 20000)) info.w = num(vi.w, 20000);
+		if (num(vi.h, 20000)) info.h = num(vi.h, 20000);
+		if (num(vi.duration, 24 * 60 * 60 * 1000)) info.duration = num(vi.duration, 24 * 60 * 60 * 1000);
+		if (num(vi.size, 512 * 1024 * 1024)) info.size = num(vi.size, 512 * 1024 * 1024);
+		const mime = String(vi.mimetype || "");
+		if (/^video\/[a-z0-9.+-]{1,40}$/i.test(mime)) info.mimetype = mime;
+		content = { msgtype: "m.video", body: text || filename || "视频", url: videoUrl };
+		if (filename) content.filename = filename;
+		if (Object.keys(info).length) content.info = info;
 	} else {
 		content = { msgtype: "m.text", body: text };
 	}
@@ -1321,13 +1382,17 @@ async function handleSend(c, request, token, room) {
 	return json(200, { ok: true, id: data.event_id, txnId: txn, ts: Date.now() });
 }
 
-// 图片/表情上传：先存到 Matrix media，再由前端发 m.image
+// 图片/表情/视频上传：先存到 Matrix media，再由前端发 m.image / m.video
 async function handleUpload(c, request, token) {
 	if (!token) return fail(401, "还没入座");
 	const type = (request.headers.get("content-type") || "image/png").split(";")[0].trim();
-	if (!/^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(type)) return fail(400, "只支持图片");
+	const isImage = /^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(type);
+	const isVideo = /^video\/(mp4|webm|quicktime|ogg)$/.test(type);
+	if (!isImage && !isVideo) return fail(400, "只支持图片和视频");
+	// 家里那条上行带宽撑不住更大的文件，也别把 homeserver 的 media 仓库塞爆。
+	const cap = isVideo ? 48 * 1024 * 1024 : 8 * 1024 * 1024;
 	const buf = await request.arrayBuffer();
-	if (buf.byteLength > 8 * 1024 * 1024) return fail(413, "图片最大 8 MB");
+	if (buf.byteLength > cap) return fail(413, isVideo ? "视频最大 48 MB" : "图片最大 8 MB");
 	const name = type.replace("/", ".");
 	const res = await mx(c, `/_matrix/media/v3/upload?filename=${enc(name)}`, {
 		token,
@@ -1412,16 +1477,27 @@ async function handleReaction(c, request, token, room) {
 	return json(200, { ok: true, id: data.event_id });
 }
 
-async function handleMedia(c, url) {
+async function handleMedia(c, request, url) {
 	const mxc = url.searchParams.get("u") || "";
 	const m = mxc.match(/^mxc:\/\/([^/]+)\/([A-Za-z0-9_-]+)$/);
 	if (!m) return fail(400, "bad mxc");
-	const upstream = await mx(c, `/_matrix/client/v1/media/download/${enc(m[1])}/${enc(m[2])}`, { token: c.bridgeToken });
-	if (!upstream.ok) return fail(upstream.status, "media failed");
+	// 视频/音频必须支持 Range：浏览器要 206 才能拖动进度条、才能跳过 moov 在尾部的等待，
+	// 一律返 200 整段会让大视频卡在首帧。
+	const range = request.headers.get("range") || "";
+	const upstream = await mx(c, `/_matrix/client/v1/media/download/${enc(m[1])}/${enc(m[2])}`, {
+		token: c.bridgeToken,
+		headers: range ? { range } : {},
+	});
+	if (!upstream.ok && upstream.status !== 206) return fail(upstream.status, "media failed");
 	const headers = new Headers();
 	headers.set("Content-Type", upstream.headers.get("content-type") || "application/octet-stream");
 	headers.set("Cache-Control", "public, max-age=86400");
-	return new Response(upstream.body, { status: 200, headers });
+	for (const name of ["content-length", "content-range", "accept-ranges"]) {
+		const v = upstream.headers.get(name);
+		if (v) headers.set(name, v);
+	}
+	if (upstream.status === 206) headers.set("Accept-Ranges", "bytes");
+	return new Response(upstream.body, { status: upstream.status, headers });
 }
 
 // ── 个人资料：显示名/头像走 Matrix profile，扩展字段存 account_data ──
@@ -2210,7 +2286,7 @@ export async function handleRequest(request, env = {}) {
 		} else if (path === "/api/sync" && request.method === "GET") {
 			out = await handleSync(c, url, base, visitorToken || c.bridgeToken);
 		} else if (path === "/api/media" && request.method === "GET") {
-			out = await handleMedia(c, url);
+			out = await handleMedia(c, request, url);
 		} else if (path === "/api/recall" && request.method === "POST") {
 			out = await handleRecall(c, request, visitorToken, roomOf(c, url));
 		} else if (path === "/api/send" && request.method === "POST") {

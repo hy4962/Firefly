@@ -204,10 +204,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						<button type="button" class="tea-tool" data-tea-emoji-toggle title="表情" aria-label="表情">
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
 						</button>
-						<button type="button" class="tea-tool" data-tea-image-pick title="发送图片或链接" aria-label="发送图片或链接">
+						<button type="button" class="tea-tool" data-tea-image-pick title="发送图片、视频或链接" aria-label="发送图片、视频或链接">
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
 						</button>
-						<input type="file" accept="image/*" data-tea-image-file hidden />
+						<input type="file" accept="image/*,video/*" data-tea-image-file hidden />
 						<button type="button" class="tea-tool" data-tea-poll-toggle title="发起投票" aria-label="发起投票">
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8" rx="1"/><rect x="13" y="5" width="3" height="13" rx="1"/><rect x="19" y="13" width="3" height="5" rx="1"/></svg>
 						</button>
@@ -1886,8 +1886,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		text-decoration-color: color-mix(in oklch, var(--primary) 35%, transparent);
 		text-underline-offset: 2px;
 	}
-	/* 纯图片消息：去掉气泡外框，图片直接贴在消息流里 */
-	.tea-msg--media .tea-msg__text {
+	/* 纯媒体消息：去掉气泡外框，媒体直接贴在消息流里。
+	   自己发的消息还有一份同权重的 .tea-msg--mine 样式（它带底色），
+	   这里补一个组合选择器把它压住，否则自己的图/视频背后会多出一块色块。 */
+	.tea-msg--media .tea-msg__text,
+	.tea-msg--media.tea-msg--mine .tea-msg__text {
 		padding: 0;
 		border: 0;
 		border-radius: 0;
@@ -1896,6 +1899,30 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-msg--media .tea-msg__text img {
 		margin-top: 0;
+	}
+	/* 视频：跟图片一样直接贴在消息流里。给了 info.w/h 就按真实比例，
+	   没给（外站客户端没填）退回 16:9，别在 metadata 回来前塌成一条窄黑边。 */
+	.tea-msg__text video.tea-video,
+	.tea-thread__msg video.tea-video {
+		display: block;
+		width: 20rem;
+		max-width: 100%;
+		aspect-ratio: 16 / 9;
+		margin-top: 0.3rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.7rem;
+		background: #000;
+	}
+	.tea-msg--media .tea-msg__text video.tea-video {
+		margin-top: 0;
+	}
+	.tea-video__cap {
+		max-width: 20rem;
+		margin-top: 0.35rem;
+		font-size: 0.86rem;
+		line-height: 1.7;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 	.tea-msg__text img {
 		display: block;
