@@ -1556,23 +1556,64 @@ async function handleRoom(c, base, room, url) {
  */
 const threadCache = { at: 0, key: "", threads: [] };
 
-/** 从主线历史里收集带线程的根事件（靠 unsigned.m.relations.m.thread 摘要） */
+/**
+ * 从主线历史里收集线程根。
+ * 不能只靠根消息上的 unsigned.m.relations.m.thread 摘要：老房间/联邦事件常常没有
+ * 这份摘要，而且只看最近 200 条会把较早的线程全漏掉（实测本机线程在 5000 条开外）。
+ * 可靠来源是线程回复事件自身的 m.relates_to.rel_type=m.thread → event_id 指向根。
+ * 所以逐页往旧翻，按 threadRoot 聚合；摘要仍作为补充（能给出 count/latest）。
+ */
+const THREAD_SCAN = { pageSize: 1000, maxPages: 6, budget: 20_000 };
 async function collectThreadRoots(c, roomId) {
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(roomId)}/messages?dir=b&limit=200`, {
-		token: c.bridgeToken,
-	});
-	const data = await res.json().catch(() => ({}));
 	const roots = new Map();
-	for (const ev of data.chunk || []) {
-		const summary = ev.unsigned?.["m.relations"]?.["m.thread"];
-		if (!summary || !(Number(summary.count) > 0)) continue;
-		roots.set(ev.event_id, {
-			id: ev.event_id,
-			ts: ev.origin_server_ts || 0,
-			count: Number(summary.count),
-			latest: summary.latest_event || null,
-			rootEvent: ev,
+	let from = "";
+	const started = Date.now();
+	for (let page = 0; page < THREAD_SCAN.maxPages; page++) {
+		if (Date.now() - started > THREAD_SCAN.budget) break;
+		const qs = `dir=b&limit=${THREAD_SCAN.pageSize}${from ? `&from=${enc(from)}` : ""}`;
+		const res = await mx(c, `/_matrix/client/v3/rooms/${enc(roomId)}/messages?${qs}`, {
+			token: c.bridgeToken,
 		});
+		const data = await res.json().catch(() => ({}));
+		const chunk = data.chunk || [];
+		if (!chunk.length) break;
+		for (const ev of chunk) {
+			const rel = ev.content?.["m.relates_to"];
+			if (rel?.rel_type === "m.thread" && rel.event_id) {
+				const root = roots.get(rel.event_id) || {
+					id: rel.event_id,
+					ts: 0,
+					count: 0,
+					latest: null,
+					rootEvent: null,
+					replies: [],
+				};
+				root.count++;
+				const ts = ev.origin_server_ts || 0;
+				if (ts > root.ts) { root.ts = ts; root.latest = ev.event_id; }
+				root.replies.push(ev);
+				roots.set(rel.event_id, root);
+			}
+			// 摘要作为补充：能拿到准确 count/latest，还能覆盖「只有摘要没有回复体」的根
+			const summary = ev.unsigned?.["m.relations"]?.["m.thread"];
+			if (summary && Number(summary.count) > 0) {
+				const root = roots.get(ev.event_id) || {
+					id: ev.event_id,
+					ts: ev.origin_server_ts || 0,
+					count: 0,
+					latest: null,
+					rootEvent: ev,
+					replies: [],
+				};
+				root.count = Math.max(root.count, Number(summary.count));
+				root.latest = root.latest || summary.latest_event || null;
+				root.rootEvent = root.rootEvent || ev;
+				root.ts = root.ts || ev.origin_server_ts || 0;
+				roots.set(ev.event_id, root);
+			}
+		}
+		from = data.end;
+		if (!from) break;
 	}
 	return roots;
 }
