@@ -404,8 +404,10 @@ function normalize(ev, members, c, base, eventMap) {
 	if (!content.body && !content.url) return null;
 	// 规范：不认识的 msgtype 也要拿 body 兜底显示，不能整条丢掉。
 	// m.file / m.audio / m.video 至少让用户知道「有人发了东西」。
-	const msgtype = String(content.msgtype || "");
-	const TYPE_ICON = { "m.file": "📎", "m.audio": "🎵", "m.video": "🎬", "m.sticker": "🩹" };
+	// m.sticker 是独立事件类型（Element 发的表情/贴纸），没有 msgtype，别整条丢掉。
+	const isSticker = ev.type === "m.sticker";
+	const msgtype = String(content.msgtype || (isSticker ? "m.sticker" : ""));
+	const TYPE_ICON = { "m.file": "📎", "m.audio": "🎵", "m.video": "🎬" };
 	if (!msgtype) return null;
 	const isMessage = ["m.text", "m.emote", "m.notice", "m.image", "m.file", "m.audio", "m.video"].includes(msgtype);
 	if (!isMessage && !TYPE_ICON[msgtype]) {
@@ -421,6 +423,10 @@ function normalize(ev, members, c, base, eventMap) {
 	let avatar = member.avatar || "";
 	let text = typeof content.body === "string" ? content.body : "";
 	let image = "";
+	// m.image 的 info.w/h 交给前端做占位尺寸，避免未加载时塌成 2×2 露出 alt。
+	const info = content.info && typeof content.info === "object" ? content.info : {};
+	const imageW = Number(info.w) || 0;
+	const imageH = Number(info.h) || 0;
 	if (TYPE_ICON[msgtype] && content.url && /^mxc:\/\//.test(content.url)) {
 		// 文件/语音/视频先给一个可点开的链接提示，正文用 body 兜底
 		text = `${TYPE_ICON[msgtype]} ${text || msgtype}`;
@@ -496,9 +502,9 @@ function normalize(ev, members, c, base, eventMap) {
 	if (emote) {
 		image = `${base}/api/media?u=${enc(emote.src)}`;
 		text = emote.code || text;
-	} else if (content.msgtype === "m.image" && content.url) {
+	} else if ((content.msgtype === "m.image" || isSticker) && content.url) {
 		image = `${base}/api/media?u=${enc(content.url)}`;
-		text = text || "发了一张图片";
+		text = text || (isSticker ? "发了一个表情" : "发了一张图片");
 	}
 	// 规范表情（formatted_body 的 img）与旧版 m.image 标记统一成前端的 emoticon 布尔
 	const emoticon = !!emote;
@@ -509,7 +515,7 @@ function normalize(ev, members, c, base, eventMap) {
 	const relates = content["m.relates_to"];
 	const threadRoot = relates && relates.rel_type === "m.thread" && relates.event_id ? relates.event_id : "";
 
-	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image, reply, emoticon, threadRoot };
+	return { id: ev.event_id, sender, ts: ev.origin_server_ts || Date.now(), nick, site, avatar, text, image, imageW, imageH, reply, emoticon, threadRoot };
 }
 
 // m.reaction 用 m.relates_to 指向目标事件，按 event_id 聚合后附给前端
@@ -896,7 +902,7 @@ async function handleHistory(c, url, base, token) {
 	} catch (_) {}
 	const eventMap = new Map((data.chunk || []).map((ev) => [ev.event_id, ev]));
 	const messages = (data.chunk || [])
-		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base, eventMap) : null))
+		.map((ev) => (ev.type === "m.room.message" || ev.type === "m.sticker" ? normalize(ev, members, c, base, eventMap) : null))
 		.filter(Boolean)
 		.reverse()
 		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender) }));
@@ -936,7 +942,7 @@ async function handleSync(c, url, base, token) {
 	const reactions = collectReactions(timeline, members);
 	const eventMap = new Map(timeline.map((ev) => [ev.event_id, ev]));
 	const messages = timeline
-		.map((ev) => (ev.type === "m.room.message" ? normalize(ev, members, c, base, eventMap) : null))
+		.map((ev) => (ev.type === "m.room.message" || ev.type === "m.sticker" ? normalize(ev, members, c, base, eventMap) : null))
 		.filter(Boolean)
 		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender), reactions: reactions.get(m.id) || [] }));
 	// reaction 更新可能指向历史消息，单独返回让前端就地合并

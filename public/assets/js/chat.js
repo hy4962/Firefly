@@ -425,8 +425,12 @@
 			const siteTag = m.site ? `<span class="tea-msg__site">来自 ${esc(m.site)}</span>` : "";
 			const poll = parsePoll(m.text || "");
 			if (poll) el.dataset.poll = JSON.stringify(poll);
+			// 消息图片不要 lazy：Chrome 会在 overflow 容器里把未加载的图压成 2×2，
+			// 懒加载又因元素太小不触发，结果只露出 alt「图片」，图永远不出来。
+			// 顺带用 Matrix info.w/h 给真实尺寸，避免布局跳动。
+			const dims = m.imageW && m.imageH ? ` width="${Number(m.imageW)}" height="${Number(m.imageH)}"` : "";
 			const body = m.image
-				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" loading="lazy" ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
+				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async"${dims} ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
 				: poll
 					? renderPollCard(poll, m.reactions, m.id)
 					: fmtText(m.text || "");
@@ -4107,8 +4111,9 @@
 				const av = m.avatar
 					? `<img src="${esc(m.avatar)}" alt="" loading="lazy" />`
 					: `<span style="${avatarStyle(m.nick, m.site)}">${esc(initials(m.nick))}</span>`;
+				const tDims = m.imageW && m.imageH ? ` width="${Number(m.imageW)}" height="${Number(m.imageH)}"` : "";
 				const body = m.image
-					? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" loading="lazy" style="max-width:100%;border-radius:0.5rem;" data-zoom />`
+					? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async"${tDims} style="max-width:100%;border-radius:0.5rem;" data-zoom />`
 					: fmtText(m.text || "");
 				return `<div class="tea-msg tea-thread__msg" data-id="${esc(m.id || "")}">
 					<div class="tea-msg__avatar" aria-hidden="true">${av}</div>
