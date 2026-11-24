@@ -289,6 +289,36 @@
 			</div>`;
 		};
 
+		// sync 里带回的回执更新：只换掉对应消息的已读区，不重画整段历史。
+		// 回执名单最多带 12 人，count 里可能还有没带下来的人，多出来的算「+N」。
+		const applyReceipts = (map) => {
+			if (!map) return;
+			const f = feedEl();
+			if (!f) return;
+			for (const [id, rec] of Object.entries(map)) {
+				if (!rec) continue;
+				const el = f.querySelector(`.tea-msg[data-id="${CSS.escape(id)}"]`);
+				if (!el) continue;
+				const sender = el.dataset.sender || "";
+				const all = Array.isArray(rec.readers) ? rec.readers : [];
+				const readers = all.filter((r) => r && r.id !== sender);
+				const hidden = Math.max(0, (Number(rec.count) || all.length) - all.length);
+				const count = readers.length + hidden;
+				const html = count ? renderReceipt({ receipt: { count, readers } }) : "";
+				const cur = el.querySelector(".tea-receipt");
+				if (!html) {
+					if (cur) cur.remove();
+					continue;
+				}
+				const box = document.createElement("div");
+				box.innerHTML = html;
+				const fresh = box.firstElementChild;
+				if (!fresh) continue;
+				if (cur) cur.replaceWith(fresh);
+				else el.querySelector(".tea-msg__body")?.appendChild(fresh);
+			}
+		};
+
 		// 已读名单弹层：fixed 定位避开消息区 overflow 裁剪
 		const bindReceipts = () => {
 			const f = feedEl();
@@ -362,6 +392,7 @@
 			el.className = "tea-msg" + (mine ? " tea-msg--mine" : "");
 			el.dataset.nick = m.nick || "";
 			el.dataset.site = m.site || "";
+			if (m.sender) el.dataset.sender = m.sender;
 			el.dataset.ts = String(m.ts || Date.now());
 			if (m.id) el.dataset.id = m.id;
 			if (m.pending) el.classList.add("tea-msg--pending");
@@ -1107,7 +1138,8 @@
 					{ timeout: SYNC_WAIT + 15_000 },
 				);
 				// 旧版后端不认 timeout 参数会「秒回」；空返回太快时退回 3 秒间隔，防止请求风暴
-				if (Date.now() - t0 < 1000 && !(data.messages || []).length && !(data.redactions || []).length) delay = 3000;
+				if (Date.now() - t0 < 1000 && !(data.messages || []).length && !(data.redactions || []).length && !Object.keys(data.receipts || {}).length)
+					delay = 3000;
 				rt.pollFails = 0;
 				if (data.next) rt.since = data.next;
 				renderTyping(data.typing || []);
@@ -1148,6 +1180,7 @@
 						if (jump) jump.hidden = false;
 					}
 				}
+				if (data.receipts) applyReceipts(data.receipts);
 				setConn("live");
 				if (!rt.rosterAt || Date.now() - rt.rosterAt > 30_000) {
 					rt.rosterAt = Date.now();

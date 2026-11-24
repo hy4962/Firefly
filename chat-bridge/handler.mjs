@@ -181,12 +181,22 @@ async function getMembers(c, roomId, force = false) {
 	return map;
 }
 
-// m.receipt 在 sync 的 ephemeral 里是一条「全量快照」事件：
-// content = { "$eventId": { "m.read": { "@user": { ts, thread_id } } } }
-// 取最近一条即可；顺手把 Matrix 用户映射成房间成员资料。
+// m.receipt 在 sync 的 ephemeral 里：content = { "$eventId": { "m.read": { "@user": { ts, thread_id } } } }
+// 顺手把 Matrix 用户映射成房间成员资料。
 function readReceipts(data, roomId, members, c, base) {
 	const events = data?.rooms?.join?.[roomId]?.ephemeral?.events || [];
-	const snapshot = [...events].reverse().find((ev) => ev.type === "m.receipt")?.content || {};
+	// 规范（v1.19 / Receipts）：/sync 下发的是增量，一次同步可能带回多条 m.receipt，
+	// 要按 user_id + receipt_type 合并覆盖，只取最后一条会漏人。
+	const snapshot = {};
+	for (const ev of events) {
+		if (ev.type !== "m.receipt" || !ev.content) continue;
+		for (const [eventId, reads] of Object.entries(ev.content)) {
+			const users = reads?.["m.read"];
+			if (!users) continue;
+			const target = snapshot[eventId] || (snapshot[eventId] = {});
+			target["m.read"] = { ...(target["m.read"] || {}), ...users };
+		}
+	}
 	const map = new Map();
 	for (const [eventId, reads] of Object.entries(snapshot)) {
 		const users = reads?.["m.read"] || {};
@@ -249,22 +259,31 @@ function readWatermarks(data, roomId, members, c, base) {
 const receiptCache = new Map();
 
 function mergeReceiptCache(roomId, map) {
+	const changed = new Set();
 	for (const [eventId, rec] of map) {
 		const key = `${roomId}|${eventId}`;
 		const prev = receiptCache.get(key);
 		if (!prev) {
 			receiptCache.set(key, { ...rec, updatedAt: Date.now() });
+			changed.add(eventId);
 			continue;
 		}
 		const byId = new Map(prev.readers.map((r) => [r.id, r]));
-		for (const r of rec.readers) if (!byId.has(r.id)) byId.set(r.id, r);
+		let added = false;
+		for (const r of rec.readers)
+			if (!byId.has(r.id)) {
+				byId.set(r.id, r);
+				added = true;
+			}
 		const readers = [...byId.values()].sort((a, b) => b.ts - a.ts);
 		receiptCache.set(key, { count: readers.length, readers: readers.slice(0, 12), updatedAt: Date.now() });
+		if (added && readers.length > prev.count) changed.add(eventId);
 	}
 	if (receiptCache.size > 3000) {
 		const oldest = [...receiptCache.entries()].sort((a, b) => a[1].updatedAt - b[1].updatedAt).slice(0, 1000);
 		for (const [k] of oldest) receiptCache.delete(k);
 	}
+	return changed;
 }
 
 function exactReceipt(roomId, eventId, sender) {
@@ -841,7 +860,15 @@ async function handleSync(c, url, base, token) {
 	const res = await mx(c, path, { token });
 	const data = await res.json();
 	const members = await membersP;
-	mergeReceiptCache(room.id, readReceipts(data, room.id, members, c, base));
+	const receiptMap = readReceipts(data, room.id, members, c, base);
+	const changedReceipts = mergeReceiptCache(room.id, receiptMap);
+	// 已读回执会随 sync 的 ephemeral 快照更新，但对应事件往往早就不在 timeline 里了。
+	// 单独回传一份，让前端就地刷新「N 人已读」，不用整页重载；只推真的多出读者的。
+	const receipts = {};
+	for (const id of changedReceipts) {
+		const rec = receiptCache.get(`${room.id}|${id}`);
+		if (rec) receipts[id] = { count: rec.count, readers: rec.readers.slice(0, 12) };
+	}
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
 	const reactions = collectReactions(timeline, members);
 	const eventMap = new Map(timeline.map((ev) => [ev.event_id, ev]));
@@ -865,7 +892,7 @@ async function handleSync(c, url, base, token) {
 			return dot > 0 ? nick.slice(0, dot).trim() : nick;
 		})
 		.filter(Boolean);
-	return json(200, { ok: true, messages, next: data.next_batch || since || null, typing, reactions: reactionUpdates, redactions });
+	return json(200, { ok: true, messages, next: data.next_batch || since || null, typing, reactions: reactionUpdates, receipts, redactions });
 }
 
 // 读取房间真实头像（m.room.avatar），统一走本站媒体代理，避免跨域 mxc://
