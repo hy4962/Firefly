@@ -174,6 +174,15 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			</div>
 
 			<div class="tea-feed-wrap">
+				<!-- ── 离开房间期间的未读提示条（仿互联茶室横向横幅） ── -->
+				<div class="tea-unreadbar" data-tea-unreadbar hidden>
+					<span class="tea-unreadbar__icon"><Icon is:inline name="material-symbols:history-rounded" /></span>
+					<span class="tea-unreadbar__text">离开房间有 <b data-tea-unread-count>0</b> 条未读消息 <span data-tea-unread-time></span></span>
+					<button type="button" class="tea-unreadbar__jump" data-tea-readjump>回到上次阅读位置 ↑</button>
+					<button type="button" class="tea-unreadbar__close" data-tea-unreadbar-close aria-label="关闭提示" title="关闭提示">
+						<Icon is:inline name="material-symbols:close-rounded" />
+					</button>
+				</div>
 				<div class="tea-feed" data-tea-feed tabindex="0" role="log" aria-live="polite" aria-label="茶室消息">
 					<div class="tea-feed__status" data-tea-feed-status>
 						<span class="tea-spinner"></span> 正在看看大家聊到哪儿了…
@@ -182,7 +191,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<button type="button" class="tea-jump" data-tea-jump hidden>
 					<Icon is:inline name="material-symbols:arrow-downward-rounded" /> 有新消息
 				</button>
-				<button type="button" class="tea-readjump" data-tea-readjump hidden>回到上次阅读位置 ↑</button>
 				<div class="tea-typing" data-tea-typing hidden aria-live="polite"><span class="tea-typing__dots"><i></i><i></i><i></i></span><span data-tea-typing-text></span></div>
 			</div>
 
@@ -2100,12 +2108,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	/* 消息流 */
 	.tea-feed-wrap {
 		position: relative;
+		/* 未读提示条要占一条独立高度，消息列表在下方滚动 */
+		display: flex;
+		flex-direction: column;
 		min-height: 0;
 		/* 不锁住的话，置顶栏 nowrap 的最小内容宽度会把整条 grid 列撑出视口 */
 		min-width: 0;
 	}
 	.tea-feed {
-		height: 100%;
+		flex: 1 1 auto;
+		min-height: 0;
 		/* 悬停操作按钮是 absolute 挂在气泡外侧的，别让它给消息区撑出横向滚动条 */
 		overflow-x: hidden;
 		overflow-y: auto;
@@ -2237,22 +2249,73 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		font-size: 0.66rem;
 		white-space: nowrap;
 	}
-	.tea-readjump {
-		position: absolute;
-		right: 1rem;
-		bottom: 0.6rem;
-		z-index: 12;
-		padding: 0.3rem 0.7rem;
-		border-radius: 999px;
-		border: 1px solid color-mix(in oklch, var(--primary) 35%, transparent);
-		background: var(--tea-surface, #fff);
-		color: var(--primary);
+	/* 离开房间期间的未读提示条：仿互联茶室顶部横幅 */
+	.tea-unreadbar {
+		flex: none;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0.45rem 0.7rem 0;
+		padding: 0.38rem 0.45rem 0.38rem 0.7rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 30%, transparent);
+		border-radius: 0.7rem;
+		background: color-mix(in oklch, var(--primary) 9%, var(--tea-surface, #fff));
+		font-size: 0.72rem;
+	}
+	.tea-unreadbar[hidden] { display: none; }
+	.tea-unreadbar__icon {
+		flex: none;
+		display: inline-flex;
+		align-items: center;
+		color: color-mix(in oklch, var(--primary) 82%, currentColor);
+	}
+	.tea-unreadbar__icon svg { width: 0.95rem; height: 0.95rem; }
+	.tea-unreadbar__text {
+		flex: 1;
+		min-width: 0;
+		color: var(--tea-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tea-unreadbar__text b {
+		color: color-mix(in oklch, var(--primary) 82%, currentColor);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.tea-unreadbar__jump {
+		flex: none;
+		padding: 0.26rem 0.6rem;
+		border: 1px solid transparent;
+		border-radius: 0.45rem;
+		background: var(--primary);
+		color: color-mix(in oklch, var(--primary) 18%, #2b2205);
 		font: inherit;
 		font-size: 0.7rem;
+		font-weight: 600;
+		white-space: nowrap;
 		cursor: pointer;
-		box-shadow: 0 4px 14px rgba(0,0,0,.1);
+		transition: filter 0.15s ease;
 	}
-	.tea-readjump[hidden] { display: none; }
+	.tea-unreadbar__jump:hover { filter: brightness(1.06); }
+	.tea-unreadbar__close {
+		flex: none;
+		width: 1.4rem;
+		height: 1.4rem;
+		display: grid;
+		place-items: center;
+		border: 0;
+		border-radius: 0.4rem;
+		background: transparent;
+		color: var(--tea-muted);
+		cursor: pointer;
+	}
+	.tea-unreadbar__close:hover { background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.1)); color: inherit; }
+	.tea-unreadbar__close svg { width: 0.85rem; height: 0.85rem; }
+	@media (max-width: 640px) {
+		.tea-unreadbar { gap: 0.35rem; padding-left: 0.55rem; }
+		.tea-unreadbar__text { font-size: 0.66rem; }
+	}
 
 	.tea-msg {
 		display: grid;

@@ -712,15 +712,24 @@
 			if (!f || f.querySelector("[data-tea-readmark]")) return;
 			const since = Number(localStorage.getItem(readKey()) || 0);
 			if (!since) return;
-			const first = [...f.querySelectorAll(".tea-msg")].find((el) => Number(el.dataset.ts || 0) > since);
+			const msgs = [...f.querySelectorAll(".tea-msg")];
+			const first = msgs.find((el) => Number(el.dataset.ts || 0) > since);
 			if (!first) return;
 			const mark = document.createElement("div");
 			mark.className = "tea-readmark";
 			mark.dataset.teaReadmark = "1";
 			mark.innerHTML = `<span>上次 ${fmtReadTime(since)} 阅读到这里</span>`;
 			first.parentElement.insertBefore(mark, first);
-			const jump = q("[data-tea-readjump]");
-			if (jump) jump.hidden = false;
+			// 顶部横幅：离开期间的未读条数 + 离开时间，仿互联茶室同款提示
+			const bar = q("[data-tea-unreadbar]");
+			if (bar) {
+				const n = msgs.filter((el) => Number(el.dataset.ts || 0) > since).length;
+				const cnt = q("[data-tea-unread-count]");
+				const when = q("[data-tea-unread-time]");
+				if (cnt) cnt.textContent = String(n);
+				if (when) when.textContent = `(${fmtReadTime(since)})`;
+				bar.hidden = false;
+			}
 		};
 		rt.saveReadMark = saveReadMark;
 
@@ -3884,8 +3893,8 @@
 				rt.readTimer = 0;
 			}
 			rt.readPending = "";
-			const rj = q("[data-tea-readjump]");
-			if (rj) rj.hidden = true;
+			const ub = q("[data-tea-unreadbar]");
+			if (ub) ub.hidden = true;
 			// 线程只在互联茶室有意义，切房时收起相关浮层
 			if (rt.closePops) rt.closePops();
 			if (rt.closeThread) rt.closeThread();
@@ -5652,6 +5661,12 @@
 					[{ background: "color-mix(in oklch, var(--primary) 40%, transparent)" }, {}],
 					{ duration: 1200, easing: "ease-out" },
 				);
+				const bar = q("[data-tea-unreadbar]");
+				if (bar) bar.hidden = true;
+			});
+			q("[data-tea-unreadbar-close]")?.addEventListener("click", () => {
+				const bar = q("[data-tea-unreadbar]");
+				if (bar) bar.hidden = true;
 			});
 			window.addEventListener("pagehide", () => rt.saveReadMark?.());
 			document.addEventListener("visibilitychange", () => {
