@@ -2882,9 +2882,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		bottom: 0;
 		left: 0;
 		z-index: 130;
-		width: 19rem;
+		width: 21rem;
 		max-width: calc(100vw - 1.5rem);
-		max-height: min(17rem, 48vh);
+		max-height: min(20rem, 52vh);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		padding: 0.6rem;
@@ -2899,8 +2899,60 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-emoji-panel__tabs {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 0.25rem;
 		margin-bottom: 0.4rem;
+	}
+	.tea-emoji-panel__search {
+		display: block;
+		margin-bottom: 0.45rem;
+	}
+	.tea-emoji-panel__search input {
+		width: 100%;
+		padding: 0.34rem 0.55rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.6rem;
+		background: color-mix(in oklch, var(--tea-line) 16%, transparent);
+		color: inherit;
+		font: inherit;
+		font-size: 0.76rem;
+	}
+	.tea-emoji-panel__search input::placeholder {
+		color: var(--tea-muted);
+	}
+	.tea-emoji-panel__search input:focus {
+		outline: 2px solid color-mix(in oklch, var(--primary) 32%, transparent);
+		outline-offset: 1px;
+	}
+	/* 颜文字：纯文本按钮，横向流式排，长的一个也不截断 */
+	.tea-emoji-panel__kao {
+		display: flex;
+		flex-wrap: wrap;
+		align-content: flex-start;
+		gap: 0.3rem;
+	}
+	.tea-emoji-panel__kao .tea-emoji-kao {
+		padding: 0.3rem 0.45rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.5rem;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 0.76rem;
+		line-height: 1.55;
+		white-space: nowrap;
+		word-break: keep-all;
+		cursor: pointer;
+	}
+	.tea-emoji-panel__kao .tea-emoji-kao:hover {
+		border-color: color-mix(in oklch, var(--primary) 30%, transparent);
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+	}
+	.tea-emoji-panel__empty {
+		padding: 0.9rem 0.4rem;
+		text-align: center;
+		font-size: 0.74rem;
+		color: var(--tea-muted);
 	}
 	.tea-emoji-panel__tab {
 		padding: 0.15rem 0.55rem;

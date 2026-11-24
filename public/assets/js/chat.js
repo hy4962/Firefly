@@ -1566,6 +1566,22 @@
 					"🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆","🦉","🐴","🦄","🐝","🦋","🐌","🐙","🐳","🐬","🌵","🌸",
 				],
 			},
+			// 颜文字：纯文本，选中直接插进输入框（取自 rainzt.cn 那套，共 48 个）
+			{
+				id: "kaomoji",
+				name: "颜文字",
+				kaomoji: true,
+				items: [
+				"(｡◕‿◕｡)", "(๑•̀ㅂ•́)و✧", "(≧▽≦)", "(✿◡‿◡)", "(｡･ω･｡)ﾉ♡", "(づ｡◕‿‿◕｡)づ",
+				"(๑˃̵ᴗ˂̵)و", "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "(￣▽￣)ノ", "(つ≧▽≦)つ", "(⌒▽⌒)☆", "(o゜▽゜)o☆",
+				"(｡>∀<｡)", "(๑>◡<๑)", "( •̀ ω •́ )✧", "(ง •̀_•́)ง", "(｀・ω・´)", "(๑•̀д•́๑)",
+				"(╯°□°）╯︵ ┻━┻", "┬─┬ ノ( ゜-゜ノ)", "(￣︶￣)", "(￣﹃￣)", "(￣ε￣＠)", "(￣y▽￣)╭",
+				"(¬_¬ )", "(눈_눈)", "(⊙_⊙;)", "(°ー°〃)", "(ﾟДﾟ;)", "(⊙o⊙)",
+				"(｡•́︿•̀｡)", "(╥﹏╥)", "(つ﹏⊂)", "(ಥ_ಥ)", "(T_T)", "(╯︵╰,)",
+				"(｡•̀ᴗ-)✧", "(づ￣ ³￣)づ", "( ˘ ³˘)♥", "(♡˙︶˙♡)", "(๑´ڡ`๑)", "(っ´▽`)っ",
+				"(っ˘ω˘ς )", "(・ω・)ノ", "(・∀・)", "(￣ω￣)", "(●'◡'●)", "(=^･ω･^=)",
+				],
+			},
 			{ id: "qq", name: "QQ", base: "/assets/emojis/qq/", prefix: "qq_", info: "/assets/emojis/qq.json" },
 			{ id: "bili", name: "B站", base: "/assets/emojis/bilibili/", prefix: "bb_", info: "/assets/emojis/bilibili.json" },
 		];
@@ -1580,8 +1596,13 @@
 			});
 		const emojiCache = new Map();
 
+		// 面板里的搜索词和当前这一套的完整条目：切换 tab / 打字筛选都靠它们
+		let emojiKeyword = "";
+		let emojiSetItems = [];
+
 		const loadEmojiSet = async (set) => {
 			if (set.unicode) return set.items.map((ch) => ({ name: ch, char: ch }));
+			if (set.kaomoji) return set.items.map((t) => ({ name: t, char: t }));
 			if (emojiCache.has(set.id)) return emojiCache.get(set.id);
 			const p = fetch(set.info)
 				.then((r) => (r.ok ? r.json() : Promise.reject(new Error("加载失败"))))
@@ -1593,27 +1614,43 @@
 			return p;
 		};
 
+		const emojiItemHtml = (it, set) =>
+			it.char
+				? `<button type="button" class="${set.kaomoji ? "tea-emoji-kao" : "tea-emoji-char"}" title="${esc(it.name)}" data-emoji-char="${esc(it.char)}">${esc(it.char)}</button>`
+				: `<img src="${esc(it.url)}" alt="${esc(it.name)}" title="${esc(it.name)}" loading="lazy" data-emoji-set-id="${set.id}" data-emoji-name="${esc(it.name)}" data-emoji-url="${esc(it.url)}" />`;
+
+		// 只重画结果区，不动搜索框，否则每敲一个字焦点就丢
+		const fillEmojiGrid = (panel, set) => {
+			const kw = emojiKeyword.trim().toLowerCase();
+			const items = kw
+				? emojiSetItems.filter(
+						(it) => String(it.name).toLowerCase().includes(kw) || String(it.char || "").includes(kw),
+					)
+				: emojiSetItems;
+			let grid = panel.querySelector(".tea-emoji-panel__grid, .tea-emoji-panel__kao");
+			if (!grid) {
+				grid = document.createElement("div");
+				panel.appendChild(grid);
+			}
+			grid.className = set.kaomoji ? "tea-emoji-panel__kao" : "tea-emoji-panel__grid";
+			grid.innerHTML = items.length
+				? items.map((it) => emojiItemHtml(it, set)).join("")
+				: `<p class="tea-emoji-panel__empty">没找到合适的，换个词试试</p>`;
+		};
+
 		const renderEmojiPanel = async (setId) => {
 			const panel = q("[data-tea-emoji-panel]");
 			if (!panel) return;
 			const set = EMOTICON_SETS.find((s) => s.id === setId) || EMOTICON_SETS[0];
+			panel.dataset.setId = set.id;
 			panel.innerHTML = `<div class="tea-emoji-panel__tabs">${EMOTICON_SETS
 				.map((s) => `<button type="button" class="tea-emoji-panel__tab${s.id === set.id ? " is-active" : ""}" data-emoji-set="${s.id}">${s.name}</button>`)
-				.join("")}</div><p class="tea-emoji-panel__msg">正在加载表情…</p>`;
+				.join("")}</div><label class="tea-emoji-panel__search"><input type="search" value="${esc(emojiKeyword)}" placeholder="找一个合适的表情…" data-emoji-search aria-label="搜索表情" /></label><p class="tea-emoji-panel__msg">正在加载表情…</p>`;
 			try {
-				const items = await loadEmojiSet(set);
-				const grid = panel.querySelector(".tea-emoji-panel__grid") || document.createElement("div");
-				grid.className = "tea-emoji-panel__grid";
-			grid.innerHTML = items
-				.map((it) =>
-					it.char
-						? `<button type="button" class="tea-emoji-char" title="${esc(it.name)}" data-emoji-char="${esc(it.char)}">${esc(it.char)}</button>`
-						: `<img src="${esc(it.url)}" alt="${esc(it.name)}" title="${esc(it.name)}" loading="lazy" data-emoji-set-id="${set.id}" data-emoji-name="${esc(it.name)}" data-emoji-url="${esc(it.url)}" />`,
-				)
-				.join("");
+				emojiSetItems = await loadEmojiSet(set);
 				const msg = panel.querySelector(".tea-emoji-panel__msg");
 				if (msg) msg.remove();
-				panel.appendChild(grid);
+				fillEmojiGrid(panel, set);
 			} catch (e) {
 				const msg = panel.querySelector(".tea-emoji-panel__msg");
 				if (msg) msg.textContent = "表情加载失败，点右上角重试";
@@ -3595,7 +3632,19 @@
 					const open = emojiPanel.hidden;
 					emojiPanel.hidden = !open;
 					if (!open) return;
+					// 每次打开都从第一套、空搜索词开始
+					emojiKeyword = "";
 					renderEmojiPanel(EMOTICON_SETS[0].id).then(() => setTimeout(positionEmojiPanel, 0));
+				});
+				emojiPanel.addEventListener("input", (e) => {
+					if (!e.target.matches("[data-emoji-search]")) return;
+					emojiKeyword = e.target.value;
+					const set = EMOTICON_SETS.find((x) => x.id === emojiPanel.dataset.setId) || EMOTICON_SETS[0];
+					fillEmojiGrid(emojiPanel, set);
+				});
+				emojiPanel.addEventListener("keydown", (e) => {
+					// 搜索框在 composer 表单里，回车会直接把消息发出去，拦掉
+					if (e.target.matches("[data-emoji-search]") && e.key === "Enter") e.preventDefault();
 				});
 				emojiPanel.addEventListener("click", (e) => {
 					// 面板会异步重建 DOM，冒泡到 document 时 target 可能已被移除，
@@ -3603,6 +3652,8 @@
 					e.stopPropagation();
 					const tab = e.target.closest("[data-emoji-set]");
 					if (tab) {
+						// 换分类就清掉搜索词，跟对方那套行为一致
+						emojiKeyword = "";
 						renderEmojiPanel(tab.dataset.emojiSet).then(() => setTimeout(positionEmojiPanel, 0));
 						return;
 					}
