@@ -271,6 +271,21 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				</div>
 			</header>
 
+			<nav class="tea-juke__tabs" role="tablist">
+				<button type="button" class="is-active" data-juke-tab="lyrics" role="tab">
+					<Icon is:inline name="material-symbols:lyrics-rounded" /><span>歌词</span>
+				</button>
+				<button type="button" data-juke-tab="search" role="tab">
+					<Icon is:inline name="material-symbols:search-rounded" /><span>搜索</span>
+				</button>
+				<button type="button" data-juke-tab="list" role="tab">
+					<Icon is:inline name="material-symbols:music-note-rounded" /><span>歌单</span>
+				</button>
+				<button type="button" data-juke-tab="history" role="tab">
+					<Icon is:inline name="material-symbols:history-rounded" /><span>历史</span>
+				</button>
+			</nav>
+
 			<div class="tea-juke__stage">
 				<div class="tea-juke__cover" data-juke-cover>
 					<span class="tea-juke__eq"><i></i><i></i><i></i></span>
@@ -282,50 +297,40 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						<span class="tea-juke__srcpill" data-juke-srcpill hidden></span>
 					</div>
 					<div class="tea-juke__timeline">
-						<input type="range" min="0" max="1000" step="1" value="0" data-juke-seek aria-label="播放进度" />
 						<div class="tea-juke__times">
-							<span data-juke-cur>0:00</span>
+							<span><b data-juke-cur>0:00</b> / <span data-juke-dur>0:00</span></span>
 							<label class="tea-juke__vol" title="音量">
-								<Icon is:inline name="material-symbols:volume-up-rounded" />
+								<button type="button" class="tea-juke__mute" data-juke-mute aria-label="静音">
+									<Icon is:inline name="material-symbols:volume-up-rounded" />
+								</button>
 								<input type="range" min="0" max="100" step="1" value="70" data-juke-vol aria-label="音量" />
 							</label>
-							<span data-juke-dur>0:00</span>
 						</div>
+						<input type="range" min="0" max="1000" step="1" value="0" data-juke-seek aria-label="播放进度" />
 					</div>
 				</div>
 			</div>
 
 			<div class="tea-juke__controls">
-				<button type="button" class="tea-juke__ctrl" data-juke-prev aria-label="上一首" title="上一首">
-					<Icon is:inline name="material-symbols:skip-previous-rounded" />
-				</button>
-				<button type="button" class="tea-juke__play" data-juke-play aria-label="播放">
-					<span data-juke-icon-play><Icon is:inline name="material-symbols:play-arrow-rounded" /></span>
-					<span data-juke-icon-pause hidden><Icon is:inline name="material-symbols:pause-rounded" /></span>
-				</button>
-				<button type="button" class="tea-juke__ctrl" data-juke-next aria-label="切歌或发起投票" title="切歌 / 投票">
-					<Icon is:inline name="material-symbols:skip-next-rounded" />
-				</button>
-				<button type="button" class="tea-juke__ctrl" data-juke-random title="随便放一首" aria-label="随便放一首">
-					<Icon is:inline name="material-symbols:shuffle-rounded" />
+				<button type="button" class="tea-juke__ctrl" data-juke-queue-jump title="播放列表" aria-label="播放列表">
+					<Icon is:inline name="material-symbols:queue-music-rounded" />
 				</button>
 				<button type="button" class="tea-juke__ctrl tea-juke__fav" data-juke-fav title="收藏这首歌" aria-label="收藏这首歌">
 					<Icon is:inline name="material-symbols:star-outline-rounded" />
 				</button>
+				<button type="button" class="tea-juke__listen" data-juke-listen title="开始收听" aria-label="开始收听">
+					<Icon is:inline name="material-symbols:headphones-rounded" />
+					<span data-juke-listen-label>开始收听</span>
+				</button>
+				<button type="button" class="tea-juke__ctrl" data-juke-next aria-label="切歌或发起投票" title="切歌 / 投票">
+					<Icon is:inline name="material-symbols:skip-next-rounded" />
+				</button>
+				<button type="button" class="tea-juke__ctrl" data-juke-random title="洗牌顺序播放" aria-label="洗牌顺序播放">
+					<Icon is:inline name="material-symbols:tune-rounded" />
+				</button>
 			</div>
-			<button type="button" class="tea-juke__listen" data-juke-listen title="开始收听" aria-label="开始收听">
-				<Icon is:inline name="material-symbols:headphones-rounded" />
-				<span data-juke-listen-label>开始收听</span>
-			</button>
 
 			<p class="tea-juke__notice" data-juke-notice hidden></p>
-
-			<nav class="tea-juke__tabs" role="tablist">
-				<button type="button" class="is-active" data-juke-tab="lyrics" role="tab">歌词</button>
-				<button type="button" data-juke-tab="search" role="tab">搜索</button>
-				<button type="button" data-juke-tab="list" role="tab">歌单</button>
-				<button type="button" data-juke-tab="history" role="tab">历史</button>
-			</nav>
 
 			<div class="tea-juke__panel tea-juke__lyrics" data-juke-lyrics role="tabpanel">
 				<p class="tea-juke__empty">先挑一首歌吧。</p>
@@ -367,10 +372,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 
 			<div class="tea-juke__queue">
 				<div class="tea-juke__queuehead">
-					<span>待播 <b data-juke-queuecount>0</b></span>
 					<div class="tea-juke__queuetabs">
 						<button type="button" class="is-active" data-juke-queue-tab="request">点播</button>
 						<button type="button" data-juke-queue-tab="rotation">轮播</button>
+					</div>
+					<div class="tea-juke__queuemeta">
+						<span data-juke-queuemode>按点播顺序</span>
+						<b data-juke-queuecount>0</b>
+						<button type="button" data-juke-queue-refresh title="刷新队列" aria-label="刷新队列">
+							<Icon is:inline name="material-symbols:refresh-rounded" />
+						</button>
 					</div>
 				</div>
 				<div class="tea-juke__queuelist" data-juke-queue><p class="tea-juke__empty">队列空着，点一首歌吧。</p></div>
@@ -4028,16 +4039,33 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		gap: 0.4rem;
 		font-size: 0.62rem;
 		color: var(--tea-muted-soft);
-		margin-top: 0.3rem;
+		margin: 0 0 0.4rem;
 		font-variant-numeric: tabular-nums;
 	}
+	.tea-juke__times b {
+		color: var(--tea-muted);
+		font-weight: 600;
+	}
+	.tea-juke__mute {
+		border: 0;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+		display: grid;
+		place-items: center;
+		padding: 0;
+		opacity: 0.75;
+	}
+	.tea-juke__mute:hover { opacity: 1; }
+	.tea-juke__mute.is-muted { opacity: 0.4; }
+	.tea-juke__mute svg { width: 0.9rem; height: 0.9rem; }
 
 	.tea-juke__controls {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.55rem;
-		padding: 0.3rem 0.8rem 0.55rem;
+		gap: 0.3rem;
+		padding: 0.55rem 0.8rem 0.7rem;
 		flex: none;
 	}
 	.tea-juke__ctrl,
@@ -4099,9 +4127,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		align-items: center;
 		justify-content: center;
 		gap: 0.4rem;
-		width: calc(100% - 1.6rem);
-		margin: 0 0.8rem 0.15rem;
-		padding: 0.52rem 0.8rem;
+		flex: 1 1 auto;
+		max-width: 12rem;
+		margin: 0;
+		padding: 0.6rem 0.8rem;
 		border: 1px solid color-mix(in oklch, var(--primary) 32%, transparent);
 		border-radius: 999px;
 		background: color-mix(in oklch, var(--primary) 9%, transparent);
@@ -4151,7 +4180,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
 		gap: 0.15rem;
-		margin: 0.15rem 0.7rem 0;
+		margin: 0.65rem 0.7rem 0.1rem;
 		padding: 0.2rem;
 		border-radius: 0.7rem;
 		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.07));
@@ -4163,7 +4192,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		color: var(--tea-muted);
 		font: inherit;
 		font-size: 0.72rem;
-		padding: 0.4rem 0.2rem;
+		padding: 0.42rem 0.2rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.28rem;
 		cursor: pointer;
 		border-radius: 0.52rem;
 		transition: background-color 0.16s ease, color 0.16s ease;
@@ -5154,6 +5187,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		padding: 0.35rem 0.7rem 0.25rem; font-size: 0.7rem; color: var(--tea-muted);
 	}
 	.tea-juke__queuehead b { color: var(--primary); font-weight: 600; }
+	.tea-juke__queuemeta {
+		display: inline-flex; align-items: center; gap: 0.35rem;
+		font-size: 0.62rem; color: var(--tea-muted-soft);
+	}
+	.tea-juke__queuemeta button {
+		border: 0; background: transparent; color: inherit; cursor: pointer;
+		display: grid; place-items: center; padding: 0.15rem; border-radius: 0.35rem; opacity: 0.7;
+	}
+	.tea-juke__queuemeta button:hover { opacity: 1; background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.1)); }
+	.tea-juke__queuemeta svg { width: 0.85rem; height: 0.85rem; }
 	.tea-juke__queuetabs { display: inline-flex; gap: 0.15rem; }
 	.tea-juke__queuetabs button {
 		border: 0; background: none; color: var(--tea-muted); font: inherit; font-size: 0.66rem;

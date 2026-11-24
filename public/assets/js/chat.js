@@ -3814,9 +3814,32 @@
 				if (qtab) {
 					jukeSig.queueTab = qtab.dataset.jukeQueueTab;
 					for (const b of juke.querySelectorAll("[data-juke-queue-tab]")) b.classList.toggle("is-active", b === qtab);
+					const mode = juke.querySelector("[data-juke-queuemode]");
+					if (mode) mode.textContent = jukeSig.queueTab === "rotation" ? "洗牌顺序播放" : "按点播顺序";
 					jukeSig.rotationSig = "";
 					jukeRenderQueue(true);
 					if (jukeSig.queueTab === "rotation") jukeLoadRotation();
+					return;
+				}
+				const qjump = e.target.closest("[data-juke-queue-jump]");
+				if (qjump) {
+					const box = juke.querySelector(".tea-juke__queue");
+					if (box) box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+					return;
+				}
+				const qrefresh = e.target.closest("[data-juke-queue-refresh]");
+				if (qrefresh) {
+					jukeLoad();
+					jukeLoadPlaylists(true);
+					jukeSay("队列已刷新。");
+					return;
+				}
+				const mute = e.target.closest("[data-juke-mute]");
+				if (mute) {
+					const a = ensureJukeAudio();
+					a.muted = !a.muted;
+					mute.classList.toggle("is-muted", a.muted);
+					mute.title = a.muted ? "取消静音" : "静音";
 					return;
 				}
 				const pl = e.target.closest("[data-juke-pl]");
