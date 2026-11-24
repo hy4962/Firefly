@@ -1158,6 +1158,229 @@
 			});
 		}
 
+		// ── 翻聊天记录 ───────────────────────────────────────────
+		const searchDialog = document.querySelector("[data-tea-search-dialog]");
+		const searchForm = document.querySelector("[data-tea-search-form]");
+		const fmtStamp = (ts) => {
+			const d = new Date(ts);
+			return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+		};
+		// 同名成员在成员表里是「昵称 (@id:server)」，搜索结果里只留昵称
+		const cleanNick = (s) => String(s || "").replace(/\s*\(@[^)]*\)\s*$/, "");
+		// 先按关键词切片再逐段 escape，避免把用户输入当 HTML
+		const markText = (text, q) => {
+			const raw = String(text || "").slice(0, 400);
+			const needle = String(q || "").toLowerCase();
+			if (!needle) return esc(raw);
+			const lower = raw.toLowerCase();
+			let out = "";
+			let at = 0;
+			for (;;) {
+				const hit = lower.indexOf(needle, at);
+				if (hit < 0) {
+					out += esc(raw.slice(at));
+					break;
+				}
+				out += esc(raw.slice(at, hit)) + "<mark>" + esc(raw.slice(hit, hit + needle.length)) + "</mark>";
+				at = hit + needle.length;
+				if (at >= raw.length) break;
+			}
+			return out;
+		};
+
+		const renderSearchResults = (data, q) => {
+			const list = document.querySelector("[data-tea-search-list]");
+			const meta = document.querySelector("[data-tea-search-meta]");
+			if (!list || !meta) return;
+			const msgs = data.messages || [];
+			const more = data.truncated ? "（只列了最近的一部分）" : "";
+			if (!msgs.length) {
+				meta.textContent = data.done
+					? "没翻到相关消息，换个词或放宽日期试试。"
+					: `已经翻了 ${data.scanned || 0} 条，还没找到…`;
+				list.innerHTML = data.done ? `<p class="tea-search__empty">一句都没找到。</p>` : "";
+				return;
+			}
+			meta.textContent = data.done
+				? `找到 ${msgs.length} 条消息${more} · 点一下回到原处`
+				: `已看 ${data.scanned || 0} 条，找到 ${msgs.length} 条${more} · 还在往旧翻…`;
+			list.innerHTML = msgs
+				.map(
+					(m) => `<article class="tea-search__card" data-msg-id="${esc(m.id)}">
+						<header><b>${esc([cleanNick(m.nick), m.site].filter(Boolean).join(" · "))}</b><time>${esc(fmtStamp(m.ts))}</time></header>
+						<p>${markText(m.text, q)}</p>
+						<button type="button" class="tea-search__jump" data-tea-search-jump="${esc(m.id)}">回到这条消息 ↗</button>
+					</article>`,
+				)
+				.join("");
+		};
+
+		// 搜索是后台任务：先拿一批，之后每 1.2 秒拉一次增量
+		const searchJob = { id: "", timer: 0 };
+		const stopSearchPoll = () => {
+			if (searchJob.timer) clearTimeout(searchJob.timer);
+			searchJob.timer = 0;
+		};
+		const pollSearch = (q) => {
+			const id = searchJob.id;
+			if (!id) return;
+			searchJob.timer = setTimeout(async () => {
+				if (searchJob.id !== id) return;
+				const err = document.querySelector("[data-tea-search-error]");
+				try {
+					const data = await api(`/api/search?job=${encodeURIComponent(id)}`, { timeout: 20_000 });
+					if (searchJob.id !== id) return;
+					renderSearchResults(data, q);
+					if (data.done) return;
+					pollSearch(q);
+				} catch (e2) {
+					if (searchJob.id !== id) return;
+					if (err) {
+						err.textContent = e2.message || "翻记录中断了";
+						err.hidden = false;
+					}
+				}
+			}, 1200);
+		};
+
+		const runSearch = async () => {
+			if (!searchForm) return;
+			const err = document.querySelector("[data-tea-search-error]");
+			const btn = document.querySelector("[data-tea-search-go]");
+			const label = document.querySelector("[data-tea-search-label]");
+			const q = (searchForm.elements.q.value || "").trim();
+			const nick = (searchForm.elements.nick.value || "").trim();
+			const from = searchForm.elements.from.value || "";
+			const to = searchForm.elements.to.value || "";
+			if (err) err.hidden = true;
+			if (!q && !nick) {
+				if (err) { err.textContent = "至少给个关键词或者昵称。"; err.hidden = false; }
+				return;
+			}
+			if (from && to && from > to) {
+				if (err) { err.textContent = "开始日期比结束日期还晚。"; err.hidden = false; }
+				return;
+			}
+			stopSearchPoll();
+			const meta = document.querySelector("[data-tea-search-meta]");
+			const list = document.querySelector("[data-tea-search-list]");
+			if (meta) meta.textContent = "正在起翻找任务…";
+			if (list) list.innerHTML = "";
+			if (btn) btn.disabled = true;
+			if (label) label.textContent = "翻找中…";
+			try {
+				const data = await api("/api/search", {
+					method: "POST",
+					body: JSON.stringify({ room: rt.room, q, nick, from, to }),
+					timeout: 20_000,
+				});
+				searchJob.id = data.job || "";
+				renderSearchResults(data, q);
+				if (!data.done) pollSearch(q);
+			} catch (e2) {
+				if (meta) meta.textContent = "翻记录失败了。";
+				if (err) { err.textContent = e2.message || "搜索失败"; err.hidden = false; }
+			} finally {
+				if (btn) btn.disabled = false;
+				if (label) label.textContent = "搜索聊天记录";
+			}
+		};
+
+		// 点结果 → 取那条消息前后各一段，切到「历史模式」看上下文
+		const enterHistory = async (eventId) => {
+			const f = feedEl();
+			if (!f || !eventId) return;
+			const bar = q("[data-tea-historybar]");
+			const barText = q("[data-tea-historybar-text]");
+			if (bar) bar.hidden = false;
+			if (barText) barText.textContent = "正在翻到那条消息…";
+			rt.historyMode = true;
+			feedStatus(`<span class="tea-spinner"></span> 正在翻到那条消息…`);
+			try {
+				const data = await api(`/api/around?room=${rt.room}&event=${encodeURIComponent(eventId)}`);
+				f.innerHTML = "";
+				rt.seen.clear();
+				rt.messages = (data.messages || []).slice();
+				for (const m of rt.messages) renderMessage({ ...m, scroll: false });
+				const node = f.querySelector(`.tea-msg[data-id="${CSS.escape(eventId)}"]`);
+				if (node) {
+					node.scrollIntoView({ block: "center" });
+					node.classList.add("is-hit");
+					setTimeout(() => node.classList.remove("is-hit"), 2600);
+				}
+				if (barText) barText.textContent = "这是从搜索结果跳过来的位置，下面只会追加新消息";
+			} catch (e2) {
+				rt.historyMode = false;
+				if (bar) bar.hidden = true;
+				feedStatus(`<b>没翻到那条消息</b><span>${esc(e2.message || "可能已经被撤回了")}</span>`);
+			}
+		};
+
+		const exitHistory = () => {
+			rt.historyMode = false;
+			const bar = q("[data-tea-historybar]");
+			if (bar) bar.hidden = true;
+			loadHistory();
+		};
+
+		const closeSearch = () => {
+			// 关掉就不再轮询；服务端任务会自己跑完并进缓存
+			stopSearchPoll();
+			searchJob.id = "";
+			if (searchDialog) searchDialog.close();
+		};
+		// swup 换页会重建 DOM，所以每个元素单独做幂等，别用一个总开关一把锁死
+		const bindSearch = () => {
+			if (searchForm && searchForm.dataset.bound !== "1") {
+				searchForm.dataset.bound = "1";
+				searchForm.addEventListener("submit", (e) => {
+					e.preventDefault();
+					runSearch();
+				});
+				const kw = searchForm.elements.q;
+				const clear = document.querySelector("[data-tea-search-clear]");
+				const syncClear = () => {
+					if (clear) clear.hidden = !kw.value;
+				};
+				kw.addEventListener("input", syncClear);
+				kw.addEventListener("change", syncClear);
+				syncClear();
+				clear?.addEventListener("click", (e) => {
+					e.preventDefault();
+					kw.value = "";
+					syncClear();
+					kw.focus();
+				});
+			}
+			const closeBtn = document.querySelector("[data-tea-search-close]");
+			if (closeBtn && closeBtn.dataset.bound !== "1") {
+				closeBtn.dataset.bound = "1";
+				closeBtn.addEventListener("click", closeSearch);
+			}
+			const list = document.querySelector("[data-tea-search-list]");
+			if (list && list.dataset.bound !== "1") {
+				list.dataset.bound = "1";
+				list.addEventListener("click", (e) => {
+					const card = e.target.closest("[data-msg-id]");
+					if (!card) return;
+					closeSearch();
+					enterHistory(card.dataset.msgId);
+				});
+			}
+			const exitBtn = document.querySelector("[data-tea-history-exit]");
+			if (exitBtn && exitBtn.dataset.bound !== "1") {
+				exitBtn.dataset.bound = "1";
+				exitBtn.addEventListener("click", exitHistory);
+			}
+		};
+
+		const openSearch = () => {
+			bindSearch();
+			if (!searchDialog || typeof searchDialog.showModal !== "function") return;
+			searchDialog.showModal();
+			setTimeout(() => searchForm && searchForm.elements.q.focus(), 80);
+		};
+
 		// ── 通知中心 ─────────────────────────────────────────────
 		const NOTICE_KEY = "tea.notices.v1";
 		const readNotices = () => {
@@ -1329,6 +1552,10 @@
 		};
 
 		const loadHistory = async () => {
+			// 正常时间线回来了，历史定位模式作废
+			rt.historyMode = false;
+			const bar = q("[data-tea-historybar]");
+			if (bar) bar.hidden = true;
 			feedStatus(`<span class="tea-spinner"></span> 正在看看大家聊到哪儿了…`);
 			const histP = api(`/api/history?limit=60&room=${rt.room}`);
 			const syncP = api(`/api/sync?room=${rt.room}&timeout=0`).catch(() => null);
@@ -1458,6 +1685,13 @@
 					delay = 3000;
 				rt.pollFails = 0;
 				if (data.next) rt.since = data.next;
+				// 历史定位模式：别把实时消息插进旧时间线，回「回到最新」再重载
+				if (rt.historyMode) {
+					renderTyping([]);
+					setConn("live");
+					if (gen === rt.gen) rt.timer = setTimeout(poll, 3000);
+					return;
+				}
 				renderTyping(data.typing || []);
 				if (data.reactions) {
 					for (const [id, rs] of Object.entries(data.reactions)) {
@@ -4481,6 +4715,13 @@
 			}
 
 			// 身份弹窗
+			// 翻聊天记录
+			bindSearch();
+			const searchOpen = document.querySelector("[data-tea-search-open]");
+			if (searchOpen && searchOpen.dataset.bound !== "1") {
+				searchOpen.dataset.bound = "1";
+				searchOpen.addEventListener("click", openSearch);
+			}
 			for (const el of document.querySelectorAll("[data-tea-enter]")) {
 				el.addEventListener("click", openDialog);
 			}

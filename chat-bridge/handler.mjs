@@ -1012,6 +1012,256 @@ function cacheRoomEvents(roomId, events) {
 	return map;
 }
 
+// ── 聊天记录搜索 ────────────────────────────────────────────────────
+// 联邦房间翻 /messages 很慢（一页 1000 条实测 3 秒），一次请求扫完必撞
+// 边缘节点的 30 秒超时。所以做成后台增量任务：
+//   POST /api/search  起一个 job，立刻返回已有结果
+//   GET  /api/search?job=xxx  拉进度，前端边翻边追加
+// 容器是常驻 node 进程，响应发出去之后后台循环还能继续跑。
+const SEARCH = {
+	pageSize: 1000,
+	maxPages: 60,
+	maxHits: 60,
+	jobBudget: 120_000,
+	jobTtl: 300_000,
+	cacheTtl: 60_000,
+	cacheSize: 16,
+	maxJobs: 12,
+};
+const searchJobs = new Map();
+const searchCache = new Map();
+const searchSeq = { n: 0 };
+
+// 日期（YYYY-MM-DD）按北京时间当日 0 点换算；NAS 机器时区不一定是东八区
+const dayStart = (s) => {
+	const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || "").trim());
+	if (!m) return 0;
+	const t = Date.parse(`${m[1]}-${m[2]}-${m[3]}T00:00:00+08:00`);
+	return Number.isFinite(t) ? t : 0;
+};
+
+/** Synapse 的全文检索，只对西文有效（中文分词不行）。失败返回 null。 */
+async function matrixSearch(c, roomId, term, limit) {
+	const body = {
+		search_categories: {
+			room_events: {
+				search_term: term,
+				keys: ["content.body"],
+				order_by: "recent",
+				// 只按房间过滤：origin_server_ts 的 range 各版本支持不一，日期在本地再筛
+				filter: { rooms: [roomId] },
+			},
+		},
+	};
+	const res = await mxJson(c, `/_matrix/client/v3/search?batch=${limit}`, { token: c.bridgeToken, method: "POST", body });
+	if (!res.ok) return null;
+	const cat = res.data && res.data.search_categories && res.data.search_categories.room_events;
+	if (!cat || !Array.isArray(cat.results)) return null;
+	return cat.results.map((r) => r && r.result).filter(Boolean);
+}
+
+/** 单条事件是否符合条件；符合就入队。 */
+function acceptEvent(job, ev) {
+	if (job.hits.length >= SEARCH.maxHits) return;
+	const ts = ev.origin_server_ts || 0;
+	if (job.fromTs && ts < job.fromTs) return;
+	if (job.toTs && ts > job.toTs) return;
+	if (ev.type !== "m.room.message" && ev.type !== "m.sticker") return;
+	const body = ev.content?.body;
+	if (typeof body !== "string" || !body) return;
+	if (job.q && !body.toLowerCase().includes(job.q)) return;
+	if (job.nick) {
+		const info = job.members.get(ev.sender) || {};
+		const rawNick = String(info.nick || ev.sender || "").toLowerCase();
+		const site = String(info.site || "").toLowerCase();
+		if (!rawNick.includes(job.nick) && !site.includes(job.nick)) return;
+	}
+	if (!ev.event_id || job.seen.has(ev.event_id)) return;
+	job.seen.add(ev.event_id);
+	job.hits.push(ev);
+	if (job.hits.length >= SEARCH.maxHits) job.truncated = true;
+}
+
+function jobPayload(job) {
+	const map = new Map(job.hits.map((ev) => [ev.event_id, ev]));
+	const messages = job.hits.map((ev) => normalize(ev, job.members, job.c, job.base, map)).filter(Boolean);
+	return {
+		ok: true,
+		job: job.id,
+		done: job.done,
+		error: job.error,
+		scanned: job.scanned,
+		truncated: job.truncated,
+		via: job.via,
+		total: messages.length,
+		messages,
+	};
+}
+
+async function runSearchJob(job) {
+	try {
+		job.members = await getMembers(job.c, job.roomId);
+
+		// 1) 西文先试 Synapse 索引，命中了就是秒回
+		if (job.q && !/[\u3400-\u9fff]/.test(job.q)) {
+			const found = await matrixSearch(job.c, job.roomId, job.q, SEARCH.maxHits * 3);
+			if (found && found.length) {
+				job.via = "matrix";
+				for (const ev of found) acceptEvent(job, ev);
+				job.done = true;
+				return finishJob(job);
+			}
+		}
+
+		// 2) 逐页往旧翻，每页结束前端就能多看到几条
+		let from = "";
+		let pages = 0;
+		const started = Date.now();
+		while (pages < SEARCH.maxPages && job.hits.length < SEARCH.maxHits) {
+			if (job.cancelled) return;
+			if (Date.now() - started > SEARCH.jobBudget) {
+				job.truncated = true;
+				break;
+			}
+			const qs = `dir=b&limit=${SEARCH.pageSize}${from ? `&from=${enc(from)}` : ""}`;
+			const res = await mxJson(job.c, `/_matrix/client/v3/rooms/${enc(job.roomId)}/messages?${qs}`, {
+				token: job.c.bridgeToken,
+			});
+			if (!res.ok) {
+				if (!job.scanned) job.error = res.data?.error || "翻记录失败了";
+				break;
+			}
+			const chunk = res.data.chunk || [];
+			if (!chunk.length) break;
+			let passedStart = false;
+			for (const ev of chunk) {
+				job.scanned++;
+				const ts = ev.origin_server_ts || 0;
+				if (job.fromTs && ts && ts < job.fromTs) {
+					passedStart = true;
+					break;
+				}
+				acceptEvent(job, ev);
+				if (job.hits.length >= SEARCH.maxHits) break;
+			}
+			from = res.data.end;
+			pages++;
+			if (passedStart || !from) break;
+		}
+		if (pages >= SEARCH.maxPages) job.truncated = true;
+		job.done = true;
+		finishJob(job);
+	} catch (e) {
+		job.error = e.message || "翻记录失败了";
+		job.done = true;
+		finishJob(job);
+	}
+}
+
+function finishJob(job) {
+	// 成功的查询进缓存，同样条件再来一次直接出结果
+	if (!job.error) {
+		const data = jobPayload(job);
+		if (searchCache.size >= SEARCH.cacheSize) searchCache.delete(searchCache.keys().next().value);
+		searchCache.set(job.cacheKey, { at: Date.now(), data });
+	}
+}
+
+function pruneJobs() {
+	const now = Date.now();
+	for (const [id, job] of searchJobs) {
+		if (job.done && now - job.touchedAt > SEARCH.jobTtl) searchJobs.delete(id);
+	}
+	if (searchJobs.size > SEARCH.maxJobs) {
+		for (const [id, job] of searchJobs) {
+			if (job.done) searchJobs.delete(id);
+			if (searchJobs.size <= SEARCH.maxJobs) break;
+		}
+	}
+}
+
+/** 起一个搜索任务；相同条件命中缓存就直接返回 done */
+async function handleSearchStart(c, request, ip) {
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const key = body.room === "chat" ? "chat" : "lobby";
+	const roomId = key === "chat" ? c.chatRoom : c.room;
+	const q = clean(body.q, 60).toLowerCase();
+	const nick = clean(body.nick, 40).toLowerCase();
+	const fromTs = dayStart(body.from);
+	const toRaw = dayStart(body.to);
+	const toTs = toRaw ? toRaw + 86_400_000 - 1 : 0;
+	if (!q && !nick) return fail(400, "至少给个关键词或者昵称");
+	if (fromTs && toTs && fromTs > toTs) return fail(400, "开始日期比结束日期还晚");
+
+	const cacheKey = `${roomId}|${q}|${nick}|${fromTs}|${toTs}`;
+	const cached = searchCache.get(cacheKey);
+	if (cached && Date.now() - cached.at < SEARCH.cacheTtl) return json(200, { ...cached.data, cached: true });
+
+	pruneJobs();
+	const job = {
+		id: `s${Date.now().toString(36)}${(searchSeq.n = (searchSeq.n + 1) % 1e4)}`,
+		c,
+		base: requestOrigin(request),
+		roomId,
+		q,
+		nick,
+		fromTs,
+		toTs,
+		cacheKey,
+		hits: [],
+		seen: new Set(),
+		members: new Map(),
+		scanned: 0,
+		truncated: false,
+		via: "scan",
+		done: false,
+		error: "",
+		cancelled: false,
+		touchedAt: Date.now(),
+	};
+	searchJobs.set(job.id, job);
+	runSearchJob(job);
+	return json(200, jobPayload(job));
+}
+
+/** 拉任务进度 */
+function handleSearchPoll(c, url) {
+	const id = String(url.searchParams.get("job") || "");
+	const job = searchJobs.get(id);
+	if (!job) return fail(404, "这次翻找已经过期了，重新搜一次");
+	job.touchedAt = Date.now();
+	return json(200, jobPayload(job));
+}
+
+/** 定位单条消息：取它前后各一段，供前端「回到这条消息」渲染 */
+async function handleAround(c, url, base) {
+	const room = roomOf(c, url);
+	const eventId = String(url.searchParams.get("event") || "");
+	if (!isEventId(eventId)) return fail(400, "消息 id 不对");
+
+	// 规范（GET /rooms/{roomId}/context/{eventId}）：直接给上下文，
+	// 不要拿 event id 当 /messages 的 from token —— Synapse 不认，会返回空。
+	const res = await mxJson(c, `/_matrix/client/v3/rooms/${enc(room.id)}/context/${enc(eventId)}?limit=30`, {
+		token: c.bridgeToken,
+	});
+	if (!res.ok) return fail(404, "这条消息可能已经被撤回了");
+	const events = [res.data.event, ...(res.data.events_before || []), ...(res.data.events_after || [])].filter(Boolean);
+	if (!res.data.event) return fail(404, "这条消息可能已经被撤回了");
+
+	const members = await getMembers(c, room.id);
+	const map = new Map(events.map((ev) => [ev.event_id, ev]));
+	const messages = events
+		.sort((a, b) => (a.origin_server_ts || 0) - (b.origin_server_ts || 0))
+		.map((ev) => normalize(ev, members, c, base, map))
+		.filter(Boolean);
+	return json(200, { ok: true, target: eventId, messages, hasOlder: !!res.data.start, hasNewer: !!res.data.end });
+}
+
 // ── 接口 ────────────────────────────────────────────────────────────
 async function handleHistory(c, url, base, token) {
 	const room = roomOf(c, url);
@@ -2373,6 +2623,13 @@ export async function handleRequest(request, env = {}) {
 			out = await handleThreadDetail(c, url, base);
 		} else if (path === "/api/history" && request.method === "GET") {
 			out = await handleHistory(c, url, base, visitorToken || c.bridgeToken);
+		} else if (path === "/api/search" && request.method === "POST") {
+			const denied = await rateCheck(env, ip, "search");
+			out = denied ? fail(429, denied) : await handleSearchStart(c, request, ip);
+		} else if (path === "/api/search" && request.method === "GET") {
+			out = handleSearchPoll(c, url);
+		} else if (path === "/api/around" && request.method === "GET") {
+			out = await handleAround(c, url, base);
 		} else if (path === "/api/sync" && request.method === "GET") {
 			out = await handleSync(c, url, base, visitorToken || c.bridgeToken);
 		} else if (path === "/api/media" && request.method === "GET") {

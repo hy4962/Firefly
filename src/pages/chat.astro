@@ -137,6 +137,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					</button>
 				</div>
 				<div class="tea-bar__tools">
+					<button type="button" class="tea-search-btn" data-tea-search-open title="翻聊天记录" aria-label="翻聊天记录">
+						<Icon is:inline name="material-symbols:search-rounded" />
+						<span>搜索</span>
+					</button>
 					<span class="tea-conn" data-tea-conn><i></i><span data-tea-conn-text>连接中</span></span>
 					<button type="button" class="tea-thread-pill" data-tea-threads-trigger aria-expanded="false" title="查看活跃线程回复" aria-label="查看活跃线程回复" hidden>
 						<Icon is:inline name="material-symbols:forum-rounded" />
@@ -160,6 +164,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<span class="tea-pins__icon"><Icon is:inline name="material-symbols:push-pin" /></span>
 				<div class="tea-pins__body" data-tea-pins-body></div>
 				<button type="button" class="tea-pins__toggle" data-tea-pins-toggle aria-label="展开或收起置顶">展开</button>
+			</div>
+
+			<!-- ── 历史定位提示条 ─────────────────────────────────── -->
+			<div class="tea-historybar" data-tea-historybar hidden>
+				<span class="tea-historybar__tag"><Icon is:inline name="material-symbols:history-rounded" /> 正在看历史</span>
+				<span class="tea-historybar__text" data-tea-historybar-text>这是从搜索结果跳过来的位置</span>
+				<button type="button" class="tea-historybar__exit" data-tea-history-exit>回到最新</button>
 			</div>
 
 			<div class="tea-feed-wrap">
@@ -682,6 +693,55 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<button type="button" class="tea-btn tea-btn--primary tea-profile__save" data-tea-profile-save>保存资料</button>
 			</footer>
 			<p class="tea-dialog__error" data-tea-profile-error hidden></p>
+		</form>
+	</dialog>
+
+	<!-- ── 翻聊天记录 ───────────────────────────────────────── -->
+	<dialog class="tea-dialog tea-search" data-tea-search-dialog aria-labelledby="tea-search-title">
+		<form method="dialog" class="tea-dialog__inner tea-search__inner" data-tea-search-form>
+			<header class="tea-dialog__head">
+				<div>
+					<h3 id="tea-search-title">翻翻茶室往事</h3>
+					<p class="tea-dialog__desc">找到那句话，回到聊天的那一刻。</p>
+				</div>
+				<button type="button" class="tea-icon-btn tea-dialog__close" data-tea-search-close aria-label="关闭">
+					<Icon is:inline name="material-symbols:close-rounded" />
+				</button>
+			</header>
+
+			<div class="tea-search__filters">
+				<label class="tea-field">
+					<span>关键词</span>
+					<span class="tea-search__kw">
+						<input type="search" name="q" maxlength="60" placeholder="比如：工作" autocomplete="off" />
+						<button type="button" class="tea-search__clear" data-tea-search-clear aria-label="清空关键词" hidden>
+							<Icon is:inline name="material-symbols:close-rounded" />
+						</button>
+					</span>
+				</label>
+				<label class="tea-field">
+					<span>茶友昵称</span>
+					<input type="search" name="nick" maxlength="40" placeholder="所有茶友" autocomplete="off" />
+				</label>
+				<label class="tea-field">
+					<span>开始日期</span>
+					<input type="date" name="from" />
+				</label>
+				<label class="tea-field">
+					<span>结束日期</span>
+					<input type="date" name="to" />
+				</label>
+			</div>
+
+			<button type="submit" class="tea-btn tea-btn--primary tea-search__go" data-tea-search-go>
+				<span data-tea-search-label>搜索聊天记录</span>
+			</button>
+
+			<div class="tea-search__results">
+				<p class="tea-search__meta" data-tea-search-meta>输入关键词或昵称，翻翻以前的对话。</p>
+				<div class="tea-search__list" data-tea-search-list></div>
+			</div>
+			<p class="tea-dialog__error" data-tea-search-error hidden></p>
 		</form>
 	</dialog>
 
@@ -1324,6 +1384,199 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		.tea-profile__spacer { display: none; }
 	}
 
+	/* ── 茶室搜索 ─────────────────────────────────────────── */
+	.tea-search-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		height: 1.85rem;
+		padding: 0 0.62rem;
+		border-radius: 999px;
+		border: 1px solid var(--tea-line);
+		background: transparent;
+		color: var(--tea-muted);
+		font: inherit;
+		font-size: 0.72rem;
+		font-weight: 500;
+		white-space: nowrap;
+		cursor: pointer;
+		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+	}
+	.tea-search-btn svg { width: 0.9rem; height: 0.9rem; }
+	.tea-search-btn:hover {
+		color: var(--primary);
+		border-color: color-mix(in oklch, var(--primary) 34%, transparent);
+		background: color-mix(in oklch, var(--primary) 8%, transparent);
+	}
+
+	/* 历史定位提示条 */
+	.tea-historybar {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0 0.7rem 0.45rem;
+		padding: 0.42rem 0.7rem;
+		border-radius: 0.7rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 26%, transparent);
+		background: color-mix(in oklch, var(--primary) 10%, transparent);
+		font-size: 0.7rem;
+	}
+	.tea-historybar[hidden] { display: none; }
+	.tea-historybar__tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.24rem;
+		font-weight: 600;
+		color: color-mix(in oklch, var(--primary) 82%, currentColor);
+		white-space: nowrap;
+	}
+	.tea-historybar__tag svg { width: 0.9rem; height: 0.9rem; }
+	.tea-historybar__text {
+		flex: 1;
+		min-width: 0;
+		color: var(--tea-muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.tea-historybar__exit {
+		flex: none;
+		border: 1px solid var(--tea-line-strong);
+		border-radius: 0.45rem;
+		background: var(--tea-surface, #fff);
+		color: inherit;
+		font: inherit;
+		font-size: 0.68rem;
+		padding: 0.2rem 0.5rem;
+		cursor: pointer;
+	}
+	.tea-historybar__exit:hover { background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08)); }
+
+	/* 搜索结果里点进来的那条，闪一下主色描边 */
+	.tea-msg.is-hit .tea-msg__text {
+		box-shadow: 0 0 0 2px color-mix(in oklch, var(--primary) 62%, transparent);
+	}
+
+	.tea-dialog.tea-search { width: min(40rem, calc(100vw - 2rem)); }
+	.tea-search__inner { max-height: calc(100dvh - 3rem); overflow-y: auto; }
+	.tea-search__filters {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.55rem 0.7rem;
+	}
+	.tea-search__filters input[type="search"]::-webkit-search-cancel-button,
+	.tea-search__filters input[type="search"]::-webkit-search-decoration {
+		-webkit-appearance: none;
+		appearance: none;
+	}
+	.tea-search__kw { position: relative; display: block; }
+	.tea-search__kw input { padding-right: 2.1rem; }
+	.tea-search__clear {
+		position: absolute;
+		right: 0.3rem;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 1.5rem;
+		height: 1.5rem;
+		display: grid;
+		place-items: center;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--tea-muted);
+		cursor: pointer;
+	}
+	.tea-search__clear:hover { background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.1)); color: inherit; }
+	.tea-search__clear[hidden] { display: none; }
+	.tea-search__clear svg { width: 0.85rem; height: 0.85rem; }
+	.tea-search__go {
+		justify-content: center;
+		height: 2.4rem;
+		border-radius: 0.7rem;
+	}
+	.tea-search__results {
+		display: grid;
+		gap: 0.5rem;
+		padding-top: 0.7rem;
+		border-top: 1px solid var(--tea-line);
+	}
+	.tea-search__meta { margin: 0; font-size: 0.68rem; color: var(--tea-muted); }
+	.tea-search__list {
+		display: grid;
+		gap: 0.5rem;
+		max-height: 22rem;
+		min-height: 13rem;
+		overflow-y: auto;
+		scrollbar-width: thin;
+		padding-right: 0.1rem;
+	}
+	.tea-search__card {
+		display: grid;
+		gap: 0.32rem;
+		padding: 0.6rem 0.7rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.7rem;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.06));
+	}
+	.tea-search__card header {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.tea-search__card b {
+		font-size: 0.74rem;
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.tea-search__card time {
+		flex: none;
+		font-size: 0.64rem;
+		color: var(--tea-muted-soft);
+		font-variant-numeric: tabular-nums;
+	}
+	.tea-search__card p {
+		margin: 0;
+		font-size: 0.74rem;
+		line-height: 1.6;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	.tea-search__card mark {
+		background: color-mix(in oklch, var(--primary) 36%, transparent);
+		color: inherit;
+		border-radius: 0.2rem;
+		padding: 0 0.1rem;
+	}
+	.tea-search__jump {
+		justify-self: start;
+		border: 0;
+		padding: 0;
+		background: none;
+		font: inherit;
+		font-size: 0.66rem;
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		cursor: pointer;
+	}
+	.tea-search__jump:hover { text-decoration: underline; }
+	.tea-search__empty {
+		padding: 1.2rem 0.5rem;
+		text-align: center;
+		font-size: 0.72rem;
+		color: var(--tea-muted);
+	}
+	@media (max-width: 640px) {
+		.tea-search__filters { grid-template-columns: 1fr; }
+		.tea-search-btn span { display: none; }
+		.tea-search-btn { padding: 0 0.45rem; }
+	}
+
 	/* 房间列表 */
 	.tea-rooms {
 		flex: none;
@@ -1612,7 +1865,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-room {
 		position: relative;
 		display: grid;
-		grid-template-rows: auto auto minmax(0, 1fr) auto;
+		grid-template-rows: auto auto auto minmax(0, 1fr) auto;
 		min-height: 0;
 		background: var(--tea-surface);
 		border: 1px solid var(--tea-line);
@@ -1621,8 +1874,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-bar { grid-row: 1; }
 	.tea-pins { grid-row: 2; }
-	.tea-feed-wrap { grid-row: 3; }
-	.tea-composer { grid-row: 4; }
+	.tea-historybar { grid-row: 3; }
+	.tea-feed-wrap { grid-row: 4; }
+	.tea-composer { grid-row: 5; }
 	.tea-bar {
 		display: flex;
 		align-items: center;
