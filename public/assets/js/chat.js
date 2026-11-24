@@ -2667,6 +2667,10 @@
 			clockAt: 0,
 			listSig: "",
 			rotationSig: "",
+			// 实时推送通道（SSE）。连着的时候轮询退成兜底，断了自己回退。
+			events: null,
+			eventRoom: "",
+			pollTick: 0,
 		};
 		// 同页脚本被 swup 重跑时，用代次让旧闭包的在途请求失效。
 		let jukeGen = 0;
@@ -3615,6 +3619,41 @@
 			}
 		};
 
+		// 实时推送：服务端状态一变就推过来（点歌 / 切歌 / 投票 / 撤歌 / 换轮播）。
+		// EventSource 自带断线重连，连不上时 2 秒轮询照常兜底，不影响收听。
+		const jukeConnectEvents = () => {
+			if (jukeSig.events) {
+				try { jukeSig.events.close(); } catch (_) {}
+				jukeSig.events = null;
+			}
+			if (typeof EventSource === "undefined") return;
+			const room = rt.room;
+			let es;
+			try {
+				// bridge 在 tea.0dm.cn，页面在 www.0dm.cn，必须走 api0 前缀，
+				// 不能写相对路径（那会打到站点自己，404）。
+				es = new EventSource(`${api0.replace(/\/$/, "")}/api/juke/events?room=${encodeURIComponent(room)}`);
+			} catch (_) {
+				return;
+			}
+			jukeSig.events = es;
+			jukeSig.eventRoom = room;
+			es.addEventListener("state", (e) => {
+				if (jukeGen && rt.jukeGen !== jukeGen) return;
+				try {
+					const data = JSON.parse(e.data);
+					if (!data || !data.state) return;
+					// 推送可能比本机点歌的 HTTP 响应先到，epoch 让在途的旧轮询作废。
+					jukeSig.stateEpoch += 1;
+					jukeApply(data.state);
+					// 切歌立刻按墙钟对齐，不用等下一个 2 秒 tick。
+					if (jukeSig.listening) jukeSync(true);
+				} catch (_) {}
+			});
+			// onerror 不打扰用户：EventSource 会自己重连，播放进度由轮询兜底。
+			es.onerror = () => {};
+		};
+
 		const jukeSwitchTab = (name) => {
 			jukeSig.tab = name;
 			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
@@ -3747,6 +3786,7 @@
 			jukeSig.playlistTracks = jukeCatalog();
 			jukeSig.playlistLoadedId = "site";
 			jukeLoad();
+			jukeConnectEvents();
 			jukeLoadPlaylists();
 			jukeRenderSearch();
 			jukeRenderList(true);
@@ -3964,18 +4004,29 @@
 			// 只清自己的 timer：旧实例的间隔可能在新实例绑定后才醒过来，
 			// 不能让它把新实例的 rt.jukeTimer 清掉。
 			const jukeTimer = setInterval(() => {
+				const closeEvents = () => {
+					if (!jukeSig.events) return;
+					try { jukeSig.events.close(); } catch (_) {}
+					jukeSig.events = null;
+				};
 				if (jukeGen && rt.jukeGen !== jukeGen) {
 					clearInterval(jukeTimer);
+					closeEvents();
 					if (rt.jukeTimer === jukeTimer) rt.jukeTimer = null;
 					return;
 				}
 				if (!root() || !root().querySelector("[data-tea-juke]")) {
 					clearInterval(jukeTimer);
+					closeEvents();
 					if (rt.jukeTimer === jukeTimer) rt.jukeTimer = null;
 					if (rt.jukeAudio) rt.jukeAudio.pause();
 					return;
 				}
-				jukeLoad();
+				// SSE 通着的时候，状态拉取退成 10 秒一次兜底；
+				// 进度对齐、歌词、渲染仍然每 2 秒走一遍，听感不变。
+				jukeSig.pollTick = (jukeSig.pollTick || 0) + 1;
+				const live = jukeSig.events && jukeSig.events.readyState === 1;
+				if (!live || jukeSig.pollTick % 5 === 0) jukeLoad();
 				if (Date.now() - (jukeSig.clockAt || 0) > 30_000) {
 					jukeSig.clockAt = Date.now();
 					jukeSampleClock();
@@ -4008,6 +4059,8 @@
 			if (!ROOMS[key] || key === rt.room) return;
 			if (rt.saveReadMark) rt.saveReadMark();
 			rt.room = key;
+			// 实时通道按房间订阅，换房必须重连，否则还在收上一间房的推送
+			jukeConnectEvents();
 			rt.since = null;
 			rt.seen.clear();
 			// 换房要断掉上一间房的 typing 续期与待发回执，否则会把状态写到新房

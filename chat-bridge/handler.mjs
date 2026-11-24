@@ -2104,6 +2104,91 @@ const JUKE_ROTATION_TYPE = "uk.9ll.juke.rotation";
 const JUKE_LIMITS = { queue: 40, history: 25, perUser: 10, tracks: 60, playlists: 8 };
 const JUKE_VERSION = 2;
 
+// ── 点歌台实时推送（SSE）─────────────────────────────────────────────
+// 歌曲状态本来就写在 Matrix 房间状态里，天然多人共享；这一层只负责
+// 「谁点了歌 / 切了歌 / 投了票」立刻推给全场，不必等前端 2 秒轮询。
+// 用 SSE 而不是 WebSocket：零依赖、反代（Lucky / CF）友好、EventSource
+// 自带断线重连。订阅表按房间隔离，带上限与心跳，断连自动回收。
+const JUKE_SUBS = new Map(); // room.id -> Map<clientId, { ctrl, at, dead }>
+const JUKE_SUB_LIMIT = 120; // 每房间最多 120 条长连接，超了踢最老的
+const JUKE_SUB_TTL = 90_000; // 90 秒没心跳的订阅视作失效
+let jukeSubId = 0;
+const sseEnc = new TextEncoder();
+
+function jukePublish(room, state) {
+	const clients = JUKE_SUBS.get(room.id);
+	if (!clients || !clients.size) return;
+	const now = Date.now();
+	const chunk = sseEnc.encode(`event: state\ndata: ${JSON.stringify({
+		ok: true,
+		room: room.key,
+		seq: state.seq,
+		state,
+		serverNow: now,
+	})}\n\n`);
+	for (const [id, sub] of clients) {
+		if (sub.dead || now - sub.at > JUKE_SUB_TTL) {
+			clients.delete(id);
+			continue;
+		}
+		try {
+			sub.ctrl.enqueue(chunk);
+		} catch (_) {
+			clients.delete(id);
+		}
+	}
+	if (!clients.size) JUKE_SUBS.delete(room.id);
+}
+
+function handleJukeEvents(room, allowOrigin) {
+	const id = `${++jukeSubId}-${Math.random().toString(36).slice(2, 7)}`;
+	let clients = JUKE_SUBS.get(room.id);
+	if (!clients) {
+		clients = new Map();
+		JUKE_SUBS.set(room.id, clients);
+	}
+	if (clients.size >= JUKE_SUB_LIMIT) {
+		const oldest = clients.keys().next().value;
+		const old = clients.get(oldest);
+		if (old) {
+			old.dead = true;
+			try { old.ctrl.close(); } catch (_) {}
+		}
+		clients.delete(oldest);
+	}
+	let hb = 0;
+	const stream = new ReadableStream({
+		start(ctrl) {
+			clients.set(id, { ctrl, at: Date.now(), dead: false });
+			ctrl.enqueue(sseEnc.encode(": connected\n\n"));
+			// 反代与浏览器都会掐长连接，20 秒一次注释帧保活
+			hb = setInterval(() => {
+				const sub = clients.get(id);
+				if (!sub || sub.dead) return clearInterval(hb);
+				sub.at = Date.now();
+				try {
+					ctrl.enqueue(sseEnc.encode(": ping\n\n"));
+				} catch (_) {
+					clearInterval(hb);
+				}
+			}, 20_000);
+		},
+		cancel() {
+			clearInterval(hb);
+			clients.delete(id);
+			if (!clients.size && JUKE_SUBS.get(room.id) === clients) JUKE_SUBS.delete(room.id);
+		},
+	});
+	const headers = {
+		"Content-Type": "text/event-stream; charset=utf-8",
+		"Cache-Control": "no-cache, no-transform",
+		Connection: "keep-alive",
+		"X-Accel-Buffering": "no",
+	};
+	if (allowOrigin) headers["Access-Control-Allow-Origin"] = allowOrigin;
+	return new Response(stream, { status: 200, headers });
+}
+
 const jukeEmpty = () => ({
 	v: JUKE_VERSION,
 	current: null,
@@ -2734,6 +2819,9 @@ async function handleJukeWrite(c, request, url, token, ip, env, room) {
 	}
 
 	await jukeWrite(c, room, state);
+	// 状态落库后立刻推给全房间：点歌、切歌、投票、撤歌、换轮播都走这里。
+	// 发起者自己也会收到一份（幂等），前端按 seq 去重。
+	jukePublish(room, state);
 	return json(200, { ok: true, state, serverNow: Date.now(), admin: !!who.admin, vote });
 }
 
@@ -2829,6 +2917,8 @@ export async function handleRequest(request, env = {}) {
 			out = await handleReaction(c, request, visitorToken, roomOf(c, url));
 		} else if (path === "/api/profile" && (request.method === "GET" || request.method === "POST")) {
 			out = await handleProfile(c, request, visitorToken);
+		} else if (path === "/api/juke/events" && request.method === "GET") {
+			out = handleJukeEvents(roomOf(c, url), corsHeaders["Access-Control-Allow-Origin"]);
 		} else if (path === "/api/juke/time" && request.method === "GET") {
 			out = json(200, { ok: true, serverNow: Date.now() });
 		} else if (path === "/api/juke/state" && request.method === "GET") {

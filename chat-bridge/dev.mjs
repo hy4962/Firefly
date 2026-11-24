@@ -34,6 +34,34 @@ http
 		try {
 			const response = await handleRequest(request, env);
 			res.writeHead(response.status, Object.fromEntries(response.headers));
+			// SSE 是长连接，不能 arrayBuffer() 等到流结束才回包，
+			// 否则客户端会一直卡在首字节。直接把 ReadableStream 泵给 Node。
+			if ((response.headers.get("content-type") || "").includes("text/event-stream")) {
+				if (!response.body) {
+					res.end();
+					return;
+				}
+				const reader = response.body.getReader();
+				req.on("close", () => { try { reader.cancel(); } catch (_) {} });
+				(async () => {
+					try {
+						while (true) {
+							const { done, value } = await reader.read();
+							if (done) break;
+							if (!res.write(Buffer.from(value))) {
+								await Promise.race([
+									new Promise((r) => res.once("drain", r)),
+									new Promise((r) => res.once("close", r)),
+								]);
+							}
+						}
+					} catch (_) {
+					} finally {
+						try { res.end(); } catch (_) {}
+					}
+				})();
+				return;
+			}
 			res.end(Buffer.from(await response.arrayBuffer()));
 		} catch (err) {
 			res.writeHead(500, { "Content-Type": "application/json" });
