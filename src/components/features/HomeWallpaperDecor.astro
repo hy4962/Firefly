@@ -550,7 +550,12 @@ const stickerToggle = config.stickerToggle;
             if (isMobileLayout()) return;
             decor.querySelectorAll("[data-home-wallpaper-initial-style]").forEach((sticker) => {
                 const initialStyle = sticker.getAttribute("data-home-wallpaper-initial-style");
-                if (initialStyle) sticker.setAttribute("style", initialStyle);
+                if (!initialStyle) return;
+                // 整条覆盖会顺带抹掉 display:none —— 一旦后面的抽签布局因为壁纸宽度为 0
+                // 之类的原因提前返回，19 张就全冒出来了。这里先把隐藏状态留着。
+                const hidden = sticker.style.display === "none";
+                sticker.setAttribute("style", initialStyle);
+                if (hidden) sticker.style.display = "none";
             });
         };
 
@@ -592,7 +597,6 @@ const stickerToggle = config.stickerToggle;
         const applyDesktopStickerRow = (decor) => {
             if (isMobileLayout()) return;
             const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
-            const wallpaperWidth = wallpaper.getBoundingClientRect().width;
             const row = [
                 ...decor.querySelectorAll(".home-wallpaper-sticker:not(.home-wallpaper-sticker--fixed)"),
             ]
@@ -602,7 +606,7 @@ const stickerToggle = config.stickerToggle;
                 }))
                 .filter((item) => item.bottom !== undefined)
                 .sort((a, b) => a.left - b.left);
-            if (!wallpaperWidth || row.length === 0) return;
+            if (row.length === 0) return;
 
             const countRaw = Number.parseInt(decor.dataset.homeWallpaperDesktopCount || "", 10);
             const gapPct = Number.parseFloat(decor.dataset.homeWallpaperDesktopGap || "") || 0;
@@ -610,14 +614,19 @@ const stickerToggle = config.stickerToggle;
             // 不抽签（0 / ≥ 总数）或没留空档 → 原样铺满（配置里的等距排布），不做任何改动
             if (!(count > 0) || count >= row.length || gapPct <= 0) return;
 
+            // 可见性先定案，再算坐标。切页回来 / 窗口过渡那一帧壁纸可能是 0 宽，
+            // 此时坐标没法算，但「只显示 count 张」这条规则不能跟着失效。
             const picked = pickDesktopStickers(
                 row.map((item) => item.el),
                 count,
             );
             const shown = row.filter((item) => picked.includes(item.el));
             row.forEach((item) => {
-                if (!picked.includes(item.el)) item.el.style.display = "none";
+                item.el.style.display = picked.includes(item.el) ? "grid" : "none";
             });
+
+            const wallpaperWidth = wallpaper.getBoundingClientRect().width;
+            if (!wallpaperWidth) return;
 
             const centers = spreadStickerCenters(shown.length, gapPct);
             shown.forEach((item, index) => {
@@ -667,14 +676,22 @@ const stickerToggle = config.stickerToggle;
             // 留 16px 冗余，避免字体/图片加载过程中的测量抖动导致来回切
             if (rearTopFromBottom + 16 <= cardBottomFromBottom) {
                 // 两排实测放得下：CSS 那条 940px 阈值偏保守（按卡片固定高度估的），
-                // 这里直接把被隐藏的后排放出来，位置沿用服务端渲染的 bottom: 16%
-                stickers
-                    .filter((sticker) =>
-                        sticker.classList.contains("home-wallpaper-sticker--rear"),
-                    )
-                    .forEach((sticker) => {
+                // 这里把「抽中的」后排放出来，位置沿用服务端渲染的 bottom: 16%。
+                // 未抽中的仍要藏着，否则这条提前返回会把整池贴纸全放行。
+                const countRaw = Number.parseInt(decor.dataset.homeWallpaperDesktopCount || "", 10);
+                const count = Number.isFinite(countRaw) ? countRaw : 0;
+                const shown =
+                    count > 0 && count < stickers.length
+                        ? pickDesktopStickers(stickers, count)
+                        : stickers;
+                stickers.forEach((sticker) => {
+                    const visible = shown.includes(sticker);
+                    if (!visible) {
+                        sticker.style.display = "none";
+                    } else if (sticker.classList.contains("home-wallpaper-sticker--rear")) {
                         sticker.style.display = "grid";
-                    });
+                    }
+                });
                 return;
             }
 
@@ -761,6 +778,8 @@ const stickerToggle = config.stickerToggle;
         const bindMobileStickerLayout = (decor) => {
             const mediaQuery = window.matchMedia("(max-width: 767px)");
             const applyLayout = () => {
+                // 先归零横滚，后面的 rect 才是相对壁纸本身的坐标
+                resetDecorScroll(decor);
                 // 先让卡片把箭头让开，再按「已经让开」的卡片底边去排贴纸 —— 顺序反了
                 // 贴纸会挤在旧位置，卡片一抬就穿帮
                 applyMobileCardLift(decor);
@@ -794,6 +813,13 @@ const stickerToggle = config.stickerToggle;
         };
 
         const getDecor = () => document.querySelector(".home-wallpaper-decor");
+
+        // 卡片收起时被 transform 推到屏幕外，装饰层 scrollWidth 比 clientWidth 大。
+        // 点卡片里的导航链接、或 Swup 回首页时焦点落回卡片，浏览器会偷偷横滚这个容器，
+        // 于是整排贴纸跟着左移、看着像「贴纸少了几张」。布局每次都把横滚归零。
+        const resetDecorScroll = (decor) => {
+            if (decor instanceof HTMLElement && decor.scrollLeft) decor.scrollLeft = 0;
+        };
 
         // ========== 入场后自动收起 ==========
         // 卡片停一会儿就把位置让给壁纸，只在边缘留一根小竖条；点竖条能把卡片再滑回来。
@@ -1227,9 +1253,12 @@ const stickerToggle = config.stickerToggle;
         };
 
         const bindAll = () => {
+            const decor = getDecor();
+            // Swup 回首页后焦点变化可能把装饰层横滚过去，下一帧再兜一次
+            resetDecorScroll(decor);
+            window.requestAnimationFrame(() => resetDecorScroll(decor));
             bindHomeWallpaperStickers();
             bindHomeWallpaperCopyLinks();
-            const decor = getDecor();
             bindHomeCardCollapse(decor);
             bindStickerToggle(decor);
         };
