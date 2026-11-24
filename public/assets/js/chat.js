@@ -205,6 +205,9 @@
 				reactions: new Map(),
 				replyTo: null,
 				typingAt: 0,
+				typingTimer: 0,
+				readTimer: 0,
+				readPending: "",
 				room: params0.get("room") === "chat" ? "chat" : "lobby",
 				visitor: store.identity,
 			});
@@ -369,6 +372,24 @@
 		const ICON_REPLY = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7 3 12l6 5"/><path d="M3 12h11a6 6 0 0 1 6 6v1"/></svg>`;
 		const ICON_MORE = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>`;
 
+		// 已读回执：规范（Receipts）要求「确认消息已展示」后上报 m.read，
+		// 并且 SHOULD NOT 给自己发的消息发回执。回执是水位线语义，只报最新一条。
+		const markRead = (m) => {
+			const v = rt.visitor;
+			if (!v || !m || !m.id || !/^\$/.test(m.id)) return;
+			if (m.sender === v.id) return;
+			if (document.visibilityState !== "visible") return;
+			rt.readPending = m.id;
+			if (rt.readTimer) return;
+			rt.readTimer = setTimeout(() => {
+				rt.readTimer = 0;
+				const id = rt.readPending;
+				rt.readPending = "";
+				if (!id) return;
+				api(`/api/receipt?room=${rt.room}`, { method: "POST", body: JSON.stringify({ eventId: id }) }).catch(() => {});
+			}, 2000);
+		};
+
 		const renderMessage = (m) => {
 			const f = feedEl();
 			if (!f) return;
@@ -442,6 +463,7 @@
 				</div>`;
 
 			f.appendChild(el);
+			markRead(m);
 			if (m.scroll !== false) scrollBottom(!m.pending);
 		};
 
@@ -1202,9 +1224,13 @@
 		};
 
 		// ── 发送 ─────────────────────────────────────────────────
-		const sendText = async (text, node, threadRoot = "") => {
+		// 规范（Transaction identifiers）：同一 txnId 重传必须幂等，
+		// 所以重试要复用同一条消息的 txnId，否则会重复发出两条。
+		const newTxn = (kind) => `${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+		const sendText = async (text, node, threadRoot = "", threadLatest = "", txnId = "") => {
 			const v = rt.visitor;
 			if (!v) return;
+			const txn = txnId || newTxn("web");
 			let target = node;
 			if (!target && !threadRoot) {
 				const ts = Date.now();
@@ -1214,7 +1240,7 @@
 			try {
 				const res = await api(`/api/send?room=${rt.room}`, {
 					method: "POST",
-					body: JSON.stringify({ text, replyTo: threadRoot ? "" : (rt.replyTo?.id || ""), threadRoot }),
+					body: JSON.stringify({ text, replyTo: threadRoot ? "" : (rt.replyTo?.id || ""), threadRoot, threadLatest, txnId: txn }),
 				});
 				if (threadRoot && rt.refreshThreads) rt.refreshThreads();
 				sendTyping(false);
@@ -1255,7 +1281,7 @@
 					retry.textContent = "发送失败：" + (e.message || "网络异常") + "，点此重试";
 					retry.addEventListener("click", () => {
 						target.remove();
-						sendText(text);
+						sendText(text, null, threadRoot, threadLatest, txn);
 					});
 					target.querySelector(".tea-msg__body").appendChild(retry);
 				}
@@ -1282,7 +1308,7 @@
 				// 发一条带图片的消息：后端 send 目前只发 text，这里用 body 携带 mxc
 				const res = await api(`/api/send?room=${rt.room}`, {
 					method: "POST",
-					body: JSON.stringify({ text: "", imageUrl: up.url, emoticon }),
+					body: JSON.stringify({ text: "", imageUrl: up.url, filename: name, emoticon }),
 				});
 				if (target) {
 					target.classList.remove("tea-msg--pending", "tea-msg--failed");
@@ -1390,14 +1416,36 @@
 		};
 
 		// ── 正在输入 ────────────────────────────────────────────
+		// 规范（Typing Notifications）：typing 是短时状态，服务器 20 秒过期；
+		// 客户端在持续输入时要周期性续期（留 5 秒安全边际），停止输入要主动置 false。
+		const TYPING_RENEW = 12_000;
+		const stopTyping = () => {
+			if (rt.typingTimer) {
+				clearInterval(rt.typingTimer);
+				rt.typingTimer = 0;
+			}
+		};
 		const sendTyping = (active) => {
 			const v = rt.visitor;
 			if (!v) return;
+			if (!active) stopTyping();
 			api(`/api/typing?room=${rt.room}`, {
 				method: "POST",
-				body: JSON.stringify({ active, userId: v.id }),
+				body: JSON.stringify({ active }),
 			}).catch(() => {});
 		};
+		const keepTyping = () => {
+			const input = q("[data-tea-text]");
+			if (!input || !input.value.trim() || document.visibilityState !== "visible") {
+				sendTyping(false);
+				return;
+			}
+			sendTyping(true);
+		};
+		const startTyping = () => {
+			if (!rt.typingTimer) rt.typingTimer = setInterval(keepTyping, TYPING_RENEW);
+		};
+		rt.stopTyping = stopTyping;
 
 		const renderTyping = (users) => {
 			const box = q("[data-tea-typing]");
@@ -2928,6 +2976,13 @@
 			rt.room = key;
 			rt.since = null;
 			rt.seen.clear();
+			// 换房要断掉上一间房的 typing 续期与待发回执，否则会把状态写到新房
+			if (rt.stopTyping) rt.stopTyping();
+			if (rt.readTimer) {
+				clearTimeout(rt.readTimer);
+				rt.readTimer = 0;
+			}
+			rt.readPending = "";
 			const rj = q("[data-tea-readjump]");
 			if (rj) rj.hidden = true;
 			// 线程只在互联茶室有意义，切房时收起相关浮层
@@ -3207,10 +3262,13 @@
 				});
 				taInput.addEventListener("input", () => {
 					const now = Date.now();
-					if (taInput.value.trim() && now - rt.typingAt > 1500) {
+					if (!taInput.value.trim()) { stopTyping(); return; }
+					if (now - rt.typingAt > 1500) {
 						rt.typingAt = now;
 						sendTyping(true);
 					}
+					// 输入过程中挂一个续期定时器，别让「正在输入」在 20 秒后自动消失
+					startTyping();
 				});
 				taInput.addEventListener("blur", () => sendTyping(false));
 			}
@@ -4043,6 +4101,7 @@
 			const threadInput = q("[data-tea-thread-input]");
 			const threadSend = q("[data-tea-thread-send]");
 			let currentThreadRoot = "";
+			let currentThreadLatest = "";
 
 			const threadMsgHtml = (m) => {
 				const av = m.avatar
@@ -4067,6 +4126,7 @@
 			const openThread = async (rootUid) => {
 				if (!threadView || !threadBody || !rootUid) return;
 				currentThreadRoot = rootUid;
+				currentThreadLatest = rootUid;
 				threadView.hidden = false;
 				threadBody.innerHTML = `<div class="tea-thread__loading">正在打开线程…</div>`;
 				if (threadSub) threadSub.textContent = "Matrix 线程 · 加载中";
@@ -4074,6 +4134,9 @@
 				try {
 					const data = await api(`/api/thread?room=${rt.room}&rootUid=${encodeURIComponent(rootUid)}`);
 					const replies = data.messages || [];
+					// 规范（Fallback for unthreaded clients）：is_falling_back 的 m.in_reply_to
+					// 要指向线程内最新一条消息，不是线程根，否则老客户端看到的是「回复主题」而不是上下文。
+					currentThreadLatest = replies.length ? replies[replies.length - 1].id : rootUid;
 					(threadSub && (threadSub.textContent = `Matrix 线程 · 共 ${replies.length} 条回复`));
 					threadBody.innerHTML = `
 						${data.root ? `<div class="tea-thread__root-label">主题原消息</div>${threadMsgHtml(data.root)}` : ""}
@@ -4089,6 +4152,7 @@
 			const closeThread = () => {
 				if (threadView) threadView.hidden = true;
 				currentThreadRoot = "";
+				currentThreadLatest = "";
 			};
 			rt.closeThread = closeThread;
 			threadView?.querySelectorAll("[data-tea-thread-close]").forEach((b) => b.addEventListener("click", closeThread));
@@ -4105,7 +4169,7 @@
 				threadInput.disabled = true;
 				if (threadSend) threadSend.disabled = true;
 				try {
-					await sendText(text, null, currentThreadRoot);
+					await sendText(text, null, currentThreadRoot, currentThreadLatest);
 					threadInput.value = "";
 					await openThread(currentThreadRoot);
 					if (rt.refreshThreads) rt.refreshThreads();
@@ -4172,7 +4236,15 @@
 			});
 			window.addEventListener("pagehide", () => rt.saveReadMark?.());
 			document.addEventListener("visibilitychange", () => {
-				if (document.visibilityState === "hidden") rt.saveReadMark?.();
+				if (document.visibilityState === "hidden") {
+					rt.saveReadMark?.();
+					return;
+				}
+				// 切回前台补一次回执：后台期间渲染的消息也算「看过了」
+				const f = feedEl();
+				const list = f ? [...f.querySelectorAll(".tea-msg[data-id]")].reverse() : [];
+				const last = list.find((el) => el.dataset.sender && el.dataset.sender !== rt.visitor?.id);
+				if (last) markRead({ id: last.dataset.id, sender: last.dataset.sender });
 			});
 		};
 

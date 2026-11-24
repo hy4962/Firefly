@@ -50,6 +50,9 @@ const SITE_BY_HOST = {
 const enc = encodeURIComponent;
 const clean = (s, max) => String(s ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
+// 规范（Appendices / Event IDs）：$ 开头的不透明串，早期房间带 :server 后缀、新房间是 base64。
+// 只认 [\w-] 会把带冒号的联邦事件 ID 判成非法。
+const isEventId = (s) => /^\$[^\s/]{1,250}$/.test(String(s ?? ""));
 
 const cfg = (env) => ({
 	hs: (env.MATRIX_HS || DEFAULTS.MATRIX_HS).replace(/\/$/, ""),
@@ -83,7 +86,9 @@ const json = (status, data, headers = {}) =>
 		headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers },
 	});
 
-const fail = (status, error) => json(status, { ok: false, error });
+// 规范（Standard error response）：429 响应 SHOULD 带 Retry-After 头。
+const fail = (status, error) =>
+	json(status, { ok: false, error }, status === 429 ? { "Retry-After": "10" } : {});
 
 // ── md5（给 weavatar 算头像）─────────────────────────────────────────
 const S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
@@ -161,7 +166,36 @@ async function mxJson(c, path, opts) {
 	return { ok: res.ok, status: res.status, data };
 }
 
+// token → user_id 缓存。typing 只能替自己发、sync 要把自己从 typing 列表里剔掉，
+// 这两件事都得先知道 token 是谁，别每次都多打一跳 whoami。
+const whoCache = new Map();
+async function whoAmI(c, token) {
+	if (!token) return "";
+	const hit = whoCache.get(token);
+	if (hit && Date.now() - hit.at < 5 * 60_000) return hit.id;
+	const { ok, data } = await mxJson(c, "/_matrix/client/v3/account/whoami", { token });
+	const id = ok && typeof data.user_id === "string" ? data.user_id : "";
+	if (whoCache.size > 500) whoCache.clear();
+	whoCache.set(token, { at: Date.now(), id });
+	return id;
+}
+
 let memberCache = { at: 0, map: new Map(), room: "" };
+
+// 规范（v1.19 / Calculating the display name for a user）：
+// displayname 在 join / invite 成员中不唯一时 MUST 用 user id 消歧，否则同名可以互相当冒充。
+function memberProfile(ev) {
+	const raw = ev.content?.displayname;
+	const uid = ev.state_key || "";
+	if (raw === undefined || raw === null || raw === "") return { base: uid, nick: uid, site: "" };
+	const text = String(raw);
+	const dot = text.indexOf(" · ");
+	return {
+		base: text,
+		nick: dot > 0 ? text.slice(0, dot).trim() : text,
+		site: dot > 0 ? text.slice(dot + 3).trim() : "",
+	};
+}
 
 async function getMembers(c, roomId, force = false) {
 	if (!force && Date.now() - memberCache.at < 60_000 && memberCache.room === roomId && memberCache.map.size) {
@@ -169,12 +203,28 @@ async function getMembers(c, roomId, force = false) {
 	}
 	const { ok, data } = await mxJson(c, `/_matrix/client/v3/rooms/${enc(roomId)}/members`);
 	if (!ok) throw new Error(data.error || "members failed");
-	const map = new Map();
+
+	// 先统计冲突：join + invite 一起算（规范要求），展示时只给 join。
+	const rows = [];
+	const counts = new Map();
 	for (const ev of data.chunk || []) {
-		if (ev.type !== "m.room.member" || ev.content?.membership !== "join") continue;
+		if (ev.type !== "m.room.member") continue;
+		const membership = ev.content?.membership;
+		if (membership !== "join" && membership !== "invite") continue;
+		const p = memberProfile(ev);
+		rows.push({ ev, p, membership });
+		counts.set(p.base, (counts.get(p.base) || 0) + 1);
+	}
+
+	const map = new Map();
+	for (const { ev, p, membership } of rows) {
+		if (membership !== "join") continue;
+		// 规范示例「display name (@id:homeserver.org)」：撞名时挂完整 user id。
+		const nick = (counts.get(p.base) || 0) > 1 ? `${p.nick} (${ev.state_key})` : p.nick;
 		map.set(ev.state_key, {
-			nick: ev.content.displayname || ev.state_key.split(":")[0].replace(/^@/, ""),
-			avatar: ev.content.avatar_url || "",
+			nick,
+			site: p.site,
+			avatar: ev.content?.avatar_url || "",
 		});
 	}
 	memberCache = { at: Date.now(), map, room: roomId };
@@ -203,8 +253,7 @@ function readReceipts(data, roomId, members, c, base) {
 		const readers = Object.entries(users)
 			.map(([id, info]) => {
 				const m = members.get(id) || {};
-				const nick = m.nick || id.split(":")[0].replace(/^@/, "");
-				const dot = nick.indexOf(" · ");
+				const nick = m.nick || id;
 				const avatar = m.avatar
 					? m.avatar.startsWith("mxc://")
 						? `${base}/api/media?u=${enc(m.avatar)}`
@@ -212,8 +261,8 @@ function readReceipts(data, roomId, members, c, base) {
 					: "";
 				return {
 					id,
-					nick: dot > 0 ? nick.slice(0, dot) : nick,
-					site: dot > 0 ? nick.slice(dot + 3) : SITE_BY_SERVER[id.split(":")[1]] || "",
+					nick,
+					site: m.site || SITE_BY_SERVER[id.split(":")[1]] || "",
 					avatar,
 					ts: info?.ts || 0,
 				};
@@ -222,36 +271,6 @@ function readReceipts(data, roomId, members, c, base) {
 		if (readers.length) map.set(eventId, { count: readers.length, readers });
 	}
 	return map;
-}
-
-// Matrix 的 m.receipt 是「最新一条」快照，旧事件的回执会消失。
-// 这里按每个读者的最新已读时间做水位线：时间早于水位的消息都算已读。
-function readWatermarks(data, roomId, members, c, base) {
-	const events = data?.rooms?.join?.[roomId]?.ephemeral?.events || [];
-	const snapshot = [...events].reverse().find((ev) => ev.type === "m.receipt")?.content || {};
-	const byUser = new Map();
-	for (const reads of Object.values(snapshot)) {
-		const users = reads?.["m.read"] || {};
-		for (const [id, info] of Object.entries(users)) {
-			if (!id || id === c.selfUserId) continue;
-			const ts = Number(info?.ts) || 0;
-			if (!ts) continue;
-			const prev = byUser.get(id);
-			if (!prev || ts > prev.ts) {
-				const m = members.get(id) || {};
-				const nick = m.nick || id.split(":")[0].replace(/^@/, "");
-				const dot = nick.indexOf(" · ");
-				byUser.set(id, {
-					id,
-					nick: dot > 0 ? nick.slice(0, dot) : nick,
-					site: dot > 0 ? nick.slice(dot + 3) : SITE_BY_SERVER[id.split(":")[1]] || "",
-					avatar: m.avatar ? (m.avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(m.avatar)}` : m.avatar) : "",
-					ts,
-				});
-			}
-		}
-	}
-	return [...byUser.values()];
 }
 
 // 精确回执：eventId -> 实际在该事件上留下 m.read 的人。
@@ -358,19 +377,54 @@ function siteLabel(url, c) {
 	}
 }
 
+// 规范（v1.19 / Sending custom emotes）：自定义表情是 m.text 的 formatted_body 里
+// 带 data-mx-emoticon 属性的 <img>，属性存在才算表情，属性值必须忽略。
+// 旧版本茶室把 data-mx-emoticon 塞进 m.image 的 content 里，历史消息仍要认。
+function customEmoteOf(content) {
+	if (content.format === "org.matrix.custom.html" && typeof content.formatted_body === "string") {
+		const html = content.formatted_body.trim();
+		const tag = html.match(/^<img\b[^>]*\bdata-mx-emoticon\b[^>]*\/?>$/i);
+		if (tag) {
+			const pick = (name) => {
+				const m = new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, "i").exec(tag[0]);
+				return m ? m[1] ?? m[2] ?? "" : "";
+			};
+			const src = pick("src");
+			if (/^mxc:\/\//.test(src)) return { src, code: pick("title") || pick("alt") };
+		}
+	}
+	if (content["data-mx-emoticon"] === true && typeof content.url === "string" && /^mxc:\/\//.test(content.url)) {
+		return { src: content.url, code: "" };
+	}
+	return null;
+}
+
 function normalize(ev, members, c, base, eventMap) {
 	const content = ev.content || {};
 	if (!content.body && !content.url) return null;
-	if (!["m.text", "m.image", "m.emote"].includes(content.msgtype)) return null;
+	// 规范：不认识的 msgtype 也要拿 body 兜底显示，不能整条丢掉。
+	// m.file / m.audio / m.video 至少让用户知道「有人发了东西」。
+	const msgtype = String(content.msgtype || "");
+	const TYPE_ICON = { "m.file": "📎", "m.audio": "🎵", "m.video": "🎬", "m.sticker": "🩹" };
+	if (!msgtype) return null;
+	const isMessage = ["m.text", "m.emote", "m.notice", "m.image", "m.file", "m.audio", "m.video"].includes(msgtype);
+	if (!isMessage && !TYPE_ICON[msgtype]) {
+		if (typeof content.body !== "string" || !content.body) return null;
+	}
 
 	const sender = ev.sender || "";
 	const domain = sender.split(":")[1] || "";
 	const member = members.get(sender) || {};
-	let nick = member.nick || sender.split(":")[0].replace(/^@/, "");
-	let site = SITE_BY_SERVER[domain] || (domain === "matrix.0dm.cn" ? c.siteName : "");
+	// 规范：m.room.member 没有 displayname 时用原始 user id 当显示名。
+	let nick = member.nick || sender;
+	let site = member.site || SITE_BY_SERVER[domain] || (domain === "matrix.0dm.cn" ? c.siteName : "");
 	let avatar = member.avatar || "";
 	let text = typeof content.body === "string" ? content.body : "";
 	let image = "";
+	if (TYPE_ICON[msgtype] && content.url && /^mxc:\/\//.test(content.url)) {
+		// 文件/语音/视频先给一个可点开的链接提示，正文用 body 兜底
+		text = `${TYPE_ICON[msgtype]} ${text || msgtype}`;
+	}
 
 	// 别的站点用共享账号转发时，靠协议头还原身份
 	const bridge = content["org.tea-room.bridge"];
@@ -438,12 +492,16 @@ function normalize(ev, members, c, base, eventMap) {
 		}
 	}
 
-	if (content.msgtype === "m.image" && content.url) {
+	const emote = customEmoteOf(content);
+	if (emote) {
+		image = `${base}/api/media?u=${enc(emote.src)}`;
+		text = emote.code || text;
+	} else if (content.msgtype === "m.image" && content.url) {
 		image = `${base}/api/media?u=${enc(content.url)}`;
 		text = text || "发了一张图片";
 	}
-	// 表情包是 m.image + 自定义标记，前端按小图渲染
-	const emoticon = content["data-mx-emoticon"] ? true : false;
+	// 规范表情（formatted_body 的 img）与旧版 m.image 标记统一成前端的 emoticon 布尔
+	const emoticon = !!emote;
 
 	avatar = avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(avatar)}` : avatar;
 
@@ -468,7 +526,7 @@ function collectReactions(events, members) {
 			existing.count++;
 		} else {
 			const m = members.get(ev.sender) || {};
-			list.push({ key, count: 1, nick: (m.nick || "").split(" · ")[0], senders: [] });
+			list.push({ key, count: 1, nick: m.nick || ev.sender, senders: [] });
 		}
 		list.find((r) => r.key === key).senders.push(ev.sender);
 		map.set(rel.event_id, list);
@@ -482,7 +540,7 @@ const memory = new Map();
 async function rateCheck(env, ip, kind = "send") {
 	const now = Date.now();
 	const gap =
-		kind === "enter" ? RATE.enterGap : kind === "juke" ? 800 : kind === "link" ? 350 : kind === "search" ? 600 : RATE.minGap;
+		kind === "enter" ? RATE.enterGap : kind === "juke" ? 800 : kind === "link" ? 350 : kind === "search" ? 600 : kind === "receipt" ? 800 : RATE.minGap;
 
 	const b = memory.get(`${kind}:${ip}`) || { last: 0, minute: [], hour: [] };
 	if (now - b.last < gap) return `手速有点快，${Math.ceil((gap - (now - b.last)) / 1000)} 秒后再试。`;
@@ -555,21 +613,27 @@ async function uploadAvatar(c, email) {
 
 const WALINE_DEFAULT = "https://waline.0dm.cn";
 
-// 身份索引存在 Synapse 的私有房间里：状态事件类型 com.0dm.tea.identity，state_key = md5(邮箱)
-const ID_EVENT_TYPE = "com.0dm.tea.identity";
+// 身份索引存在 Synapse 的私有房间里，state_key = md5(邮箱)。
+// 规范（Appendices / Common Namespaced Identifier Grammar）：自定义事件类型按 Java 包名反向
+// 域名命名，0dm.cn 反写是 cn.0dm。旧类型 com.0dm.* 属于历史错误命名，只保留读兼容。
+const ID_EVENT_TYPE = "cn.0dm.tea.identity";
+const LEGACY_ID_EVENT_TYPE = "com.0dm.tea.identity";
 const idKey = (email) => md5Hex(email.trim().toLowerCase());
 
 async function readIdentity(c, email) {
 	if (!email || !c.indexRoom) return null;
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.indexRoom)}/state/${ID_EVENT_TYPE}/${enc(idKey(email))}`, {
-		token: c.adminToken,
-	});
-	if (!res.ok) return null;
-	try {
-		return await res.json();
-	} catch {
-		return null;
+	for (const type of [ID_EVENT_TYPE, LEGACY_ID_EVENT_TYPE]) {
+		const res = await mx(c, `/_matrix/client/v3/rooms/${enc(c.indexRoom)}/state/${type}/${enc(idKey(email))}`, {
+			token: c.adminToken,
+		});
+		if (!res.ok) continue;
+		try {
+			return await res.json();
+		} catch {
+			return null;
+		}
 	}
+	return null;
 }
 
 async function writeIdentity(c, email, data) {
@@ -805,10 +869,9 @@ function collectRedactions(events, members) {
 		const target = ev.content?.redacts || ev.redacts || "";
 		if (!target) continue;
 		const sender = ev.sender || "";
-		let nick = members.get(sender)?.nick || sender.split(":")[0].replace(/^@/, "");
-		const dot = nick.indexOf(" · ");
-		const site = dot > 0 ? nick.slice(dot + 3).trim() : SITE_BY_SERVER[sender.split(":")[1]] || "";
-		if (dot > 0) nick = nick.slice(0, dot).trim();
+		const m = members.get(sender) || {};
+		const nick = m.nick || sender;
+		const site = m.site || SITE_BY_SERVER[sender.split(":")[1]] || "";
 		list.push({ id: target, by: nick, site, ts: ev.origin_server_ts || Date.now() });
 	}
 	return list;
@@ -883,14 +946,11 @@ async function handleSync(c, url, base, token) {
 	const typingEv = (data.rooms?.join?.[room.id]?.ephemeral?.events || [])
 		.filter((ev) => ev.type === "m.typing")
 		.pop();
+	// m.typing 的 user_ids 是全量快照，规范要求客户端整份替换；自己不能出现在提醒里
+	const me = await whoAmI(c, token);
 	const typing = (typingEv?.content?.user_ids || [])
-		.filter((id) => id !== c.selfUserId)
-		.map((id) => {
-			const m = members.get(id) || {};
-			const nick = m.nick || id.split(":")[0].replace(/^@/, "");
-			const dot = nick.indexOf(" · ");
-			return dot > 0 ? nick.slice(0, dot).trim() : nick;
-		})
+		.filter((id) => id !== me)
+		.map((id) => (members.get(id) || {}).nick || id)
 		.filter(Boolean);
 	return json(200, { ok: true, messages, next: data.next_batch || since || null, typing, reactions: reactionUpdates, receipts, redactions });
 }
@@ -940,24 +1000,17 @@ async function handleRoom(c, base, room, url) {
 	};
 	const list = [...members.entries()].map(([id, m]) => {
 		const domain = id.split(":")[1] || "";
-		const dot = m.nick.indexOf(" · ");
 		return {
 			id,
-			nick: dot > 0 ? m.nick.slice(0, dot) : m.nick,
-			site: dot > 0 ? m.nick.slice(dot + 3) : SITE_BY_SERVER[domain] || (domain === "matrix.0dm.cn" ? c.siteName : ""),
+			nick: m.nick,
+			site: m.site || SITE_BY_SERVER[domain] || (domain === "matrix.0dm.cn" ? c.siteName : ""),
 			avatar: m.avatar.startsWith("mxc://") ? `${base}/api/media?u=${enc(m.avatar)}` : m.avatar,
 			online: active.has(id) || isPresent(id),
 		};
 	});
 
-	const seen = new Map();
-	for (const item of list) {
-		const key = `${item.nick}|${item.site}`;
-		const prev = seen.get(key);
-		if (!prev || (!prev.online && item.online)) seen.set(key, item);
-	}
-	const unique = [...seen.values()];
-	unique.sort((a, b) => {
+	// 不能按昵称去重：同名是两个人，合并展示就违反「显示名必须消歧」，还给了冒名空间。
+	list.sort((a, b) => {
 		if (a.online !== b.online) return a.online ? -1 : 1;
 		const aMine = a.site === c.siteName;
 		const bMine = b.site === c.siteName;
@@ -968,8 +1021,8 @@ async function handleRoom(c, base, room, url) {
 	return json(200, {
 		ok: true,
 		room: { key: room.key, name: room.name, desc: room.desc, id: room.id, avatar },
-		members: unique,
-		online: unique.filter((m) => m.online).length,
+		members: list,
+		online: list.filter((m) => m.online).length,
 	});
 }
 
@@ -1088,7 +1141,7 @@ async function handleThreads(c, url, base) {
 async function handleThreadDetail(c, url, base) {
 	const room = roomOf(c, url);
 	const rootUid = url.searchParams.get("rootUid") || "";
-	if (!/^\$[\w-]+$/.test(rootUid)) return fail(400, "线程标识不对");
+	if (!isEventId(rootUid)) return fail(400, "线程标识不对");
 	try {
 		const members = await getMembers(c, room.id);
 		const t = await fetchThread(c, room.id, rootUid, members, base, null, 0);
@@ -1166,7 +1219,7 @@ async function handleRecall(c, request, token, room) {
 		return fail(400, "请求格式不对");
 	}
 	const eventId = clean(body.eventId, 120);
-	if (!/^\$[\w-]+$/.test(eventId)) return fail(400, "消息标识不对");
+	if (!isEventId(eventId)) return fail(400, "消息标识不对");
 	const txn = `recall-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/redact/${enc(eventId)}/${txn}`, {
 		token,
@@ -1189,42 +1242,54 @@ async function handleSend(c, request, token, room) {
 	const text = clean(body.text, LIMITS.text);
 	const replyTo = clean(body.replyTo, 120);
 	const threadRoot = clean(body.threadRoot, 120);
+	const threadLatest = clean(body.threadLatest, 120);
 	const imageUrl = clean(body.imageUrl, 400);
+	const filename = clean(body.filename, 120);
 	if (!text && !imageUrl) return fail(400, "空消息发不出去");
 
 	let content;
-	if (imageUrl) {
+	if (imageUrl && body.emoticon === true) {
+		// 规范（v1.19 / Sending custom emotes）：表情是 m.text 的 formatted_body 里
+		// 带 data-mx-emoticon 的 <img>，height MUST 存在；不再是 m.image 上的自定义字段。
+		const code = clean(body.shortcode, 40) || ":emote:";
+		const attr = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 		content = {
-			msgtype: "m.image",
-			body: text || "发了一张图片",
-			url: imageUrl,
-			"data-mx-emoticon": body.emoticon === true,
+			msgtype: "m.text",
+			body: code,
+			format: "org.matrix.custom.html",
+			formatted_body: `<img data-mx-emoticon src="${attr(imageUrl)}" alt="${attr(code)}" title="${attr(code)}" height="32" />`,
 		};
+	} else if (imageUrl) {
+		content = { msgtype: "m.image", body: text || filename || "图片", url: imageUrl };
 	} else {
 		content = { msgtype: "m.text", body: text };
 	}
-	// Matrix 原生线程（MSC3440）：rel_type=m.thread + is_falling_back + m.in_reply_to。
-	// 线程回复在主流不可见，客户端需按 threadRoot 单独拉取。
-	if (threadRoot && /^\$[\w-]+$/.test(threadRoot)) {
+	// Matrix 原生线程：rel_type=m.thread + is_falling_back + m.in_reply_to。
+	// 规范（Fallback for unthreaded clients）：is_falling_back 为 true 时，
+	// m.in_reply_to MUST 指向「客户端已知的线程内最新一条消息」，而不是线程根。
+	if (isEventId(threadRoot)) {
+		const target = isEventId(threadLatest) ? threadLatest : threadRoot;
 		content["m.relates_to"] = {
 			rel_type: "m.thread",
 			event_id: threadRoot,
 			is_falling_back: true,
-			"m.in_reply_to": { event_id: threadRoot },
+			"m.in_reply_to": { event_id: target },
 		};
-	} else if (replyTo && /^\$[\w-]+$/.test(replyTo)) {
-		// 普通 Matrix 回复关系，客户端按 body 的 "> <@user> 原文" 渲染引用块
+	} else if (isEventId(replyTo)) {
+		// v1.13 起富回复不再要求 body 里带 "> <@user>" 引用块，只留关系字段即可。
 		content["m.relates_to"] = { "m.in_reply_to": { event_id: replyTo } };
 	}
-	const txn = `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/send/m.room.message/${txn}`, {
+	// 规范（Transaction identifiers）：同一个 txnId 重传必须幂等，
+	// 所以重试要复用前端给的 txnId，不能每次重新生成。
+	const txn = clean(body.txnId, 80) || `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/send/m.room.message/${enc(txn)}`, {
 		token,
 		method: "PUT",
 		body: content,
 	});
 	const data = await res.json().catch(() => ({}));
 	if (!res.ok) return fail(res.status === 403 ? 403 : 502, data.error || "发送失败");
-	return json(200, { ok: true, id: data.event_id, ts: Date.now() });
+	return json(200, { ok: true, id: data.event_id, txnId: txn, ts: Date.now() });
 }
 
 // 图片/表情上传：先存到 Matrix media，再由前端发 m.image
@@ -1255,15 +1320,41 @@ async function handleTyping(c, request, token, room) {
 	} catch {
 		return fail(400, "请求格式不对");
 	}
+	// typing 只能替自己发（服务端会校验 userId = 认证用户），身份从 token 现查，别信前端。
 	const active = body.active === true;
-	const uid = clean(body.userId, 200);
-	if (!uid) return fail(400, "缺少用户标识");
+	const uid = await whoAmI(c, token);
+	if (!uid) return fail(401, "登录状态失效了，重新入座试试");
+	// 规范：客户端持续输入时间隔续期，服务器超时建议 20-30 秒。
 	await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/typing/${enc(uid)}`, {
 		token,
 		method: "PUT",
-		body: { typing: active, timeout: active ? 5000 : 0 },
+		body: { typing: active, timeout: active ? 20_000 : 0 },
 	});
 	return json(200, { ok: true });
+}
+
+// 已读回执：规范（Receipts）要求客户端确认消息已展示后上报 m.read，
+// 且不应对自己发的消息发回执。前端的「N 人已读」全靠这里。
+async function handleReceipt(c, request, token, room) {
+	if (!token) return fail(401, "还没入座");
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const eventId = clean(body.eventId, 120);
+	if (!isEventId(eventId)) return fail(400, "消息标识不对");
+	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/receipt/m.read/${enc(eventId)}`, {
+		token,
+		method: "POST",
+		body: {},
+	});
+	if (!res.ok) {
+		const data = await res.json().catch(() => ({}));
+		return fail(res.status === 403 ? 403 : 502, data.error || "回执上报失败");
+	}
+	return json(200, { ok: true, id: eventId });
 }
 
 // 回应（reaction）：Matrix m.reaction，带 m.relates_to
@@ -1277,11 +1368,11 @@ async function handleReaction(c, request, token, room) {
 	}
 	const key = clean(body.key, 32);
 	const target = clean(body.eventId, 120);
-	if (!key || !/^\$[\w-]+$/.test(target)) return fail(400, "参数不对");
+	if (!key || !isEventId(target)) return fail(400, "参数不对");
 	const content = {
 		"m.relates_to": { rel_type: "m.annotation", event_id: target, key },
 	};
-	const txn = `rx-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+	const txn = clean(body.txnId, 80) || `rx-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 	const res = await mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/send/m.reaction/${txn}`, {
 		token,
 		method: "PUT",
@@ -2100,6 +2191,9 @@ export async function handleRequest(request, env = {}) {
 			out = await handleUpload(c, request, visitorToken);
 		} else if (path === "/api/typing" && request.method === "POST") {
 			out = await handleTyping(c, request, visitorToken, roomOf(c, url));
+		} else if (path === "/api/receipt" && request.method === "POST") {
+			const denied = await rateCheck(env, ip, "receipt");
+			out = denied ? fail(429, denied) : await handleReceipt(c, request, visitorToken, roomOf(c, url));
 		} else if (path === "/api/reaction" && request.method === "POST") {
 			out = await handleReaction(c, request, visitorToken, roomOf(c, url));
 		} else if (path === "/api/profile" && (request.method === "GET" || request.method === "POST")) {
