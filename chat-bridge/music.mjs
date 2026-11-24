@@ -2,19 +2,33 @@
  * 茶室点歌台 · 音乐聚合层
  *
  * 只做四件事：
- *   1. 搜歌（QQ 音乐 / 网易云 / 酷狗，统一成一份结构）
+ *   1. 搜歌（QQ 音乐 / 网易云 / 酷狗 / YouTube Music，统一成一份结构）
  *   2. 找可播音源（优先原平台，失败就按歌名 + 歌手 + 时长去别的平台对齐）
  *   3. 解析公开歌单（Playlist Out）
  *   4. 给跨域/防盗链的音频做签名代理
  *
+ * 取链在官方接口之外接入 CYAPI 聚合源做竞速与兜底：
+ *   - QQ：vkeys（主，快）与 CYAPI 320k（备，带歌词）谁先返回用谁；
+ *   - 酷狗：官方 play/getdata 若命中 30 秒试听（is_free_part），自动降级 CYAPI 拿完整音源（320k/FLAC）。
  * 所有上游都是公开接口，Worker 只做转发与归一化，不落盘、不存音频。
  */
 
 const UA =
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";
 const enc = encodeURIComponent;
-const SOURCES = new Set(["qq", "netease", "kugou", "local"]);
-const SOURCE_LABEL = { qq: "QQ 音乐", netease: "网易云", kugou: "酷狗" };
+const SOURCES = new Set(["qq", "netease", "kugou", "youtube", "local"]);
+const SOURCE_LABEL = { qq: "QQ 音乐", netease: "网易云", kugou: "酷狗", youtube: "YouTube Music" };
+
+// CYAPI 聚合源：仅服务端用于解析直链/歌词，从不下发到浏览器。
+// 凭据不写进源码（仓库公开），由部署环境通过 CYAPI_KEY 注入，便于随时轮换。
+const CYAPI_BASE = "https://cyapi.top/API";
+let cyapiKey = "";
+export function setCyapiKey(value) {
+	cyapiKey = String(value || "").trim();
+}
+function cyapiKeyOf() {
+	return cyapiKey;
+}
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, Number(n) || 0));
 const text = (v, max) =>
@@ -72,11 +86,13 @@ export function normalizeTrack(raw, fallback = {}) {
 
 // ── 网络 ─────────────────────────────────────────────────────────────
 
-async function fetchWithTimeout(url, { headers = {}, timeout = 8000, redirect = "follow" } = {}) {
+async function fetchWithTimeout(url, { headers = {}, timeout = 8000, redirect = "follow", method = "GET", body } = {}) {
 	const ctrl = new AbortController();
 	const timer = setTimeout(() => ctrl.abort(), timeout);
 	try {
 		return await fetch(url, {
+			method,
+			body,
 			headers: { "User-Agent": UA, ...headers },
 			redirect,
 			signal: ctrl.signal,
@@ -152,9 +168,16 @@ async function searchNetease(q, limit) {
 }
 
 async function searchKugou(q, limit) {
-	// 移动端 CDN 只有 http 证书，服务端请求不受页面 mixed content 影响
-	const url = `http://mobilecdn.kugou.com/api/v3/search/song?keyword=${enc(q)}&page=1&pagesize=${limit}&showtype=1`;
-	const data = await getJson(url, { Accept: "application/json" });
+	// 主通道：移动端 CDN（自带高清封面，不被频控拦）
+	const primary = `http://mobilecdn.kugou.com/api/v3/search/song?keyword=${enc(q)}&page=1&pagesize=${limit}&showtype=1`;
+	let data;
+	try {
+		data = await getJson(primary, { Accept: "application/json" });
+	} catch (_) {
+		// 备用通道：complexsearch，主通道偶发异常时回退
+		const fallback = `https://complexsearch.kugou.com/v2/search/song?keyword=${enc(q)}&page=1&pagesize=${limit}&bitrate=0&isfuse=0`;
+		data = await getJson(fallback, { Accept: "application/json" });
+	}
 	const list = data?.data?.info || [];
 	return list
 		.map((s) => {
@@ -172,7 +195,77 @@ async function searchKugou(q, limit) {
 		.filter((t) => t && t.sourceId);
 }
 
-const SEARCHERS = { qq: searchQQ, netease: searchNetease, kugou: searchKugou };
+async function searchYouTube(q, limit) {
+	// YouTube Music 内部 InnerTube Web API。
+	// 注意：文章里那个 params（只看 Songs）过滤串已被官方改动，现在只会返回专辑，
+	// 所以这里不传 params，直接从返回的 itemSectionRenderer 里挑音乐条目。
+	const body = {
+		context: {
+			client: { clientName: "WEB_REMIX", clientVersion: "1.20240101.01.00", hl: "zh-CN", gl: "US" },
+		},
+		query: q,
+	};
+	const res = await fetchWithTimeout("https://music.youtube.com/youtubei/v1/search?prettyPrint=false", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Referer: "https://music.youtube.com/",
+			Origin: "https://music.youtube.com",
+			Accept: "application/json",
+		},
+		body: JSON.stringify(body),
+		timeout: 10000,
+	});
+	if (!res.ok) throw new Error(`YouTube Music HTTP ${res.status}`);
+	const data = await res.json();
+	const sections = data?.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents || [];
+	const runText = (x) => (Array.isArray(x?.runs) ? x.runs.map((y) => y.text).join("") : x?.simpleText || "");
+	const durSec = (s) => {
+		const parts = String(s || "").split(":").map(Number);
+		if (parts.some((n) => !Number.isFinite(n))) return 0;
+		return parts.reduce((acc, n) => acc * 60 + n, 0);
+	};
+	const out = [];
+	for (const sec of sections) {
+		const containers = [
+			...(sec?.itemSectionRenderer?.contents || []),
+			...(sec?.musicShelfRenderer?.contents || []),
+		];
+		for (const item of containers) {
+			const r = item?.musicResponsiveListItemRenderer || item?.songRenderer;
+			if (!r) continue;
+			const videoId =
+				r.playlistItemData?.videoId ||
+				r.navigationEndpoint?.watchEndpoint?.videoId ||
+				r.videoId;
+			if (!videoId) continue;
+			const cols = r.flexColumns || [];
+			const title = runText(cols[0]?.musicResponsiveListItemFlexColumnRenderer?.text) || runText(r.title);
+			const metaRuns = cols[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs || [];
+			// 只收「歌曲」，把普通视频 / 歌单混排结果挡在外面
+			if (!metaRuns.some((x) => x.text === "歌曲")) continue;
+			const artist =
+				metaRuns.find((x) => x.text && x.text !== "歌曲" && x.text !== " • " && !/播放次数|次播放/.test(x.text))?.text || "";
+			const thumbs = r.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails || r.thumbnail?.thumbnails || [];
+			const thumb = thumbs.slice(-1)[0]?.url || "";
+			const dur = durSec(r.lengthText?.simpleText) || Number(r.lengthSeconds || 0);
+			const t = normalizeTrack({
+				source: "youtube",
+				sourceId: videoId,
+				title,
+				artist,
+				durationSec: dur,
+				cover: /^https:\/\//.test(thumb) ? thumb : "",
+			});
+			if (t) out.push(t);
+			if (out.length >= limit) break;
+		}
+		if (out.length >= limit) break;
+	}
+	return out;
+}
+
+const SEARCHERS = { qq: searchQQ, netease: searchNetease, kugou: searchKugou, youtube: searchYouTube };
 
 export async function searchMusic(source, query, limit = 12) {
 	const q = text(query, 60);
@@ -187,6 +280,7 @@ export async function searchMusic(source, query, limit = 12) {
 			searchQQ(q, Math.min(limit, 8)),
 			searchNetease(q, Math.min(limit, 8)),
 			searchKugou(q, Math.min(limit, 8)),
+			searchYouTube(q, Math.min(limit, 8)),
 		]);
 		const buckets = results.map((r) => (r.status === "fulfilled" ? r.value : []));
 		// 轮流出结果，避免第一屏全是同一个平台
@@ -227,8 +321,26 @@ function baseTitle(s) {
 		.trim();
 }
 
+// 跨平台对齐时统一繁简体与常见中英别名，避免「周杰倫」对不上「周杰伦 / Jay Chou」
+const SIMPLIFIED_MAP = {
+	倫: "伦", 傑: "杰", 會: "会", 愛: "爱", 頭: "头", 時: "时", 無: "无", 專: "专",
+	輯: "辑", 樂: "乐", 聲: "声", 點: "点", 國: "国", 華: "华", 風: "风", 雲: "云",
+	夢: "梦", 離: "离", 開: "开", 關: "关", 來: "来", 個: "个", 為: "为", 與: "与",
+	這: "这", 說: "说", 對: "对", 發: "发", 現: "现", 經: "经", 過: "过", 還: "还",
+	從: "从", 亞: "亚", 爾: "尔", 內: "内", 萬: "万", 復: "复", 興: "兴", 盡: "尽",
+};
+const ARTIST_ALIASES = [
+	[/^(?:周杰伦|周杰倫|jay\s*chou)$/i, "周杰伦"],
+	[/^(?:林俊杰|林俊傑|jj\s*lin)$/i, "林俊杰"],
+	[/^(?:陈奕迅|陳奕迅|eason\s*chan)$/i, "陈奕迅"],
+	[/^(?:aimer|エメ)$/i, "aimer"],
+	[/^(?:五月天|mayday)$/i, "五月天"],
+	[/^(?:蔡依林|蔡依琳|jolin\s*tsai)$/i, "蔡依林"],
+];
 function norm(s) {
-	return baseTitle(s)
+	let v = baseTitle(s).replace(/[倫傑會愛頭時無專輯樂聲點國華風雲夢離開關來個為與這說對發現經過還從亞爾內萬復興盡]/g, (ch) => SIMPLIFIED_MAP[ch] || ch);
+	for (const [re, to] of ARTIST_ALIASES) if (re.test(v.trim())) v = to;
+	return v
 		.toLowerCase()
 		.replace(/[\s\-_.·・,，、/\\&+~!！?？:：'"“”‘’()（）[\]【】]/g, "")
 		.replace(/feat\.?.*$/, "")
@@ -277,17 +389,50 @@ function scoreCandidate(want, cand) {
 
 // ── 取直链 ───────────────────────────────────────────────────────────
 
+/** 从 vkeys 取 QQ 直链（主源，快） */
+async function vkeysQqLink(id, quality = 6) {
+	const data = await getJson(`https://api.vkeys.cn/music/tencent/song/link?quality=${quality}&mid=${enc(id)}`, {}, 7000);
+	let url = String(data?.data?.url || "").replace(/^http:/i, "https:");
+	if (!/^https:\/\//i.test(url)) throw new Error("vkeys 没有返回直链");
+	return url;
+}
+
+/** 从 CYAPI 取 QQ 直链（备用源，320k/FLAC，附带歌词） */
+async function cyapiQqLink(id, quality = "320") {
+	const key = cyapiKeyOf();
+	if (!key) throw new Error("CYAPI 凭据未配置");
+	const data = await getJson(
+		`${CYAPI_BASE}/qq_music.php?type=json&quality=${quality}&mid=${enc(id)}&apikey=${enc(key)}`,
+		{},
+		9000,
+	);
+	let url = String(data?.url || "").replace(/^http:/i, "https:");
+	if (!/^https:\/\//i.test(url)) throw new Error("CYAPI 没有返回直链");
+	const lrc = String(data?.lyric?.text || "");
+	if (lrc) cacheSet(`lrc:qq:${id}`, lrc, 60 * 60_000);
+	return url;
+}
+
 async function qqLink(id) {
 	const key = `link:qq:${id}`;
 	const hit = cacheGet(key);
 	if (hit) return hit;
-	for (const quality of [6, 2]) {
+
+	// 双源竞速：谁先拿到有效直链用谁。CYAPI 返回 320k 且带歌词，vkeys 延迟更低。
+	const winner = await Promise.any([
+		vkeysQqLink(id, 6),
+		cyapiQqLink(id, "320"),
+	]).catch(() => "");
+	if (winner) return cacheSet(key, winner, 15 * 60_000);
+
+	// 两个源都失败时再逐个低码率兜底，尽量把歌唱出来
+	for (const step of [
+		() => vkeysQqLink(id, 2),
+		() => cyapiQqLink(id, "128"),
+	]) {
 		try {
-			const data = await getJson(`https://api.vkeys.cn/music/tencent/song/link?quality=${quality}&mid=${enc(id)}`, {}, 7000);
-			let url = String(data?.data?.url || "");
-			if (!url) continue;
-			url = url.replace(/^http:/i, "https:");
-			if (/^https:\/\//i.test(url)) return cacheSet(key, url, 15 * 60_000);
+			const url = await step();
+			if (url) return cacheSet(key, url, 15 * 60_000);
 		} catch (_) {}
 	}
 	return "";
@@ -341,6 +486,8 @@ async function kugouLink(hash) {
 	const key = `link:kugou:${hash}`;
 	const hit = cacheGet(key);
 	if (hit) return hit;
+
+	// 先走官方免费接口；VIP 歌会返回 is_free_part=1 并截断成 30 秒试听
 	const mid = String(Math.floor(Math.random() * 900000 + 100000));
 	const url = `https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${enc(hash)}&dfid=-&mid=${mid}&platid=4&_=${Date.now()}`;
 	try {
@@ -349,8 +496,28 @@ async function kugouLink(hash) {
 			Accept: "application/json",
 			Cookie: `kg_mid=${mid}; kg_dfid=${mid}`,
 		});
+		const partial = Number(data?.data?.is_free_part) === 1;
 		const raw = String(data?.data?.play_url || data?.data?.play_backup_url || "");
-		if (/^https?:\/\//i.test(raw)) return cacheSet(key, raw.replace(/^http:/i, "https:"), 10 * 60_000);
+		if (!partial && /^https?:\/\//i.test(raw)) {
+			return cacheSet(key, raw.replace(/^http:/i, "https:"), 10 * 60_000);
+		}
+	} catch (_) {}
+
+	// 官方源不通或只有试听片段 → CYAPI 拿完整音源（320k / FLAC）
+	const apikey = cyapiKeyOf();
+	if (!apikey) return "";
+	try {
+		const data = await getJson(
+			`${CYAPI_BASE}/kugou.php?id=${enc(hash)}&apikey=${enc(apikey)}`,
+			{},
+			9000,
+		);
+		const raw = String(data?.data?.url || "");
+		if (/^https?:\/\//i.test(raw)) {
+			const lrc = String(data?.data?.lyrics || "");
+			if (lrc) cacheSet(`lrc:kugou:${hash}`, lrc, 60 * 60_000);
+			return cacheSet(key, raw, 15 * 60_000);
+		}
 	} catch (_) {}
 	return "";
 }

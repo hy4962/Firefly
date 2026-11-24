@@ -13,7 +13,16 @@
  * QQ / 网易云 / 酷狗公开接口，播放前现取直链，跨域或防盗链时走签名代理。
  */
 
-import { normalizeTrack, resolveTrack, searchMusic, importPlaylist, proxyUrl, verifyProxy, proxyAudio } from "./music.mjs";
+import {
+	normalizeTrack,
+	resolveTrack,
+	searchMusic,
+	importPlaylist,
+	proxyUrl,
+	verifyProxy,
+	proxyAudio,
+	setCyapiKey,
+} from "./music.mjs";
 
 const DEFAULTS = {
 	MATRIX_HS: "https://matrix.0dm.cn",
@@ -2372,7 +2381,7 @@ async function handleJukeSearch(url, ip, env) {
 	const q = clean(url.searchParams.get("q"), 60);
 	if (!q) return fail(400, "想听什么？先输入歌名或歌手");
 	const rawSource = clean(url.searchParams.get("source"), 12) || "all";
-	const source = rawSource === "all" || ["qq", "netease", "kugou"].includes(rawSource) ? rawSource : "all";
+	const source = rawSource === "all" || ["qq", "netease", "kugou", "youtube"].includes(rawSource) ? rawSource : "all";
 	const limit = Math.max(4, Math.min(20, Number(url.searchParams.get("limit")) || 12));
 	try {
 		const items = await searchMusic(source, q, limit);
@@ -2671,6 +2680,8 @@ function requestOrigin(request) {
 // ── 入口 ────────────────────────────────────────────────────────────
 export async function handleRequest(request, env = {}) {
 	const c = cfg(env);
+	// CYAPI 联调凭据：环境变量优先，便于随时轮换；未设置时用内置默认值
+	if (env.CYAPI_KEY) setCyapiKey(env.CYAPI_KEY);
 	const url = new URL(request.url);
 	const path = url.pathname.replace(/\/+$/, "") || "/";
 	const origin = request.headers.get("origin") || "";

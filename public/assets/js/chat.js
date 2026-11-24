@@ -2503,6 +2503,7 @@
 			if (src === "qq") return "QQ";
 			if (src === "netease") return "网易云";
 			if (src === "kugou") return "酷狗";
+			if (src === "youtube") return "YouTube";
 			if (src === "local" || src === "site") return "本站";
 			const p = String(t?.platform || "").toLowerCase();
 			if (p.includes("apple")) return "Apple";
