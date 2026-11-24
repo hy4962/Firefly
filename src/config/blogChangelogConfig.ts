@@ -34,9 +34,9 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		title: "液态玻璃顶栏",
 		date: "2026-11-24",
 		summary:
-			"顶栏的玻璃岛不再只是毛玻璃了：背后壁纸会被 SVG 噪声位移揉出波纹；菜单项也从一排小胶囊改成一整块玻璃 + 平铺文字，只有当前项是浅色实心胶囊",
+			"顶栏的玻璃胶囊叠上了 SVG 噪声折射；菜单项从套娃小胶囊改成平铺文字，最后连那层外壳也直接去掉，只剩当前项一枚浅色胶囊",
 		description:
-			"按 Muyu 那篇教程给三块胶囊补上了 Apple Liquid Glass 的折射层。原理是把 backdrop-filter 的磨砂结果交给同一个元素上的 filter:url(#...) 做位移：造分形噪声 → 高斯磨平 → 线性拉伸拉满量程 → feDisplacementMap 挪像素。最容易踩的坑是 backdrop root——本体一旦带 backdrop-filter，内部搜索面板和下拉菜单的毛玻璃就废了，所以磨砂和折射全部下沉到 ::before，本体只留底色、内衬白圈和投影；再补 clip-path 收拾滤镜溢出的方角、will-change 治淡入闪烁。实现全在页脚配置里：0×0 SVG 滤镜 + 240 行纯新增 CSS/脚本，上游主题一个文件没碰。菜单区最后又按参考站收了一刀：普通项撤掉自己的底色、描边和玻璃层，改成平铺文字；hover 只留淡白洗过，当前项才是那枚浅色实心胶囊，两个自定义入口也退回主题色文字。默认 10px 模糊 / 120 折射 / 0.01 波纹密度（面板模糊保底 16px），三个 localStorage 键沿用教程的命名，想换手感直接改值刷新即可。",
+			"按 Muyu 那篇教程给三块胶囊补上了 Apple Liquid Glass 的折射层。原理是把 backdrop-filter 的磨砂结果交给同一个元素上的 filter:url(#...) 做位移：造分形噪声 → 高斯磨平 → 线性拉伸拉满量程 → feDisplacementMap 挪像素。最容易踩的坑是 backdrop root——本体一旦带 backdrop-filter，内部搜索面板和下拉菜单的毛玻璃就废了，所以磨砂和折射全部下沉到 ::before，本体只留底色、内衬白圈和投影；再补 clip-path 收拾滤镜溢出的方角、will-change 治淡入闪烁。实现全在页脚配置里：0×0 SVG 滤镜 + 277 行纯新增 CSS/脚本，上游主题一个文件没碰。菜单区最后连外壳也去掉了：菜单岛的底色、边框、投影和玻璃伪元素全部清空，普通项撤掉自己的小胶囊底色/描边/玻璃层，改成文字直接浮在壁纸上；hover 只留淡白洗过，当前项才是那枚浅色实心胶囊，两个自定义入口也退回主题色文字。没有底色垫底，补了一圈很淡的文字光晕保证可读。默认 10px 模糊 / 120 折射 / 0.01 波纹密度（面板模糊保底 16px），三个 localStorage 键沿用教程的命名，想换手感直接改值刷新即可。",
 		items: [
 			{
 				category: "视觉",
@@ -48,7 +48,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 			},
 			{
 				category: "实现",
-				text: "FooterConfig.html 末尾追加 0×0 SVG 滤镜（feTurbulence → feGaussianBlur → feComponentTransfer 斜率 3.5/截距 -1.25 → feDisplacementMap）与配置层 CSS，本体 backdrop-filter 全部撤掉；追加高特异性覆盖把菜单项的小胶囊底色/描边/玻璃层清掉，只留当前项浅色实心；240 行纯新增、0 删除",
+				text: "FooterConfig.html 末尾追加 0×0 SVG 滤镜（feTurbulence → feGaussianBlur → feComponentTransfer 斜率 3.5/截距 -1.25 → feDisplacementMap）与配置层 CSS，本体 backdrop-filter 全部撤掉；追加高特异性覆盖清掉菜单项的小胶囊与整个菜单岛外壳，只留当前项浅色实心 + 文字光晕；277 行纯新增、0 删除",
 			},
 			{
 				category: "维护",
