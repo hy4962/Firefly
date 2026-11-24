@@ -35,7 +35,8 @@ export const friendsConfig: FriendLink[] = [
 	},
 	{
 		title: "折腾进行时",
-		imgurl: "https://www.9ll.uk/assets/images/kirino.webp",
+		// 本站头像改用本地公共副本（2026-11-24 换新图），与茶室页本条目共用同一份文件，换头像时两边同步
+		imgurl: "/assets/images/kirino.webp",
 		desc: "生命不息，折腾不止！",
 		siteurl: "https://www.9ll.uk",
 		rss: "/rss.xml", // 本站 RSS，使自己的文章进入朋友圈时间线并标记"本站主理人"
