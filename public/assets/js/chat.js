@@ -13,6 +13,7 @@
 	};
 	const API_BASE = appData("api");
 	const SITE_NAME = appData("site");
+	const WALINE_BASE = appData("waline");
 
 		const KEY = "__teaRoomRuntime";
 		const params0 = new URLSearchParams(location.search);
@@ -916,11 +917,39 @@
 		// ── 个人资料 ─────────────────────────────────────────────
 		const profileDialog = document.querySelector("[data-tea-profile-dialog]");
 		const profileForm = document.querySelector("[data-tea-profile-form]");
+
+		// 推送三档；老资料里只有 push 布尔值，按「仅提及」兼容
+		const PUSH_MODES = ["off", "mention", "all"];
+		const pushModeOf = (v) => {
+			const m = v && v.pushMode;
+			if (PUSH_MODES.includes(m)) return m;
+			return v && v.push === true ? "mention" : "off";
+		};
+		const paintPushSeg = () => {
+			const seg = document.querySelector("[data-tea-push-seg]");
+			if (!seg || !profileForm) return;
+			const mode = profileForm.elements.pushMode.value || "off";
+			for (const b of seg.querySelectorAll("[data-push-mode]")) {
+				const on = b.dataset.pushMode === mode;
+				b.classList.toggle("is-active", on);
+				b.setAttribute("aria-pressed", on ? "true" : "false");
+			}
+		};
+		// 站点地址：显示去掉协议和尾斜杠的主机部分，跳转时补 https
+		const siteLabel = (raw) => String(raw || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+		const siteHref = (raw) => {
+			const s = String(raw || "").trim();
+			if (!s) return "";
+			return /^https?:\/\//i.test(s) ? s : `https://${s}`;
+		};
+
 		const profilePaint = () => {
 			if (!profileForm) return;
 			const nick = profileForm.elements.nick.value.trim() || "还没填昵称";
 			const status = profileForm.elements.status.value.trim() || "在线";
 			const avatar = profileForm.elements.avatar.value.trim();
+			const signature = profileForm.elements.signature.value.trim();
+			const website = profileForm.elements.website.value.trim();
 			const av = document.querySelector("[data-tea-profile-avatar]");
 			const name = document.querySelector("[data-tea-profile-name]");
 			const st = document.querySelector("[data-tea-profile-status]");
@@ -935,6 +964,24 @@
 			}
 			if (name) name.textContent = nick;
 			if (st) st.textContent = status;
+
+			// 右上角：签名摘要 + 站点链接
+			const signline = document.querySelector("[data-tea-profile-signline]");
+			if (signline) signline.textContent = signature || "暂未填写个人简介";
+			const link = document.querySelector("[data-tea-profile-sitelink]");
+			const host = document.querySelector("[data-tea-profile-sitehost]");
+			if (link && host) {
+				link.hidden = !website;
+				if (website) {
+					link.href = siteHref(website);
+					host.textContent = siteLabel(website);
+				}
+			}
+
+			const badge = document.querySelector("[data-tea-profile-badge]");
+			if (badge) badge.hidden = !(rt.visitor && rt.visitor.admin);
+			const reset = document.querySelector("[data-tea-avatar-reset]");
+			if (reset) reset.hidden = !avatar;
 		};
 		const openProfile = async () => {
 			if (!rt.visitor) {
@@ -949,13 +996,29 @@
 			profileForm.elements.avatar.value = v.avatar || "";
 			profileForm.elements.status.value = v.status || "";
 			profileForm.elements.emailNotify.checked = v.emailNotify !== false;
-			profileForm.elements.push.checked = v.push === true;
+			profileForm.elements.pushMode.value = pushModeOf(v);
+			const grid = document.querySelector("[data-tea-status-grid]");
+			if (grid) {
+				for (const b of grid.querySelectorAll("[data-tea-status]")) {
+					b.classList.toggle("is-active", b.dataset.teaStatus === (v.status || ""));
+				}
+			}
+			paintPushSeg();
 			profilePaint();
+			// Waline 个人中心直接带上当前 token，省得再登一次
+			const center = document.querySelector("[data-tea-waline-center]");
+			if (center) {
+				const w = walineUser();
+				center.href =
+					WALINE_BASE && w && w.token
+						? `${WALINE_BASE.replace(/\/$/, "")}/ui/profile?token=${encodeURIComponent(w.token)}`
+						: "/guestbook/";
+			}
 			if (typeof profileDialog.showModal === "function") profileDialog.showModal();
 		};
 		const closeProfile = () => profileDialog && profileDialog.close();
 		if (profileForm) {
-			for (const name of ["nick", "status", "avatar"]) {
+			for (const name of ["nick", "status", "avatar", "signature", "website"]) {
 				profileForm.elements[name]?.addEventListener("input", profilePaint);
 			}
 			const grid = document.querySelector("[data-tea-status-grid]");
@@ -968,14 +1031,69 @@
 					profilePaint();
 				});
 			}
-			profileForm.elements.push?.addEventListener("change", async (e) => {
-				if (!e.target.checked) return;
+			// 推送三档：选非「关闭」前先要权限，被拒就退回关闭
+			document.querySelector("[data-tea-push-seg]")?.addEventListener("click", async (e) => {
+				const b = e.target.closest("[data-push-mode]");
+				if (!b) return;
+				const mode = b.dataset.pushMode;
+				const err = document.querySelector("[data-tea-profile-error]");
+				if (err) err.hidden = true;
+				if (mode !== "off") {
+					if (!("Notification" in window)) {
+						if (err) {
+							err.textContent = "这个浏览器不支持桌面通知";
+							err.hidden = false;
+						}
+						return;
+					}
+					const p = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+					if (p !== "granted") {
+						if (err) {
+							err.textContent = "浏览器没给通知权限，先在地址栏的站点设置里允许通知。";
+							err.hidden = false;
+						}
+						profileForm.elements.pushMode.value = "off";
+						paintPushSeg();
+						return;
+					}
+				}
+				profileForm.elements.pushMode.value = mode;
+				paintPushSeg();
+			});
+			document.querySelector("[data-tea-push-test]")?.addEventListener("click", async () => {
+				const err = document.querySelector("[data-tea-profile-error]");
+				if (err) err.hidden = true;
 				if (!("Notification" in window)) {
-					e.target.checked = false;
+					if (err) {
+						err.textContent = "这个浏览器不支持桌面通知";
+						err.hidden = false;
+					}
 					return;
 				}
-				const p = await Notification.requestPermission();
-				if (p !== "granted") e.target.checked = false;
+				const p = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+				if (p !== "granted") {
+					if (err) {
+						err.textContent = "浏览器没给通知权限，先在地址栏的站点设置里允许通知。";
+						err.hidden = false;
+					}
+					return;
+				}
+				try {
+					new Notification("茶室测试推送", {
+						body: "看到这条就说明推送通了，有人在茶室 @ 你时会这样提醒。",
+						tag: "tea-push-test",
+					});
+				} catch (_) {
+					if (err) {
+						err.textContent = "推送没发出去，可能是系统级通知被关掉了，或者浏览器要求走 Service Worker。";
+						err.hidden = false;
+					}
+				}
+			});
+			document.querySelector("[data-tea-avatar-reset]")?.addEventListener("click", () => {
+				const v = rt.visitor || {};
+				profileForm.elements.avatar.value = v.defaultAvatar || "";
+				profilePaint();
 			});
 			document.querySelector("[data-tea-profile-close]")?.addEventListener("click", closeProfile);
 			document.querySelector("[data-tea-profile-cancel]")?.addEventListener("click", closeProfile);
@@ -1009,7 +1127,7 @@
 						avatarUrl: profileForm.elements.avatar.value.trim(),
 						status: profileForm.elements.status.value.trim(),
 						emailNotify: profileForm.elements.emailNotify.checked,
-						push: profileForm.elements.push.checked,
+						pushMode: profileForm.elements.pushMode.value,
 					};
 					if (!body.nick) throw new Error("昵称不能为空");
 				const data = await api("/api/profile", { method: "POST", body: JSON.stringify(body) });
@@ -1020,7 +1138,8 @@
 						website: body.website,
 						status: body.status,
 						emailNotify: body.emailNotify,
-						push: body.push,
+						pushMode: body.pushMode,
+						push: body.pushMode !== "off",
 					});
 					if (data.user?.avatar) v.avatar = data.user.avatar;
 					rt.visitor = v;
@@ -1085,15 +1204,24 @@
 			if (!v || !m || !m.id || m.sender === v.id) return;
 			const text = String(m.text || "");
 			const hit = (v.nick && text.includes("@" + v.nick)) || (m.reply && m.reply.who === v.nick);
-			if (!hit) return;
-			if (notices.some((n) => n.id === m.id)) return;
-			notices.unshift({ id: m.id, nick: m.nick || "茶友", text: text.slice(0, 100), ts: m.ts || Date.now(), room: rt.room, read: false });
-			notices = notices.slice(0, 30);
-			saveNotices();
-			renderNotices();
-			if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-				try { new Notification(`${m.nick || "茶友"} 提到了你`, { body: text.slice(0, 100) }); } catch (_) {}
+			// 通知中心只收 @ 和回复，别把每句话都塞进去
+			if (hit && !notices.some((n) => n.id === m.id)) {
+				notices.unshift({ id: m.id, nick: m.nick || "茶友", text: text.slice(0, 100), ts: m.ts || Date.now(), room: rt.room, read: false });
+				notices = notices.slice(0, 30);
+				saveNotices();
+				renderNotices();
 			}
+			// 桌面推送按三档来：全部消息 / 仅提及 / 关闭
+			const mode = pushModeOf(v);
+			if (mode === "off" || !document.hidden) return;
+			if (!("Notification" in window) || Notification.permission !== "granted") return;
+			if (mode === "mention" && !hit) return;
+			try {
+				new Notification(mode === "all" ? `${m.nick || "茶友"} 在茶室说话` : `${m.nick || "茶友"} 提到了你`, {
+					body: text.slice(0, 100),
+					tag: m.id,
+				});
+			} catch (_) {}
 		};
 		const notifyBell = q("[data-tea-notify-toggle]");
 		const notifyPop = q("[data-tea-notify]");
@@ -1793,6 +1921,10 @@
 				email: extra.email || "",
 				website: extra.website || "",
 				token: res.token,
+				// 留言板管理员（站长）在资料卡上挂个认证角标
+				admin: !!res.user.admin,
+				// 入座时的那张头像，作为「恢复默认」的落点
+				defaultAvatar: res.user.avatar || "",
 				// 只有走留言板凭证开出来的座位才算 SSO 绑定：
 				// 昵称表单里手填的邮箱不算，免得留言板没登录时把人踢下线。
 				sso: res.waline && res.waline.token ? "waline" : "",

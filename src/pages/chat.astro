@@ -9,6 +9,9 @@ const description = "一个连着 Matrix 公共大厅的聊天室，消息会同
 // 调试时可用 ?api=http://127.0.0.1:8787 覆盖，方便本地联调。
 const CHAT_API = "https://tea.0dm.cn";
 
+// 留言板地址：资料弹窗里的「Waline 个人中心」直接带 token 跳过去
+const WALINE_SERVER = "https://waline.0dm.cn";
+
 // 站点署名，后缀会拼到访客昵称后面同步到大厅
 const SITE_NAME = "折腾进行时";
 
@@ -34,6 +37,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		id="tea-app"
 		data-tea-app
 		data-api={CHAT_API}
+		data-waline={WALINE_SERVER}
 		data-site={SITE_NAME}
 		data-peers={JSON.stringify(peers)}
 		data-self-site={JSON.stringify(selfSite)}
@@ -570,7 +574,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			<header class="tea-dialog__head">
 				<div>
 					<h3 id="tea-profile-title">个人资料</h3>
-					<p class="tea-dialog__desc">修改后实时同步至在线成员列表与后续消息。</p>
+					<p class="tea-dialog__desc">修改后将实时同步至在线成员列表与后续消息。</p>
 				</div>
 				<button type="button" class="tea-icon-btn tea-dialog__close" data-tea-profile-close aria-label="关闭">
 					<Icon is:inline name="material-symbols:close-rounded" />
@@ -580,63 +584,91 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			<div class="tea-profile__preview">
 				<div class="tea-dialog__avatar" data-tea-profile-avatar>?</div>
 				<div class="tea-profile__preview-copy">
-					<b data-tea-profile-name>HY</b>
+					<span class="tea-profile__nameline">
+						<b data-tea-profile-name>HY</b>
+						<em class="tea-profile__badge" data-tea-profile-badge hidden>认证</em>
+					</span>
 					<span data-tea-profile-status>在线</span>
 				</div>
-				<span class="tea-profile__online">在线</span>
+				<div class="tea-profile__meta">
+					<span data-tea-profile-signline>暂未填写个人简介</span>
+					<a href="#" target="_blank" rel="noopener" data-tea-profile-sitelink hidden>
+						<Icon is:inline name="material-symbols:link-rounded" />
+						<span data-tea-profile-sitehost></span>
+					</a>
+				</div>
 			</div>
 
 			<div class="tea-profile__grid">
 				<section class="tea-profile__section">
-					<h4>基本资料</h4>
-					<label class="tea-field">
-						<span>展示昵称</span>
-						<input type="text" name="nick" maxlength="20" placeholder="你的昵称" required />
-					</label>
-					<label class="tea-field">
-						<span>个性签名 <em>最多 80 字</em></span>
-						<input type="text" name="signature" maxlength="80" placeholder="写一句简短介绍" />
-					</label>
-					<label class="tea-field">
-						<span>个人主页 <em>选填</em></span>
-						<input type="text" name="website" maxlength="120" placeholder="https://你的博客" />
-					</label>
-				</section>
-
-				<section class="tea-profile__section">
-					<h4>主页与头像</h4>
-					<label class="tea-field">
-						<span>自定义头像链接 <em>图片直链</em></span>
-						<input type="url" name="avatar" maxlength="500" placeholder="https://example.com/avatar.png" />
-					</label>
-					<p class="tea-profile__hint">支持 https 图片直链，保存时会自动上传成 Matrix 头像。</p>
-				</section>
-
-				<section class="tea-profile__section">
-					<h4>个性状态</h4>
-					<div class="tea-status-grid" data-tea-status-grid>
-						{["听歌中","摸鱼中","写代码","改Bug中","学习中","工作中","忙碌中","开会中","码字中","思考中","游戏中","看番中"].map((s) => (
-							<button type="button" data-tea-status={s}>{s}</button>
-						))}
+					<h4><i></i>基本资料</h4>
+					<div class="tea-profile__panel">
+						<label class="tea-field">
+							<span>展示昵称</span>
+							<input type="text" name="nick" maxlength="20" placeholder="你的昵称" required />
+						</label>
+						<label class="tea-field">
+							<span>个性签名 <em>（可选，最多 80 字）</em></span>
+							<input type="text" name="signature" maxlength="80" placeholder="写一句简短介绍，别人点你头像时可见" />
+						</label>
 					</div>
-					<label class="tea-field">
-						<span>自定义状态 <em>最多 40 字</em></span>
-						<input type="text" name="status" maxlength="40" placeholder="点击上面的状态，或自己写" />
-					</label>
 				</section>
 
 				<section class="tea-profile__section">
-					<h4>个人设置</h4>
-					<label class="tea-switch">
-						<span><b>离线 @ 与回复提醒</b><small>有人提到你时记录到通知中心</small></span>
-						<input type="checkbox" name="emailNotify" checked />
-						<i></i>
-					</label>
-					<label class="tea-switch">
-						<span><b>浏览器推送</b><small>页面在后台时也能收到提醒</small></span>
-						<input type="checkbox" name="push" />
-						<i></i>
-					</label>
+					<h4><i></i>主页与头像</h4>
+					<div class="tea-profile__panel">
+						<label class="tea-field">
+							<span>个人主页 <em>（可选）</em></span>
+							<input type="text" name="website" maxlength="120" placeholder="0dm.cn" />
+						</label>
+						<div class="tea-field">
+							<span class="tea-field__head">
+								自定义头像链接 <em>（可选）</em>
+								<button type="button" class="tea-profile__reset" data-tea-avatar-reset hidden>恢复默认</button>
+							</span>
+							<input type="url" name="avatar" maxlength="500" placeholder="https://example.com/avatar.png" aria-label="自定义头像链接" />
+						</div>
+						<p class="tea-profile__hint">支持 https 图片直链，保存时会自动上传成 Matrix 头像。</p>
+					</div>
+				</section>
+
+				<section class="tea-profile__section">
+					<h4><i></i>个性状态</h4>
+					<div class="tea-profile__panel">
+						<div class="tea-status-grid" data-tea-status-grid>
+							{["听歌中","摸鱼中","写代码","改Bug中","学习中","工作中","忙碌中","开会中","码字中","思考中","游戏中","看番中"].map((s) => (
+								<button type="button" data-tea-status={s}>{s}</button>
+							))}
+						</div>
+						<label class="tea-field">
+							<span>自定义状态 <em>（最多 40 字）</em></span>
+							<input type="text" name="status" maxlength="40" placeholder="点击上面的状态，或自己写" />
+						</label>
+					</div>
+				</section>
+
+				<section class="tea-profile__section">
+					<h4><i></i>个人设置</h4>
+					<div class="tea-profile__panel">
+						<label class="tea-switch">
+							<span><b>离线 @ 与回复邮件提醒</b><small>不在线时有人 @ 或回复你，将记录到通知中心</small></span>
+							<input type="checkbox" name="emailNotify" checked />
+							<i></i>
+						</label>
+						<hr class="tea-profile__hr" />
+						<div class="tea-push">
+							<div class="tea-push__head">
+								<span class="tea-switch__copy"><b>浏览器推送</b><small>页面在后台时也能收到提醒</small></span>
+								<button type="button" class="tea-profile__reset" data-tea-push-test>发送测试推送</button>
+							</div>
+							<div class="tea-seg" data-tea-push-seg role="group" aria-label="浏览器推送范围">
+								<button type="button" data-push-mode="off">关闭</button>
+								<button type="button" data-push-mode="mention">仅提及</button>
+								<button type="button" data-push-mode="all">全部消息</button>
+							</div>
+							<input type="hidden" name="pushMode" value="off" />
+						</div>
+					</div>
 				</section>
 			</div>
 
@@ -644,10 +676,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<button type="button" class="tea-btn tea-btn--ghost tea-profile__logout" data-tea-profile-logout>
 					<Icon is:inline name="material-symbols:logout-rounded" /> 退出登录
 				</button>
-				<a class="tea-btn tea-btn--ghost" href="/guestbook/" target="_blank" rel="noopener">Waline 个人中心 ↗</a>
+				<a class="tea-btn tea-btn--ghost" href="/guestbook/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-tea-waline-center>Waline 个人中心 ↗</a>
 				<span class="tea-profile__spacer"></span>
 				<button type="button" class="tea-btn tea-btn--ghost" data-tea-profile-cancel>取消</button>
-				<button type="button" class="tea-btn tea-btn--primary" data-tea-profile-save>保存资料</button>
+				<button type="button" class="tea-btn tea-btn--primary tea-profile__save" data-tea-profile-save>保存资料</button>
 			</footer>
 			<p class="tea-dialog__error" data-tea-profile-error hidden></p>
 		</form>
@@ -1066,56 +1098,152 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-notify__empty { padding: 1rem 0.6rem; text-align: center; font-size: 0.72rem; color: var(--tea-muted); }
 
 	/* ── 个人资料弹窗 ─────────────────────────────────────── */
-	.tea-dialog.tea-profile { width: min(44rem, calc(100vw - 2rem)); }
+	.tea-dialog.tea-profile { width: min(56rem, calc(100vw - 2rem)); }
 	.tea-profile__inner { max-height: calc(100dvh - 3rem); overflow-y: auto; }
+
+	/* 顶部预览卡：头像 + 昵称/认证 + 状态，右侧放签名与站点 */
 	.tea-profile__preview {
 		display: flex;
 		align-items: center;
-		gap: 0.65rem;
-		padding: 0.6rem 0.7rem;
-		border-radius: 0.8rem;
-		background: color-mix(in oklch, var(--primary) 5%, transparent);
-		border: 1px solid var(--tea-line);
+		gap: 0.7rem;
+		padding: 0.7rem 0.85rem;
+		border-radius: 0.9rem;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.06));
 	}
-	.tea-profile__preview-copy { flex: 1; min-width: 0; display: grid; gap: 0.1rem; }
-	.tea-profile__preview-copy b { font-size: 0.86rem; }
-	.tea-profile__preview-copy span { font-size: 0.68rem; color: var(--tea-muted); }
-	.tea-profile__online { font-size: 0.64rem; color: #2f9e6b; }
+	.tea-profile__preview-copy { flex: 1; min-width: 0; display: grid; gap: 0.15rem; }
+	.tea-profile__nameline { display: flex; align-items: center; gap: 0.3rem; min-width: 0; }
+	.tea-profile__nameline b {
+		font-size: 0.9rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.tea-profile__badge {
+		flex: none;
+		font-style: normal;
+		font-size: 0.56rem;
+		line-height: 1;
+		padding: 0.2rem 0.32rem;
+		border-radius: 0.28rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 34%, transparent);
+		background: color-mix(in oklch, var(--primary) 18%, transparent);
+		color: color-mix(in oklch, var(--primary) 72%, currentColor);
+	}
+	.tea-profile__preview-copy > span:last-child { font-size: 0.68rem; color: var(--tea-muted); }
+	.tea-profile__meta {
+		display: grid;
+		gap: 0.22rem;
+		justify-items: end;
+		max-width: 46%;
+		text-align: right;
+	}
+	.tea-profile__meta > span {
+		max-width: 100%;
+		font-size: 0.68rem;
+		color: var(--tea-muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.tea-profile__meta a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.16rem;
+		max-width: 100%;
+		font-size: 0.68rem;
+		color: var(--tea-muted);
+		text-decoration: none;
+	}
+	.tea-profile__meta a:hover { color: var(--primary); }
+	.tea-profile__meta a svg { width: 0.8rem; height: 0.8rem; flex: none; }
+	.tea-profile__meta a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 	.tea-profile__grid {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 0.7rem;
+		gap: 0.85rem 1rem;
+		align-items: start;
 	}
-	.tea-profile__section {
-		display: grid;
-		gap: 0.5rem;
-		padding: 0.7rem;
-		border: 1px solid var(--tea-line);
-		border-radius: 0.8rem;
-		align-content: start;
-	}
+	.tea-profile__section { display: grid; gap: 0.42rem; min-width: 0; }
 	.tea-profile__section h4 {
 		margin: 0;
-		font-size: 0.76rem;
-		font-weight: 600;
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.78rem;
+		font-weight: 700;
 	}
+	.tea-profile__section h4 i {
+		width: 0.18rem;
+		height: 0.82rem;
+		border-radius: 999px;
+		background: color-mix(in oklch, var(--primary) 88%, transparent);
+	}
+	.tea-profile__panel {
+		display: grid;
+		gap: 0.6rem;
+		padding: 0.72rem 0.75rem;
+		border-radius: 0.8rem;
+		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.06));
+		align-content: start;
+	}
+	.tea-profile__panel .tea-field input {
+		background: var(--tea-surface, #fff);
+		border-color: var(--tea-line);
+	}
+	.tea-field__head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.4rem;
+	}
+	.tea-profile__reset {
+		border: 0;
+		padding: 0;
+		background: none;
+		font: inherit;
+		font-size: 0.66rem;
+		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		cursor: pointer;
+		flex: none;
+	}
+	.tea-profile__reset:hover { text-decoration: underline; }
 	.tea-profile__hint { margin: 0; font-size: 0.64rem; color: var(--tea-muted); line-height: 1.5; }
-	.tea-status-grid { display: flex; flex-wrap: wrap; gap: 0.28rem; }
+	.tea-profile__hr {
+		margin: 0;
+		border: 0;
+		border-top: 1px solid var(--tea-line);
+	}
+
+	/* 状态：固定 3 行高，超出滚动，避免 12 个标签把弹窗顶长 */
+	.tea-status-grid {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0.32rem;
+		max-height: 6.2rem;
+		overflow-y: auto;
+		scrollbar-width: thin;
+		padding-right: 0.1rem;
+	}
 	.tea-status-grid button {
 		border: 1px solid var(--tea-line);
 		border-radius: 0.45rem;
-		background: var(--btn-regular-bg, rgba(128, 128, 128, 0.06));
+		background: var(--btn-regular-bg-hover, rgba(128, 128, 128, 0.1));
 		color: var(--tea-muted);
 		font: inherit;
 		font-size: 0.68rem;
-		padding: 0.28rem 0.45rem;
+		padding: 0.34rem 0.2rem;
 		cursor: pointer;
+		transition: background 0.15s, border-color 0.15s, color 0.15s;
 	}
+	.tea-status-grid button:hover { color: inherit; background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.16)); }
 	.tea-status-grid button.is-active {
-		background: color-mix(in oklch, var(--primary) 16%, transparent);
-		border-color: color-mix(in oklch, var(--primary) 36%, transparent);
-		color: color-mix(in oklch, var(--primary) 78%, currentColor);
+		background: color-mix(in oklch, var(--primary) 22%, transparent);
+		border-color: color-mix(in oklch, var(--primary) 52%, transparent);
+		color: color-mix(in oklch, var(--primary) 82%, currentColor);
+		font-weight: 600;
 	}
+
 	.tea-switch {
 		display: flex;
 		align-items: center;
@@ -1124,7 +1252,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-switch > span { flex: 1; display: grid; gap: 0.1rem; }
 	.tea-switch b { font-size: 0.72rem; font-weight: 500; }
-	.tea-switch small { font-size: 0.62rem; color: var(--tea-muted); }
+	.tea-switch small { font-size: 0.62rem; color: var(--tea-muted); line-height: 1.45; }
 	.tea-switch input { position: absolute; opacity: 0; pointer-events: none; }
 	.tea-switch i {
 		position: relative;
@@ -1148,18 +1276,52 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-switch input:checked + i { background: color-mix(in oklch, var(--primary) 70%, #2f6b4f); }
 	.tea-switch input:checked + i::after { transform: translateX(0.95rem); }
+
+	.tea-push { display: grid; gap: 0.5rem; }
+	.tea-push__head { display: flex; align-items: flex-start; gap: 0.5rem; }
+	.tea-switch__copy { flex: 1; display: grid; gap: 0.1rem; }
+	.tea-switch__copy b { font-size: 0.72rem; font-weight: 500; }
+	.tea-switch__copy small { font-size: 0.62rem; color: var(--tea-muted); line-height: 1.45; }
+	.tea-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3rem; }
+	.tea-seg button {
+		padding: 0.4rem 0.2rem;
+		border: 1px solid var(--tea-line);
+		border-radius: 0.5rem;
+		background: var(--tea-surface, #fff);
+		color: var(--tea-muted);
+		font: inherit;
+		font-size: 0.7rem;
+		cursor: pointer;
+		transition: background 0.15s, border-color 0.15s, color 0.15s;
+	}
+	.tea-seg button:hover { color: inherit; }
+	.tea-seg button.is-active {
+		background: var(--primary);
+		border-color: transparent;
+		color: color-mix(in oklch, var(--primary) 22%, #2b2205);
+		font-weight: 600;
+	}
+
 	.tea-profile__foot {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
 		gap: 0.4rem;
-		padding-top: 0.2rem;
+		margin-top: 0.15rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--tea-line);
 	}
 	.tea-profile__foot .tea-btn { font-size: 0.72rem; padding: 0.38rem 0.7rem; }
-	.tea-profile__logout { color: #c0563f; }
+	/* 说明：.tea-btn--ghost 里写了 color: inherit，且在文件后面；
+	   这里必须多一层前缀，否则红色被压掉 */
+	.tea-profile__foot .tea-profile__logout { color: #c0563f; border-color: transparent; }
+	.tea-profile__save { min-width: 6.5rem; justify-content: center; }
 	.tea-profile__spacer { flex: 1; }
 	@media (max-width: 720px) {
 		.tea-profile__grid { grid-template-columns: 1fr; }
+		.tea-profile__meta { max-width: 40%; }
+		.tea-profile__foot .tea-btn { flex: 1; justify-content: center; }
+		.tea-profile__spacer { display: none; }
 	}
 
 	/* 房间列表 */
@@ -3748,6 +3910,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		font-weight: 600;
 		color: #fff;
 		background: color-mix(in oklch, var(--primary) 70%, #6b5a22);
+		background-size: cover;
+		background-position: center;
 		flex: none;
 	}
 	.tea-dialog__preview-copy {

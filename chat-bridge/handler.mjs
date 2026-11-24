@@ -696,7 +696,7 @@ async function writeIdentity(c, email, data) {
 
 /** 同一邮箱复用同一个 Matrix 账号；没有就新建。 */
 async function provisionIdentity(c, env, profile, base) {
-	const { nick, email, website } = profile;
+	const { nick, email, website, admin } = profile;
 	if (!c.adminToken) throw new Error("bridge 未配置 ADMIN_TOKEN");
 
 	const stored = await readIdentity(c, email);
@@ -725,6 +725,7 @@ async function provisionIdentity(c, env, profile, base) {
 					id: stored.uid,
 					nick,
 					avatar: stored.mxc ? `${base}/api/media?u=${enc(stored.mxc)}` : "",
+					admin: !!admin,
 				},
 				token: login.data.access_token,
 			};
@@ -785,7 +786,7 @@ async function provisionIdentity(c, env, profile, base) {
 	await writeIdentity(c, email, { uid: userId, pw: password, nick, website, mxc: avatarUrl || "", ts: Date.now() });
 
 	return {
-		user: { id: userId, nick, avatar: avatarUrl ? `${base}/api/media?u=${enc(avatarUrl)}` : "" },
+		user: { id: userId, nick, avatar: avatarUrl ? `${base}/api/media?u=${enc(avatarUrl)}` : "", admin: !!admin },
 		token,
 	};
 }
@@ -855,7 +856,7 @@ async function handleWaline(c, env, request, ip, base) {
 	const website = clean(data.url || data.link || "", LIMITS.website);
 
 	try {
-		const out = await provisionIdentity(c, env, { nick, email, website }, base);
+		const out = await provisionIdentity(c, env, { nick, email, website, admin: data.type === "administrator" }, base);
 		// 把 Waline 自己的 token 一起回给前端：茶室登录完顺手写进评论区的存储键，
 		// 同一浏览器下博客那边直接就是已登录状态（两边同源，共用 localStorage）。
 		return json(200, { ok: true, ...out, waline: { token: data.token || "", user: walineUser(data, email, nick, website) } });
@@ -910,7 +911,7 @@ async function handleWalineSso(c, env, request, ip, base) {
 	const nick = clean(data.display_name || data.nick || email.split("@")[0], LIMITS.nick);
 	const website = clean(data.url || data.link || "", LIMITS.website);
 	try {
-		const out = await provisionIdentity(c, env, { nick, email, website }, base);
+		const out = await provisionIdentity(c, env, { nick, email, website, admin: data.type === "administrator" }, base);
 		return json(200, { ok: true, ...out, waline: { token, user: walineUser(data, email, nick, website) } });
 	} catch (e) {
 		return fail(502, e.message || "开座位失败");
@@ -971,6 +972,7 @@ async function handleMatrixLogin(c, request, ip) {
 			avatar: rawAvatar.startsWith("mxc://")
 				? `${requestOrigin(request)}/api/media?u=${enc(rawAvatar)}`
 				: "",
+			admin: !!c.ownerId && uid === c.ownerId,
 		},
 	});
 }
@@ -1604,7 +1606,13 @@ async function handleProfile(c, request, token) {
 	const avatarUrl = clean(body.avatarUrl, 600);
 	const status = clean(body.status, 40);
 	const emailNotify = body.emailNotify === true;
-	const push = body.push === true;
+	// 三档推送：off / mention / all；老客户端只发 push 布尔值，按 mention 兼容
+	const pushMode = ["off", "mention", "all"].includes(String(body.pushMode || ""))
+		? String(body.pushMode)
+		: body.push === true
+			? "mention"
+			: "off";
+	const push = pushMode !== "off";
 
 	const displayname = `${nick} · ${c.siteName}`;
 	const nameRes = await mx(c, `/_matrix/client/v3/profile/${enc(uid)}/displayname`, {
@@ -1645,7 +1653,7 @@ async function handleProfile(c, request, token) {
 		} catch (_) {}
 	}
 
-	const profile = { nick, signature, website, avatarUrl, status, emailNotify, push, updatedAt: Date.now() };
+	const profile = { nick, signature, website, avatarUrl, status, emailNotify, push, pushMode, updatedAt: Date.now() };
 	await mx(c, dataPath, { token, method: "PUT", body: profile });
 	memberCache.at = 0;
 	return json(200, {
