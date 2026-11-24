@@ -85,7 +85,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						<button type="button" class="tea-room-item" data-room="chat">
 							<span class="tea-room-item__avatar"><img src="/assets/images/room-chat.webp" data-room-avatar="chat" alt="" loading="lazy" /></span>
 							<span class="tea-room-item__copy">
-								<b>闲聊</b>
+								<b>闲聊/站点留言板</b>
 								<span>随便聊聊日常与折腾</span>
 							</span>
 						</button>
@@ -190,6 +190,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				</div>
 				<button type="button" class="tea-jump" data-tea-jump hidden>
 					<Icon is:inline name="material-symbols:arrow-downward-rounded" /> 有新消息
+				</button>
+				<!-- 不在底部时常驻的「滑到底部」按钮，到底自动隐藏 -->
+				<button type="button" class="tea-bottomjump" data-tea-bottomjump hidden aria-label="滑到底部" title="滑到底部">
+					<Icon is:inline name="material-symbols:arrow-downward-rounded" /> <span>滑到底部</span>
 				</button>
 				<div class="tea-typing" data-tea-typing hidden aria-live="polite"><span class="tea-typing__dots"><i></i><i></i><i></i></span><span data-tea-typing-text></span></div>
 			</div>
@@ -3213,6 +3217,39 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-jump svg {
 		width: 0.9rem;
 		height: 0.9rem;
+	}
+
+	/* 不在底部时常驻：一键滑到底部 */
+	.tea-bottomjump {
+		position: absolute;
+		right: 1rem;
+		bottom: 0.7rem;
+		z-index: 12;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.35rem 0.8rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in oklch, var(--primary) 38%, transparent);
+		background: var(--tea-surface);
+		color: var(--primary);
+		font: inherit;
+		font-size: 0.72rem;
+		box-shadow: 0 8px 22px -14px rgba(0, 0, 0, 0.5);
+		cursor: pointer;
+		transition: border-color 0.15s ease, filter 0.15s ease;
+	}
+	.tea-bottomjump[hidden] { display: none; }
+	.tea-bottomjump svg {
+		width: 0.9rem;
+		height: 0.9rem;
+	}
+	.tea-bottomjump:hover {
+		border-color: var(--primary);
+		filter: brightness(1.04);
+	}
+	@media (max-width: 640px) {
+		.tea-bottomjump { right: 0.65rem; padding: 0.4rem 0.7rem; }
 	}
 
 	/* 输入区 */

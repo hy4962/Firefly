@@ -19,7 +19,7 @@
 		const params0 = new URLSearchParams(location.search);
 		const api0 = params0.get("api") || API_BASE;
 		const ROOMS = {
-			chat: { name: "闲聊", desc: "随便聊聊日常与折腾" },
+			chat: { name: "闲聊/站点留言板", desc: "随便聊聊日常与折腾" },
 			lobby: { name: "互联茶室", desc: "和其他站点的朋友一起聊天" },
 		};
 
@@ -406,6 +406,40 @@
 			const f = feedEl();
 			if (!f) return;
 			f.scrollTo({ top: f.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+		};
+
+		// 「滑到底部」按钮：只在离开底部时露出来
+		const syncBottomJump = () => {
+			const b = q("[data-tea-bottomjump]");
+			if (b) b.hidden = atBottom();
+		};
+		rt.syncBottomJump = syncBottomJump;
+
+		// 图片陆续加载会撑高消息区，造成「人在底部、判定却不在」。
+		// 贴底一小会儿等高度稳定；用户一动滚轮/触屏立刻放手。
+		let bottomStickTimer = 0;
+		let bottomStickDelay = 0;
+		const cancelBottomStick = () => {
+			clearInterval(bottomStickTimer);
+			clearTimeout(bottomStickDelay);
+			bottomStickTimer = 0;
+			bottomStickDelay = 0;
+		};
+		const stickBottomBriefly = (afterMs = 0) => {
+			cancelBottomStick();
+			const start = () => {
+				let n = 0;
+				bottomStickTimer = setInterval(() => {
+					scrollBottom(false);
+					syncBottomJump();
+					if (++n >= 16) {
+						clearInterval(bottomStickTimer);
+						bottomStickTimer = 0;
+					}
+				}, 180);
+			};
+			if (afterMs) bottomStickDelay = setTimeout(start, afterMs);
+			else start();
 		};
 
 		const renderReactions = (m) => {
@@ -1590,7 +1624,7 @@
 			list.innerHTML = notices.length
 				? notices
 						.map((n) => `<div class="tea-notify__item${n.read ? "" : " is-unread"}" data-notice-id="${esc(n.id)}">
-							<b>${esc(n.nick || "茶友")}${n.room === "chat" ? " · 闲聊" : " · 互联茶室"}</b>
+							<b>${esc(n.nick || "茶友")}${n.room === "chat" ? " · 闲聊/站点留言板" : " · 互联茶室"}</b>
 							<span>${esc(n.text || "")}</span>
 							<time>${esc(fmtTime(n.ts))}</time>
 						</div>`)
@@ -1763,6 +1797,8 @@
 					applyRedactions(hist.redactions || []);
 					markUnreadDivider();
 					scrollBottom(false);
+					syncBottomJump();
+					stickBottomBriefly(0);
 				}
 				setConn("live");
 
@@ -3895,6 +3931,9 @@
 			rt.readPending = "";
 			const ub = q("[data-tea-unreadbar]");
 			if (ub) ub.hidden = true;
+			const bj = q("[data-tea-bottomjump]");
+			if (bj) bj.hidden = true;
+			cancelBottomStick();
 			// 线程只在互联茶室有意义，切房时收起相关浮层
 			if (rt.closePops) rt.closePops();
 			if (rt.closeThread) rt.closeThread();
@@ -5069,13 +5108,20 @@
 					jump.hidden = true;
 				});
 			}
+			q("[data-tea-bottomjump]")?.addEventListener("click", () => {
+				scrollBottom(true);
+				stickBottomBriefly(600);
+			});
 			const feed = feedEl();
 			if (feed) {
+				feed.addEventListener("wheel", cancelBottomStick, { passive: true });
+				feed.addEventListener("touchstart", cancelBottomStick, { passive: true });
 				feed.addEventListener("scroll", () => {
 					if (atBottom()) {
 						const j = q("[data-tea-jump]");
 						if (j) j.hidden = true;
 					}
+					syncBottomJump();
 				});
 				feed.addEventListener("click", (e) => {
 					const img = e.target.closest("img[data-zoom]");
