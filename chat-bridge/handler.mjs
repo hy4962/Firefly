@@ -26,7 +26,9 @@ const DEFAULTS = {
 	IDENTITY_PREFIX: "tea",
 };
 
-const LIMITS = { text: 500, nick: 8, email: 120, website: 120, history: 80 };
+// 正文上限放宽到 4000：Markdown 图片语法本身要占百来字符，500 字时图文根本配不了几句话。
+// 仍远低于 Matrix 单事件 64 KiB 上限。
+const LIMITS = { text: 4000, nick: 8, email: 120, website: 120, history: 80 };
 const RATE = { minGap: 2000, perMinute: 12, perHour: 60, enterGap: 20_000 };
 
 const SITE_BY_SERVER = {

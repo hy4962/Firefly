@@ -3191,9 +3191,12 @@
 					imageFile.click();
 				});
 				imageFile.addEventListener("change", () => {
-					const f = imageFile.files?.[0];
-					if (f) sendImage(f, { name: f.name });
+					const files = [...(imageFile.files || [])];
 					imageFile.value = "";
+					if (!files.length) return;
+					(async () => {
+						for (const f of files) await insertImageAsMarkdown(f, f.name || "图片");
+					})();
 				});
 			}
 
@@ -3266,11 +3269,13 @@
 			const taInput = q("[data-tea-text]");
 			if (taInput) {
 				taInput.addEventListener("paste", (e) => {
-					const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith("image/"));
-					if (f) {
-						e.preventDefault();
-						sendImage(f, { name: f.name || "粘贴的图片" });
-					}
+					const files = [...(e.clipboardData?.files || [])].filter((x) => x.type.startsWith("image/"));
+					if (!files.length) return;
+					e.preventDefault();
+					// 串行上传，保证多张图片的插入顺序跟粘贴顺序一致
+					(async () => {
+						for (const f of files) await insertImageAsMarkdown(f, f.name || "粘贴的图片");
+					})();
 				});
 				taInput.addEventListener("input", () => {
 					const now = Date.now();
@@ -3301,18 +3306,41 @@
 				emojiPanel.style.left = left + "px";
 				emojiPanel.dataset.anchored = "1";
 			};
-			const insertAtCursor = (text) => {
+			const insertAtCursor = (text, max = 4000) => {
 				const input = q("[data-tea-text]");
 				if (!input) return;
 				const start = input.selectionStart ?? input.value.length;
 				const end = input.selectionEnd ?? start;
 				const next = input.value.slice(0, start) + text + input.value.slice(end);
-				if (next.length > 500) { showError("内容太长了，表情放不下"); return; }
+				if (next.length > max) { showError("内容太长了，放不下啦"); return; }
 				input.value = next;
 				const caret = start + text.length;
 				input.focus();
 				input.setSelectionRange(caret, caret);
 				input.dispatchEvent(new Event("input", { bubbles: true }));
+			};
+
+			// 图片先上传成 mxc，再把 Markdown 图片语法插进输入框：
+			// 用户可以左右配文字、调位置，最后一条消息一起发。
+			const insertImageAsMarkdown = async (blob, name) => {
+				if (!rt.visitor) { openDialog(); return; }
+				try {
+					showError("图片上传中…");
+					const buf = await blob.arrayBuffer();
+					const up = await api("/api/upload", {
+						method: "POST",
+						body: buf,
+						headers: { "Content-Type": blob.type || "image/png" },
+						timeout: 60_000,
+					});
+					if (!up || !up.url) throw new Error("没拿到图片地址");
+					const mediaUrl = `${API_BASE}/api/media?u=${encodeURIComponent(up.url)}`;
+					const alt = String(name || "图片").replace(/[\[\]\r\n()]/g, "").slice(0, 30) || "图片";
+					insertAtCursor(`![${alt}](${mediaUrl})`);
+					showError("");
+				} catch (e) {
+					showError(`图片上传失败：${e.message || "网络异常"}`);
+				}
 			};
 			if (emojiToggle && emojiPanel) {
 				emojiToggle.addEventListener("click", (e) => {
