@@ -1825,6 +1825,7 @@
 					email: (res.waline && res.waline.user && res.waline.user.email) || w.email || "",
 					website: (res.waline && res.waline.user && res.waline.user.url) || w.url || "",
 				});
+				hydrateProfile();
 				return true;
 			} catch (e2) {
 				// 凭证过期：把评论区的死会话清掉，别让它一直挡着下次登录
