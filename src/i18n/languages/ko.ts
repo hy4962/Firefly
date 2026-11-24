@@ -30,7 +30,7 @@ export const ko: Translation = {
 	[Key.categoryRoseTitle]: "게시글 카테고리",
 	[Key.tagGraphTitle]: "태그 관계",
 	[Key.tagGraphDescription]:
-		"노드가 클수록 인용이 많고, 선이 굵을수록 함께 등장한 횟수가 많습니다. 드래그·확대하고 태그를 클릭하면 아카이브로 이동합니다",
+		"노드가 클수록 인용이 많고, 선이 굵을수록 함께 등장한 횟수가 많습니다. 캔버스를 드래그·확대하고 태그를 클릭하면 아카이브로 이동합니다",
 	[Key.tagGraphEmpty]: "아직 태그 동시 등장 데이터가 충분하지 않습니다",
 	[Key.tagGraphMore]: "모든 태그 보기",
 	[Key.tagGraphLinks]: "개의 연결",

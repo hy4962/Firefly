@@ -30,7 +30,7 @@ export const zh_CN: Translation = {
 	[Key.categoryRoseTitle]: "文章分类",
 	[Key.tagGraphTitle]: "标签关系",
 	[Key.tagGraphDescription]:
-		"节点越大引用越多，连线越粗共现越多；拖拽节点、滚轮缩放，点击标签查看归档",
+		"节点越大引用越多，连线越粗共现越多；拖拽画布、滚轮缩放，点击标签查看归档",
 	[Key.tagGraphEmpty]: "还没有足够的标签共现数据",
 	[Key.tagGraphMore]: "查看全部标签",
 	[Key.tagGraphLinks]: "条连线",

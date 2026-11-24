@@ -30,7 +30,7 @@ export const zh_TW: Translation = {
 	[Key.categoryRoseTitle]: "文章分類",
 	[Key.tagGraphTitle]: "標籤關係",
 	[Key.tagGraphDescription]:
-		"節點越大引用越多，連線越粗共現越多；拖曳節點、滾輪縮放，點擊標籤查看歸檔",
+		"節點越大引用越多，連線越粗共現越多；拖曳畫布、滾輪縮放，點擊標籤查看歸檔",
 	[Key.tagGraphEmpty]: "還沒有足夠的標籤共現資料",
 	[Key.tagGraphMore]: "查看全部標籤",
 	[Key.tagGraphLinks]: "條連線",

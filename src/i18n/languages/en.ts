@@ -31,7 +31,7 @@ export const en: Translation = {
 	[Key.categoryRoseTitle]: "Post Categories",
 	[Key.tagGraphTitle]: "Tag Relationships",
 	[Key.tagGraphDescription]:
-		"Bigger nodes mean more posts; thicker links mean more co-occurrences. Drag or zoom to explore, click a tag to browse its archive.",
+		"Bigger nodes mean more posts; thicker links mean more co-occurrences. Drag the canvas or scroll to zoom, then click a tag to browse its archive.",
 	[Key.tagGraphEmpty]: "Not enough tag co-occurrence data yet",
 	[Key.tagGraphMore]: "View all tags",
 	[Key.tagGraphLinks]: "links",

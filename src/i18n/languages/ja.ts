@@ -30,7 +30,7 @@ export const ja: Translation = {
 	[Key.categoryRoseTitle]: "記事カテゴリ",
 	[Key.tagGraphTitle]: "タグの関係",
 	[Key.tagGraphDescription]:
-		"ノードが大きいほど引用が多く、線が太いほど共起が多い。ドラッグ・ズームで探索し、タグをクリックするとアーカイブを表示します",
+		"ノードが大きいほど引用が多く、線が太いほど共起が多い。キャンバスをドラッグ・ズームして探索し、タグをクリックするとアーカイブを表示します",
 	[Key.tagGraphEmpty]: "タグの共起データがまだ十分ではありません",
 	[Key.tagGraphMore]: "すべてのタグを見る",
 	[Key.tagGraphLinks]: "本のリンク",
