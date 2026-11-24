@@ -3100,6 +3100,13 @@
 				if (!n || n.nodeType !== 1) continue;
 				if (n.tagName !== "LINK") continue;
 				if (!/(^|\s)stylesheet(\s|$)/i.test(n.getAttribute && n.getAttribute("rel"))) continue;
+				/* 只管本站样式：评论区的 waline.css 在 unpkg 上，跨域不说，
+				   国内还经常慢，等它会把整页藏住 */
+				try {
+					if (new URL(n.href, location.href).origin !== location.origin) continue;
+				} catch (_) {
+					continue;
+				}
 				if (!n.sheet) fresh.push(n);
 			}
 			if (!fresh.length) return;
