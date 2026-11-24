@@ -264,7 +264,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					<span data-juke-icon-play><Icon is:inline name="material-symbols:play-arrow-rounded" /></span>
 					<span data-juke-icon-pause hidden><Icon is:inline name="material-symbols:pause-rounded" /></span>
 				</button>
-				<button type="button" class="tea-juke__ctrl" data-juke-next aria-label="切下一首">
+				<button type="button" class="tea-juke__ctrl" data-juke-next aria-label="切歌或发起投票" title="切歌 / 投票">
 					<Icon is:inline name="material-symbols:skip-next-rounded" />
 				</button>
 				<label class="tea-juke__vol" title="音量">
@@ -272,6 +272,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					<input type="range" min="0" max="100" step="1" value="70" data-juke-vol aria-label="音量" />
 				</label>
 			</div>
+
+			<p class="tea-juke__notice" data-juke-notice hidden></p>
 
 			<nav class="tea-juke__tabs" role="tablist">
 				<button type="button" class="is-active" data-juke-tab="lyrics" role="tab">歌词</button>
@@ -284,14 +286,34 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<p class="tea-juke__empty">先挑一首歌吧。</p>
 			</div>
 			<div class="tea-juke__panel" data-juke-search role="tabpanel" hidden>
+				<div class="tea-juke__sources" data-juke-sources>
+					<button type="button" class="is-active" data-juke-source="site">本站</button>
+					<button type="button" data-juke-source="all">全部</button>
+					<button type="button" data-juke-source="qq">QQ 音乐</button>
+					<button type="button" data-juke-source="netease">网易云</button>
+					<button type="button" data-juke-source="kugou">酷狗</button>
+				</div>
 				<form class="tea-juke__searchform" data-juke-searchform>
-					<input type="search" maxlength="40" placeholder="在站点歌单里找歌…" data-juke-q aria-label="搜索歌单" />
-					<button type="submit" class="tea-btn tea-btn--primary">找</button>
+					<input type="search" maxlength="60" placeholder="搜歌名、歌手，或粘贴歌单链接…" data-juke-q aria-label="搜索歌曲" />
+					<button type="submit" class="tea-btn tea-btn--primary">搜</button>
 				</form>
-				<div class="tea-juke__results" data-juke-results><p class="tea-juke__empty">只搜本站歌单里的歌。</p></div>
+				<div class="tea-juke__importbar">
+					<button type="button" class="tea-juke__linkbtn" data-juke-import-toggle>导入歌单</button>
+					<span>网易云 / QQ / Apple Music / Spotify</span>
+				</div>
+				<form class="tea-juke__importform" data-juke-importform hidden>
+					<input type="url" maxlength="600" placeholder="粘贴公开歌单链接" data-juke-importurl aria-label="歌单链接" />
+					<button type="submit" class="tea-btn tea-btn--primary">导入</button>
+				</form>
+				<div class="tea-juke__results" data-juke-results><p class="tea-juke__empty">搜全网歌曲，或者切到「本站」翻站点歌单。</p></div>
 			</div>
 			<div class="tea-juke__panel" data-juke-list role="tabpanel" hidden>
-				<p class="tea-juke__empty">歌单还在路上…</p>
+				<div class="tea-juke__plbar" data-juke-plbar></div>
+				<div class="tea-juke__plhead" data-juke-plhead hidden>
+					<span data-juke-plname></span>
+					<button type="button" data-juke-pl-rotation hidden>设为轮播</button>
+				</div>
+				<div class="tea-juke__results" data-juke-pltracks><p class="tea-juke__empty">歌单还在路上…</p></div>
 			</div>
 			<div class="tea-juke__panel" data-juke-history role="tabpanel" hidden>
 				<p class="tea-juke__empty">还没有播放记录。</p>
@@ -4018,6 +4040,91 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-juke__queuetabs button.is-active { background: var(--btn-regular-bg, rgba(128, 128, 128, 0.1)); color: inherit; }
 	.tea-juke__queuelist { flex: 1; min-height: 0; overflow-y: auto; padding: 0 0.4rem 0.45rem; scrollbar-width: thin; }
+
+	/* ── 点歌台 v2：全网搜索 / 导入歌单 / 轮播 ─────────────── */
+	.tea-juke__sources {
+		display: flex; gap: 0.2rem; overflow-x: auto; padding: 0.15rem 0.25rem 0.35rem;
+		scrollbar-width: none;
+	}
+	.tea-juke__sources::-webkit-scrollbar { display: none; }
+	.tea-juke__sources button {
+		flex: none; border: 1px solid var(--tea-line); background: transparent; color: var(--tea-muted);
+		font: inherit; font-size: 0.64rem; line-height: 1; padding: 0.28rem 0.5rem;
+		border-radius: 999px; cursor: pointer; white-space: nowrap;
+	}
+	.tea-juke__sources button.is-active {
+		color: var(--primary); border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+		background: color-mix(in oklch, var(--primary) 10%, transparent);
+	}
+	.tea-juke__importbar {
+		display: flex; align-items: center; gap: 0.4rem; padding: 0 0.3rem 0.45rem;
+		font-size: 0.6rem; color: var(--tea-muted-soft);
+	}
+	.tea-juke__linkbtn {
+		flex: none; border: 0; background: none; color: color-mix(in oklch, var(--primary) 80%, currentColor);
+		font: inherit; font-size: 0.66rem; padding: 0; cursor: pointer;
+	}
+	.tea-juke__linkbtn:hover { text-decoration: underline; }
+	.tea-juke__importform { display: flex; gap: 0.35rem; padding: 0 0.25rem 0.5rem; }
+	.tea-juke__importform[hidden] { display: none; }
+	.tea-juke__importform input {
+		flex: 1; min-width: 0; padding: 0.35rem 0.55rem; border-radius: 0.55rem;
+		border: 1px solid var(--tea-line-strong); background: transparent; color: inherit;
+		font: inherit; font-size: 0.7rem; outline: none;
+	}
+	.tea-juke__importform input:focus { border-color: color-mix(in oklch, var(--primary) 48%, transparent); }
+	.tea-juke__importform .tea-btn { padding: 0.3rem 0.7rem; font-size: 0.7rem; }
+	.tea-juke__notice {
+		margin: 0.15rem 0.45rem 0.35rem; padding: 0.35rem 0.55rem; border-radius: 0.5rem;
+		background: color-mix(in oklch, var(--primary) 11%, transparent);
+		color: color-mix(in oklch, var(--primary) 82%, currentColor);
+		font-size: 0.66rem; line-height: 1.45;
+	}
+	.tea-juke__notice.is-error {
+		background: color-mix(in oklch, #d9534f 12%, transparent);
+		color: #c94b47;
+	}
+	.tea-juke__plbar {
+		display: flex; gap: 0.25rem; overflow-x: auto; padding: 0.1rem 0.25rem 0.45rem;
+		scrollbar-width: none;
+	}
+	.tea-juke__plbar::-webkit-scrollbar { display: none; }
+	.tea-juke__plbar button {
+		flex: none; max-width: 8.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+		border: 1px solid var(--tea-line); background: transparent; color: var(--tea-muted);
+		font: inherit; font-size: 0.64rem; line-height: 1; padding: 0.3rem 0.5rem;
+		border-radius: 0.45rem; cursor: pointer;
+	}
+	.tea-juke__plbar button.is-active {
+		color: var(--primary); border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+		background: color-mix(in oklch, var(--primary) 10%, transparent);
+	}
+	.tea-juke__plhead {
+		display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;
+		padding: 0 0.35rem 0.35rem; font-size: 0.66rem; color: var(--tea-muted);
+	}
+	.tea-juke__plhead[hidden] { display: none; }
+	.tea-juke__plhead button {
+		border: 1px solid var(--tea-line); background: transparent; color: var(--tea-muted);
+		font: inherit; font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 0.35rem; cursor: pointer;
+	}
+	.tea-juke__plhead button:hover { color: var(--primary); border-color: color-mix(in oklch, var(--primary) 45%, transparent); }
+	.tea-juke__src {
+		font-style: normal; flex: none; font-size: 0.54rem; line-height: 1.35;
+		padding: 0 0.22rem; border: 1px solid var(--tea-line); border-radius: 0.28rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-song__name { display: flex; align-items: center; gap: 0.3rem; }
+	.tea-song__name > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.tea-juke__dur { margin-left: auto; flex: none; font-size: 0.58rem; color: var(--tea-muted-soft); font-variant-numeric: tabular-nums; }
+	.tea-juke__rotbrief { padding: 0.15rem 0.35rem 0.4rem; }
+	.tea-juke__rotbrief b { font-size: 0.72rem; font-weight: 600; }
+	.tea-juke__rotbrief p { margin: 0.15rem 0 0.35rem; font-size: 0.62rem; color: var(--tea-muted); }
+	.tea-juke__rotbrief button {
+		border: 1px solid var(--tea-line); background: transparent; color: var(--tea-muted);
+		font: inherit; font-size: 0.62rem; padding: 0.2rem 0.5rem; border-radius: 0.4rem; cursor: pointer;
+	}
+	.tea-juke__rotbrief button:hover { color: var(--primary); border-color: color-mix(in oklch, var(--primary) 45%, transparent); }
 </style>
 
 <script is:inline define:vars={{ API_BASE: CHAT_API, SITE_NAME, PEERS: peers, SELF_SITE: selfSite }}>
@@ -5495,19 +5602,127 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			}
 		};
 
-		// ── 点歌台：茶室共享队列 + 站点歌单，驱动 __fireflyMusic ──
+		// ── 点歌台 v2：全网搜索 + 共享队列 + 轮播 + 同步收听 ──────────
 		const jukeSig = {
-			tab: "lyrics", queueTab: "request", list: "", lrc: -2,
-			state: null, catalog: [], query: "", lastUid: "", lastSeq: -1,
-			listening: false, ending: false,
+			tab: "lyrics",
+			queueTab: "request",
+			room: "",
+			state: null,
+			catalog: [],
+			query: "",
+			source: "site",
+			searchList: [],
+			searchState: "idle",
+			searchError: "",
+			playlists: [],
+			playlistsLoaded: false,
+			playlistsLoading: false,
+			playlistsRoom: "",
+			playlistId: "site",
+			playlistLoadedId: "",
+			playlistTracks: [],
+			playlistLoading: false,
+			rotationFull: null,
+			rotationLoading: false,
+			listening: false,
+			ending: false,
+			loading: false,
+			lastUid: "",
+			lastSeq: -1,
+			currentKey: "",
+			directUrl: "",
+			proxyUrl: "",
+			proxyTried: false,
+			stallTimer: 0,
+			lyrics: [],
+			lrcIndex: -2,
+			loadToken: 0,
+			notice: "",
+			noticeError: false,
+			noticeTimer: 0,
+			clock: [],
+			clockAt: 0,
+			listSig: "",
+			rotationSig: "",
 		};
+
 		const musicApi = () => (window.__fireflyMusic ? window.__fireflyMusic : null);
 		const jukeNode = (sel) => (root() ? root().querySelector("[data-tea-juke] " + sel) : null);
-
-		const jukeId = (t) => {
-			const m = String(t?.url || t?.id || "").match(/[?&]id=(\d+)/);
-			return m ? m[1] : String(t?.id || "");
+		const jukeDur = (n) => {
+			const sec = Math.max(0, Math.round(Number(n) || 0));
+			return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 		};
+		const jukeSourceLabel = (t) => {
+			const src = t?.source || "";
+			if (src === "qq") return "QQ";
+			if (src === "netease") return "网易云";
+			if (src === "kugou") return "酷狗";
+			if (src === "local" || src === "site") return "本站";
+			const p = String(t?.platform || "").toLowerCase();
+			if (p.includes("apple")) return "Apple";
+			if (p.includes("spotify")) return "Spotify";
+			if (p.includes("youtube")) return "YouTube";
+			if (p.includes("qq")) return "QQ";
+			if (p.includes("netease")) return "网易云";
+			if (p.includes("kugou")) return "酷狗";
+			return "音源";
+		};
+		const jukeSafeUrl = (u) => String(u || "").replace(/["\\\n\r()]/g, "");
+		const jukeCover = (url) => (url ? `url("${jukeSafeUrl(url)}")` : "");
+
+		const jukeClock = {
+			add(serverNow, t0, t1) {
+				const server = Number(serverNow) || 0;
+				const rtt = t1 - t0;
+				if (!server || rtt < 0 || rtt > 5000) return;
+				jukeSig.clock.push({ server, local: (t0 + t1) / 2, rtt });
+				jukeSig.clock.sort((a, b) => a.rtt - b.rtt);
+				jukeSig.clock = jukeSig.clock.slice(0, 6);
+			},
+			now() {
+				const best = jukeSig.clock[0];
+				if (!best) return Date.now();
+				return best.server + (performance.now() - best.local);
+			},
+		};
+
+		const jukeSampleClock = async () => {
+			const t0 = performance.now();
+			try {
+				const data = await api("/api/juke/time", { timeout: 5000 });
+				jukeClock.add(data.serverNow, t0, performance.now());
+			} catch (_) {}
+		};
+
+		const jukeSay = (msg, isError = false) => {
+			jukeSig.notice = msg || "";
+			jukeSig.noticeError = !!isError;
+			const el = jukeNode("[data-juke-notice]");
+			if (el) {
+				el.textContent = msg || "";
+				el.hidden = !msg;
+				el.classList.toggle("is-error", !!isError);
+			}
+			clearTimeout(jukeSig.noticeTimer);
+			if (msg) jukeSig.noticeTimer = setTimeout(() => jukeSay(""), 8000);
+		};
+
+		const jukeParseLrc = (text) => {
+			const out = [];
+			const reg = /\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
+			for (const line of String(text || "").split(/\r?\n/)) {
+				const matches = [...line.matchAll(reg)];
+				if (!matches.length) continue;
+				const body = line.replace(reg, "").trim();
+				if (!body) continue;
+				for (const m of matches) {
+					const frac = m[3] ? Number(`0.${m[3]}`) : 0;
+					out.push({ time: Number(m[1]) * 60 + Number(m[2]) + frac, text: body });
+				}
+			}
+			return out.sort((a, b) => a.time - b.time);
+		};
+
 		const jukeCatalog = () => {
 			const m = musicApi();
 			if (!m) return [];
@@ -5515,48 +5730,344 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				try { m.init(); } catch (_) {}
 			}
 			const st = m.getState();
-			jukeSig.catalog = (st.playlist || []).map((t) => ({
-				id: jukeId(t), title: t.name || "未知曲目", artist: t.artist || "",
-				url: t.url || "", cover: t.pic || "", lrc: t.lrc || "",
-			})).filter((t) => t.id);
+			jukeSig.catalog = (st.playlist || []).map((t, i) => {
+				const url = String(t.url || "");
+				const idm = url.match(/[?&]id=(\d+)/);
+				const id = idm ? idm[1] : String(t.id || "");
+				const netease = /^\d+$/.test(id);
+				return {
+					key: netease ? `netease:${id}` : `site:${i}`,
+					title: t.name || "未知曲目",
+					artist: t.artist || "",
+					album: "",
+					cover: t.pic || "",
+					durationSec: 0,
+					source: netease ? "netease" : /^\/assets\//.test(url) ? "local" : "",
+					sourceId: netease ? id : "",
+					url: url.startsWith("/assets/") ? url : "",
+					platform: "site",
+				};
+			}).filter((t) => t.title);
 			return jukeSig.catalog;
 		};
-		const jukeTrackRow = (t, i, attr, curId) => `<button type="button" class="tea-song${curId && curId === t.id ? " is-current" : ""}" ${attr}>
-			<span class="tea-song__idx">${curId === t.id ? "♪" : i + 1}</span>
+
+		const jukeTrackRow = (t, i, attr, curKey) => `<button type="button" class="tea-song${curKey && curKey === t.key ? " is-current" : ""}" ${attr}>
+			<span class="tea-song__idx">${curKey === t.key ? "♪" : i + 1}</span>
 			<span class="tea-song__copy">
-				<span class="tea-song__name">${esc(t.title)}</span>
-				<span class="tea-song__artist">${esc(t.artist)}</span>
+				<span class="tea-song__name"><span>${esc(t.title)}</span><em class="tea-juke__src">${esc(jukeSourceLabel(t))}</em><span class="tea-juke__dur">${t.durationSec ? jukeDur(t.durationSec) : ""}</span></span>
+				<span class="tea-song__artist">${esc(t.artist || "未知歌手")}${t.requester ? " · " + esc(t.requester) : ""}</span>
 			</span>
 		</button>`;
 
-		const jukePlayRemote = (track) => {
-			const m = musicApi();
-			if (!m || !track) return;
-			jukeCatalog();
-			const idx = jukeSig.catalog.findIndex((t) => t.id === track.id);
-			if (idx < 0) return;
-			if (m.getState().currentIndex !== idx) m.loadTrack(idx, false);
-			const s = jukeSig.state || {};
-			const skew = Number(s.serverNow || Date.now()) - Date.now();
-			let at = ((Date.now() + skew - Number(track.startAt || Date.now())) / 1000);
-			const st = m.getState();
-			if (at < 0) at = 0;
-			if (st.duration && at > st.duration - 2) at = 0;
-			if (at > 0) {
-				m.seekToTime(at);
-				setTimeout(() => {
-					const mm = musicApi();
-					if (mm && mm.getState().duration > at + 1) mm.seekToTime(at);
-				}, 900);
+		const jukeQueueRow = (t, curKey) => {
+			const mine = rt.visitor && t.requesterId && t.requesterId === rt.visitor.id;
+			const canDel = mine || !!(jukeSig.state && jukeSig.state.admin);
+			return `<div class="tea-juke__qrow${curKey === t.key ? " is-current" : ""}">
+				<button type="button" class="tea-song" data-juke-qplay="${esc(t.uid)}">
+					<span class="tea-song__idx">♪</span>
+					<span class="tea-song__copy">
+						<span class="tea-song__name"><span>${esc(t.title)}</span><em class="tea-juke__src">${esc(jukeSourceLabel(t))}</em><span class="tea-juke__dur">${t.durationSec ? jukeDur(t.durationSec) : ""}</span></span>
+						<span class="tea-song__artist">${esc(t.artist || "未知歌手")} · ${esc(t.requester || "茶友")}</span>
+					</span>
+				</button>
+				${canDel ? `<button type="button" class="tea-juke__qact" data-juke-qdel="${esc(t.uid)}" title="移除" aria-label="移除">×</button>` : ""}
+			</div>`;
+		};
+
+		const ensureJukeAudio = () => {
+			let a = rt.jukeAudio;
+			if (!a) {
+				a = new Audio();
+				a.preload = "auto";
+				a.volume = Math.min(1, Math.max(0, Number(localStorage.getItem("tea.jukeVolume") ?? 0.7)));
+				document.body.appendChild(a);
+				rt.jukeAudio = a;
+			} else if (!a.isConnected) {
+				document.body.appendChild(a);
 			}
-			if (!m.getState().isPlaying) m.togglePlay();
-			recordSong(jukeSig.catalog[idx]);
+			if (!rt.jukeAudioBound) {
+				rt.jukeAudioBound = true;
+				a.addEventListener("play", () => {
+					const m = musicApi();
+					if (m && m.getState().isPlaying) m.togglePlay();
+					jukeRenderTrack();
+				});
+				a.addEventListener("pause", () => jukeRenderTrack());
+				a.addEventListener("timeupdate", () => {
+					jukeRenderProgress();
+					if (jukeSig.tab === "lyrics") jukeRenderLyrics(false);
+					jukeSetupPosition();
+				});
+				a.addEventListener("loadedmetadata", () => {
+					jukeRenderProgress();
+					jukeSync(true);
+				});
+				a.addEventListener("canplay", () => {
+					clearTimeout(jukeSig.stallTimer);
+				});
+				a.addEventListener("playing", () => {
+					clearTimeout(jukeSig.stallTimer);
+					a.playbackRate = 1;
+					jukeRenderTrack();
+				});
+				a.addEventListener("waiting", () => {
+					clearTimeout(jukeSig.stallTimer);
+					jukeSig.stallTimer = setTimeout(() => {
+						if (jukeSig.listening && !jukeSig.proxyTried && jukeSig.proxyUrl) jukeUseProxy();
+					}, 3500);
+				});
+				a.addEventListener("volumechange", () => {
+					try { localStorage.setItem("tea.jukeVolume", String(a.volume)); } catch (_) {}
+					const vol = jukeNode("[data-juke-vol]");
+					if (vol) vol.value = String(Math.round(a.volume * 100));
+				});
+				a.addEventListener("ended", () => {
+					if (!jukeSig.listening || !jukeSig.state?.current || jukeSig.ending) return;
+					jukeSig.ending = true;
+					const from = jukeSig.state.current.uid;
+					jukeAction("ended", { from }).finally(() => setTimeout(() => { jukeSig.ending = false; }, 2500));
+				});
+				a.addEventListener("error", () => {
+					if (!jukeSig.listening || !jukeSig.state?.current) return;
+					if (!jukeSig.proxyTried && jukeSig.proxyUrl) {
+						jukeUseProxy();
+						return;
+					}
+					jukeSay("这首歌的音源暂时播不了，换一首试试。", true);
+				});
+			}
+			return a;
+		};
+
+		const jukeUseProxy = () => {
+			const a = rt.jukeAudio;
+			if (!a || !jukeSig.proxyUrl || jukeSig.proxyTried) return;
+			jukeSig.proxyTried = true;
+			const at = Number(a.currentTime) || 0;
+			const wasPlaying = !a.paused;
+			a.src = jukeSig.proxyUrl;
+			const resume = () => {
+				try { if (at > 0) a.currentTime = at; } catch (_) {}
+				if (wasPlaying) a.play().catch(() => {});
+			};
+			if (a.readyState >= 1) resume();
+			else a.addEventListener("loadedmetadata", resume, { once: true });
+			jukeSay("直连有点慢，已经切到代理线路。");
+		};
+
+		const jukeSetupPosition = () => {
+			if (!("mediaSession" in navigator) || !("setPositionState" in navigator.mediaSession)) return;
+			const a = rt.jukeAudio;
+			if (!a || !a.duration || !isFinite(a.duration) || a.duration <= 0) return;
+			try {
+				navigator.mediaSession.setPositionState({
+					duration: a.duration,
+					playbackRate: a.playbackRate || 1,
+					position: Math.min(Math.max(0, a.currentTime), a.duration),
+				});
+			} catch (_) {}
+		};
+
+		const jukeSetupMediaSession = (track) => {
+			if (!("mediaSession" in navigator)) return;
+			try {
+				if (window.MediaMetadata) {
+					navigator.mediaSession.metadata = new MediaMetadata({
+						title: track?.title || "茶室点歌台",
+						artist: track?.artist || "折腾进行时",
+						album: "茶室点歌台",
+						artwork: track?.cover ? [{ src: track.cover, sizes: "300x300" }] : [],
+					});
+				}
+				navigator.mediaSession.setActionHandler("play", () => {
+					const a = ensureJukeAudio();
+					jukeSig.listening = true;
+					a.play().catch(() => {});
+				});
+				navigator.mediaSession.setActionHandler("pause", () => {
+					const a = rt.jukeAudio;
+					if (a) a.pause();
+				});
+				navigator.mediaSession.setActionHandler("nexttrack", () => jukeSkip());
+				navigator.mediaSession.setActionHandler("previoustrack", () => {
+					const a = rt.jukeAudio;
+					if (a) a.currentTime = 0;
+				});
+				navigator.mediaSession.setActionHandler("seekto", (d) => {
+					const a = rt.jukeAudio;
+					if (a && d && Number.isFinite(d.seekTime)) a.currentTime = d.seekTime;
+				});
+			} catch (_) {}
+		};
+
+		const jukeSeekTo = (track) => {
+			const a = rt.jukeAudio;
+			if (!a || !track || !track.startAt) return;
+			const at = Math.max(0, (jukeClock.now() - Number(track.startAt)) / 1000);
+			if (!Number.isFinite(at)) return;
+			if (a.duration && at > a.duration - 0.8) return;
+			try {
+				if (Math.abs(a.currentTime - at) > 0.4) a.currentTime = at;
+			} catch (_) {}
+		};
+
+		const jukeSync = (force) => {
+			const a = rt.jukeAudio;
+			const cur = jukeSig.state?.current;
+			if (!a || !cur || !jukeSig.listening || a.paused) return;
+			const expected = (jukeClock.now() - Number(cur.startAt || 0)) / 1000;
+			if (!Number.isFinite(expected) || expected < 0) return;
+			if (a.readyState < 2 || !a.duration || !isFinite(a.duration)) return;
+			const diff = expected - a.currentTime;
+			if (Math.abs(diff) > 3 || force) {
+				try { a.currentTime = Math.min(Math.max(0, expected), Math.max(0, a.duration - 0.6)); } catch (_) {}
+				a.playbackRate = 1;
+			} else if (diff > 0.6) {
+				a.playbackRate = 1.04;
+			} else if (diff < -0.6) {
+				a.playbackRate = 0.96;
+			} else {
+				a.playbackRate = 1;
+			}
+		};
+
+		const jukePlayCurrent = async (track) => {
+			if (!track) return;
+			const a = ensureJukeAudio();
+			if (jukeSig.currentKey === track.key && a.src && !a.error) {
+				jukeSeekTo(track);
+				if (a.paused) a.play().catch(() => {});
+				return;
+			}
+			const token = ++jukeSig.loadToken;
+			try { a.pause(); } catch (_) {}
+			jukeSig.currentKey = track.key;
+			jukeSig.directUrl = "";
+			jukeSig.proxyUrl = "";
+			jukeSig.proxyTried = false;
+			jukeSig.lyrics = [];
+			jukeSig.lrcIndex = -2;
+			clearTimeout(jukeSig.stallTimer);
+			const params = new URLSearchParams();
+			params.set("key", track.key || "");
+			params.set("title", track.title || "");
+			params.set("artist", track.artist || "");
+			params.set("source", track.source || "");
+			params.set("id", track.sourceId || "");
+			params.set("duration", String(track.durationSec || 0));
+			if (track.url) params.set("url", track.url);
+			jukeSay("正在找音源…");
+			try {
+				const data = await api(`/api/juke/link?${params.toString()}`, { timeout: 20_000 });
+				if (token !== jukeSig.loadToken) return;
+				jukeSig.directUrl = data.direct || "";
+				jukeSig.proxyUrl = data.proxy || "";
+				jukeSig.proxyTried = data.url === data.proxy;
+				jukeSig.lyrics = jukeParseLrc(data.lrc || "");
+				jukeSay("");
+				a.src = data.url;
+				if (a.volume === 0 && Number(localStorage.getItem("tea.jukeVolume") ?? 0.7) > 0) {
+					a.volume = Number(localStorage.getItem("tea.jukeVolume") ?? 0.7);
+				}
+				const start = Number(track.startAt) || 0;
+				const wait = start ? Math.max(0, start - jukeClock.now()) : 0;
+				const begin = () => {
+					if (token !== jukeSig.loadToken) return;
+					jukeSeekTo(track);
+					if (!jukeSig.listening) return;
+					if (wait > 0) {
+						setTimeout(() => {
+							if (token === jukeSig.loadToken && jukeSig.listening) a.play().catch(() => {});
+						}, wait + 40);
+					} else {
+						a.play().catch(() => {
+							if (token !== jukeSig.loadToken) return;
+							jukeSay("浏览器拦住了自动播放，点一下播放键继续。", true);
+						});
+					}
+				};
+				if (a.readyState >= 1) begin();
+				else a.addEventListener("loadedmetadata", begin, { once: true });
+				jukeSetupMediaSession(track);
+				jukeRenderLyrics(true);
+				jukeRenderTrack();
+			} catch (e) {
+				if (token !== jukeSig.loadToken) return;
+				jukeSig.listening = false;
+				jukeSay(e.message || "找不到可播的音源", true);
+				jukeRenderTrack();
+			}
+		};
+
+		const jukeListeners = () => {
+			const el = q("[data-tea-online]");
+			return Math.max(1, Number(el && el.textContent) || 1);
+		};
+
+		const jukeAction = async (action, extra = {}) => {
+			if (action !== "ended" && (!rt.visitor || !rt.visitor.token)) {
+				jukeSay("先入座，再点歌。", true);
+				return null;
+			}
+			try {
+				const data = await api(`/api/juke/action?room=${encodeURIComponent(rt.room)}`, {
+					method: "POST",
+					body: JSON.stringify({ action, room: rt.room, ...extra }),
+				});
+				if (data.state) {
+					if (typeof data.admin === "boolean") data.state.admin = data.admin;
+					jukeApply(data.state);
+				}
+				return data;
+			} catch (e) {
+				jukeSay(e.message || "操作失败，稍后再试", true);
+				return null;
+			}
+		};
+
+		const jukeSkip = async () => {
+			const cur = jukeSig.state?.current;
+			if (!cur) return;
+			const data = await jukeAction("skip", { from: cur.uid, listeners: jukeListeners() });
+			if (!data || !data.vote) return;
+			if (data.vote.skipped) {
+				jukeSay("切歌成功。");
+			} else {
+				const left = Math.max(0, Number(data.vote.required || 0) - Number(data.vote.votes || 0));
+				jukeSay(`已投票切歌，${data.vote.votes}/${data.vote.required} 人同意，还差 ${left} 人。`);
+			}
+		};
+
+		const jukePick = async (track) => {
+			if (!track) return;
+			const data = await jukeAction("enqueue", { track });
+			if (!data) return;
+			if (data.duplicate) jukeSay("这首歌已经在队列里了。");
+			else if (data.state?.current?.key === track.key) jukeSay("这就开播。");
+			else jukeSay("已加入待播队列。");
+		};
+
+		const jukeRenderProgress = () => {
+			const a = rt.jukeAudio;
+			const seek = jukeNode("[data-juke-seek]");
+			const ct = jukeNode("[data-juke-cur]");
+			const du = jukeNode("[data-juke-dur]");
+			const cur = a ? a.currentTime : 0;
+			const dur = a && isFinite(a.duration) ? a.duration : 0;
+			const p = dur > 0 ? Math.min(100, (cur / dur) * 100) : 0;
+			if (seek) {
+				seek.value = String(Math.round(p * 10));
+				seek.style.setProperty("--p", p + "%");
+			}
+			if (ct) ct.textContent = jukeDur(cur);
+			if (du) du.textContent = jukeDur(dur);
 		};
 
 		const jukeRenderTrack = () => {
-			const m = musicApi();
+			const a = rt.jukeAudio;
 			const s = jukeSig.state;
 			const cur = s && s.current;
+			const playing = !!a && !a.paused && jukeSig.listening;
 			const live = jukeNode("[data-juke-live]");
 			const title = jukeNode("[data-juke-title]");
 			const artist = jukeNode("[data-juke-artist]");
@@ -5564,99 +6075,260 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			if (title) title.textContent = cur ? cur.title : "还没开始听";
 			if (artist) {
 				artist.textContent = cur
-					? `${cur.artist || "未知歌手"}${cur.requester ? " · " + cur.requester + " 点的" : ""}`
+					? `${cur.artist || "未知歌手"}${cur.kind === "rotation" ? " · 背景轮播" : cur.requester ? " · " + cur.requester + " 点的" : ""}`
 					: "从下面挑一首，或者让茶室随便放";
 			}
-			if (cover) cover.style.backgroundImage = cur && cur.cover ? `url("${esc(cur.cover)}")` : "";
+			if (cover) cover.style.backgroundImage = cur && cur.cover ? jukeCover(cur.cover) : "";
 			if (live) {
 				live.classList.toggle("is-listening", jukeSig.listening);
+				live.classList.toggle("is-playing", playing);
 				const label = live.querySelector("b");
-				if (label) label.textContent = jukeSig.listening ? (m && m.getState().isPlaying ? "收听中" : "已加入") : "未开始";
+				if (label) label.textContent = jukeSig.listening ? (playing ? "收听中" : "已加入") : "未开始";
 			}
 			const listenBtn = jukeNode("[data-juke-listen]");
 			if (listenBtn) {
 				listenBtn.classList.toggle("is-on", jukeSig.listening);
 				listenBtn.title = jukeSig.listening ? "退出收听" : "开始收听";
 			}
-			const st = m ? m.getState() : null;
 			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
-			if (juke && st) juke.classList.toggle("is-playing", !!st.isPlaying);
-			const seek = jukeNode("[data-juke-seek]");
-			if (seek && st) {
-				seek.value = String(Math.round(st.progress || 0));
-				seek.style.setProperty("--p", (st.progress || 0) + "%");
-			}
-			const ct = jukeNode("[data-juke-cur]");
-			if (ct && st) ct.textContent = st.currentTimeStr || "0:00";
-			const du = jukeNode("[data-juke-dur]");
-			if (du && st) du.textContent = st.durationStr || "0:00";
-			const vol = jukeNode("[data-juke-vol]");
-			if (vol && st) vol.value = String(Math.round((st.isMuted ? 0 : st.volume || 0) * 100));
+			if (juke) juke.classList.toggle("is-playing", playing);
 			const playBtn = jukeNode("[data-juke-play]");
-			if (playBtn && st) {
+			if (playBtn) {
 				const p = playBtn.querySelector("[data-juke-icon-play]");
-				const q = playBtn.querySelector("[data-juke-icon-pause]");
-				if (p) p.hidden = !!st.isPlaying;
-				if (q) q.hidden = !st.isPlaying;
+				const q2 = playBtn.querySelector("[data-juke-icon-pause]");
+				if (p) p.hidden = playing;
+				if (q2) q2.hidden = !playing;
 			}
+			const vol = jukeNode("[data-juke-vol]");
+			if (vol && a) vol.value = String(Math.round(a.volume * 100));
+			jukeRenderProgress();
 		};
 
 		const jukeRenderLyrics = (force) => {
 			const box = jukeNode("[data-juke-lyrics]");
-			const m = musicApi();
-			if (!box || !m) return;
-			const st = m.getState();
-			const key = (st.track && (st.track.url || st.track.name)) || "";
-			if (!st.lyrics || !st.lyrics.length) {
-				if (force || box.dataset.song !== key || box.dataset.empty !== "1") {
-					box.innerHTML = `<p class="tea-juke__empty">${st.track ? "这首歌暂时没有歌词。" : "先挑一首歌吧。"}</p>`;
+			if (!box) return;
+			const a = rt.jukeAudio;
+			const cur = jukeSig.state?.current;
+			const key = cur ? cur.key : "";
+			if (!cur) {
+				if (force || box.dataset.song !== "") {
+					box.innerHTML = `<p class="tea-juke__empty">先挑一首歌吧。</p>`;
+					box.dataset.song = "";
 					box.dataset.empty = "1";
-					box.dataset.song = key;
-					jukeSig.lrc = -2;
 				}
 				return;
 			}
-			if (force || box.dataset.empty === "1" || box.dataset.song !== key) {
-				box.innerHTML = st.lyrics
-					.map((l, i) => `<button type="button" class="tea-lyric" data-lrc="${i}" data-t="${l.time}">${esc(l.text)}</button>`)
-					.join("");
-				box.dataset.empty = "0";
-				box.dataset.song = key;
-				jukeSig.lrc = -2;
-			}
-			if (jukeSig.lrc !== st.currentLrcIndex) {
-				jukeSig.lrc = st.currentLrcIndex;
-				const lines = box.querySelectorAll(".tea-lyric");
-				lines.forEach((p, i) => p.classList.toggle("is-current", i === st.currentLrcIndex));
-				if (st.currentLrcIndex >= 0 && st.isPlaying && lines[st.currentLrcIndex]) {
-					lines[st.currentLrcIndex].scrollIntoView({ block: "center", behavior: "smooth" });
+			if (!jukeSig.lyrics.length) {
+				if (force || box.dataset.song !== key || box.dataset.empty !== "1") {
+					box.innerHTML = `<p class="tea-juke__empty">这首歌暂时没有歌词。</p>`;
+					box.dataset.song = key;
+					box.dataset.empty = "1";
+					jukeSig.lrcIndex = -2;
 				}
+				return;
 			}
-		};
-
-		const jukeRenderList = () => {
-			const box = jukeNode("[data-juke-list]");
-			if (!box) return;
-			const list = jukeCatalog();
-			const sig = list.map((t) => t.id).join(",");
-			if (jukeSig.list === sig) return;
-			jukeSig.list = sig;
-			box.innerHTML = list.length
-				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-add="${i}"`, jukeSig.state?.current?.id)).join("")
-				: `<p class="tea-juke__empty">歌单还在路上…</p>`;
+			if (force || box.dataset.song !== key || box.dataset.empty === "1") {
+				box.innerHTML = jukeSig.lyrics
+					.map((l, i) => `<button type="button" class="tea-lyric" data-lrc="${i}">${esc(l.text)}</button>`)
+					.join("");
+				box.dataset.song = key;
+				box.dataset.empty = "0";
+				jukeSig.lrcIndex = -2;
+			}
+			const t = a ? a.currentTime : 0;
+			let idx = -1;
+			for (let i = 0; i < jukeSig.lyrics.length; i++) {
+				if (jukeSig.lyrics[i].time <= t + 0.12) idx = i;
+				else break;
+			}
+			if (idx !== jukeSig.lrcIndex) {
+				jukeSig.lrcIndex = idx;
+				const lines = box.querySelectorAll(".tea-lyric");
+				lines.forEach((line, i) => line.classList.toggle("is-current", i === idx));
+				if (idx >= 0 && lines[idx] && a && !a.paused) lines[idx].scrollIntoView({ block: "center", behavior: "smooth" });
+			}
 		};
 
 		const jukeRenderSearch = () => {
 			const box = jukeNode("[data-juke-results]");
 			if (!box) return;
-			const q = jukeSig.query.trim().toLowerCase();
-			const list = jukeCatalog().filter((t) => !q || (t.title + " " + t.artist).toLowerCase().includes(q));
+			let list = [];
+			if (jukeSig.source === "site") {
+				const qtext = jukeSig.query.trim().toLowerCase();
+				list = jukeCatalog().filter((t) => !qtext || (t.title + " " + t.artist).toLowerCase().includes(qtext));
+				if (list.length > 60) list = list.slice(0, 60);
+				jukeSig.searchList = list;
+				box.innerHTML = list.length
+					? list.map((t, i) => jukeTrackRow(t, i, `data-juke-pick="${i}"`, jukeSig.state?.current?.key)).join("")
+					: `<p class="tea-juke__empty">${qtext ? `本站歌单里没找到「${esc(jukeSig.query)}」。` : "站点歌单还在路上…"}</p>`;
+				return;
+			}
+			if (jukeSig.searchState === "loading") {
+				box.innerHTML = `<p class="tea-juke__empty">正在翻 QQ / 网易云 / 酷狗的曲库…</p>`;
+				return;
+			}
+			if (jukeSig.searchState === "error") {
+				box.innerHTML = `<p class="tea-juke__empty">${esc(jukeSig.searchError || "搜索失败")}</p>`;
+				return;
+			}
+			list = jukeSig.results || [];
+			jukeSig.searchList = list;
 			box.innerHTML = list.length
-				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-add="${t.id}"`, jukeSig.state?.current?.id)).join("")
-				: `<p class="tea-juke__empty">本站歌单里没找到「${esc(jukeSig.query)}」。</p>`;
+				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-pick="${i}"`, jukeSig.state?.current?.key)).join("")
+				: `<p class="tea-juke__empty">${jukeSig.searchState === "done" ? "没搜到，换个关键词试试。" : "搜全网歌曲，或者切到「本站」翻站点歌单。"}</p>`;
 		};
 
-		const jukeRenderQueue = () => {
+		const jukeSearch = async () => {
+			const qtext = jukeSig.query.trim();
+			if (/^https?:\/\//i.test(qtext)) {
+				jukeShowImport(true);
+				const input = jukeNode("[data-juke-importurl]");
+				if (input) input.value = qtext;
+				jukeSay("看起来是歌单链接，点「导入」把它存进歌单。");
+				return;
+			}
+			if (jukeSig.source === "site") {
+				jukeRenderSearch();
+				return;
+			}
+			if (!qtext) {
+				jukeSay("想听什么？先输入歌名或歌手。");
+				return;
+			}
+			jukeSig.searchState = "loading";
+			jukeSig.searchError = "";
+			jukeSig.results = [];
+			jukeRenderSearch();
+			try {
+				const data = await api(`/api/juke/search?q=${encodeURIComponent(qtext)}&source=${encodeURIComponent(jukeSig.source)}&limit=14`, { timeout: 20_000 });
+				jukeSig.results = data.items || [];
+				jukeSig.searchState = "done";
+				if (!jukeSig.results.length) jukeSay("没搜到，换个关键词试试。");
+			} catch (e) {
+				jukeSig.searchState = "error";
+				jukeSig.searchError = e.message || "搜索失败";
+			}
+			jukeRenderSearch();
+		};
+
+		const jukeLoadPlaylists = async (force) => {
+			if (jukeSig.playlistsLoading) return;
+			if (jukeSig.playlistsLoaded && !force && jukeSig.playlistsRoom === rt.room) return;
+			const room = rt.room;
+			jukeSig.playlistsLoading = true;
+			try {
+				const data = await api(`/api/juke/playlists?room=${encodeURIComponent(room)}`);
+				if (room !== rt.room) return;
+				jukeSig.playlists = data.items || [];
+				jukeSig.playlistsLoaded = true;
+				jukeSig.playlistsRoom = room;
+				if (data.rotation && jukeSig.state) jukeSig.state.rotation = data.rotation;
+				if (jukeSig.playlistId !== "site" && !jukeSig.playlists.some((p) => p.id === jukeSig.playlistId)) {
+					jukeSig.playlistId = "site";
+				}
+				jukeRenderList(true);
+			} catch (_) {}
+			finally {
+				jukeSig.playlistsLoading = false;
+			}
+		};
+
+		const jukeLoadPlaylist = async (id) => {
+			id = id || "site";
+			const room = rt.room;
+			jukeSig.playlistId = id;
+			jukeSig.playlistLoading = true;
+			jukeSig.playlistTracks = [];
+			jukeRenderList(true);
+			if (id === "site") {
+				jukeSig.playlistTracks = jukeCatalog();
+				jukeSig.playlistLoadedId = "site";
+				jukeSig.playlistLoading = false;
+				jukeRenderList(true);
+				return;
+			}
+			try {
+				const data = await api(`/api/juke/playlist?room=${encodeURIComponent(room)}&id=${encodeURIComponent(id)}`, { timeout: 20_000 });
+				if (jukeSig.playlistId !== id || room !== rt.room) return;
+				jukeSig.playlistTracks = data.playlist?.tracks || [];
+				jukeSig.playlistLoadedId = id;
+			} catch (e) {
+				jukeSay(e.message || "歌单加载失败", true);
+			} finally {
+				if (jukeSig.playlistId === id) {
+					jukeSig.playlistLoading = false;
+					jukeRenderList(true);
+				}
+			}
+		};
+
+		const jukeRenderList = (force) => {
+			const bar = jukeNode("[data-juke-plbar]");
+			const head = jukeNode("[data-juke-plhead]");
+			const name = jukeNode("[data-juke-plname]");
+			const rotBtn = jukeNode("[data-juke-pl-rotation]");
+			const box = jukeNode("[data-juke-pltracks]");
+			if (!bar || !box) return;
+			if (!jukeSig.playlistsLoaded) {
+				bar.innerHTML = "";
+				box.innerHTML = `<p class="tea-juke__empty">正在读歌单…</p>`;
+				jukeLoadPlaylists();
+				return;
+			}
+			const items = [{ id: "site", name: "本站歌单", trackCount: jukeSig.catalog.length }, ...jukeSig.playlists];
+			const sig = `${jukeSig.playlistId}|${items.map((x) => x.id + x.trackCount).join(",")}|${jukeSig.playlistTracks.length}|${jukeSig.state?.admin ? 1 : 0}|${jukeSig.state?.rotation?.playlistId || ""}`;
+			if (!force && sig === jukeSig.listSig) return;
+			jukeSig.listSig = sig;
+			bar.innerHTML = items
+				.map((p) => `<button type="button" class="${p.id === jukeSig.playlistId ? "is-active" : ""}" data-juke-pl="${esc(p.id)}" title="${esc(p.name)}">${esc(p.name)}</button>`)
+				.join("");
+			const selected = items.find((p) => p.id === jukeSig.playlistId) || items[0];
+			if (head) head.hidden = selected.id === "site";
+			if (name) name.textContent = selected.name || "歌单";
+			if (rotBtn) {
+				const canRotate = !!(jukeSig.state && jukeSig.state.admin);
+				rotBtn.hidden = !canRotate || selected.id === "site";
+				const isRot = jukeSig.state?.rotation?.playlistId === selected.id;
+				rotBtn.textContent = isRot ? "取消轮播" : "设为轮播";
+				rotBtn.dataset.rotationId = selected.id;
+			}
+			if (selected.id === "site") {
+				const site = jukeCatalog();
+				if (jukeSig.playlistLoadedId !== "site" || site.length !== jukeSig.playlistTracks.length) {
+					jukeSig.playlistTracks = site;
+					jukeSig.playlistLoadedId = "site";
+				}
+			}
+			if (jukeSig.playlistLoading) {
+				box.innerHTML = `<p class="tea-juke__empty">正在读「${esc(selected.name)}」…</p>`;
+				return;
+			}
+			if (selected.id !== "site" && jukeSig.playlistLoadedId !== selected.id) {
+				box.innerHTML = `<p class="tea-juke__empty">点一下歌单标签加载曲目。</p>`;
+				return;
+			}
+			const list = jukeSig.playlistTracks;
+			box.innerHTML = list.length
+				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-plpick="${i}"`, jukeSig.state?.current?.key)).join("")
+				: `<p class="tea-juke__empty">这个歌单里还没有歌。</p>`;
+		};
+
+		const jukeLoadRotation = async (force) => {
+			if (jukeSig.rotationLoading) return;
+			if (!force && jukeSig.rotationFull && jukeSig.rotationFull.playlistId === jukeSig.state?.rotation?.playlistId) return;
+			jukeSig.rotationLoading = true;
+			try {
+				const data = await api(`/api/juke/rotation?room=${encodeURIComponent(rt.room)}`);
+				jukeSig.rotationFull = data.rotation || null;
+			} catch (_) {
+				jukeSig.rotationFull = null;
+			} finally {
+				jukeSig.rotationLoading = false;
+				jukeRenderQueue(true);
+			}
+		};
+
+		const jukeRenderQueue = (force) => {
 			const box = jukeNode("[data-juke-queue]");
 			const count = jukeNode("[data-juke-queuecount]");
 			const s = jukeSig.state;
@@ -5664,21 +6336,31 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			if (count) count.textContent = String(queue.length);
 			if (!box) return;
 			const kind = jukeSig.queueTab;
-			const rows = queue.filter((t) => (t.kind || "request") === kind);
-			box.innerHTML = rows.length
-				? rows
-						.map((t) => `<div class="tea-juke__qrow">
-							<button type="button" class="tea-song" data-juke-qplay="${esc(t.uid)}">
-								<span class="tea-song__idx">♪</span>
-								<span class="tea-song__copy">
-									<span class="tea-song__name">${esc(t.title)}</span>
-									<span class="tea-song__artist">${esc(t.artist)} · ${esc(t.requester || "茶友")}</span>
-								</span>
-							</button>
-							<button type="button" class="tea-juke__qact" data-juke-qdel="${esc(t.uid)}" title="移除" aria-label="移除">×</button>
-						</div>`)
-						.join("")
-				: `<p class="tea-juke__empty">${kind === "rotation" ? "轮播队列空着。" : "点播队列空着，去歌单里挑一首。"}</p>`;
+			if (kind === "request") {
+				box.innerHTML = queue.length
+					? queue.map((t) => jukeQueueRow(t, s?.current?.key)).join("")
+					: `<p class="tea-juke__empty">点播队列空着，去歌单里挑一首。</p>`;
+				return;
+			}
+			const rot = s && s.rotation;
+			if (!rot) {
+				box.innerHTML = `<p class="tea-juke__empty">还没有绑定背景轮播。站长可以在「歌单」里选一个导入歌单设为轮播。</p>`;
+				return;
+			}
+			const full = jukeSig.rotationFull && jukeSig.rotationFull.playlistId === rot.playlistId ? jukeSig.rotationFull : null;
+			const sig = `${rot.playlistId}|${rot.trackCount}|${full ? full.tracks.length : 0}|${s?.current?.key || ""}`;
+			if (!force && sig === jukeSig.rotationSig) return;
+			jukeSig.rotationSig = sig;
+			const brief = `<div class="tea-juke__rotbrief">
+				<b>${esc(rot.name)}</b>
+				<p>${rot.trackCount} 首 · 点播队列空着时自动接着放</p>
+				${full ? "" : `<button type="button" data-juke-rotation-load>查看全部</button>`}
+			</div>`;
+			if (!full) {
+				box.innerHTML = brief + (rot.preview || []).map((t, i) => `<div class="tea-juke__qrow"><span class="tea-song"><span class="tea-song__idx">${i + 1}</span><span class="tea-song__copy"><span class="tea-song__name"><span>${esc(t.title)}</span></span><span class="tea-song__artist">${esc(t.artist || "未知歌手")}</span></span></span></div>`).join("");
+				return;
+			}
+			box.innerHTML = brief + full.tracks.map((t, i) => jukeTrackRow(t, i, `data-juke-rotpick="${i}"`, s?.current?.key)).join("");
 		};
 
 		const jukeRenderHistory = () => {
@@ -5686,153 +6368,308 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			if (!box) return;
 			const list = (jukeSig.state && jukeSig.state.history) || [];
 			box.innerHTML = list.length
-				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-readd="${esc(t.id)}"`, "")).join("")
+				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-readd="${i}"`, "")).join("")
 				: `<p class="tea-juke__empty">还没有播放记录。</p>`;
 		};
 
 		const jukeApply = (s) => {
 			if (!s) return;
+			if (!s.room) s.room = jukeSig.room || rt.room;
 			const prev = jukeSig.state;
-			jukeSig.state = s;
-			const uid = s.current && s.current.uid;
-			if (jukeSig.listening && uid && uid !== jukeSig.lastUid) {
-				jukeSig.lastUid = uid;
-				jukePlayRemote(s.current);
+			if (jukeSig.room !== s.room) {
+				jukeSig.room = s.room;
+				jukeSig.lastUid = "";
+				jukeSig.playlistsLoaded = false;
+				jukeSig.playlistsLoading = false;
+				jukeSig.playlistId = "site";
+				jukeSig.playlistLoadedId = "";
+				jukeSig.playlistTracks = [];
+				jukeSig.playlistLoading = false;
+				jukeSig.rotationFull = null;
+				jukeSig.listSig = "";
+				jukeSig.rotationSig = "";
+				jukeLoadPlaylists(true);
 			}
-			if (!prev || prev.queue !== s.queue) jukeRenderQueue();
-			if (!prev || prev.history !== s.history) jukeRenderHistory();
+			jukeSig.state = s;
+			if (jukeSig.listening) {
+				const cur = s.current;
+				if (cur && cur.uid !== jukeSig.lastUid) {
+					jukeSig.lastUid = cur.uid;
+					jukePlayCurrent(cur);
+				} else if (!cur) {
+					jukeSig.lastUid = "";
+					const a = rt.jukeAudio;
+					if (a) a.pause();
+				} else if (cur && cur.uid === jukeSig.lastUid) {
+					jukeSeekTo(cur);
+				}
+			}
+			const changed = !prev || prev.seq !== s.seq;
+			if (changed) {
+				jukeRenderQueue();
+				jukeRenderHistory();
+				if (jukeSig.tab === "list") jukeRenderList(true);
+			}
 			jukeRenderTrack();
 		};
 
 		const jukeLoad = async () => {
+			if (jukeSig.loading) return;
+			jukeSig.loading = true;
 			try {
-				jukeApply(await api(`/api/juke/state?room=${encodeURIComponent(rt.room)}`));
-			} catch (_) {}
+				const data = await api(`/api/juke/state?room=${encodeURIComponent(rt.room)}`, { timeout: 15_000 });
+				jukeApply(data);
+			} catch (_) {
+				// 轮询失败不打断正在播的歌，下一轮再试
+			} finally {
+				jukeSig.loading = false;
+			}
 		};
 
-		const jukeAction = async (action, extra = {}) => {
-			if (!rt.visitor || !rt.visitor.token) {
-				showError("先入座，再点歌。");
+		const jukeSwitchTab = (name) => {
+			jukeSig.tab = name;
+			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
+			if (!juke) return;
+			for (const b of juke.querySelectorAll("[data-juke-tab]")) b.classList.toggle("is-active", b.dataset.jukeTab === name);
+			for (const [key, sel] of [["lyrics", "lyrics"], ["search", "search"], ["list", "list"], ["history", "history"]]) {
+				const el = jukeNode("[data-juke-" + sel + "]");
+				if (el) el.hidden = name !== key;
+			}
+			if (name === "lyrics") jukeRenderLyrics(true);
+			if (name === "search") jukeRenderSearch();
+			if (name === "list") {
+				jukeLoadPlaylists().then(() => {
+					if (jukeSig.playlistId !== "site" && jukeSig.playlistLoadedId !== jukeSig.playlistId) jukeLoadPlaylist(jukeSig.playlistId);
+					else jukeRenderList(true);
+				});
+			}
+			if (name === "history") jukeRenderHistory();
+		};
+
+		const jukeSetSource = (source) => {
+			jukeSig.source = source || "site";
+			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
+			if (juke) {
+				for (const b of juke.querySelectorAll("[data-juke-source]")) b.classList.toggle("is-active", b.dataset.jukeSource === jukeSig.source);
+			}
+			jukeSig.results = [];
+			jukeSig.searchList = [];
+			jukeSig.searchState = "idle";
+			jukeSig.searchError = "";
+			jukeRenderSearch();
+		};
+
+		const jukeShowImport = (show) => {
+			const form = jukeNode("[data-juke-importform]");
+			if (!form) return;
+			form.hidden = !show;
+			if (show) {
+				const input = jukeNode("[data-juke-importurl]");
+				if (input) input.focus();
+			}
+		};
+
+		const jukeImport = async () => {
+			const input = jukeNode("[data-juke-importurl]");
+			const url = input ? input.value.trim() : "";
+			if (!url) {
+				jukeSay("先粘贴一个歌单链接。", true);
 				return;
 			}
+			if (!rt.visitor || !rt.visitor.token) {
+				jukeSay("先入座，再导歌单。", true);
+				return;
+			}
+			const btn = jukeNode("[data-juke-importform] button[type=submit]");
+			if (btn) btn.disabled = true;
+			jukeSay("正在解析歌单，长歌单可能要十几秒…");
 			try {
-				const data = await api(`/api/juke/action?room=${encodeURIComponent(rt.room)}`, {
+				const data = await api(`/api/juke/import?room=${encodeURIComponent(rt.room)}`, {
 					method: "POST",
-					body: JSON.stringify({ action, room: rt.room, ...extra }),
+					body: JSON.stringify({ url }),
+					timeout: 35_000,
 				});
-				if (data.state) jukeApply(data.state);
+				const pl = data.playlist;
+				if (pl) {
+					jukeSig.playlists = [pl, ...jukeSig.playlists.filter((p) => p.id !== pl.id)];
+					jukeSig.playlistsLoaded = true;
+					jukeSig.playlistsRoom = rt.room;
+					jukeSig.playlistId = pl.id;
+					jukeSig.playlistLoadedId = "";
+					await jukeLoadPlaylist(pl.id);
+					jukeSwitchTab("list");
+					jukeSay(`已导入「${pl.name}」，${pl.trackCount} 首。`);
+				}
+				if (input) input.value = "";
+				jukeShowImport(false);
 			} catch (e) {
-				showError(e.message || "点歌失败，稍后再试");
+				jukeSay(e.message || "歌单导入失败", true);
+			} finally {
+				if (btn) btn.disabled = false;
 			}
 		};
 
-		const jukeFind = (id) => jukeSig.catalog.find((t) => t.id === id);
-
-		const renderJuke = () => {
-			if (!root()) return;
-			if (!jukeSig.state) jukeLoad();
-			jukeCatalog();
-			jukeRenderTrack();
-			jukeRenderList();
-			if (jukeSig.tab === "lyrics") jukeRenderLyrics();
-			if (jukeSig.tab === "search" && jukeSig.query) jukeRenderSearch();
-			const st = musicApi() && musicApi().getState();
-			if (jukeSig.listening && jukeSig.state?.current && st && st.duration > 1 && st.currentTime > st.duration - 0.8) {
-				if (!jukeSig.ending) {
-					jukeSig.ending = true;
-					jukeAction("next");
-					setTimeout(() => { jukeSig.ending = false; }, 3000);
+		const jukeToggleListen = async (on) => {
+			const a = ensureJukeAudio();
+			jukeSig.listening = on === undefined ? !jukeSig.listening : !!on;
+			jukeSig.lastUid = "";
+			if (jukeSig.listening) {
+				await jukeLoad();
+				const cur = jukeSig.state?.current;
+				if (cur && jukeSig.currentKey !== cur.key) {
+					jukeSig.lastUid = cur.uid;
+					await jukePlayCurrent(cur);
+				} else if (!cur) {
+					jukeSay("房间还没开始放歌，先点一首吧。");
 				}
+			} else {
+				a.pause();
 			}
+			jukeRenderTrack();
 		};
 
 		const bindJuke = () => {
 			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
 			if (!juke || juke.dataset.bound === "1") return;
 			juke.dataset.bound = "1";
-			jukeCatalog();
+			// 页面被 swup 换过一次后，旧 audio 的事件闭包还指着上一份 state，
+			// 重新绑定时直接换一只新的，避免出现“界面在动、播放器不听使唤”。
+			if (rt.jukeAudio) {
+				try {
+					rt.jukeAudio.pause();
+					rt.jukeAudio.remove();
+				} catch (_) {}
+				rt.jukeAudio = null;
+				rt.jukeAudioBound = false;
+			}
+			ensureJukeAudio();
+			jukeSampleClock();
+			jukeSig.playlistTracks = jukeCatalog();
+			jukeSig.playlistLoadedId = "site";
 			jukeLoad();
-			jukeRenderList();
-			jukeRenderQueue();
+			jukeLoadPlaylists();
+			jukeRenderSearch();
+			jukeRenderList(true);
+			jukeRenderQueue(true);
 			jukeRenderHistory();
+			jukeRenderTrack();
 
 			juke.addEventListener("click", async (e) => {
-				const lyric = e.target.closest("[data-lrc]");
-				if (lyric && musicApi()) {
-					musicApi().seekToTime(Number(lyric.dataset.t));
-					if (!musicApi().getState().isPlaying) musicApi().togglePlay();
+				const source = e.target.closest("[data-juke-source]");
+				if (source) {
+					jukeSetSource(source.dataset.jukeSource);
 					return;
 				}
-				const add = e.target.closest("[data-juke-add]");
-				if (add) {
-					const key = add.dataset.jukeAdd;
-					const t = /^\d+$/.test(key) ? jukeSig.catalog[Number(key)] : jukeFind(key);
-					if (t) jukeAction("enqueue", { track: t });
+				if (e.target.closest("[data-juke-import-toggle]")) {
+					const form = jukeNode("[data-juke-importform]");
+					jukeShowImport(!!(form && form.hidden));
 					return;
 				}
-				const readd = e.target.closest("[data-juke-readd]");
-				if (readd) {
-					const t = jukeFind(readd.dataset.jukeReadd);
-					if (t) jukeAction("enqueue", { track: t });
-					return;
-				}
-				const qplay = e.target.closest("[data-juke-qplay]");
-				if (qplay) { jukeAction("play", { uid: qplay.dataset.jukeQplay }); return; }
-				const qdel = e.target.closest("[data-juke-qdel]");
-				if (qdel) { jukeAction("remove", { uid: qdel.dataset.jukeQdel }); return; }
 				const tab = e.target.closest("[data-juke-tab]");
 				if (tab) {
-					jukeSig.tab = tab.dataset.jukeTab;
-					for (const b of juke.querySelectorAll("[data-juke-tab]")) b.classList.toggle("is-active", b === tab);
-					for (const [name, sel] of [["lyrics", "lyrics"], ["search", "search"], ["list", "list"], ["history", "history"]]) {
-						const el = jukeNode("[data-juke-" + sel + "]");
-						if (el) el.hidden = jukeSig.tab !== name;
-					}
-					if (jukeSig.tab === "lyrics") jukeRenderLyrics(true);
-					if (jukeSig.tab === "search") jukeRenderSearch();
-					if (jukeSig.tab === "list") jukeRenderList();
+					jukeSwitchTab(tab.dataset.jukeTab);
 					return;
 				}
 				const qtab = e.target.closest("[data-juke-queue-tab]");
 				if (qtab) {
 					jukeSig.queueTab = qtab.dataset.jukeQueueTab;
 					for (const b of juke.querySelectorAll("[data-juke-queue-tab]")) b.classList.toggle("is-active", b === qtab);
-					jukeRenderQueue();
+					jukeSig.rotationSig = "";
+					jukeRenderQueue(true);
+					if (jukeSig.queueTab === "rotation") jukeLoadRotation();
+					return;
+				}
+				const pl = e.target.closest("[data-juke-pl]");
+				if (pl) {
+					jukeLoadPlaylist(pl.dataset.jukePl);
+					return;
+				}
+				const rotBtn = e.target.closest("[data-juke-pl-rotation]");
+				if (rotBtn) {
+					const id = rotBtn.dataset.rotationId || "";
+					const isRot = jukeSig.state?.rotation?.playlistId === id;
+					const data = await jukeAction("rotation", { playlistId: isRot ? "" : id });
+					if (data) {
+						jukeSig.rotationFull = null;
+						jukeSay(isRot ? "已取消背景轮播。" : `已把「${jukeSig.playlists.find((p) => p.id === id)?.name || "歌单"}」设为背景轮播。`);
+						jukeRenderList(true);
+						jukeRenderQueue(true);
+					}
+					return;
+				}
+				const plpick = e.target.closest("[data-juke-plpick]");
+				if (plpick) {
+					jukePick(jukeSig.playlistTracks[Number(plpick.dataset.jukePlpick)]);
+					return;
+				}
+				const rotLoad = e.target.closest("[data-juke-rotation-load]");
+				if (rotLoad) {
+					jukeLoadRotation(true);
+					return;
+				}
+				const rotpick = e.target.closest("[data-juke-rotpick]");
+				if (rotpick) {
+					jukePick(jukeSig.rotationFull?.tracks?.[Number(rotpick.dataset.jukeRotpick)]);
+					return;
+				}
+				const pick = e.target.closest("[data-juke-pick]");
+				if (pick) {
+					jukePick(jukeSig.searchList[Number(pick.dataset.jukePick)]);
+					return;
+				}
+				const qplay = e.target.closest("[data-juke-qplay]");
+				if (qplay) { jukeAction("play", { uid: qplay.dataset.jukeQplay }); return; }
+				const qdel = e.target.closest("[data-juke-qdel]");
+				if (qdel) { jukeAction("remove", { uid: qdel.dataset.jukeQdel }); return; }
+				const readd = e.target.closest("[data-juke-readd]");
+				if (readd) {
+					jukePick(jukeSig.state?.history?.[Number(readd.dataset.jukeReadd)]);
+					return;
+				}
+				const lyric = e.target.closest("[data-lrc]");
+				if (lyric) {
+					const line = jukeSig.lyrics[Number(lyric.dataset.lrc)];
+					const a = rt.jukeAudio;
+					if (line && a) {
+						a.currentTime = line.time;
+						if (a.paused && jukeSig.listening) a.play().catch(() => {});
+					}
 					return;
 				}
 				const listen = e.target.closest("[data-juke-listen]");
 				if (listen) {
-					jukeSig.listening = !jukeSig.listening;
-					jukeSig.lastUid = "";
-					if (jukeSig.listening) {
-						await jukeLoad();
-						if (jukeSig.state?.current) jukePlayRemote(jukeSig.state.current);
-					} else if (musicApi() && musicApi().getState().isPlaying) {
-						musicApi().togglePlay();
+					jukeToggleListen();
+					return;
+				}
+				if (e.target.closest("[data-juke-next]")) { jukeSkip(); return; }
+				if (e.target.closest("[data-juke-play]")) {
+					if (!jukeSig.listening) {
+						jukeToggleListen(true);
+					} else {
+						const a = ensureJukeAudio();
+						if (a.paused) a.play().catch(() => {});
+						else a.pause();
 					}
-					jukeRenderTrack();
+					return;
+				}
+				const prev = e.target.closest("[data-juke-prev]");
+				if (prev) {
+					const a = ensureJukeAudio();
+					if (a) {
+						a.currentTime = 0;
+						if (a.paused && jukeSig.listening) a.play().catch(() => {});
+					}
 					return;
 				}
 				const random = e.target.closest("[data-juke-random]");
 				if (random) {
-					const list = jukeCatalog();
-					if (list.length) jukeAction("random", { track: list[Math.floor(Math.random() * list.length)] });
+					let pool = jukeCatalog();
+					if (!pool.length) pool = jukeSig.playlistTracks;
+					if (!pool.length) pool = jukeSig.rotationFull?.tracks || [];
+					if (!pool.length) { jukeSay("还没有可点的歌。", true); return; }
+					jukePick(pool[Math.floor(Math.random() * pool.length)]);
 					return;
 				}
-				if (e.target.closest("[data-juke-next]")) { jukeAction("next"); return; }
-				if (e.target.closest("[data-juke-play]")) {
-					if (!jukeSig.listening) {
-						jukeSig.listening = true;
-						jukeSig.lastUid = "";
-						await jukeLoad();
-						if (jukeSig.state?.current) jukePlayRemote(jukeSig.state.current);
-					} else if (musicApi()) {
-						musicApi().togglePlay();
-					}
-					jukeRenderTrack();
-					return;
-				}
-				if (e.target.closest("[data-juke-prev]")) { if (musicApi()) musicApi().playPrev(); return; }
 				if (e.target.closest("[data-juke-close]")) {
 					const shell = root();
 					if (!shell) return;
@@ -5844,14 +6681,32 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			const form = juke.querySelector("[data-juke-searchform]");
 			if (form) form.addEventListener("submit", (e) => {
 				e.preventDefault();
-				jukeSig.query = juke.querySelector("[data-juke-q]").value || "";
-				jukeRenderSearch();
+				const input = jukeNode("[data-juke-q]");
+				jukeSig.query = input ? input.value : "";
+				jukeSearch();
 			});
-			juke.querySelector("[data-juke-seek]").addEventListener("input", (e) => {
-				if (musicApi()) musicApi().seek(Number(e.target.value) / 10);
+
+			const importForm = juke.querySelector("[data-juke-importform]");
+			if (importForm) importForm.addEventListener("submit", (e) => {
+				e.preventDefault();
+				jukeImport();
 			});
-			juke.querySelector("[data-juke-vol]").addEventListener("input", (e) => {
-				if (musicApi()) musicApi().setVolume(Number(e.target.value) / 100);
+
+			const seek = juke.querySelector("[data-juke-seek]");
+			if (seek) seek.addEventListener("input", (e) => {
+				const a = rt.jukeAudio;
+				if (a && a.duration) a.currentTime = (Number(e.target.value) / 1000) * a.duration;
+			});
+
+			const vol = juke.querySelector("[data-juke-vol]");
+			if (vol) vol.addEventListener("input", (e) => {
+				const a = ensureJukeAudio();
+				a.volume = Math.min(1, Math.max(0, Number(e.target.value) / 100));
+			});
+
+			window.addEventListener("fm:play-state", (e) => {
+				const a = rt.jukeAudio;
+				if (e.detail && e.detail.isPlaying && a && !a.paused) a.pause();
 			});
 
 			if (rt.jukeTimer) clearInterval(rt.jukeTimer);
@@ -5859,12 +6714,19 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				if (!root() || !root().querySelector("[data-tea-juke]")) {
 					clearInterval(rt.jukeTimer);
 					rt.jukeTimer = null;
+					if (rt.jukeAudio) rt.jukeAudio.pause();
 					return;
 				}
 				jukeLoad();
-				renderJuke();
-			}, 3000);
-			renderJuke();
+				if (Date.now() - (jukeSig.clockAt || 0) > 30_000) {
+					jukeSig.clockAt = Date.now();
+					jukeSampleClock();
+				}
+				if (jukeSig.listening) jukeSync();
+				jukeRenderTrack();
+				if (jukeSig.tab === "lyrics") jukeRenderLyrics(false);
+				if (jukeSig.tab === "list") jukeRenderList();
+			}, 2000);
 		};
 
 		// ── 图片预览 ─────────────────────────────────────────────

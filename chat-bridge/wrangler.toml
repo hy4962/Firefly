@@ -1,6 +1,10 @@
 # 茶室桥接 Worker
 # 部署：npx wrangler deploy -c chat-bridge/wrangler.toml
 # 密钥：npx wrangler secret put BRIDGE_TOKEN -c chat-bridge/wrangler.toml
+# 点歌台音频代理签名（可选，不设则复用 BRIDGE_TOKEN）：
+# npx wrangler secret put MUSIC_SECRET -c chat-bridge/wrangler.toml
+# 站长 Matrix ID（可选，默认按房间 power_levels >= 50 判定）：
+# OWNER_ID = "@uid01:matrix.0dm.cn"
 
 name = "tea-bridge"
 main = "worker.mjs"

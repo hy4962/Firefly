@@ -8,7 +8,12 @@
  * 两个令牌：
  *   ADMIN_TOKEN  —— 服务器管理员（开号 / 改资料）
  *   BRIDGE_TOKEN —— 房间成员（匿名读历史、拉成员、邀请、代理媒体）
+ *
+ * 点歌台（/api/juke/*）：歌曲元数据与队列存在房间状态事件里；搜歌走
+ * QQ / 网易云 / 酷狗公开接口，播放前现取直链，跨域或防盗链时走签名代理。
  */
+
+import { normalizeTrack, resolveTrack, searchMusic, importPlaylist, proxyUrl, verifyProxy, proxyAudio } from "./music.mjs";
 
 const DEFAULTS = {
 	MATRIX_HS: "https://matrix.0dm.cn",
@@ -56,6 +61,7 @@ const cfg = (env) => ({
 	siteName: env.SITE_NAME || DEFAULTS.SITE_NAME,
 	siteUrl: env.SITE_URL || DEFAULTS.SITE_URL,
 	prefix: env.IDENTITY_PREFIX || DEFAULTS.IDENTITY_PREFIX,
+	ownerId: env.OWNER_ID || "",
 	walineApi: env.WALINE_API || "", 
 	origins: (env.ALLOW_ORIGINS || DEFAULTS.ALLOW_ORIGINS).split(",").map((s) => s.trim()).filter(Boolean),
 });
@@ -456,7 +462,8 @@ const memory = new Map();
 
 async function rateCheck(env, ip, kind = "send") {
 	const now = Date.now();
-	const gap = kind === "enter" ? RATE.enterGap : kind === "juke" ? 800 : RATE.minGap;
+	const gap =
+		kind === "enter" ? RATE.enterGap : kind === "juke" ? 800 : kind === "link" ? 350 : kind === "search" ? 600 : RATE.minGap;
 
 	const b = memory.get(`${kind}:${ip}`) || { last: 0, minute: [], hour: [] };
 	if (now - b.last < gap) return `手速有点快，${Math.ceil((gap - (now - b.last)) / 1000)} 秒后再试。`;
@@ -1352,77 +1359,505 @@ async function handleProfile(c, request, token) {
 	});
 }
 
-// ── 点歌台：队列存在 Matrix 房间状态事件里 ──────────────────────────
-// 不分 isolate 内存、重启不丢；写入需要访客 token，读取公开。
+// ── 点歌台 v2：队列、歌单、轮播都存在 Matrix 房间状态事件里 ──────────
+// 不依赖 isolate 内存，重启不丢；写入需要访客 token，读取公开。
+// 队列只存歌曲元数据，播放前再解析直链，避免 vkey 过期。
 const JUKE_STATE_TYPE = "uk.9ll.juke.state";
 const JUKE_STATE_KEY = "juke";
-const JUKE_LIMITS = { queue: 40, history: 40 };
+const JUKE_PLAYLISTS_TYPE = "uk.9ll.juke.playlists";
+const JUKE_PLAYLIST_TYPE = "uk.9ll.juke.playlist";
+const JUKE_ROTATION_TYPE = "uk.9ll.juke.rotation";
+const JUKE_LIMITS = { queue: 40, history: 25, perUser: 10, tracks: 60, playlists: 8 };
+const JUKE_VERSION = 2;
 
-const jukeEmpty = () => ({ v: 1, current: null, queue: [], history: [], seq: 0, updatedAt: 0 });
+const jukeEmpty = () => ({
+	v: JUKE_VERSION,
+	current: null,
+	queue: [],
+	history: [],
+	votes: {},
+	rotation: null,
+	seq: 0,
+	updatedAt: 0,
+});
 
+const jukeUid = () => `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+const jukePlaylistId = () => `pl-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+/** 队列/歌单里的歌曲只保留可公开复现的元数据，直链在播放时现取 */
 function jukeTrack(raw) {
-	const id = clean(raw?.id, 40).replace(/[^A-Za-z0-9_-]/g, "");
-	const title = clean(raw?.title, 80);
-	const artist = clean(raw?.artist, 80);
-	const url = clean(raw?.url, 600);
-	const cover = clean(raw?.cover, 600);
-	const lrc = clean(raw?.lrc, 600);
-	if (!id || !title) return null;
-	const good = (v) => !v || /^\/assets\//.test(v) || /^https:\/\/api\.i-meto\.com\/meting\/api\?/.test(v);
-	if (!good(url) || !good(cover)) return null;
-	return { id, title, artist, url, cover, lrc, kind: raw?.kind === "rotation" ? "rotation" : "request" };
+	const t = normalizeTrack(raw);
+	if (!t || !t.title) return null;
+	if (t.source === "local" && !/^\/assets\//.test(t.url || "")) return null;
+	return t;
 }
 
-async function jukeRead(c, room) {
-	const path = `/_matrix/client/v3/rooms/${enc(room.id)}/state/${JUKE_STATE_TYPE}/${JUKE_STATE_KEY}`;
-	const { ok, status, data } = await mxJson(c, path);
-	if (!ok && status !== 404) throw new Error(data.error || "juke state read failed");
-	const s = status === 404 ? null : data;
-	if (!s || typeof s !== "object" || s.v !== 1) return jukeEmpty();
+function jukeEntry(raw) {
+	const t = jukeTrack(raw);
+	if (!t) return null;
 	return {
-		v: 1,
-		current: s.current && typeof s.current === "object" ? s.current : null,
-		queue: Array.isArray(s.queue) ? s.queue.slice(0, JUKE_LIMITS.queue) : [],
-		history: Array.isArray(s.history) ? s.history.slice(0, JUKE_LIMITS.history) : [],
-		seq: Number(s.seq) || 0,
-		updatedAt: Number(s.updatedAt) || 0,
+		...t,
+		uid: clean(raw?.uid, 40) || jukeUid(),
+		requester: clean(raw?.requester, 30),
+		requesterId: clean(raw?.requesterId, 90),
+		addedAt: Number(raw?.addedAt) || 0,
+		startAt: Number(raw?.startAt) || 0,
+		playedAt: Number(raw?.playedAt) || 0,
+		by: clean(raw?.by, 30),
+		kind: raw?.kind === "rotation" ? "rotation" : "request",
 	};
 }
 
-async function jukeWrite(c, room, state) {
-	const path = `/_matrix/client/v3/rooms/${enc(room.id)}/state/${JUKE_STATE_TYPE}/${JUKE_STATE_KEY}`;
-	const res = await mx(c, path, { method: "PUT", body: state });
+function jukePreview(rot) {
+	if (!rot || !Array.isArray(rot.tracks) || !rot.tracks.length) return [];
+	const order = Array.isArray(rot.order) && rot.order.length === rot.tracks.length ? rot.order : rot.tracks.map((_, i) => i);
+	const out = [];
+	let i = Number(rot.index) || 0;
+	while (out.length < 5 && i < order.length) {
+		const t = rot.tracks[order[i]];
+		if (t) out.push({ key: t.key, title: t.title, artist: t.artist });
+		i++;
+	}
+	return out;
+}
+
+async function jukeStateGet(c, room, type, key = "") {
+	const path = `/_matrix/client/v3/rooms/${enc(room.id)}/state/${enc(type)}/${enc(key)}`;
+	const { ok, status, data } = await mxJson(c, path);
+	if (status === 404) return null;
+	if (!ok) throw new Error(data.error || "juke state read failed");
+	return data;
+}
+
+async function jukeStatePut(c, room, type, key, body) {
+	const path = `/_matrix/client/v3/rooms/${enc(room.id)}/state/${enc(type)}/${enc(key)}`;
+	const res = await mx(c, path, { method: "PUT", body });
 	const data = await res.json().catch(() => ({}));
 	if (!res.ok) throw new Error(data.error || "juke state write failed");
 }
 
-async function jukeWho(c, token) {
-	const { ok, data } = await mxJson(c, "/_matrix/client/v3/account/whoami", { token });
-	if (!ok || !data.user_id) return "茶友";
-	const local = data.user_id.split(":")[0].replace(/^@/, "");
-	return local.startsWith("tea") ? "茶友" : local;
+async function jukeRead(c, room) {
+	const raw = await jukeStateGet(c, room, JUKE_STATE_TYPE, JUKE_STATE_KEY);
+	if (!raw || typeof raw !== "object") return jukeEmpty();
+
+	// v1 迁移：当时队列里存的是站点歌单的 id + Meting 直链
+	if (raw.v !== JUKE_VERSION) {
+		const migrate = (t) => {
+			if (!t || typeof t !== "object") return null;
+			const oldId = clean(t.id, 80);
+			const url = clean(t.url, 600);
+			const numeric = /^\d+$/.test(oldId);
+			const local = /^\/assets\//.test(url);
+			const t2 = jukeTrack({
+				title: t.title,
+				artist: t.artist,
+				cover: t.cover,
+				source: numeric ? "netease" : local ? "local" : "",
+				sourceId: numeric ? oldId : "",
+				key: numeric ? `netease:${oldId}` : "",
+				url: local ? url : "",
+			});
+			if (!t2) return null;
+			return {
+				...t2,
+				uid: clean(t.uid, 40) || jukeUid(),
+				requester: clean(t.requester, 30),
+				requesterId: clean(t.requesterId, 90),
+				addedAt: Number(t.addedAt) || 0,
+				startAt: Number(t.startAt) || 0,
+				playedAt: Number(t.playedAt) || 0,
+				kind: "request",
+			};
+		};
+		const queue = Array.isArray(raw.queue) ? raw.queue.map(migrate).filter(Boolean) : [];
+		const history = Array.isArray(raw.history) ? raw.history.map(migrate).filter(Boolean) : [];
+		return {
+			...jukeEmpty(),
+			current: raw.current ? migrate(raw.current) : null,
+			queue,
+			history,
+			seq: Number(raw.seq) || 0,
+			updatedAt: Number(raw.updatedAt) || 0,
+		};
+	}
+
+	const current = raw.current ? jukeEntry(raw.current) : null;
+	const queue = Array.isArray(raw.queue) ? raw.queue.map(jukeEntry).filter(Boolean).slice(0, JUKE_LIMITS.queue) : [];
+	const history = Array.isArray(raw.history) ? raw.history.map(jukeEntry).filter(Boolean).slice(0, JUKE_LIMITS.history) : [];
+	const votes = raw.votes && typeof raw.votes === "object" ? raw.votes : {};
+	const rotation = raw.rotation && typeof raw.rotation === "object"
+		? {
+				playlistId: clean(raw.rotation.playlistId, 40),
+				name: clean(raw.rotation.name, 80),
+				trackCount: Number(raw.rotation.trackCount) || 0,
+				preview: Array.isArray(raw.rotation.preview)
+					? raw.rotation.preview.slice(0, 6).map((x) => ({
+							key: clean(x?.key, 80),
+							title: clean(x?.title, 100),
+							artist: clean(x?.artist, 120),
+						}))
+					: [],
+			}
+		: null;
+	return {
+		v: JUKE_VERSION,
+		current,
+		queue,
+		history,
+		votes,
+		rotation,
+		seq: Number(raw.seq) || 0,
+		updatedAt: Number(raw.updatedAt) || 0,
+	};
 }
 
-const jukeUid = () => `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+async function jukeWrite(c, room, state) {
+	state.v = JUKE_VERSION;
+	state.updatedAt = Date.now();
+	// Matrix 单个状态事件有 64KB 上限；超了就丢最早的历史和队尾，保住正在播的歌
+	if (JSON.stringify(state).length > 56_000) {
+		state.history = state.history.slice(0, 8);
+		state.queue = state.queue.slice(0, 20);
+	}
+	if (JSON.stringify(state).length > 62_000) {
+		state.history = [];
+		state.queue = state.queue.slice(0, 10);
+	}
+	await jukeStatePut(c, room, JUKE_STATE_TYPE, JUKE_STATE_KEY, state);
+}
+
+// ── 访客身份与站长判定 ──────────────────────────────────────────────
+const jukeWhoCache = new Map();
+
+async function jukeWho(c, room, token) {
+	const ck = `${token}|${room.id}`;
+	const hit = jukeWhoCache.get(ck);
+	if (hit && Date.now() - hit.at < 5 * 60_000) return hit.who;
+
+	let who = { id: "", name: "茶友", admin: false };
+	const { ok, data } = await mxJson(c, "/_matrix/client/v3/account/whoami", { token });
+	if (ok && data.user_id) {
+		const id = data.user_id;
+		const local = id.split(":")[0].replace(/^@/, "");
+		let name = local.startsWith("tea") ? "茶友" : local;
+		try {
+			const prof = await mxJson(c, `/_matrix/client/v3/profile/${enc(id)}`, {});
+			const dn = prof.data?.displayname;
+			if (dn) name = String(dn).split(" · ")[0].slice(0, 20);
+		} catch (_) {}
+		let admin = false;
+		try {
+			const pl = await mxJson(c, `/_matrix/client/v3/rooms/${enc(room.id)}/state/m.room.power_levels/`, {});
+			if (pl.ok && pl.data && typeof pl.data === "object") {
+				const users = pl.data.users || {};
+				admin = Number(users[id] ?? pl.data.users_default ?? 0) >= 50 || (!!c.ownerId && id === c.ownerId);
+			}
+		} catch (_) {}
+		who = { id, name, admin };
+	}
+	if (jukeWhoCache.size > 500) jukeWhoCache.clear();
+	jukeWhoCache.set(ck, { at: Date.now(), who });
+	return who;
+}
+
+// ── 歌单 ────────────────────────────────────────────────────────────
+async function jukePlaylistsRead(c, room) {
+	const raw = await jukeStateGet(c, room, JUKE_PLAYLISTS_TYPE, "");
+	const items = Array.isArray(raw?.items)
+		? raw.items
+				.slice(0, JUKE_LIMITS.playlists)
+				.map((x) => ({
+					id: clean(x?.id, 40),
+					name: clean(x?.name, 80),
+					platform: clean(x?.platform, 24),
+					creator: clean(x?.creator, 60),
+					cover: /^https?:\/\//.test(String(x?.cover || "")) ? String(x.cover).replace(/^http:/i, "https:") : "",
+					trackCount: Number(x?.trackCount) || 0,
+					by: clean(x?.by, 30),
+					addedAt: Number(x?.addedAt) || 0,
+				}))
+				.filter((x) => x.id && x.name)
+		: [];
+	return { v: 1, items };
+}
+
+async function jukePlaylistRead(c, room, id) {
+	if (!/^[A-Za-z0-9_-]{4,40}$/.test(id)) return null;
+	const raw = await jukeStateGet(c, room, JUKE_PLAYLIST_TYPE, id);
+	if (!raw || typeof raw !== "object") return null;
+	const tracks = Array.isArray(raw.tracks) ? raw.tracks.map(jukeTrack).filter(Boolean).slice(0, JUKE_LIMITS.tracks) : [];
+	if (!tracks.length) return null;
+	return {
+		id,
+		name: clean(raw.name, 80) || "导入的歌单",
+		platform: clean(raw.platform, 24),
+		creator: clean(raw.creator, 60),
+		cover: /^https?:\/\//.test(String(raw.cover || "")) ? String(raw.cover).replace(/^http:/i, "https:") : "",
+		by: clean(raw.by, 30),
+		addedAt: Number(raw.addedAt) || 0,
+		tracks,
+	};
+}
+
+// ── 轮播 ────────────────────────────────────────────────────────────
+function jukeShuffle(n, lastKey, tracks) {
+	const order = Array.from({ length: n }, (_, i) => i);
+	for (let i = n - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[order[i], order[j]] = [order[j], order[i]];
+	}
+	if (n > 1 && lastKey && tracks[order[0]]?.key === lastKey) {
+		const j = 1 + Math.floor(Math.random() * (n - 1));
+		[order[0], order[j]] = [order[j], order[0]];
+	}
+	return order;
+}
+
+async function jukeRotationRead(c, room) {
+	const raw = await jukeStateGet(c, room, JUKE_ROTATION_TYPE, "juke");
+	if (!raw || typeof raw !== "object") return null;
+	const tracks = Array.isArray(raw.tracks) ? raw.tracks.map(jukeTrack).filter(Boolean).slice(0, JUKE_LIMITS.tracks) : [];
+	if (!tracks.length) return null;
+	const order = Array.isArray(raw.order)
+		? raw.order.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < tracks.length)
+		: [];
+	return {
+		v: 1,
+		playlistId: clean(raw.playlistId, 40),
+		name: clean(raw.name, 80) || "轮播歌单",
+		tracks,
+		order,
+		index: Number(raw.index) || 0,
+		lastKey: clean(raw.lastKey, 80),
+	};
+}
+
+async function jukeRotationWrite(c, room, rot) {
+	await jukeStatePut(c, room, JUKE_ROTATION_TYPE, "juke", {
+		v: 1,
+		playlistId: rot.playlistId,
+		name: rot.name,
+		tracks: rot.tracks,
+		order: rot.order,
+		index: rot.index,
+		lastKey: rot.lastKey,
+	});
+}
+
+async function jukeRotationNext(c, room, rot) {
+	if (!rot || !rot.tracks.length) return null;
+	let order = Array.isArray(rot.order) && rot.order.length === rot.tracks.length ? rot.order.slice() : [];
+	if (order.length !== rot.tracks.length) order = jukeShuffle(rot.tracks.length, rot.lastKey, rot.tracks);
+	let index = Number(rot.index) || 0;
+	if (index >= order.length) {
+		order = jukeShuffle(rot.tracks.length, rot.lastKey, rot.tracks);
+		index = 0;
+	}
+	const track = rot.tracks[order[index]];
+	if (!track) return null;
+	rot.order = order;
+	rot.index = index + 1;
+	rot.lastKey = track.key;
+	await jukeRotationWrite(c, room, rot);
+	return { ...track, kind: "rotation", uid: jukeUid() };
+}
+
+const jukeRotationMeta = (rot) =>
+	rot
+		? {
+				playlistId: rot.playlistId,
+				name: rot.name,
+				trackCount: rot.tracks.length,
+				preview: jukePreview(rot),
+			}
+		: null;
 
 function jukeAdvance(state, next, who) {
 	if (state.current) {
-		state.history.unshift({ ...state.current, playedAt: Date.now(), by: state.current.requester || "" });
+		state.history.unshift({
+			...state.current,
+			playedAt: Date.now(),
+			by: state.current.requester || "",
+		});
 		state.history = state.history.slice(0, JUKE_LIMITS.history);
 	}
-	state.current = next ? { ...next, uid: next.uid || jukeUid(), startAt: Date.now() + 500, requester: who } : null;
-	state.seq += 1;
+	if (next) {
+		const kind = next.kind === "rotation" ? "rotation" : "request";
+		state.current = {
+			...next,
+			uid: next.uid || jukeUid(),
+			startAt: Date.now() + 700,
+			requester: kind === "rotation" ? "" : next.requester || who?.name || "茶友",
+			requesterId: kind === "rotation" ? "" : next.requesterId || who?.id || "",
+			kind,
+		};
+	} else {
+		state.current = null;
+	}
+	state.votes = {};
+	state.seq = (Number(state.seq) || 0) + 1;
 	state.updatedAt = Date.now();
 	return state;
 }
 
-async function handleJukeState(c, url, room) {
+async function jukeNext(c, room, state, rot, who) {
+	const next = state.queue.shift() || (await jukeRotationNext(c, room, rot));
+	jukeAdvance(state, next, who);
+	return next;
+}
+
+// ── 接口 ────────────────────────────────────────────────────────────
+async function handleJukeState(c, room, token) {
 	const state = await jukeRead(c, room);
-	return json(200, { ok: true, ...state, serverNow: Date.now(), room: room.key });
+	const who = token ? await jukeWho(c, room, token) : { admin: false, id: "", name: "茶友" };
+	return json(200, { ok: true, ...state, serverNow: Date.now(), room: room.key, admin: !!who.admin, me: who.id });
+}
+
+async function handleJukeSearch(url, ip, env) {
+	const denied = await rateCheck(env, ip, "search");
+	if (denied) return fail(429, denied);
+	const q = clean(url.searchParams.get("q"), 60);
+	if (!q) return fail(400, "想听什么？先输入歌名或歌手");
+	const rawSource = clean(url.searchParams.get("source"), 12) || "all";
+	const source = rawSource === "all" || ["qq", "netease", "kugou"].includes(rawSource) ? rawSource : "all";
+	const limit = Math.max(4, Math.min(20, Number(url.searchParams.get("limit")) || 12));
+	try {
+		const items = await searchMusic(source, q, limit);
+		return json(200, { ok: true, items, source, q, serverNow: Date.now() });
+	} catch (err) {
+		return fail(502, `曲库暂时不通：${String(err.message || err).slice(0, 60)}`);
+	}
+}
+
+async function handleJukeLink(request, url, ip, env) {
+	const denied = await rateCheck(env, ip, "link");
+	if (denied) return fail(429, denied);
+	const track = jukeTrack({
+		key: clean(url.searchParams.get("key"), 80),
+		title: clean(url.searchParams.get("title"), 100),
+		artist: clean(url.searchParams.get("artist"), 140),
+		source: clean(url.searchParams.get("source"), 12),
+		sourceId: clean(url.searchParams.get("id"), 80),
+		durationSec: Number(url.searchParams.get("duration")) || 0,
+		url: clean(url.searchParams.get("url"), 600),
+	});
+	if (!track) return fail(400, "缺少歌曲信息");
+	try {
+		const got = await resolveTrack(track);
+		const origin = new URL(request.url).origin;
+		const secret = env.MUSIC_SECRET || env.BRIDGE_TOKEN || "";
+		const local = got.source === "local" || /^\/assets\//.test(got.url);
+		const proxied = local ? "" : await proxyUrl(got.url, secret, origin);
+		return json(200, {
+			ok: true,
+			url: local ? got.url : /^https:\/\//i.test(got.url) ? got.url : proxied,
+			direct: got.url,
+			proxy: proxied,
+			source: got.source,
+			sourceId: got.sourceId,
+			lrc: got.lrc || "",
+			serverNow: Date.now(),
+		});
+	} catch (err) {
+		return fail(404, String(err.message || err).slice(0, 100) || "找不到可播的音源");
+	}
+}
+
+async function handleJukeStream(request, url, env) {
+	const secret = env.MUSIC_SECRET || env.BRIDGE_TOKEN || "";
+	const target = await verifyProxy(url.searchParams, secret);
+	if (!target) return fail(403, "这条音频链接已经过期，重新点一次歌吧");
+	try {
+		return await proxyAudio(request, target);
+	} catch (_) {
+		return fail(502, "音频代理暂时不通，稍后再试");
+	}
+}
+
+async function handleJukePlaylists(c, room) {
+	const idx = await jukePlaylistsRead(c, room);
+	const state = await jukeRead(c, room);
+	return json(200, { ok: true, items: idx.items, rotation: state.rotation, serverNow: Date.now() });
+}
+
+async function handleJukePlaylist(c, room, url) {
+	const id = clean(url.searchParams.get("id"), 40);
+	const pl = await jukePlaylistRead(c, room, id);
+	if (!pl) return fail(404, "歌单不存在或已经删了");
+	return json(200, { ok: true, playlist: pl, serverNow: Date.now() });
+}
+
+async function handleJukeRotation(c, room) {
+	const rot = await jukeRotationRead(c, room);
+	return json(200, {
+		ok: true,
+		rotation: rot
+			? {
+					playlistId: rot.playlistId,
+					name: rot.name,
+					trackCount: rot.tracks.length,
+					index: rot.index,
+					tracks: rot.order.length === rot.tracks.length ? rot.order.map((i) => rot.tracks[i]).filter(Boolean) : rot.tracks,
+					next: jukePreview(rot),
+				}
+			: null,
+		serverNow: Date.now(),
+	});
+}
+
+async function handleJukeImport(c, request, token, ip, env, room) {
+	if (!token) return fail(401, "先入座，再导歌单");
+	const denied = await rateCheck(env, ip, "import");
+	if (denied) return fail(429, denied);
+	let body;
+	try {
+		body = await request.json();
+	} catch {
+		return fail(400, "请求格式不对");
+	}
+	const who = await jukeWho(c, room, token);
+	const idx = await jukePlaylistsRead(c, room);
+	if (idx.items.length >= JUKE_LIMITS.playlists) return fail(400, "这间房的导入歌单已经满了");
+	let pl;
+	try {
+		pl = await importPlaylist(body.url);
+	} catch (err) {
+		return fail(400, String(err.message || err).slice(0, 120) || "歌单解析失败");
+	}
+	const id = jukePlaylistId();
+	const record = {
+		v: 1,
+		id,
+		name: pl.name,
+		platform: pl.platform,
+		creator: pl.creator,
+		cover: pl.cover,
+		by: who.name,
+		addedAt: Date.now(),
+		tracks: pl.tracks,
+	};
+	await jukeStatePut(c, room, JUKE_PLAYLIST_TYPE, id, record);
+	const item = {
+		id,
+		name: record.name,
+		platform: record.platform,
+		creator: record.creator,
+		cover: record.cover,
+		trackCount: record.tracks.length,
+		by: record.by,
+		addedAt: record.addedAt,
+	};
+	idx.items.unshift(item);
+	await jukeStatePut(c, room, JUKE_PLAYLISTS_TYPE, "", { v: 1, items: idx.items.slice(0, JUKE_LIMITS.playlists) });
+	return json(200, {
+		ok: true,
+		playlist: { ...item },
+		items: idx.items,
+		serverNow: Date.now(),
+	});
 }
 
 async function handleJukeWrite(c, request, url, token, ip, env, room) {
-	if (!token) return fail(401, "先入座，再点歌");
 	const denied = await rateCheck(env, ip, "juke");
 	if (denied) return fail(429, denied);
 	let body;
@@ -1431,43 +1866,141 @@ async function handleJukeWrite(c, request, url, token, ip, env, room) {
 	} catch {
 		return fail(400, "请求格式不对");
 	}
-	const who = await jukeWho(c, token);
-	const state = await jukeRead(c, room);
 	const action = clean(body.action, 20);
+	// 未入座的旁观者也可以收听；一首歌自然播完后允许他们推动队列，手动切歌仍需身份
+	if (!token && action !== "ended") return fail(401, "先入座，再点歌");
+	const who = token ? await jukeWho(c, room, token) : { id: "", name: "茶友", admin: false };
+	const state = await jukeRead(c, room);
+	const rot = await jukeRotationRead(c, room);
+	let vote = null;
 
 	if (action === "enqueue" || action === "random") {
 		const track = jukeTrack(body.track);
-		if (!track) return fail(400, "这首歌不在本站歌单里");
-		if (action === "random") track.kind = "rotation";
-		if (state.current?.id === track.id || state.queue.some((t) => t.id === track.id)) {
-			return json(200, { ok: true, duplicate: true, state });
+		if (!track) return fail(400, "这首歌的信息不完整");
+		if (state.current?.key === track.key || state.queue.some((t) => t.key === track.key)) {
+			return json(200, { ok: true, duplicate: true, state, serverNow: Date.now(), admin: !!who.admin });
 		}
-		state.queue.push({ ...track, uid: jukeUid(), requester: who, addedAt: Date.now() });
-		if (state.queue.length > JUKE_LIMITS.queue) state.queue = state.queue.slice(-JUKE_LIMITS.queue);
-		state.seq += 1;
-		state.updatedAt = Date.now();
+		const mine = state.queue.filter((t) => t.requesterId && t.requesterId === who.id).length;
+		if (mine >= JUKE_LIMITS.perUser) return fail(400, `一次最多排 ${JUKE_LIMITS.perUser} 首，等前面的放完再来`);
+		if (state.queue.length >= JUKE_LIMITS.queue) return fail(400, "队列已经排满了，等一会儿再点");
+		const entry = {
+			...track,
+			uid: jukeUid(),
+			requester: who.name,
+			requesterId: who.id,
+			addedAt: Date.now(),
+			kind: "request",
+		};
+		if (!state.current || state.current.kind === "rotation") {
+			jukeAdvance(state, entry, who);
+		} else {
+			state.queue.push(entry);
+			state.seq += 1;
+			state.updatedAt = Date.now();
+		}
 	} else if (action === "play") {
 		const uid = clean(body.uid, 40);
 		const idx = state.queue.findIndex((t) => t.uid === uid);
 		if (idx < 0) return fail(404, "队列里没找到这首歌");
 		const [next] = state.queue.splice(idx, 1);
 		jukeAdvance(state, next, who);
-	} else if (action === "next") {
-		const next = state.queue.shift() || null;
+	} else if (action === "next" || action === "ended") {
+		if (!state.current) return json(200, { ok: true, state, serverNow: Date.now(), admin: !!who.admin });
+		const from = clean(body.from, 40);
+		if (action === "ended" && !from) return fail(400, "缺少当前曲目信息");
+		if (action === "ended" && from && state.current.uid !== from) {
+			return json(200, { ok: true, stale: true, state, serverNow: Date.now(), admin: !!who.admin });
+		}
+		const next = state.queue.shift() || (await jukeRotationNext(c, room, rot));
 		jukeAdvance(state, next, who);
+		if (rot) state.rotation = jukeRotationMeta(rot);
+	} else if (action === "skip") {
+		if (!state.current) return json(200, { ok: true, state, serverNow: Date.now(), admin: !!who.admin });
+		const cur = state.current;
+		const listeners = Math.max(1, Math.min(99, Number(body.listeners) || 1));
+		const immediate =
+			cur.kind === "rotation" ||
+			!cur.requesterId ||
+			cur.requesterId === who.id ||
+			who.admin ||
+			listeners <= 2;
+		if (immediate) {
+			const next = state.queue.shift() || (await jukeRotationNext(c, room, rot));
+			jukeAdvance(state, next, who);
+			if (rot) state.rotation = jukeRotationMeta(rot);
+			vote = { skipped: true, votes: 0, required: 0 };
+		} else {
+			// 收听人数不好精确统计，超过 3 人时固定最多要 3 票，避免大房间里永远凑不齐
+			const required = Math.min(3, Math.floor(listeners / 2) + 1);
+			const key = cur.uid;
+			const voters = Array.isArray(state.votes[key]) ? state.votes[key].slice(0, 50) : [];
+			if (who.id && !voters.includes(who.id)) voters.push(who.id);
+			state.votes = { [key]: voters };
+			if (voters.length >= required) {
+				const next = state.queue.shift() || (await jukeRotationNext(c, room, rot));
+				jukeAdvance(state, next, who);
+				if (rot) state.rotation = jukeRotationMeta(rot);
+				vote = { skipped: true, votes: voters.length, required };
+			} else {
+				state.seq += 1;
+				state.updatedAt = Date.now();
+				vote = { skipped: false, votes: voters.length, required };
+			}
+		}
 	} else if (action === "remove") {
 		const uid = clean(body.uid, 40);
 		const idx = state.queue.findIndex((t) => t.uid === uid);
 		if (idx < 0) return fail(404, "队列里没找到这首歌");
+		const target = state.queue[idx];
+		if (target.requesterId && target.requesterId !== who.id && !who.admin) return fail(403, "只能撤自己点的歌");
 		state.queue.splice(idx, 1);
 		state.seq += 1;
 		state.updatedAt = Date.now();
+	} else if (action === "rotation") {
+		if (!who.admin) return fail(403, "只有站长能换轮播歌单");
+		const playlistId = clean(body.playlistId, 40);
+		if (!playlistId) {
+			await jukeStatePut(c, room, JUKE_ROTATION_TYPE, "juke", {
+				v: 1,
+				playlistId: "",
+				name: "",
+				tracks: [],
+				order: [],
+				index: 0,
+				lastKey: "",
+			});
+			state.rotation = null;
+			state.seq += 1;
+			state.updatedAt = Date.now();
+		} else {
+			const pl = await jukePlaylistRead(c, room, playlistId);
+			if (!pl) return fail(404, "歌单不存在");
+			const nextRot = {
+				v: 1,
+				playlistId,
+				name: pl.name,
+				tracks: pl.tracks,
+				order: jukeShuffle(pl.tracks.length, "", pl.tracks),
+				index: 0,
+				lastKey: "",
+			};
+			await jukeRotationWrite(c, room, nextRot);
+			state.rotation = jukeRotationMeta(nextRot);
+			if (!state.current || state.current.kind === "rotation") {
+				const next = await jukeRotationNext(c, room, nextRot);
+				jukeAdvance(state, next, who);
+				state.rotation = jukeRotationMeta(nextRot);
+			} else {
+				state.seq += 1;
+				state.updatedAt = Date.now();
+			}
+		}
 	} else {
 		return fail(400, "不支持的操作");
 	}
 
 	await jukeWrite(c, room, state);
-	return json(200, { ok: true, state, serverNow: Date.now() });
+	return json(200, { ok: true, state, serverNow: Date.now(), admin: !!who.admin, vote });
 }
 
 // ── 入口 ────────────────────────────────────────────────────────────
@@ -1531,10 +2064,26 @@ export async function handleRequest(request, env = {}) {
 			out = await handleReaction(c, request, visitorToken, roomOf(c, url));
 		} else if (path === "/api/profile" && (request.method === "GET" || request.method === "POST")) {
 			out = await handleProfile(c, request, visitorToken);
+		} else if (path === "/api/juke/time" && request.method === "GET") {
+			out = json(200, { ok: true, serverNow: Date.now() });
 		} else if (path === "/api/juke/state" && request.method === "GET") {
-			out = await handleJukeState(c, url, roomOf(c, url));
+			out = await handleJukeState(c, roomOf(c, url), visitorToken);
 		} else if (path === "/api/juke/action" && request.method === "POST") {
 			out = await handleJukeWrite(c, request, url, visitorToken, ip, env, roomOf(c, url));
+		} else if (path === "/api/juke/search" && request.method === "GET") {
+			out = await handleJukeSearch(url, ip, env);
+		} else if (path === "/api/juke/link" && request.method === "GET") {
+			out = await handleJukeLink(request, url, ip, env);
+		} else if (path === "/api/juke/stream" && request.method === "GET") {
+			out = await handleJukeStream(request, url, env);
+		} else if (path === "/api/juke/playlists" && request.method === "GET") {
+			out = await handleJukePlaylists(c, roomOf(c, url));
+		} else if (path === "/api/juke/playlist" && request.method === "GET") {
+			out = await handleJukePlaylist(c, roomOf(c, url), url);
+		} else if (path === "/api/juke/rotation" && request.method === "GET") {
+			out = await handleJukeRotation(c, roomOf(c, url));
+		} else if (path === "/api/juke/import" && request.method === "POST") {
+			out = await handleJukeImport(c, request, visitorToken, ip, env, roomOf(c, url));
 		} else {
 			out = fail(404, "not found");
 		}
