@@ -3940,6 +3940,19 @@
 					const img = e.target.closest("img[data-zoom]");
 					if (img) openZoom(img.currentSrc || img.getAttribute("src"), img);
 				});
+				// 别的客户端发视频常常不填 info.w/h，只能先按 16:9 占位。
+				// 元数据一到就用真实比例纠正，竖屏视频就不会被塞进宽框里加黑边。
+				// loadedmetadata 不冒泡，得用捕获阶段接。
+				feed.addEventListener(
+					"loadedmetadata",
+					(e) => {
+						const v = e.target;
+						if (!v || v.tagName !== "VIDEO" || !v.videoWidth || !v.videoHeight) return;
+						if (v.style.aspectRatio) return;
+						v.style.aspectRatio = `${v.videoWidth}/${v.videoHeight}`;
+					},
+					true,
+				);
 			}
 
 			// 图片预览：按钮 / 滚轮 / 拖动 / 双指 / 键盘 / 左右切换
