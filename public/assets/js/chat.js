@@ -581,8 +581,12 @@
 					: poll
 						? renderPollCard(poll, m.reactions, m.id)
 						: fmtText(m.text || "");
+			// 引用块能点：跳回被回复的那句话（不在当前时间线里就走历史定位）
+			const replyBody = `<b>${esc(m.reply?.who || "茶友")}</b><span>${esc(m.reply?.text || "")}</span>`;
 			const reply = m.reply
-				? `<div class="tea-msg__reply"><b>${esc(m.reply.who || "茶友")}</b><span>${esc(m.reply.text || "")}</span></div>`
+				? m.reply.id
+					? `<button type="button" class="tea-msg__reply" data-jump-id="${esc(m.reply.id)}" title="跳到被回复的那条">${replyBody}</button>`
+					: `<div class="tea-msg__reply">${replyBody}</div>`
 				: "";
 			const reactions = renderReactions(m);
 			// pending 时也渲染操作区（CSS 隐藏），发送成功后去掉 pending 类即可显示，
@@ -1314,6 +1318,20 @@
 				if (bar) bar.hidden = true;
 				feedStatus(`<b>没翻到那条消息</b><span>${esc(e2.message || "可能已经被撤回了")}</span>`);
 			}
+		};
+
+		// 点引用块 → 跳回被回复的那条；已经不在时间线里就取上下文
+		const jumpToMessage = async (id) => {
+			const f = feedEl();
+			if (!f || !id) return;
+			const node = f.querySelector(`.tea-msg[data-id="${CSS.escape(id)}"]`);
+			if (node) {
+				node.scrollIntoView({ block: "center", behavior: "smooth" });
+				node.classList.add("is-hit");
+				setTimeout(() => node.classList.remove("is-hit"), 2600);
+				return;
+			}
+			await enterHistory(id);
 		};
 
 		const exitHistory = () => {
@@ -4715,6 +4733,17 @@
 			}
 
 			// 身份弹窗
+			// 引用块点击：跳回原消息
+			const feedNode = feedEl();
+			if (feedNode && feedNode.dataset.jumpBound !== "1") {
+				feedNode.dataset.jumpBound = "1";
+				feedNode.addEventListener("click", (e) => {
+					const quote = e.target.closest(".tea-msg__reply[data-jump-id]");
+					if (!quote) return;
+					e.stopPropagation();
+					jumpToMessage(quote.dataset.jumpId);
+				});
+			}
 			// 翻聊天记录
 			bindSearch();
 			const searchOpen = document.querySelector("[data-tea-search-open]");

@@ -2407,14 +2407,29 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		font-weight: 600;
 	}
 	.tea-msg__reply {
+		display: block;
+		width: 100%;
 		margin: 0 0 0.3rem;
 		padding: 0.3rem 0.55rem;
+		text-align: left;
+		font: inherit;
+		font-size: 0.76rem;
+		line-height: 1.5;
+		color: inherit;
+		appearance: none;
+		border: 0;
 		border-left: 2px solid color-mix(in oklch, var(--primary) 55%, transparent);
 		border-radius: 0 0.45rem 0.45rem 0;
 		background: color-mix(in oklch, var(--primary) 8%, var(--btn-regular-bg, rgba(128, 128, 128, 0.08)));
-		font-size: 0.76rem;
-		line-height: 1.5;
 	}
+	button.tea-msg__reply {
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+	button.tea-msg__reply:hover {
+		background: color-mix(in oklch, var(--primary) 16%, var(--btn-regular-bg, rgba(128, 128, 128, 0.08)));
+	}
+	button.tea-msg__reply:active { transform: translateY(1px); }
 	.tea-msg__reply b {
 		display: block;
 		font-size: 0.7rem;
