@@ -216,6 +216,18 @@ export const friendsConfig: FriendLink[] = [
 		weight: -2,
 		enabled: true,
 	},
+	{
+		title: "昭鸢笺",
+		imgurl: "https://blog.mibase.top/img/miro.jpg",
+		desc: "昭有明朗向远之意，鸢乘风而上，笺以载笔墨见闻",
+		siteurl: "https://blog.mibase.top/",
+		// 2026-11-24 核查：Hugo 个人技术博客，38 篇文章、2024-2026 持续更新，无 noindex；
+		// 对方 /links 共 20 条友链全站统一 rel="noopener nofollow noreferrer"（站点策略），我方尚未被挂上。
+		// 对方申请规则：先放它再私聊，邮箱 hi@mibase.top。不填 rss。
+		tags: ["Blog"],
+		weight: -3,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
