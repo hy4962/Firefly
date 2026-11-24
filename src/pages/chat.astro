@@ -126,7 +126,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						<img data-tea-bar-avatar src="/assets/images/room-lobby.webp" alt="" />
 					</span>
 					<div>
-						<h1 class="tea-bar__title">{title}</h1>
+						<div class="tea-bar__heading">
+							<h1 class="tea-bar__title">{title}</h1>
+							<span class="tea-conn" data-tea-conn><i></i><span data-tea-conn-text>连接中</span></span>
+						</div>
 						<p class="tea-bar__sub">Matrix 互联大厅</p>
 					</div>
 					<button type="button" class="tea-room-switch" data-tea-sites-trigger aria-expanded="false" title="查看互联茶室友站" aria-label="查看互联茶室友站">
@@ -141,7 +144,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						<Icon is:inline name="material-symbols:search-rounded" />
 						<span>搜索</span>
 					</button>
-					<span class="tea-conn" data-tea-conn><i></i><span data-tea-conn-text>连接中</span></span>
 					<button type="button" class="tea-thread-pill" data-tea-threads-trigger aria-expanded="false" title="查看活跃线程回复" aria-label="查看活跃线程回复" hidden>
 						<Icon is:inline name="material-symbols:forum-rounded" />
 						<span>线程回复</span>
@@ -1949,6 +1951,12 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		height: 100%;
 		object-fit: cover;
 		display: block;
+	}
+	.tea-bar__heading {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
 	}
 	.tea-bar__title {
 		margin: 0;
