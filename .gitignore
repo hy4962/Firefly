@@ -83,3 +83,10 @@ package/
 .jest/
 .nyc_output/
 .coverage/
+
+# 本地临时目录：封面批处理产物、技能打包与测试残留
+.covers-tmp/
+.skill-build/
+/.tmp/
+/page_elements_*.txt
+/page_text_*.txt
