@@ -123,11 +123,11 @@ const skipTooltipText = $derived.by(() => {
     <button
       type="button"
       class="chat-tool-btn chat-panel-close-btn shrink-0 md:hidden"
-      aria-label="关闭点歌台"
+      aria-label="返回茶室"
       onclick={onClose}
     >
       <svg class="w-[1.15rem] h-[1.15rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-        <path d="m6 6 12 12M18 6 6 18" />
+        <path d="m15 18-6-6 6-6" />
       </svg>
     </button>
   {/if}

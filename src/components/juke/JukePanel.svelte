@@ -20,13 +20,20 @@
 		onClose?: () => void;
 	}
 
+	function closeMobileJuke() {
+		if (typeof document === "undefined") return;
+		document.querySelector("[data-tea-app]")?.classList.remove("is-juke-open");
+		const scrim = document.querySelector("[data-juke-scrim]");
+		if (scrim instanceof HTMLElement) scrim.hidden = true;
+	}
+
 	const {
 		apiBase,
 		walineServerUrl = "",
 		playlistOutApiUrl = "https://playlistout-api.lengxiqwq.com",
 		roomId = "chat",
 		siteName = "折腾进行时",
-		onClose,
+		onClose = closeMobileJuke,
 	}: Props = $props();
 
 	const base = apiBase.replace(/\/+$/, "");
