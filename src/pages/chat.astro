@@ -340,6 +340,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<div class="tea-juke__cside tea-juke__cside--right">
 					<button type="button" class="tea-juke__ctrl" data-juke-next aria-label="切歌或发起投票" title="切歌 / 投票">
 						<Icon is:inline name="material-symbols:skip-next-rounded" />
+						<span class="tea-juke__votebadge" data-juke-votecount hidden></span>
 					</button>
 					<button type="button" class="tea-juke__ctrl" data-juke-random title="洗牌顺序播放" aria-label="洗牌顺序播放">
 						<Icon is:inline name="material-symbols:tune-rounded" />
@@ -4479,6 +4480,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		cursor: pointer;
 		display: grid;
 		place-items: center;
+		position: relative;
 		border-radius: 0.5rem;
 		width: 2rem;
 		height: 2rem;
@@ -4490,6 +4492,22 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	.tea-juke__ctrl:active { transform: scale(0.92); }
 	.tea-juke__ctrl svg { width: 1.25rem; height: 1.25rem; }
+	.tea-juke__votebadge {
+		position: absolute;
+		top: -0.2rem;
+		right: -0.25rem;
+		min-width: 0.85rem;
+		height: 0.85rem;
+		padding: 0 0.15rem;
+		border-radius: 999px;
+		background: #fbbf24;
+		color: #3b2a00;
+		font-size: 0.58rem;
+		font-weight: 700;
+		line-height: 0.85rem;
+		text-align: center;
+	}
+	.tea-juke__votebadge[hidden] { display: none; }
 	.tea-juke__fav.is-on svg {
 		fill: currentColor;
 		color: #fbbf24;
@@ -4598,6 +4616,64 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		border-radius: 0.55rem;
 		cursor: pointer;
 	}
+	.tea-songrow {
+		display: flex;
+		align-items: center;
+		gap: 0.15rem;
+		border-radius: 0.55rem;
+	}
+	.tea-songrow > .tea-song { flex: 1; min-width: 0; }
+	.tea-songrow:hover { background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08)); }
+	.tea-songrow.is-current { background: color-mix(in oklch, var(--primary) 10%, transparent); }
+	.tea-songrow .tea-song:hover,
+	.tea-songrow .tea-song.is-current { background: transparent; }
+	.tea-song__acts {
+		display: flex;
+		align-items: center;
+		gap: 0.1rem;
+		flex: none;
+		padding-right: 0.2rem;
+	}
+	.tea-song__fav,
+	.tea-song__qact {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.55rem;
+		height: 1.55rem;
+		padding: 0;
+		border: 0;
+		border-radius: 0.35rem;
+		background: transparent;
+		color: var(--tea-muted-soft);
+		font: inherit;
+		font-size: 0.8rem;
+		cursor: pointer;
+	}
+	.tea-song__fav svg { width: 0.85rem; height: 0.85rem; transition: transform 0.15s, filter 0.15s; }
+	.tea-song__fav:hover,
+	.tea-song__qact:hover { color: var(--primary); background: var(--juke-soft); }
+	.tea-song__fav.is-on { color: #fbbf24; }
+	.tea-song__fav.is-on svg { fill: currentColor; filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.5)); }
+	.tea-song__fav svg.is-sparkling { animation: juke-star-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+	.tea-song__favcount {
+		flex: none;
+		font-size: 0.56rem;
+		color: var(--juke-accent-text);
+		background: var(--juke-soft);
+		padding: 0.1rem 0.28rem;
+		border-radius: 999px;
+		white-space: nowrap;
+	}
+	.tea-song__qstate {
+		width: 1.55rem;
+		flex: none;
+		text-align: center;
+		font-size: 0.7rem;
+		color: var(--tea-muted-soft);
+	}
+	.tea-song__qstate.is-current { color: var(--juke-accent-text); }
 	.tea-song:hover {
 		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.08));
 	}

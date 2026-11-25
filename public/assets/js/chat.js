@@ -309,6 +309,28 @@
 			set favorites(v) {
 				localStorage.setItem("tea.juke.favorites", JSON.stringify(v));
 			},
+			// 收听意图：刷新/重新进茶室后半小时内自动接上房间的歌。
+			get jukeListen() {
+				try {
+					return localStorage.getItem("tea.juke.listen") === "1"
+						&& Date.now() - Number(localStorage.getItem("tea.juke.listenAt") || 0) < 30 * 60 * 1000;
+				} catch {
+					return false;
+				}
+			},
+			set jukeListen(on) {
+				try {
+					if (on) {
+						localStorage.setItem("tea.juke.listen", "1");
+						localStorage.setItem("tea.juke.listenAt", String(Date.now()));
+					} else {
+						localStorage.removeItem("tea.juke.listen");
+						localStorage.removeItem("tea.juke.listenAt");
+					}
+				} catch {
+					// 隐私模式下忽略，收听本身仍可用。
+				}
+			},
 		};
 
 		// ── 留言板 SSO ───────────────────────────────────────────
@@ -2927,13 +2949,71 @@
 			return jukeSig.catalog;
 		};
 
-		const jukeTrackRow = (t, i, attr, curKey, countBadge) => `<button type="button" class="tea-song${curKey && curKey === t.key ? " is-current" : ""}" ${attr}>
-			${t.cover ? `<span class="tea-song__cover" style="background-image:url('${jukeSafeUrl(t.cover)}')"></span>` : `<span class="tea-song__idx">${curKey === t.key ? "♪" : i + 1}</span>`}
-			<span class="tea-song__copy">
-				<span class="tea-song__name"><span>${esc(t.title)}</span>${countBadge ? `<em class="tea-juke__count">${esc(countBadge)}</em>` : ""}<em class="tea-juke__src">${esc(jukeSourceLabel(t))}</em><span class="tea-juke__dur">${t.durationSec ? jukeDur(t.durationSec) : ""}</span></span>
-				<span class="tea-song__artist">${esc(t.artist || "未知歌手")}${t.requester ? " · " + esc(t.requester) : ""}</span>
-			</span>
-		</button>`;
+		// 行内收藏 / 队列按钮用 "列表键:序号" 回查原始 track，
+		// 不把整首歌塞进 data 属性（歌名、封面里可能有引号）。
+		const jukeRowTrack = (ref) => {
+			const at = String(ref || "").lastIndexOf(":");
+			if (at < 0) return null;
+			const lists = {
+				search: jukeSig.searchList,
+				playlist: jukeSig.playlistTracks,
+				rotation: jukeSig.rotationFull && jukeSig.rotationFull.tracks,
+				history: jukeSig.histList,
+			};
+			const list = lists[ref.slice(0, at)];
+			const item = list && list[Number(ref.slice(at + 1))];
+			return item || null;
+		};
+		const jukeFavAgg = (track) => (jukeSig.favTracks || []).find((t) => t.key === track.key) || null;
+		const jukeSparkle = (btn) => {
+			const star = btn && btn.querySelector("svg");
+			if (!star) return;
+			star.classList.remove("is-sparkling");
+			void star.getBoundingClientRect();
+			star.classList.add("is-sparkling");
+			setTimeout(() => star.classList.remove("is-sparkling"), 700);
+			const burst = document.createElement("span");
+			burst.className = "juke-sparkle-burst";
+			burst.innerHTML = ["s1", "s2", "s3", "s4", "s5", "s6"]
+				.map((c, i) => `<span class="juke-sparkle ${c}">${i % 2 ? "✦" : "★"}</span>`)
+				.join("");
+			btn.appendChild(burst);
+			setTimeout(() => burst.remove(), 800);
+		};
+
+		const jukeTrackRow = (t, i, attr, curKey, countBadge, listKey) => {
+			const isCur = !!(curKey && curKey === t.key);
+			const queued = ((jukeSig.state && jukeSig.state.queue) || []).find((q) => q.key === t.key);
+			const mine = !!(queued && rt.visitor && queued.requesterId && queued.requesterId === rt.visitor.id);
+			const canDel = !!(queued && (mine || (jukeSig.state && jukeSig.state.admin)));
+			const agg = jukeFavAgg(t);
+			const favCount = Number(agg && agg.favoriteCount) || 0;
+			const faved = jukeIsFav(t.key);
+			const ref = `${listKey || "search"}:${i}`;
+			const favNames = (agg && Array.isArray(agg.favoriters) ? agg.favoriters : [])
+				.map((f) => esc(f.name || "茶友")).join("、");
+			const star = `<svg viewBox="0 0 24 24" fill="${faved ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 1.9 14.35 9.15 21.95 9.15 15.8 13.62 18.15 20.87 12 16.39 5.85 20.87 8.2 13.62 2.05 9.15 9.65 9.15" /></svg>`;
+			return `<div class="tea-songrow${isCur ? " is-current" : ""}">
+				<button type="button" class="tea-song${isCur ? " is-current" : ""}" ${attr}>
+					${t.cover ? `<span class="tea-song__cover" style="background-image:url('${jukeSafeUrl(t.cover)}')"></span>` : `<span class="tea-song__idx">${isCur ? "♪" : i + 1}</span>`}
+					<span class="tea-song__copy">
+						<span class="tea-song__name"><span>${esc(t.title)}</span>${countBadge ? `<em class="tea-juke__count">${esc(countBadge)}</em>` : ""}<em class="tea-juke__src">${esc(jukeSourceLabel(t))}</em><span class="tea-juke__dur">${t.durationSec ? jukeDur(t.durationSec) : ""}</span></span>
+						<span class="tea-song__artist">${esc(t.artist || "未知歌手")}${t.requester ? " · " + esc(t.requester) : ""}</span>
+					</span>
+				</button>
+				<span class="tea-song__acts">
+					${favCount ? `<span class="tea-song__favcount" title="${esc(favNames)}">${favCount}人收藏</span>` : ""}
+					<button type="button" class="tea-song__fav${faved ? " is-on" : ""}" data-juke-rowfav="${ref}" aria-label="${faved ? "取消收藏" : "收藏"} ${esc(t.title)}" title="${faved ? "取消收藏" : "全站收藏"}">${star}</button>
+					${isCur
+						? `<span class="tea-song__qstate is-current" aria-label="播放中">♪</span>`
+						: queued
+							? canDel
+								? `<button type="button" class="tea-song__qact is-queued" data-juke-rowqueue="${ref}" aria-label="移出队列 ${esc(t.title)}" title="移出队列">−</button>`
+								: `<span class="tea-song__qstate" aria-label="已入队列">✓</span>`
+							: `<button type="button" class="tea-song__qact" data-juke-rowqueue="${ref}" aria-label="点歌 ${esc(t.title)}" title="点歌">+</button>`}
+				</span>
+			</div>`;
+		};
 
 		const jukeQueueRow = (t, curKey) => {
 			const mine = rt.visitor && t.requesterId && t.requesterId === rt.visitor.id;
@@ -3455,6 +3535,14 @@
 			}
 			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
 			if (juke) juke.classList.toggle("is-playing", playing);
+			const voteCount = jukeNode("[data-juke-votecount]");
+			if (voteCount) {
+				const voters = cur && s && s.votes ? s.votes[cur.uid] : null;
+				const n = Array.isArray(voters) ? voters.length : 0;
+				voteCount.hidden = !n;
+				voteCount.textContent = n ? String(n) : "";
+				voteCount.title = n ? `已有 ${n} 人投票切歌` : "";
+			}
 			const playBtn = jukeNode("[data-juke-play]");
 			if (playBtn) {
 				const p = playBtn.querySelector("[data-juke-icon-play]");
@@ -3522,7 +3610,7 @@
 				if (list.length > 60) list = list.slice(0, 60);
 				jukeSig.searchList = list;
 				box.innerHTML = list.length
-					? list.map((t, i) => jukeTrackRow(t, i, `data-juke-pick="${i}"`, jukeSig.state?.current?.key)).join("")
+					? list.map((t, i) => jukeTrackRow(t, i, `data-juke-pick="${i}"`, jukeSig.state?.current?.key, "", "search")).join("")
 					: `<p class="tea-juke__empty">${qtext ? `本站歌单里没找到「${esc(jukeSig.query)}」。` : "站点歌单还在路上…"}</p>`;
 				return;
 			}
@@ -3542,7 +3630,7 @@
 			jukeSig.searchList = list;
 			const more = jukeSig.searchHasMore ? `<button type="button" class="tea-juke__more" data-juke-search-more>加载更多结果</button>` : "";
 			box.innerHTML = tip + (list.length
-				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-pick="${i}"`, jukeSig.state?.current?.key)).join("") + more
+				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-pick="${i}"`, jukeSig.state?.current?.key, "", "search")).join("") + more
 				: `<p class="tea-juke__empty">${jukeSig.searchState === "done" ? "没搜到，换个关键词试试。" : "搜全网歌曲，或者切到「本站」翻站点歌单。"}</p>`);
 		};
 
@@ -3814,7 +3902,7 @@
 			}
 			const list = jukeSig.playlistTracks;
 			box.innerHTML = list.length
-				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-plpick="${i}"`, jukeSig.state?.current?.key, isFav && t.favoriteCount > 1 ? `${t.favoriteCount}人收藏` : "")).join("")
+				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-plpick="${i}"`, jukeSig.state?.current?.key, "", "playlist")).join("")
 				: `<p class="tea-juke__empty">这个歌单里还没有歌。</p>`;
 		};
 
@@ -3865,7 +3953,7 @@
 				box.innerHTML = brief + (rot.preview || []).map((t, i) => `<div class="tea-juke__qrow"><span class="tea-song"><span class="tea-song__idx">${i + 1}</span><span class="tea-song__copy"><span class="tea-song__name"><span>${esc(t.title)}</span></span><span class="tea-song__artist">${esc(t.artist || "未知歌手")}</span></span></span></div>`).join("");
 				return;
 			}
-			box.innerHTML = brief + full.tracks.map((t, i) => jukeTrackRow(t, i, `data-juke-rotpick="${i}"`, s?.current?.key)).join("");
+			box.innerHTML = brief + full.tracks.map((t, i) => jukeTrackRow(t, i, `data-juke-rotpick="${i}"`, s?.current?.key, "", "rotation")).join("");
 		};
 
 		const jukeRenderHistory = () => {
@@ -3897,7 +3985,7 @@
 			const list = jukeSig.histSort === "count" ? [...merged].sort((a, b) => b.count - a.count) : merged;
 			jukeSig.histList = list;
 			box.innerHTML = list.length
-				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-readd="${i}"`, "", t.count > 1 ? `${t.count}次` : "")).join("")
+				? list.map((t, i) => jukeTrackRow(t, i, `data-juke-readd="${i}"`, "", t.count > 1 ? `${t.count}次` : "", "history")).join("")
 				: `<p class="tea-juke__empty">${raw.length ? "没有符合条件的播放记录。" : "还没有播放记录。"}</p>`;
 		};
 
@@ -4099,6 +4187,7 @@
 		const jukeToggleListen = async (on) => {
 			const a = ensureJukeAudio();
 			jukeSig.listening = on === undefined ? !jukeSig.listening : !!on;
+			store.jukeListen = jukeSig.listening;
 			jukeSig.lastUid = "";
 			if (jukeSig.listening) {
 				await jukeLoad();
@@ -4144,8 +4233,24 @@
 			jukeSampleClock();
 			jukeSig.playlistTracks = jukeCatalog();
 			jukeSig.playlistLoadedId = "site";
-			jukeLoad();
+			jukeLoad().then(() => {
+				if (jukeGen && rt.jukeGen !== jukeGen) return;
+				if (store.jukeListen && !jukeSig.listening && !rt.jukeListenTried) {
+					rt.jukeListenTried = true;
+					jukeToggleListen(true);
+				}
+			});
 			jukeConnectEvents();
+			// 手机锁屏 / 切后台回来后定时器常被挂起，回到前台立刻按服务端时钟对齐一次。
+			const jukeWake = () => {
+				if (jukeGen && rt.jukeGen !== jukeGen) return;
+				if (document.hidden || !jukeSig.listening) return;
+				jukeSync(true);
+				jukeRenderProgress();
+			};
+			document.addEventListener("visibilitychange", jukeWake);
+			window.addEventListener("pageshow", jukeWake);
+			window.addEventListener("online", jukeWake);
 			jukeLoadPlaylists();
 			jukeRenderSearch();
 			jukeRenderList(true);
@@ -4242,6 +4347,64 @@
 					a.muted = !a.muted;
 					mute.classList.toggle("is-muted", a.muted);
 					mute.title = a.muted ? "取消静音" : "静音";
+					return;
+				}
+				const rowfav = e.target.closest("[data-juke-rowfav]");
+				if (rowfav) {
+					const t = jukeRowTrack(rowfav.dataset.jukeRowfav);
+					if (!t) return;
+					if (!rt.visitor || !rt.visitor.token) {
+						jukeSay("先入座，再收藏。", true);
+						return;
+					}
+					rowfav.disabled = true;
+					const changed = await jukeFavToggle(t);
+					rowfav.disabled = false;
+					const all = store.favorites;
+					const at = all.findIndex((f) => f.key === t.key);
+					const mirror = {
+						key: t.key,
+						title: t.title,
+						artist: t.artist || "",
+						cover: t.cover || "",
+						source: t.source || "",
+						sourceId: t.sourceId || "",
+						platform: t.platform || "",
+					};
+					if (changed === null) {
+						if (at >= 0) all.splice(at, 1);
+						else all.unshift(mirror);
+					} else if (changed) {
+						if (at < 0) all.unshift(mirror);
+						jukeSparkle(rowfav);
+						jukeSay(`已收藏《${t.title}》`);
+					} else {
+						if (at >= 0) all.splice(at, 1);
+						jukeSay(`已取消收藏《${t.title}》`);
+					}
+					store.favorites = all.slice(0, 100);
+					if (jukeGen && rt.jukeGen !== jukeGen) return;
+					if (jukeSig.tab === "list") jukeRenderList(true);
+					else if (jukeSig.tab === "history") jukeRenderHistory();
+					else jukeRenderSearch();
+					jukeRenderTrack();
+					return;
+				}
+				const rowqueue = e.target.closest("[data-juke-rowqueue]");
+				if (rowqueue) {
+					const t = jukeRowTrack(rowqueue.dataset.jukeRowqueue);
+					if (!t) return;
+					const q = ((jukeSig.state && jukeSig.state.queue) || []).find((x) => x.key === t.key);
+					if (!q) {
+						jukePick(t);
+						return;
+					}
+					const mine = !!(rt.visitor && q.requesterId && q.requesterId === rt.visitor.id);
+					if (!mine && !(jukeSig.state && jukeSig.state.admin)) {
+						jukeSay("只能撤自己点的歌。", true);
+						return;
+					}
+					jukeAction("remove", { uid: q.uid });
 					return;
 				}
 				const pl = e.target.closest("[data-juke-pl]");
@@ -4391,20 +4554,7 @@
 						if (at < 0) all.unshift({ key: cur.key, title: cur.title, artist: cur.artist || "", cover: cur.cover || "", source: cur.source || "", sourceId: cur.sourceId || "", platform: cur.platform || "" });
 						jukeSay(`已将《${cur.title}》收藏到全站共享收藏`);
 						// 点亮瞬间撒 6 颗星，对齐目标站点歌台的收藏反馈。
-						const star = fav.querySelector("svg");
-						if (star) {
-							star.classList.remove("is-sparkling");
-							void star.getBoundingClientRect();
-							star.classList.add("is-sparkling");
-							setTimeout(() => star.classList.remove("is-sparkling"), 700);
-						}
-						const burst = document.createElement("span");
-						burst.className = "juke-sparkle-burst";
-						burst.innerHTML = ["s1", "s2", "s3", "s4", "s5", "s6"]
-							.map((c, i) => `<span class="juke-sparkle ${c}">${i % 2 ? "✦" : "★"}</span>`)
-							.join("");
-						fav.appendChild(burst);
-						setTimeout(() => burst.remove(), 800);
+						jukeSparkle(fav);
 					} else {
 						if (at >= 0) all.splice(at, 1);
 						jukeSay(`已取消收藏《${cur.title}》`);
@@ -4555,12 +4705,18 @@
 				if (jukeGen && rt.jukeGen !== jukeGen) {
 					clearInterval(jukeTimer);
 					closeEvents();
+					document.removeEventListener("visibilitychange", jukeWake);
+					window.removeEventListener("pageshow", jukeWake);
+					window.removeEventListener("online", jukeWake);
 					if (rt.jukeTimer === jukeTimer) rt.jukeTimer = null;
 					return;
 				}
 				if (!root() || !root().querySelector("[data-tea-juke]")) {
 					clearInterval(jukeTimer);
 					closeEvents();
+					document.removeEventListener("visibilitychange", jukeWake);
+					window.removeEventListener("pageshow", jukeWake);
+					window.removeEventListener("online", jukeWake);
 					if (rt.jukeTimer === jukeTimer) rt.jukeTimer = null;
 					if (rt.jukeAudio) rt.jukeAudio.pause();
 					return;
