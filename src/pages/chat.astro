@@ -1,6 +1,9 @@
 ---
 import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import JukePanel from "@/components/juke/JukePanel.svelte";
+
+import "@/styles/pages/juke-chat.css";
 
 const title = "茶室";
 const description = "一个连着 Matrix 公共大厅的聊天室，消息会同步到已接入的友站。";
@@ -258,191 +261,16 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			</form>
 		</div>
 
-		<!-- ── 点歌台：茶室共享队列，复用站点全局播放器 ─────────── -->
+		<!-- ── 点歌台：冷汐同款全功能点歌台，WebSocket 直连 fnOS 网关 ─────────── -->
 		<aside class="tea-juke" data-tea-juke aria-label="点歌台">
-			<header class="tea-juke__head">
-				<div class="tea-juke__headtitle" data-juke-headtitle>
-					<div class="tea-juke__title">
-						<Icon is:inline name="material-symbols:music-note-rounded" />
-						<h2>点歌台</h2>
-					</div>
-					<div class="tea-juke__tools">
-						<button type="button" class="tea-juke__live" data-juke-live aria-label="收听状态，点击切换">
-							<span class="tea-juke__live-eq" aria-hidden="true"><i></i><i></i><i></i></span>
-							<Icon class="tea-juke__live-mute" is:inline name="material-symbols:volume-off-rounded" />
-							<b>未收听</b>
-						</button>
-						<button type="button" class="tea-icon-btn" data-juke-close aria-label="关闭点歌台">
-							<Icon is:inline name="material-symbols:close-rounded" />
-						</button>
-					</div>
-				</div>
-			</header>
-
-			<nav class="tea-juke__tabs" role="tablist">
-				<button type="button" class="is-active" data-juke-tab="lyrics" role="tab">
-					<Icon is:inline name="material-symbols:lyrics-rounded" /><span>歌词</span>
-				</button>
-				<button type="button" data-juke-tab="search" role="tab">
-					<Icon is:inline name="material-symbols:search-rounded" /><span>搜索</span>
-				</button>
-				<button type="button" data-juke-tab="list" role="tab">
-					<Icon is:inline name="material-symbols:music-note-rounded" /><span>歌单</span>
-				</button>
-				<button type="button" data-juke-tab="history" role="tab">
-					<Icon is:inline name="material-symbols:history-rounded" /><span>历史</span>
-				</button>
-			</nav>
-
-			<div class="tea-juke__player">
-				<div class="tea-juke__cover" data-juke-cover>
-					<svg class="tea-juke__cover-ph" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-						<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-					</svg>
-					<span class="tea-juke__eq"><i></i><i></i><i></i></span>
-				</div>
-				<div class="tea-juke__pinfo">
-					<h3 class="tea-juke__ptitle" data-juke-title>还没开始听</h3>
-					<p class="tea-juke__partist" data-juke-artist>从下面挑一首，或者让茶室随便放</p>
-					<div class="tea-juke__ptags">
-						<span class="tea-juke__requester" data-juke-srcpill hidden></span>
-						<span class="tea-juke__favusers" data-juke-favusers hidden></span>
-					</div>
-				</div>
-			</div>
-
-			<div class="tea-juke__timebar">
-				<div class="tea-juke__times">
-					<b data-juke-cur>0:00</b><span class="tea-juke__tsep">/</span><span data-juke-dur>0:00</span>
-				</div>
-				<div class="tea-juke__vol" title="音量">
-					<button type="button" class="tea-juke__mute" data-juke-mute aria-label="静音">
-						<Icon is:inline name="material-symbols:volume-up-rounded" />
-					</button>
-					<input type="range" min="0" max="100" step="1" value="70" data-juke-vol aria-label="音量" />
-				</div>
-			</div>
-			<input type="range" class="tea-juke__seek" min="0" max="1000" step="1" value="0" data-juke-seek aria-label="播放进度" />
-
-			<div class="tea-juke__controls">
-				<div class="tea-juke__cside">
-					<button type="button" class="tea-juke__ctrl" data-juke-pane-cycle title="切换歌词 / 队列视图" aria-label="切换视图">
-						<Icon is:inline name="material-symbols:grid-view-rounded" />
-					</button>
-					<button type="button" class="tea-juke__ctrl tea-juke__fav" data-juke-fav title="收藏这首歌" aria-label="收藏这首歌">
-						<Icon is:inline name="material-symbols:star-outline-rounded" />
-					</button>
-				</div>
-				<button type="button" class="tea-juke__listen" data-juke-listen title="开始收听" aria-label="开始收听">
-					<Icon is:inline name="material-symbols:headphones-rounded" />
-					<span data-juke-listen-label>开始收听</span>
-				</button>
-				<div class="tea-juke__cside tea-juke__cside--right">
-					<button type="button" class="tea-juke__ctrl" data-juke-next aria-label="切歌或发起投票" title="切歌 / 投票">
-						<Icon is:inline name="material-symbols:skip-next-rounded" />
-						<span class="tea-juke__votebadge" data-juke-votecount hidden></span>
-					</button>
-					<button type="button" class="tea-juke__ctrl" data-juke-random title="洗牌顺序播放" aria-label="洗牌顺序播放">
-						<Icon is:inline name="material-symbols:tune-rounded" />
-					</button>
-				</div>
-			</div>
-
-			<div class="tea-juke__extratools">
-				<button type="button" data-juke-alt title="用当前歌曲去全网找其它可播版本">
-					<Icon is:inline name="material-symbols:repeat-rounded" /><span>换源</span>
-				</button>
-				<button type="button" data-juke-queue-jump title="查看播放队列">
-					<Icon is:inline name="material-symbols:queue-music-rounded" /><span>队列</span>
-				</button>
-			</div>
-
-			<div class="tea-juke__panebar" data-juke-panebar hidden role="group" aria-label="歌词与队列显示方式">
-				<button type="button" class="is-active" data-juke-pane="split" title="歌词与队列并列" aria-label="歌词与队列并列">
-					<Icon is:inline name="material-symbols:grid-view-rounded" /><span>分栏</span>
-				</button>
-				<button type="button" data-juke-pane="lyrics" title="只看歌词" aria-label="只看歌词">
-					<Icon is:inline name="material-symbols:lyrics-rounded" /><span>歌词</span>
-				</button>
-				<button type="button" data-juke-pane="queue" title="只看播放队列" aria-label="只看播放队列">
-					<Icon is:inline name="material-symbols:queue-music-rounded" /><span>队列</span>
-				</button>
-			</div>
-
-			<p class="tea-juke__notice" data-juke-notice hidden></p>
-
-			<div class="tea-juke__panel tea-juke__lyrics" data-juke-lyrics role="tabpanel">
-				<p class="tea-juke__empty">先挑一首歌吧。</p>
-			</div>
-			<div class="tea-juke__panel" data-juke-search role="tabpanel" hidden>
-				<div class="tea-juke__sources" data-juke-sources>
-					<button type="button" class="is-active" data-juke-source="site">本站</button>
-					<button type="button" data-juke-source="all">全部</button>
-					<button type="button" data-juke-source="qq">QQ 音乐</button>
-					<button type="button" data-juke-source="netease">网易云</button>
-					<button type="button" data-juke-source="kugou">酷狗</button>
-					<button type="button" data-juke-source="youtube">YouTube</button>
-				</div>
-				<form class="tea-juke__searchform" data-juke-searchform>
-					<input type="search" maxlength="60" placeholder="搜歌名、歌手，或粘贴歌单链接…" data-juke-q aria-label="搜索歌曲" />
-					<button type="submit" class="tea-btn tea-btn--primary">搜</button>
-				</form>
-				<div class="tea-juke__importbar">
-					<button type="button" class="tea-juke__linkbtn" data-juke-import-toggle>导入歌单</button>
-					<span>网易云 / QQ / Apple Music / Spotify</span>
-				</div>
-				<form class="tea-juke__importform" data-juke-importform hidden>
-					<input type="url" maxlength="600" placeholder="粘贴公开歌单链接" data-juke-importurl aria-label="歌单链接" />
-					<button type="submit" class="tea-btn tea-btn--primary">导入</button>
-				</form>
-				<div class="tea-juke__results" data-juke-results><p class="tea-juke__empty">搜全网歌曲，或者切到「本站」翻站点歌单。</p></div>
-			</div>
-			<div class="tea-juke__panel" data-juke-list role="tabpanel" hidden>
-				<div class="tea-juke__plbar" data-juke-plbar></div>
-				<div class="tea-juke__plhead" data-juke-plhead hidden>
-					<span data-juke-plname></span>
-					<button type="button" data-juke-pl-rotation hidden>设为轮播</button>
-				</div>
-				<div class="tea-juke__plmanage" data-juke-plmanage hidden></div>
-				<div class="tea-juke__favfilter" data-juke-favfilter hidden></div>
-				<div class="tea-juke__results" data-juke-pltracks><p class="tea-juke__empty">歌单还在路上…</p></div>
-			</div>
-			<div class="tea-juke__panel" data-juke-history role="tabpanel" hidden>
-				<div class="tea-juke__histbar">
-					<div class="tea-juke__histsort">
-						<button type="button" class="is-active" data-juke-hist-sort="recent">按时间</button>
-						<button type="button" data-juke-hist-sort="count">按次数</button>
-					</div>
-					<div class="tea-juke__histselects">
-						<select data-juke-hist-type aria-label="播放记录类型">
-							<option value="all">全部</option>
-							<option value="request">点播</option>
-							<option value="rotation">轮播</option>
-						</select>
-						<select data-juke-hist-user aria-label="点歌人">
-							<option value="">所有点歌人</option>
-						</select>
-					</div>
-				</div>
-				<div class="tea-juke__results" data-juke-histlist><p class="tea-juke__empty">还没有播放记录。</p></div>
-			</div>
-
-			<div class="tea-juke__queue">
-				<div class="tea-juke__queuehead">
-					<div class="tea-juke__queuetabs">
-						<button type="button" class="is-active" data-juke-queue-tab="request">点播</button>
-						<button type="button" data-juke-queue-tab="rotation">轮播</button>
-					</div>
-					<div class="tea-juke__queuemeta">
-						<span data-juke-queuemode>按点播顺序</span>
-						<b data-juke-queuecount>0</b>
-						<button type="button" data-juke-queue-refresh title="刷新队列" aria-label="刷新队列">
-							<Icon is:inline name="material-symbols:refresh-rounded" />
-						</button>
-					</div>
-				</div>
-				<div class="tea-juke__queuelist" data-juke-queue><p class="tea-juke__empty">队列空着，点一首歌吧。</p></div>
-			</div>
+			<JukePanel
+				client:only="svelte"
+				apiBase={CHAT_API}
+				walineServerUrl={WALINE_SERVER}
+				playlistOutApiUrl="https://playlistout-api.lengxiqwq.com"
+				roomId="chat"
+				siteName={SITE_NAME}
+			/>
 		</aside>
 
 		<!-- ── 互联友站浮层 ─────────────────────────────────────── -->

@@ -1,0 +1,473 @@
+<script lang="ts">
+	import { onDestroy, onMount } from "svelte";
+	import MusicPanel from "./MusicPanel.svelte";
+	import { MusicClock } from "./musicClock";
+	import type { ChatMusicTrack } from "./musicTypes";
+	import type {
+		ChatMentionCandidate,
+		ChatOnlineMember,
+		ChatSessionUser,
+		RotationAction,
+		RoomMusicState,
+	} from "./chatTypes";
+
+	interface Props {
+		apiBase: string;
+		walineServerUrl?: string;
+		playlistOutApiUrl?: string;
+		roomId?: string;
+		siteName?: string;
+		onClose?: () => void;
+	}
+
+	const {
+		apiBase,
+		walineServerUrl = "",
+		playlistOutApiUrl = "https://playlistout-api.lengxiqwq.com",
+		roomId = "chat",
+		siteName = "折腾进行时",
+		onClose,
+	}: Props = $props();
+
+	const base = apiBase.replace(/\/+$/, "");
+	const clock = new MusicClock();
+
+	let audioEl: HTMLAudioElement | null = $state(null);
+	let socket: WebSocket | null = null;
+	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+	let clockTimer: ReturnType<typeof setInterval> | null = null;
+	let clockSent = new Map<string, number>();
+	let requestWaiters = new Map<string, { finish: (ok: boolean) => void; timer: ReturnType<typeof setTimeout> }>();
+	let destroyed = false;
+
+	let currentUser = $state<ChatSessionUser | null>(null);
+	let musicState = $state<RoomMusicState | null>(null);
+	let onlineMembers = $state<ChatOnlineMember[]>([]);
+	let mentionMembers = $state<ChatMentionCandidate[]>([]);
+	let listeningMemberCount = $state(0);
+	let rotationAction = $state<RotationAction | null>(null);
+	let isRandomizing = $state(false);
+	let isSkippingTrack = $state(false);
+	let playlistRefreshSeq = $state(0);
+	let fallbackSearch = $state<{ query: string; seq: number } | undefined>(undefined);
+	let fallbackSearchSeq = 0;
+	let clockOffsetMs = $state(0);
+	let toast = $state("");
+	let toastTimer: ReturnType<typeof setTimeout> | null = null;
+	let initialVolume = 1;
+	let initialListening = false;
+
+	const walineToken = (() => {
+		try {
+			const raw = localStorage.getItem("WALINE_USER") || "";
+			const user = raw ? JSON.parse(raw) : null;
+			return typeof user?.token === "string" ? user.token : "";
+		} catch {
+			return "";
+		}
+	})();
+
+	const playlistAuth = $derived(
+		currentUser
+			? {
+					userKey: currentUser.userKey,
+					userName: currentUser.name,
+					userAvatar: currentUser.avatar,
+					token: walineToken,
+					kind: currentUser.authType,
+					isAdmin: currentUser.isAdmin,
+				}
+			: undefined,
+	);
+
+	function notify(message: string) {
+		if (!message) return;
+		toast = message;
+		if (toastTimer) clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => (toast = ""), 3200);
+	}
+
+	function readUser(): ChatSessionUser | null {
+		try {
+			const walineRaw = localStorage.getItem("WALINE_USER") || "";
+			const waline = walineRaw ? JSON.parse(walineRaw) : null;
+			if (waline?.token) {
+				const key = String(waline.objectId || waline.id || waline.display_name || "waline");
+				return {
+					userKey: `waline:${key}`,
+					authType: "waline",
+					name: String(waline.display_name || waline.nick || "茶友"),
+					avatar: String(waline.avatar || ""),
+					url: String(waline.url || ""),
+					badge: waline.type === "administrator" ? "站长" : "认证",
+					badgeType: waline.type === "administrator" ? "host" : "accent",
+					isAdmin: waline.type === "administrator" || Boolean(waline.admin),
+				};
+			}
+			const guestRaw =
+				sessionStorage.getItem("guestbook-chat-auth") ||
+				localStorage.getItem("guestbook-chat-auth") ||
+				"";
+			const guest = guestRaw ? JSON.parse(guestRaw) : null;
+			if (guest?.token) {
+				return {
+					userKey: `guest:${guest.objectId || guest.id || guest.token.slice(0, 10)}`,
+					authType: "guest",
+					name: String(guest.display_name || guest.nick || "茶友"),
+					avatar: String(guest.avatar || ""),
+					url: String(guest.url || guest.link || ""),
+					badge: "访客",
+					badgeType: "tag",
+					isAdmin: false,
+				};
+			}
+			const identityRaw = localStorage.getItem("tea.identity") || "";
+			const identity = identityRaw ? JSON.parse(identityRaw) : null;
+			if (identity?.token && identity?.id) {
+				return {
+					userKey: `tea:${identity.id}`,
+					authType: "guest",
+					name: String(identity.name || identity.nick || "茶友"),
+					avatar: String(identity.avatar || ""),
+					url: "",
+					badge: "访客",
+					badgeType: "tag",
+					isAdmin: false,
+				};
+			}
+		} catch {
+			// 存储不可用时仍允许浏览和收听，只是不能点歌。
+		}
+		return null;
+	}
+
+	function sendPacket(packet: Record<string, unknown>): boolean {
+		if (!socket || socket.readyState !== WebSocket.OPEN) {
+			notify("点歌台正在重连，请稍候…");
+			return false;
+		}
+		socket.send(JSON.stringify(packet));
+		return true;
+	}
+
+	function request<T extends { ok?: boolean; error?: string }>(
+		packet: Record<string, unknown>,
+		timeoutMs = 15_000,
+	): Promise<T> {
+		return new Promise((resolve) => {
+			if (!socket || socket.readyState !== WebSocket.OPEN) {
+				resolve({ ok: false, error: "点歌台暂时不在线" } as T);
+				return;
+			}
+			const requestId = packet.requestId ? String(packet.requestId) : crypto.randomUUID();
+			const timer = setTimeout(() => {
+				requestWaiters.delete(requestId);
+				resolve({ ok: false, error: "请求超时" } as T);
+			}, timeoutMs);
+			requestWaiters.set(requestId, {
+				finish: () => {
+					clearTimeout(timer);
+					resolve(socketPacketCache.get(requestId) as T);
+				},
+				timer,
+			});
+			socketPacketCache.set(requestId, { ok: false, error: "请求超时" } as T);
+			sendPacket({ ...packet, requestId });
+		});
+	}
+
+	// 回应包按 requestId 落到这里，request() 的 Promise 再取走结果。
+	const socketPacketCache = new Map<string, unknown>();
+
+	function handlePacket(packet: any) {
+		switch (packet?.type) {
+			case "music:state": {
+				musicState = packet as RoomMusicState;
+				clock.seed(Number(packet.serverTime) || Date.now());
+				break;
+			}
+			case "music:request_result": {
+				const id = String(packet.requestId || "");
+				socketPacketCache.set(id, packet);
+				const waiter = requestWaiters.get(id);
+				if (waiter) {
+					requestWaiters.delete(id);
+					clearTimeout(waiter.timer);
+					waiter.finish(Boolean(packet.ok));
+				}
+				if (!packet.ok && packet.error) notify(String(packet.error));
+				break;
+			}
+			case "music:rotation_result": {
+				rotationAction = {
+					entryId: String(packet.entryId || packet.trackId || ""),
+					code: packet.ok ? undefined : String(packet.code || "FAILED"),
+					message: packet.ok ? undefined : String(packet.error || "切换失败"),
+					offer: packet.offer,
+				};
+				break;
+			}
+			case "pong": {
+				const t0 = clockSent.get(String(packet.id || ""));
+				if (t0 !== undefined) {
+					clockSent.delete(String(packet.id || ""));
+					if (clock.sample(Number(packet.serverTime), t0)) {
+						clockOffsetMs = clock.now() - Date.now();
+					}
+				}
+				break;
+			}
+			case "presence:update": {
+				onlineMembers = Array.isArray(packet.members) ? packet.members : [];
+				mentionMembers = Array.isArray(packet.mentionMembers) ? packet.mentionMembers : [];
+				listeningMemberCount = Number(packet.musicAudience?.listeningCount) || 0;
+				break;
+			}
+			case "playlists:updated": {
+				playlistRefreshSeq += 1;
+				break;
+			}
+			case "error": {
+				notify(String(packet.message || packet.error || "点歌台出错了"));
+				break;
+			}
+		}
+	}
+
+	function connect() {
+		if (destroyed) return;
+		const wsBase = base.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
+		const params = new URLSearchParams({ room: roomId });
+		if (walineToken) params.set("token", walineToken);
+		try {
+			socket = new WebSocket(`${wsBase}/juke/ws?${params.toString()}`);
+		} catch {
+			socket = null;
+			scheduleReconnect();
+			return;
+		}
+		socket.addEventListener("open", () => {
+			currentUser = readUser();
+			sendPacket({ type: "auth", roomId, user: currentUser, siteName });
+			sampleClock();
+		});
+		socket.addEventListener("message", (event) => {
+			try {
+				handlePacket(JSON.parse(String(event.data)));
+			} catch {
+				// 忽略未知推送。
+			}
+		});
+		socket.addEventListener("close", scheduleReconnect);
+		socket.addEventListener("error", () => socket?.close());
+	}
+
+	function scheduleReconnect() {
+		if (destroyed || reconnectTimer) return;
+		reconnectTimer = setTimeout(() => {
+			reconnectTimer = null;
+			connect();
+		}, 1800);
+	}
+
+	function sampleClock() {
+		if (!socket || socket.readyState !== WebSocket.OPEN) return;
+		const id = crypto.randomUUID();
+		clockSent.set(id, performance.now());
+		sendPacket({ type: "clock:sync", id, t0: performance.now() });
+	}
+
+	async function searchOnline(
+		keyword: string,
+		options?: { signal?: AbortSignal; page?: number; provider?: "qq" | "netease" | "kugou" | "youtube" },
+	) {
+		const q = new URLSearchParams({
+			q: keyword,
+			page: String(options?.page || 1),
+			limit: "20",
+			provider: options?.provider || "qq",
+		});
+		const resp = await fetch(`${base}/api/music/search?${q.toString()}`, {
+			signal: options?.signal,
+		});
+		const data = await resp.json().catch(() => null);
+		if (!resp.ok || !data?.ok) throw new Error(data?.error || "搜索失败");
+		return {
+			tracks: Array.isArray(data.tracks) ? (data.tracks as ChatMusicTrack[]) : [],
+			hasMore: Boolean(data.hasMore),
+			page: Number(data.page) || 1,
+		};
+	}
+
+	function enqueue(track: ChatMusicTrack): Promise<boolean> {
+		if (!currentUser) {
+			notify("先在茶室入座，再来点歌");
+			return Promise.resolve(false);
+		}
+		return request<{ ok: boolean; error?: string }>({
+			type: "music:enqueue",
+			allowAlternatives: true,
+			track: {
+				id: track.id,
+				provider: track.provider,
+				sourceId: track.sourceId,
+				sourcePlatform: track.sourcePlatform,
+				playlistId: track.playlistId,
+				position: track.position,
+				title: track.title,
+				artist: track.artist,
+				album: track.album,
+				cover: track.cover,
+				durationSec: track.durationSec || 0,
+			},
+		}).then((result) => Boolean(result.ok));
+	}
+
+	function randomEnqueue(playlistId: string): Promise<boolean> {
+		return request<{ ok: boolean; error?: string }>({
+			type: "music:enqueue",
+			randomPlaylistId: playlistId,
+		}).then((result) => Boolean(result.ok));
+	}
+
+	onMount(() => {
+		try {
+			initialVolume = Number(localStorage.getItem("tea.jukeVolume") ?? "1") || 1;
+			initialListening =
+				localStorage.getItem("tea.juke.listen") === "1" &&
+				Date.now() - Number(localStorage.getItem("tea.juke.listenAt") || 0) < 30 * 60 * 1000;
+		} catch {
+			// 忽略存储异常。
+		}
+		document.documentElement.setAttribute("data-chat-page", "true");
+		connect();
+		clockTimer = setInterval(sampleClock, 12_000);
+		window.addEventListener("tea:juke-search", handleExternalSearch);
+	});
+
+	function handleExternalSearch(event: Event) {
+		const query = String((event as CustomEvent).detail || "").trim();
+		if (!query) return;
+		fallbackSearchSeq += 1;
+		fallbackSearch = { query, seq: fallbackSearchSeq };
+	}
+
+	onDestroy(() => {
+		destroyed = true;
+		if (reconnectTimer) clearTimeout(reconnectTimer);
+		if (clockTimer) clearInterval(clockTimer);
+		if (toastTimer) clearTimeout(toastTimer);
+		for (const waiter of requestWaiters.values()) clearTimeout(waiter.timer);
+		requestWaiters.clear();
+		socket?.close();
+		window.removeEventListener("tea:juke-search", handleExternalSearch);
+		document.documentElement.removeAttribute("data-chat-page");
+	});
+</script>
+
+<div class="juke-panel-host">
+	<audio bind:this={audioEl} preload="metadata"></audio>
+	<MusicPanel
+		{audioEl}
+		{roomId}
+		{walineToken}
+		{playlistAuth}
+		{playlistRefreshSeq}
+		{fallbackSearch}
+		{musicState}
+		{currentUser}
+		{onlineMembers}
+		{mentionMembers}
+		{listeningMemberCount}
+		{rotationAction}
+		{isSkippingTrack}
+		{clockOffsetMs}
+		{initialVolume}
+		{initialListening}
+		chatServerUrl={base}
+		{playlistOutApiUrl}
+		serverNow={() => clock.now()}
+		onSearchOnline={searchOnline}
+		onEnqueueTrack={enqueue}
+		onRandomEnqueue={randomEnqueue}
+		{isRandomizing}
+		onRemoveQueue={(uid) => sendPacket({ type: "music:remove", uid })}
+		onRemoveRotationTrack={(track) => sendPacket({ type: "music:rotation_remove", entryId: track.entryId || track.id })}
+		onShuffleRotation={() => sendPacket({ type: "music:rotation_shuffle" })}
+		onPlayQueued={(uid) => {
+			isSkippingTrack = true;
+			sendPacket({ type: "music:play_queued", uid, playUid: musicState?.current?.uid });
+			setTimeout(() => (isSkippingTrack = false), 4500);
+		}}
+		onPlayRotationTrack={(track) => {
+			isSkippingTrack = true;
+			sendPacket({ type: "music:play_rotation", entryId: track.entryId || track.id });
+			setTimeout(() => (isSkippingTrack = false), 4500);
+		}}
+		onSkipTrack={() => {
+			isSkippingTrack = true;
+			sendPacket({ type: "music:skip", playUid: musicState?.current?.uid });
+			setTimeout(() => (isSkippingTrack = false), 4500);
+		}}
+		onVoteSkip={() => sendPacket({ type: "music:vote_skip", playUid: musicState?.current?.uid })}
+		onReportDuration={(playUid, durationSec) => sendPacket({ type: "music:report_duration", playUid, durationSec })}
+		onTrackEnded={(playUid) => sendPacket({ type: "music:ended", playUid })}
+		onReportError={(playUid, revision) => sendPacket({ type: "music:report_error", playUid, revision })}
+		onNotify={(message) => notify(message)}
+		onPlaybackStatusChange={(status) => {
+			try {
+				sendPacket({
+					type: "music:listen",
+					listening: Boolean(status.isListening && !status.isMuted && status.audioStatus !== "blocked"),
+				});
+				if (status.isListening) {
+					localStorage.setItem("tea.juke.listen", "1");
+					localStorage.setItem("tea.juke.listenAt", String(Date.now()));
+					const globalPlayer = (window as any).__fireflyMusic;
+					globalPlayer?.pause?.();
+				} else {
+					localStorage.removeItem("tea.juke.listen");
+					localStorage.removeItem("tea.juke.listenAt");
+				}
+				if (typeof status.volume === "number") {
+					localStorage.setItem("tea.jukeVolume", String(status.volume));
+				}
+			} catch {
+				// 忽略存储异常。
+			}
+		}}
+		{onClose}
+	/>
+	{#if toast}
+		<div class="juke-toast" role="status">{toast}</div>
+	{/if}
+</div>
+
+<style>
+	.juke-panel-host {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		min-height: 0;
+		overflow: hidden;
+	}
+	.juke-panel-host audio {
+		display: none;
+	}
+	.juke-toast {
+		position: absolute;
+		left: 50%;
+		bottom: 1rem;
+		z-index: 300;
+		transform: translateX(-50%);
+		max-width: calc(100% - 1.5rem);
+		padding: 0.5rem 0.85rem;
+		border-radius: 0.6rem;
+		background: rgba(20, 24, 28, 0.92);
+		color: #fff;
+		font-size: 0.72rem;
+		line-height: 1.45;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+		pointer-events: none;
+	}
+</style>

@@ -6,6 +6,8 @@ import http from "node:http";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { handleRequest } from "./handler.mjs";
+import { handleJukeHttp, handleJukeSocket } from "./juke/gateway.mjs";
+import { attachJukeWebSocket } from "./juke/websocket.mjs";
 
 const PORT = Number(process.env.PORT || 8787);
 const env = { ...process.env };
@@ -20,10 +22,19 @@ if (!env.CYAPI_KEY) {
 	} catch (_) {}
 }
 
-http
-	.createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
 		const chunks = [];
 		for await (const chunk of req) chunks.push(chunk);
+
+		const requestUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+		if (
+			requestUrl.pathname.startsWith("/api/music/") ||
+			requestUrl.pathname.startsWith("/api/playlists") ||
+			requestUrl.pathname.startsWith("/api/juke/health")
+		) {
+			await handleJukeHttp(req, res, requestUrl, Buffer.concat(chunks));
+			return;
+		}
 
 		const request = new Request(`http://${req.headers.host || "localhost"}${req.url}`, {
 			method: req.method,
@@ -67,8 +78,12 @@ http
 			res.writeHead(500, { "Content-Type": "application/json" });
 			res.end(JSON.stringify({ ok: false, error: String(err.message || err) }));
 		}
-	})
-	.listen(PORT, "0.0.0.0", () => {
-		console.log(`tea bridge dev server: http://127.0.0.1:${PORT}`);
-		if (!env.BRIDGE_TOKEN) console.log("⚠️  BRIDGE_TOKEN 为空，接口会返回 500");
-	});
+});
+
+attachJukeWebSocket(server, "/juke/ws", handleJukeSocket);
+
+server.listen(PORT, "0.0.0.0", () => {
+	console.log(`tea bridge dev server: http://127.0.0.1:${PORT}`);
+	console.log(`juke gateway websocket: ws://127.0.0.1:${PORT}/juke/ws`);
+	if (!env.BRIDGE_TOKEN) console.log("⚠️  BRIDGE_TOKEN 为空，接口会返回 500");
+});
