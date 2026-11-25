@@ -2494,7 +2494,8 @@
 
 	html body #navbar[data-transparent-mode] > div > div:first-child > a:first-child > div {
 		gap: 0.4rem;
-		font-size: 1.02rem;
+		/* 与菜单项（2.5rem / 0.92rem）、工具按钮（2.5rem）统一视觉尺寸 */
+		font-size: 0.95rem;
 	}
 
 	/* ---------- 菜单岛 ---------- */
@@ -2665,9 +2666,12 @@
 		display: inline-flex !important;
 		align-items: center;
 		justify-content: center;
-		flex: 0 0 2.75rem;
-		width: 2.75rem !important;
-		height: 2.75rem !important;
+		/* 主题按钮被上游 <div class="z-50"> 包了一层 46px 行盒，
+		   默认按基线靠上，会比同排按钮高 3px；middle 让三岛内容真正齐平 */
+		vertical-align: middle !important;
+		flex: 0 0 2.5rem;
+		width: 2.5rem !important;
+		height: 2.5rem !important;
 		padding: 0 !important;
 		border: 0 !important;
 		border-radius: 9999px !important;
@@ -2719,7 +2723,7 @@
 		position: relative;
 		z-index: 1;
 		width: auto !important;
-		height: 2.75rem !important;
+		height: 2.5rem !important;
 		margin-right: 0 !important;
 		padding-right: 0.2rem !important;
 		border: 0 !important;
