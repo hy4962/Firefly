@@ -83,6 +83,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 								<b>互联茶室</b>
 								<span>和其他站点的朋友一起聊天</span>
 							</span>
+							<span class="tea-room-item__count" data-room-count="lobby">0/—</span>
 						</button>
 					</li>
 					<li class="tea-rooms__group">本站</li>
@@ -93,6 +94,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 								<b>闲聊/站点留言板</b>
 								<span>随便聊聊日常与折腾</span>
 							</span>
+							<span class="tea-room-item__count" data-room-count="chat">0/—</span>
 						</button>
 					</li>
 				</ul>
@@ -145,6 +147,12 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					</div>
 				</div>
 				<div class="tea-bar__tools">
+					<span class="tea-live-count" data-tea-live-count title="茶室在线人数">
+						<i aria-hidden="true"></i>
+						<b data-tea-live-online>0</b>
+						<span>/</span>
+						<b data-tea-live-total>—</b>
+					</span>
 					<button type="button" class="tea-search-btn" data-tea-search-open title="翻聊天记录" aria-label="翻聊天记录">
 						<Icon is:inline name="material-symbols:search-rounded" />
 						<span>搜索</span>
@@ -169,7 +177,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			<!-- ── 置顶消息 ───────────────────────────────────────── -->
 			<div class="tea-pins" data-tea-pins hidden>
 				<span class="tea-pins__icon"><Icon is:inline name="material-symbols:push-pin" /></span>
-				<div class="tea-pins__body" data-tea-pins-body></div>
+				<div class="tea-pins__body" data-tea-pins-body role="button" tabindex="0" aria-expanded="false" title="展开当前置顶"></div>
+				<span class="tea-pins__count" data-tea-pins-count hidden></span>
+				<button type="button" class="tea-pins__action" data-tea-pins-next title="查看下一条置顶" aria-label="查看下一条置顶" hidden>
+					<Icon is:inline name="material-symbols:chevron-right-rounded" />
+				</button>
 				<button type="button" class="tea-pins__toggle" data-tea-pins-toggle aria-label="展开或收起置顶">展开</button>
 			</div>
 
@@ -1532,6 +1544,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		display: block;
 	}
 	.tea-room-item__copy {
+		flex: 1;
 		min-width: 0;
 		display: grid;
 		gap: 0.05rem;
@@ -1546,6 +1559,17 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+	.tea-room-item__count {
+		display: none;
+		flex: none;
+		margin-left: auto;
+		font-size: 0.66rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--tea-muted);
+	}
+	.tea-room-item.is-active .tea-room-item__count {
+		display: inline;
 	}
 
 	/* 在线列表 */
@@ -1879,6 +1903,31 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		color: #c0563f;
 		border-color: color-mix(in oklch, #c0563f 30%, transparent);
 	}
+	.tea-live-count {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.24rem;
+		height: 1.85rem;
+		padding: 0 0.58rem;
+		border-radius: 999px;
+		border: 1px solid var(--tea-line);
+		background: color-mix(in oklch, var(--tea-surface) 78%, transparent);
+		color: var(--tea-muted);
+		font-size: 0.68rem;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+	.tea-live-count i {
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 50%;
+		background: #34c759;
+		box-shadow: 0 0 0 3px color-mix(in oklch, #34c759 18%, transparent);
+	}
+	.tea-live-count b {
+		font-weight: 600;
+		color: var(--deep-text);
+	}
 	.tea-icon-btn {
 		width: 2rem;
 		height: 2rem;
@@ -1940,27 +1989,40 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	/* 置顶消息条 */
 	.tea-pins {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		min-width: 0;
-		gap: 0.5rem;
-		margin: 0.5rem 0.95rem 0;
-		padding: 0.4rem 0.65rem;
-		border-radius: 0.7rem;
-		background: color-mix(in oklch, var(--primary) 6%, var(--tea-surface));
-		border: 1px solid color-mix(in oklch, var(--primary) 18%, transparent);
+		min-height: 2.125rem;
+		gap: 0.45rem;
+		margin: 0;
+		padding: 0.18rem 0.8rem;
+		border-radius: 0;
+		background: color-mix(in oklch, var(--primary) 7%, var(--tea-surface));
+		border: 0;
+		border-bottom: 1px solid color-mix(in oklch, var(--primary) 18%, transparent);
 		font-size: 0.72rem;
-		line-height: 1.55;
+		line-height: 1.35;
 	}
 	.tea-pins[hidden] { display: none; }
 	.tea-pins__icon {
 		display: inline-flex;
 		flex: none;
 		color: color-mix(in oklch, var(--primary) 78%, currentColor);
-		margin-top: 0.1rem;
 	}
 	.tea-pins__icon svg { width: 0.9rem; height: 0.9rem; }
-	.tea-pins__body { flex: 1; min-width: 0; color: var(--tea-muted); }
-	/* 名称 + 正文同一行；折叠时单行省略，别让多行置顶把整条撑高 */
+	.tea-pins__body {
+		flex: 1;
+		min-width: 0;
+		height: 1rem;
+		overflow: hidden;
+		color: var(--tea-muted);
+		cursor: pointer;
+		border-radius: 0.3rem;
+		outline: none;
+	}
+	.tea-pins__body:hover { color: var(--deep-text); }
+	.tea-pins__body:focus-visible {
+		box-shadow: 0 0 0 2px color-mix(in oklch, var(--primary) 34%, transparent);
+	}
 	.tea-pins__item { display: flex; align-items: baseline; gap: 0.35rem; min-width: 0; }
 	.tea-pins__who { flex: none; font-weight: 700; color: var(--primary); }
 	.tea-pins__text {
@@ -1975,8 +2037,35 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-pins__text p,
 	.tea-pins__text div { display: inline; }
 	.tea-pins__text a { color: var(--primary); text-decoration: none; border-bottom: 1px solid color-mix(in oklch, var(--primary) 30%, transparent); }
-	/* 点「展开」才恢复原文换行 */
-	.tea-pins:not(.tea-pins--collapsed) .tea-pins__text { white-space: pre-wrap; overflow: visible; text-overflow: clip; }
+	.tea-pins:not(.tea-pins--collapsed) {
+		align-items: flex-start;
+		padding-top: 0.38rem;
+		padding-bottom: 0.38rem;
+	}
+	.tea-pins:not(.tea-pins--collapsed) .tea-pins__icon {
+		margin-top: 0.12rem;
+	}
+	.tea-pins:not(.tea-pins--collapsed) .tea-pins__body {
+		height: auto;
+		max-height: min(9rem, 28vh);
+		overflow-y: auto;
+		padding-right: 0.3rem;
+		scrollbar-width: thin;
+	}
+	.tea-pins:not(.tea-pins--collapsed) .tea-pins__text {
+		white-space: pre-wrap;
+		word-break: break-word;
+		overflow: visible;
+		text-overflow: clip;
+	}
+	.tea-pins__count {
+		flex: none;
+		color: var(--tea-muted);
+		font-size: 0.63rem;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+	.tea-pins__action,
 	.tea-pins__toggle {
 		flex: none;
 		border: 0;
@@ -1985,9 +2074,23 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		font: inherit;
 		font-size: 0.68rem;
 		cursor: pointer;
-		padding: 0.05rem 0.2rem;
+		border-radius: 0.35rem;
 	}
-	.tea-pins__toggle:hover { text-decoration: underline; }
+	.tea-pins__action {
+		width: 1.45rem;
+		height: 1.45rem;
+		display: grid;
+		place-items: center;
+		padding: 0;
+	}
+	.tea-pins__action svg { width: 1rem; height: 1rem; }
+	.tea-pins__toggle {
+		padding: 0.18rem 0.35rem;
+	}
+	.tea-pins__action:hover,
+	.tea-pins__toggle:hover {
+		background: color-mix(in oklch, var(--primary) 11%, transparent);
+	}
 
 	/* 消息流 */
 	.tea-feed-wrap {
@@ -5131,6 +5234,11 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		.tea-bar__tools {
 			gap: 0.25rem;
 		}
+		.tea-live-count {
+			height: 1.7rem;
+			padding: 0 0.45rem;
+			font-size: 0.64rem;
+		}
 		.tea-conn [data-tea-conn-text] {
 			display: none;
 		}
@@ -5149,6 +5257,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		}
 	}
 	@media (max-width: 520px) {
+		.tea-live-count {
+			display: none;
+		}
 		.tea-banner__peers {
 			display: none;
 		}

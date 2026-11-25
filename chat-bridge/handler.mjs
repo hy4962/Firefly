@@ -351,6 +351,72 @@ async function getActiveSenders(c, roomId) {
 	return set;
 }
 
+// 累计聊过天的人数需要翻完整房间历史；结果缓存十分钟，避免每次轮询都扫 Matrix。
+const chatterCache = new Map();
+const CHATTER_CACHE_TTL = 10 * 60_000;
+const CHATTER_SCAN_TIMEOUT = 8_000;
+
+async function scanTotalChatters(c, roomId) {
+	const senders = new Set();
+	let from = "";
+	for (let page = 0; page < 120; page += 1) {
+		const qs = new URLSearchParams({ dir: "b", limit: "1000" });
+		if (from) qs.set("from", from);
+		const { ok, data } = await mxJson(
+			c,
+			`/_matrix/client/v3/rooms/${enc(roomId)}/messages?${qs.toString()}`,
+			{ token: c.bridgeToken },
+		);
+		if (!ok) throw new Error(data.error || "history scan failed");
+		const chunk = Array.isArray(data.chunk) ? data.chunk : [];
+		for (const ev of chunk) {
+			if (ev?.type !== "m.room.message" || !ev.sender) continue;
+			senders.add(ev.sender);
+		}
+		const next = typeof data.end === "string" ? data.end : "";
+		if (!next || !chunk.length || next === from) break;
+		from = next;
+	}
+	return senders.size;
+}
+
+async function getTotalChatters(c, roomId, memberCount) {
+	const now = Date.now();
+	let entry = chatterCache.get(roomId);
+	if (entry && !entry.pending && now - entry.at < CHATTER_CACHE_TTL) {
+		return Math.max(entry.count || 0, memberCount);
+	}
+	if (!entry?.pending) {
+		const previous = entry?.count || 0;
+		entry = { at: 0, count: previous, pending: scanTotalChatters(c, roomId) };
+		chatterCache.set(roomId, entry);
+		entry.pending.then((count) => {
+			chatterCache.set(roomId, { at: Date.now(), count, pending: null });
+		}).catch(() => {
+			chatterCache.set(roomId, {
+				at: Date.now() - CHATTER_CACHE_TTL + 60_000,
+				count: previous,
+				pending: null,
+			});
+		});
+	}
+	let scanTimer = null;
+	try {
+		const count = await Promise.race([
+			entry.pending,
+			new Promise((resolve) => {
+				scanTimer = setTimeout(() => resolve(null), CHATTER_SCAN_TIMEOUT);
+			}),
+		]);
+		if (typeof count === "number") return Math.max(count, memberCount);
+	} catch (_) {
+	} finally {
+		if (scanTimer) clearTimeout(scanTimer);
+	}
+	const cached = chatterCache.get(roomId);
+	return Math.max(cached?.count || 0, memberCount);
+}
+
 // 真实在线状态：presenceCache 是主动探测的结果（有 20s 缓存）；
 // livePresence 是 /sync 里联邦推来的 presence 事件——外站账号在不发言时，
 // 只有这条流能看到人家在自己站点上还醒着。以前把它扔了，外站就永远离线。
@@ -1525,6 +1591,7 @@ async function handleRoom(c, base, room, url) {
 		room: { key: room.key, name: room.name, desc: room.desc, id: room.id, avatar },
 		members: list,
 		online: list.filter((m) => m.online).length,
+		totalChatters: await getTotalChatters(c, room.id, list.length),
 	};
 	// ?debug=1 时把在线判定依据带出来，排查「人走了还显示在线」用
 	if (url?.searchParams.get("debug") === "1") {

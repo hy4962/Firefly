@@ -471,6 +471,21 @@
 			if (label) label.textContent = text || (state === "live" ? "已连接" : state === "down" ? "连接中断" : "连接中");
 		};
 
+		const setRoomCount = (online, total) => {
+			const onlineCount = Math.max(0, Number(online) || 0);
+			const totalCount = Math.max(onlineCount, Number(total) || 0);
+			const roomCount = q(`[data-room-count="${rt.room}"]`);
+			const liveOnline = q("[data-tea-live-online]");
+			const liveTotal = q("[data-tea-live-total]");
+			const countBox = q("[data-tea-live-count]");
+			if (roomCount) roomCount.textContent = `${onlineCount}/${totalCount > 0 ? totalCount : "—"}`;
+			if (liveOnline) liveOnline.textContent = String(onlineCount);
+			if (liveTotal) liveTotal.textContent = totalCount > 0 ? String(totalCount) : "—";
+			if (countBox) countBox.title = totalCount > 0
+				? `${onlineCount} 人在线 · 累计 ${totalCount} 人聊过天`
+				: `${onlineCount} 人在线`;
+		};
+
 		const showError = (msg) => {
 			const box = q("[data-tea-error]");
 			if (!box) return;
@@ -891,13 +906,15 @@
 		};
 		rt.saveReadMark = saveReadMark;
 
-		const renderMembers = (members) => {
+		const renderMembers = (members, totalChatters = 0) => {
 			const list = q("[data-tea-members]");
 			if (!list) return;
 			rt.members = members;
 			const isOn = (m) => m.online !== false || !!(rt.visitor && m.id === rt.visitor.id);
 			const countEl = q("[data-tea-online]");
-			if (countEl) countEl.textContent = String(members.filter(isOn).length + (rt.visitor ? 0 : 1));
+			const onlineCount = members.filter(isOn).length + (rt.visitor ? 0 : 1);
+			if (countEl) countEl.textContent = String(onlineCount);
+			setRoomCount(onlineCount, Math.max(Number(totalChatters) || 0, members.length));
 			const more = q("[data-tea-roster-all]");
 			const observerHtml = rt.visitor
 				? ""
@@ -2007,7 +2024,7 @@
 		const loadRoom = async () => {
 			try {
 				const data = await api(`/api/room?room=${rt.room}`);
-				renderMembers(data.members || []);
+				renderMembers(data.members || [], data.totalChatters || 0);
 				applyRoomAvatar(rt.room, data.room && data.room.avatar);
 			} catch (_) {}
 		};
@@ -4517,13 +4534,59 @@
 			const pinsBox = q("[data-tea-pins]");
 			const pinsBody = q("[data-tea-pins-body]");
 			const pinsToggle = q("[data-tea-pins-toggle]");
+			const pinsCount = q("[data-tea-pins-count]");
+			const pinsNext = q("[data-tea-pins-next]");
+			const setPinExpanded = (expanded) => {
+				if (!pinsBox) return;
+				pinsBox.classList.toggle("tea-pins--collapsed", !expanded);
+				if (pinsToggle) pinsToggle.textContent = expanded ? "收起" : "展开";
+				if (pinsBody) {
+					pinsBody.setAttribute("aria-expanded", String(expanded));
+					pinsBody.title = expanded ? "收起当前置顶" : "展开当前置顶";
+				}
+			};
 			const pinOpen = () => {
 				if (!pinsBox) return;
-				const collapsed = pinsBox.classList.toggle("tea-pins--collapsed");
-				if (pinsToggle) pinsToggle.textContent = collapsed ? "展开" : "收起";
+				setPinExpanded(pinsBox.classList.contains("tea-pins--collapsed"));
+			};
+			const renderCurrentPin = () => {
+				const pins = Array.isArray(rt.pinnedMessages) ? rt.pinnedMessages : [];
+				if (!pinsBox || !pinsBody) return;
+				if (!pins.length) {
+					pinsBox.hidden = true;
+					return;
+				}
+				rt.pinIndex = ((Number(rt.pinIndex) || 0) + pins.length) % pins.length;
+				const p = pins[rt.pinIndex];
+				const nick = p.nick || "茶友";
+				const site = p.site ? ` · ${esc(p.site)}` : "";
+				const text = fmtText(p.text || "");
+				pinsBody.innerHTML = `<div class="tea-pins__item"><span class="tea-pins__who">${esc(nick)}${site}：</span><span class="tea-pins__text">${text}</span></div>`;
+				if (pinsCount) {
+					pinsCount.hidden = pins.length <= 1;
+					pinsCount.textContent = `${rt.pinIndex + 1}/${pins.length}`;
+				}
+				if (pinsNext) pinsNext.hidden = pins.length <= 1;
+				setPinExpanded(!pinsBox.classList.contains("tea-pins--collapsed"));
 			};
 			pinsToggle?.addEventListener("click", pinOpen);
-			pinsBox?.classList.add("tea-pins--collapsed");
+			pinsBody?.addEventListener("click", (event) => {
+				if (event.target.closest("a")) return;
+				pinOpen();
+			});
+			pinsBody?.addEventListener("keydown", (event) => {
+				if (event.target !== pinsBody || (event.key !== "Enter" && event.key !== " ")) return;
+				event.preventDefault();
+				pinOpen();
+			});
+			pinsNext?.addEventListener("click", () => {
+				const pins = Array.isArray(rt.pinnedMessages) ? rt.pinnedMessages : [];
+				if (pins.length <= 1) return;
+				rt.pinIndex = ((Number(rt.pinIndex) || 0) + 1) % pins.length;
+				setPinExpanded(false);
+				renderCurrentPin();
+			});
+			setPinExpanded(false);
 			const loadPins = async () => {
 				if (!pinsBox || !pinsBody) return;
 				if (rt.room !== "lobby") { pinsBox.hidden = true; return; }
@@ -4531,14 +4594,10 @@
 					const data = await api(`/api/pins?room=${rt.room}`);
 					const pins = data.pins || [];
 					if (!pins.length) { pinsBox.hidden = true; return; }
-					pinsBody.innerHTML = pins
-						.map((p) => {
-							const nick = p.nick || "茶友";
-							const site = p.site ? ` · ${esc(p.site)}` : "";
-							const text = fmtText(p.text || "");
-							return `<div class="tea-pins__item"><span class="tea-pins__who">${esc(nick)}${site}：</span><span class="tea-pins__text">${text}</span></div>`;
-						})
-						.join("");
+					rt.pinnedMessages = pins;
+					rt.pinIndex = 0;
+					setPinExpanded(false);
+					renderCurrentPin();
 					pinsBox.hidden = false;
 				} catch (_) {
 					pinsBox.hidden = true;
