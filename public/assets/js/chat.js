@@ -199,6 +199,15 @@
 				.join("");
 		};
 
+		// 置顶栏是单行摘要，只展示纯文本：别把其他站点发来的 Markdown 标题符号原样漏出来。
+		const pinPlain = (text) =>
+			String(text ?? "")
+				.replace(/```[\s\S]*?```/g, " ")
+				.replace(/^\s{0,3}#{1,6}\s*/gm, "")
+				.replace(/[*_~>`]/g, "")
+				.replace(/\s+/g, " ")
+				.trim();
+
 		// 视频播放器：规范（m.video）的 info 带 w/h，有就按真实比例占位，
 		// 没有就退回 16:9，别在 metadata 加载前塌成一条 150px 高的黑边。
 		const videoTag = (src, info, poster) => {
@@ -4567,7 +4576,7 @@
 				const p = pins[rt.pinIndex];
 				const nick = p.nick || "茶友";
 				const site = p.site ? ` · ${esc(p.site)}` : "";
-				const text = fmtText(p.text || "");
+				const text = esc(pinPlain(p.text || ""));
 				pinsBody.innerHTML = `<div class="tea-pins__item"><span class="tea-pins__who">${esc(nick)}${site}：</span><span class="tea-pins__text">${text}</span></div>`;
 				if (pinsCount) {
 					pinsCount.hidden = pins.length <= 1;

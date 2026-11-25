@@ -39,14 +39,16 @@
 	const base = apiBase.replace(/\/+$/, "");
 	const clock = new MusicClock();
 	let activeRoomId = $state((() => {
-		if (!import.meta.env.DEV || typeof window === "undefined") return roomId;
-		const override = new URLSearchParams(window.location.search)
-			.get("jukeRoom")
-			?.trim()
-			.toLowerCase();
-		return override && /^[a-z0-9_-]{1,48}$/.test(override)
-			? override
-			: roomId;
+		if (typeof window === "undefined") return roomId;
+		const params = new URLSearchParams(window.location.search);
+		// 茶室自带 ?room=chat|lobby，点歌台必须跟聊天室首屏房间一致。
+		const roomOverride = params.get("room")?.trim().toLowerCase();
+		if (roomOverride === "chat" || roomOverride === "lobby") return roomOverride;
+		if (import.meta.env.DEV) {
+			const jukeOverride = params.get("jukeRoom")?.trim().toLowerCase();
+			if (jukeOverride && /^[a-z0-9_-]{1,48}$/.test(jukeOverride)) return jukeOverride;
+		}
+		return roomId;
 	})());
 
 	let audioEl: HTMLAudioElement | null = $state(null);
