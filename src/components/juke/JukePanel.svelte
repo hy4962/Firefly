@@ -53,6 +53,7 @@
 
 	let audioEl: HTMLAudioElement | null = $state(null);
 	let socket: WebSocket | null = null;
+	let connectedToken = "";
 	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	let clockTimer: ReturnType<typeof setInterval> | null = null;
 	let clockSent = new Map<string, number>();
@@ -76,15 +77,9 @@
 	let initialVolume = 1;
 	let initialListening = false;
 
-	const walineToken = (() => {
-		try {
-			const raw = localStorage.getItem("WALINE_USER") || "";
-			const user = raw ? JSON.parse(raw) : null;
-			return typeof user?.token === "string" ? user.token : "";
-		} catch {
-			return "";
-		}
-	})();
+	// 这里原来只在组件初始化时读一次 WALINE_USER：用 Matrix 账号入座后
+	// 本地写的是 tea.identity，点歌台就一直以为自己没登录。
+	let walineToken = $state(readAuthToken());
 
 	const playlistAuth = $derived(
 		currentUser
@@ -158,6 +153,56 @@
 			// 存储不可用时仍允许浏览和收听，只是不能点歌。
 		}
 		return null;
+	}
+
+	function readAuthToken(): string {
+		try {
+			const walineRaw = localStorage.getItem("WALINE_USER") || "";
+			const waline = walineRaw ? JSON.parse(walineRaw) : null;
+			if (typeof waline?.token === "string" && waline.token) return waline.token;
+			const guestRaw =
+				sessionStorage.getItem("guestbook-chat-auth") ||
+				localStorage.getItem("guestbook-chat-auth") ||
+				"";
+			const guest = guestRaw ? JSON.parse(guestRaw) : null;
+			if (typeof guest?.token === "string" && guest.token) return guest.token;
+			const identityRaw = localStorage.getItem("tea.identity") || "";
+			const identity = identityRaw ? JSON.parse(identityRaw) : null;
+			if (typeof identity?.token === "string" && identity.token) return identity.token;
+		} catch {
+			// 存储不可用时按未登录处理。
+		}
+		return "";
+	}
+
+	function refreshAuth() {
+		const nextToken = readAuthToken();
+		walineToken = nextToken;
+		currentUser = readUser();
+		const ws = socket;
+		if (!ws || ws.readyState !== WebSocket.OPEN) return;
+		if (nextToken !== connectedToken) {
+			// WebSocket URL 里的 token 不能热替换，重连一次让后端按新身份认。
+			ws.close(1000, "auth-change");
+			return;
+		}
+		sendPacket({ type: "auth", roomId: activeRoomId, user: currentUser, siteName });
+	}
+
+	function handleAuthEvent() {
+		refreshAuth();
+	}
+
+	function handleAuthStorage(event: StorageEvent) {
+		if (
+			event.key &&
+			event.key !== "WALINE_USER" &&
+			event.key !== "WALINE_USER_META" &&
+			event.key !== "guestbook-chat-auth" &&
+			event.key !== "tea.identity"
+		)
+			return;
+		refreshAuth();
 	}
 
 	function sendPacket(packet: Record<string, unknown>): boolean {
@@ -266,6 +311,8 @@
 		if (destroyed) return;
 		const wsBase = base.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
 		const params = new URLSearchParams({ room: activeRoomId });
+		walineToken = readAuthToken();
+		connectedToken = walineToken;
 		if (walineToken) params.set("token", walineToken);
 		let ws: WebSocket;
 		try {
@@ -407,6 +454,8 @@
 		clockTimer = setInterval(sampleClock, 12_000);
 		window.addEventListener("tea:juke-search", handleExternalSearch);
 		window.addEventListener("tea:room-change", handleRoomChange);
+		window.addEventListener("tea:juke-auth", handleAuthEvent);
+		window.addEventListener("storage", handleAuthStorage);
 	});
 
 	function handleExternalSearch(event: Event) {
@@ -426,6 +475,8 @@
 		socket?.close();
 		window.removeEventListener("tea:juke-search", handleExternalSearch);
 		window.removeEventListener("tea:room-change", handleRoomChange);
+		window.removeEventListener("tea:juke-auth", handleAuthEvent);
+		window.removeEventListener("storage", handleAuthStorage);
 		document.documentElement.removeAttribute("data-chat-page");
 	});
 </script>

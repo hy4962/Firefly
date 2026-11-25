@@ -430,6 +430,15 @@
 				localStorage.removeItem(GUESTBOOK_AUTH_KEY);
 				sessionStorage.removeItem(GUESTBOOK_AUTH_KEY);
 			} catch (_) {}
+			notifyJukeAuth();
+		};
+
+		// 点歌台是独立 Svelte 岛，只在 WS 连接时读一次登录态。
+		// 茶室入座/退出后主动通知它重新认证，避免「左上已入座、右上说未入座」。
+		const notifyJukeAuth = () => {
+			try {
+				window.dispatchEvent(new CustomEvent("tea:juke-auth"));
+			} catch (_) {}
 		};
 
 		// 记一首歌到当前访客名下（同曲累加时间，不重复堆条目）
@@ -2540,6 +2549,7 @@
 				sso: res.waline && res.waline.token ? "waline" : "",
 			};
 			store.identity = rt.visitor;
+			notifyJukeAuth();
 			// 茶室用留言板账号登录的，顺手把这套会话写回评论区存储
 			if (res.waline && res.waline.token) saveWalineUser(res.waline);
 			renderSelf();
@@ -2596,6 +2606,7 @@
 					if (rt.visitor && rt.visitor.sso === "waline") {
 						rt.visitor = null;
 						store.identity = null;
+						notifyJukeAuth();
 						renderSelf();
 						setGate(false);
 						showError("留言板那边退出了，茶室座位也一起退出。");
@@ -2609,6 +2620,7 @@
 					if (w && w.email && rt.visitor.email && w.email !== rt.visitor.email) {
 						rt.visitor = null;
 						store.identity = null;
+						notifyJukeAuth();
 						seatFromWaline();
 					}
 				}
