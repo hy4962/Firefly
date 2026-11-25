@@ -34,6 +34,8 @@ const DEFAULTS = {
 	SITE_URL: "https://www.0dm.cn",
 	ALLOW_ORIGINS: "https://www.0dm.cn,https://0dm.cn,https://www.9ll.uk,https://9ll.uk,http://localhost:4399,http://127.0.0.1:4399",
 	IDENTITY_PREFIX: "tea",
+	// 本机容器没显式配 OWNER_ID，但站长自己的 Matrix 账号要能管轮播。
+	OWNER_ID: "@heyuan:matrix.0dm.cn",
 };
 
 // 正文上限放宽到 4000：Markdown 图片语法本身要占百来字符，500 字时图文根本配不了几句话。

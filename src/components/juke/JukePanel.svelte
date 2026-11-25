@@ -146,7 +146,8 @@
 					url: "",
 					badge: "访客",
 					badgeType: "tag",
-					isAdmin: false,
+					// 站长用 Matrix 账号入座时，登录接口已经给了 admin 标记。
+					isAdmin: Boolean(identity.admin),
 				};
 			}
 		} catch {

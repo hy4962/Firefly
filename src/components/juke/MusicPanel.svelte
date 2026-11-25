@@ -1511,6 +1511,10 @@ function playlistAuthKey(auth?: PlaylistAuth): string {
 const isWalineLoggedIn = $derived(
 	Boolean(currentUser && currentUser.authType === "waline" && walineToken),
 );
+// 轮播设置原本只认 Waline 登录；站长用 Matrix 账号入座时也要能进。
+const canOpenRotationSettings = $derived(
+	Boolean(currentUser && walineToken && (isWalineLoggedIn || currentUser.isAdmin)),
+);
 
 const rotationTooltipText = "歌单轮播设置";
 
@@ -2133,7 +2137,7 @@ async function loadRotationSettings() {
 
 function openRotationSettings() {
 	if (rotationSaving) return;
-	if (!currentUser || !isWalineLoggedIn) {
+	if (!canOpenRotationSettings) {
 		onRequestAuth?.();
 		return;
 	}
@@ -2159,7 +2163,7 @@ function toggleRotationPlaylist(playlistId: string) {
 }
 
 async function handleSaveRotation() {
-	if (rotationSaving || rotationLoading || rotationLoadError || roomId !== rotationDialogRoom || chatServerUrl !== rotationDialogServer || !canSaveRotation || !isWalineLoggedIn) return;
+	if (rotationSaving || rotationLoading || rotationLoadError || roomId !== rotationDialogRoom || chatServerUrl !== rotationDialogServer || !canSaveRotation || !canOpenRotationSettings) return;
 	const selectedIds = validSelectedRotationIds;
 	const setting: RoomRotation = rotationMode === "playlist"
 		? { mode: "playlist", playlistIds: selectedIds, playlistId: selectedIds[0] }
@@ -2167,7 +2171,7 @@ async function handleSaveRotation() {
 	rotationSaving = true;
 	rotationError = "";
 	try {
-		rotation = await saveRoomRotation(chatServerUrl, roomId, { kind: "waline", token: walineToken }, setting);
+		rotation = await saveRoomRotation(chatServerUrl, roomId, { kind: currentUser?.authType || "guest", token: walineToken }, setting);
 		rotationExpanded = false;
 		onNotify?.("已保存本房间的轮播设置", "success");
 		await loadPlaylists(true);
@@ -4307,10 +4311,10 @@ $effect(() => {
             <ChatTooltip text={rotationTooltipText}>
               <button
                 type="button"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors border-none bg-transparent {!currentUser || isWalineLoggedIn
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors border-none bg-transparent {canOpenRotationSettings
                   ? 'cursor-pointer text-[var(--chat-meta-color)] hover:text-(--primary) active:scale-95'
                   : 'text-[var(--chat-meta-color)] opacity-40 cursor-not-allowed!'}"
-                aria-disabled={currentUser && !isWalineLoggedIn ? "true" : undefined}
+                aria-disabled={currentUser && !canOpenRotationSettings ? "true" : undefined}
                 aria-label={rotationTooltipText}
                 onclick={openRotationSettings}
               >
@@ -4510,10 +4514,10 @@ $effect(() => {
                   </span>
                   <button
                     type="button"
-                    class="mt-1 px-3 py-1 text-[12px] rounded-lg font-medium transition-all {!currentUser || isWalineLoggedIn
+                    class="mt-1 px-3 py-1 text-[12px] rounded-lg font-medium transition-all {canOpenRotationSettings
                       ? 'border border-[var(--primary)]/35 bg-[var(--primary)]/10 text-(--primary) hover:bg-[var(--primary)]/20 cursor-pointer active:scale-95'
                       : 'border border-[var(--chat-divider-color)] bg-transparent text-[var(--chat-meta-color)] opacity-40 cursor-not-allowed!'}"
-                    aria-disabled={currentUser && !isWalineLoggedIn ? "true" : undefined}
+                    aria-disabled={currentUser && !canOpenRotationSettings ? "true" : undefined}
                     aria-label="设置轮播歌单"
                     onclick={openRotationSettings}
                   >
@@ -4847,10 +4851,10 @@ $effect(() => {
               <div class="mt-1.5">
                 <button
                   type="button"
-                  class="px-3 py-1 text-[12px] rounded-lg font-medium transition-all {!currentUser || isWalineLoggedIn
+                  class="px-3 py-1 text-[12px] rounded-lg font-medium transition-all {canOpenRotationSettings
                     ? 'border border-[var(--primary)]/35 bg-[var(--primary)]/10 text-(--primary) hover:bg-[var(--primary)]/20 cursor-pointer active:scale-95'
                     : 'border border-[var(--chat-divider-color)] bg-transparent text-[var(--chat-meta-color)] opacity-40 cursor-not-allowed!'}"
-                  aria-disabled={currentUser && !isWalineLoggedIn ? "true" : undefined}
+                  aria-disabled={currentUser && !canOpenRotationSettings ? "true" : undefined}
                   aria-label="设置轮播歌单"
                   onclick={openRotationSettings}
                 >
@@ -5935,7 +5939,7 @@ $effect(() => {
     </div>
   {/if}
 
-  <ChatModal open={rotationExpanded && isWalineLoggedIn}
+  <ChatModal open={rotationExpanded && canOpenRotationSettings}
     title="歌单轮播设置" subtitle="仅作用于当前房间，待播队列优先" size="lg"
     mobile="full" fillHeightOnDesktop={true} lockedMinHeight={540}
     topPriority
