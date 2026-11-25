@@ -21,7 +21,11 @@ const active = new Map();
 let cleanup;
 
 function paths(url, trackKey = '') {
-  const seed = typeof trackKey === 'string' && trackKey.trim() ? trackKey.trim() : url;
+  const seed = typeof trackKey === 'string' && trackKey.trim()
+    ? trackKey.trim()
+    : url instanceof URL
+      ? url.href
+      : String(url);
   const key = createHash('sha256').update(seed).digest('hex').slice(0, 32);
   return {
     key,
@@ -625,7 +629,11 @@ export async function handleStreamProxyRequest(req, res, url, _referer, mimeType
     if (res.destroyed) return;
     if (res.headersSent) res.destroy();
     else res.writeHead(502, { ...errorHeaders, 'Content-Type': 'application/json' })
-      .end(JSON.stringify({ ok: false, error: '音源暂时不可用' }));
+      .end(JSON.stringify({
+        ok: false,
+        error: '音源暂时不可用',
+        reason: error instanceof Error ? error.message : String(error)
+      }));
   } finally {
     idle.stop();
     await cached?.file.close().catch(() => {});

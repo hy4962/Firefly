@@ -150,7 +150,7 @@ async function fetchFromCommunityXml(steamId: string): Promise<SteamSnapshot> {
 
 	const blocks = xml.match(/<mostPlayedGame>[\s\S]*?<\/mostPlayedGame>/g) ?? [];
 	const games: SteamGame[] = blocks
-		.map((block) => {
+		.map<SteamGame | null>((block) => {
 			const link = pickTag(block, "gameLink");
 			const appid = Number(link.match(/\/app\/(\d+)/)?.[1] ?? 0);
 			if (appid <= 0) return null;

@@ -31,6 +31,16 @@
 
 	const base = apiBase.replace(/\/+$/, "");
 	const clock = new MusicClock();
+	const activeRoomId = (() => {
+		if (!import.meta.env.DEV || typeof window === "undefined") return roomId;
+		const override = new URLSearchParams(window.location.search)
+			.get("jukeRoom")
+			?.trim()
+			.toLowerCase();
+		return override && /^[a-z0-9_-]{1,48}$/.test(override)
+			? override
+			: roomId;
+	})();
 
 	let audioEl: HTMLAudioElement | null = $state(null);
 	let socket: WebSocket | null = null;
@@ -237,7 +247,7 @@
 	function connect() {
 		if (destroyed) return;
 		const wsBase = base.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
-		const params = new URLSearchParams({ room: roomId });
+		const params = new URLSearchParams({ room: activeRoomId });
 		if (walineToken) params.set("token", walineToken);
 		try {
 			socket = new WebSocket(`${wsBase}/juke/ws?${params.toString()}`);
@@ -248,7 +258,7 @@
 		}
 		socket.addEventListener("open", () => {
 			currentUser = readUser();
-			sendPacket({ type: "auth", roomId, user: currentUser, siteName });
+			sendPacket({ type: "auth", roomId: activeRoomId, user: currentUser, siteName });
 			sampleClock();
 		});
 		socket.addEventListener("message", (event) => {
@@ -369,7 +379,7 @@
 	<audio bind:this={audioEl} preload="metadata"></audio>
 	<MusicPanel
 		{audioEl}
-		{roomId}
+		roomId={activeRoomId}
 		{walineToken}
 		{playlistAuth}
 		{playlistRefreshSeq}

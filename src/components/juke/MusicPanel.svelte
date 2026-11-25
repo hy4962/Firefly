@@ -353,21 +353,21 @@ interface SearchProviderOption {
 const SEARCH_PROVIDERS: SearchProviderOption[] = [
 	{
 		id: "qq",
-		label: "音源1",
+		label: "QQ 音乐",
 		activeClass: "border-[#1ecd96] text-[#1ecd96] bg-[#1ecd96]/15",
 		inactiveClass: "border-[#1ecd96]/45 text-[var(--chat-meta-color)] hover:border-[#1ecd96] hover:text-[#1ecd96] hover:bg-[#1ecd96]/8",
 		isOverseas: false,
 	},
 	{
 		id: "kugou",
-		label: "音源2",
+		label: "酷狗音乐",
 		activeClass: "border-[#227df7] text-[#227df7] bg-[#227df7]/15",
 		inactiveClass: "border-[#227df7]/45 text-[var(--chat-meta-color)] hover:border-[#227df7] hover:text-[#227df7] hover:bg-[#227df7]/8",
 		isOverseas: false,
 	},
 	{
 		id: "netease",
-		label: "音源3",
+		label: "网易云音乐",
 		activeClass: "border-[#ec4141] text-[#ec4141] bg-[#ec4141]/15",
 		inactiveClass: "border-[#ec4141]/45 text-[var(--chat-meta-color)] hover:border-[#ec4141] hover:text-[#ec4141] hover:bg-[#ec4141]/8",
 		isOverseas: false,

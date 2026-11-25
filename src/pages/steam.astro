@@ -19,12 +19,14 @@ type SnapshotGame = {
 type Snapshot = {
 	version: number;
 	updatedAt: string | null;
+	partial?: boolean;
 	profile: {
 		steamId: string;
 		name: string;
 		avatar: string;
 		profileUrl: string;
 		online: boolean;
+		stateMessage?: string;
 		level: number;
 		badgeCount: number;
 	} | null;

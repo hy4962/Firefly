@@ -15,7 +15,29 @@ mkdirSync(DATA_DIR, { recursive: true });
 mkdirSync(join(DATA_DIR, "music_cache"), { recursive: true });
 
 const SIGN_SECRET = process.env.MUSIC_SECRET || process.env.BRIDGE_TOKEN || process.env.ADMIN_TOKEN || "tea-juke-local";
-const SERVER_ORIGIN = (process.env.JUKE_PUBLIC_ORIGIN || process.env.SITE_URL || "https://tea.0dm.cn").replace(/\/+$/, "");
+// SITE_URL 是博客主站，不是音频网关；流代理必须落在 tea-bridge 的公网入口。
+const SERVER_ORIGIN = (
+	process.env.JUKE_PUBLIC_ORIGIN ||
+	process.env.TEA_PUBLIC_ORIGIN ||
+	"https://tea.0dm.cn"
+).replace(/\/+$/, "");
+const DEFAULT_ALLOW_ORIGINS = [
+	"https://www.0dm.cn",
+	"https://0dm.cn",
+	"https://www.9ll.uk",
+	"https://9ll.uk",
+	"http://localhost:4321",
+	"http://127.0.0.1:4321",
+	"http://localhost:4399",
+	"http://127.0.0.1:4399",
+].join(",");
+const allowOrigins = new Set(
+	String(process.env.ALLOW_ORIGINS || DEFAULT_ALLOW_ORIGINS)
+		.split(",")
+		.map((origin) => origin.trim().replace(/\/+$/, ""))
+		.filter(Boolean),
+);
+const YTDLP_PATH = process.env.YTDLP_PATH || "/usr/local/bin/yt-dlp";
 
 function readCyapiKey() {
 	if (process.env.CYAPI_KEY) return process.env.CYAPI_KEY;
@@ -246,6 +268,38 @@ function requestUser(req, body) {
 function json(res, status, data) {
 	res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
 	res.end(JSON.stringify(data));
+}
+
+function text(res, status, value) {
+	res.writeHead(status, {
+		"Content-Type": "text/plain; charset=utf-8",
+		"Cache-Control": "public, max-age=3600",
+	});
+	res.end(value);
+}
+
+function applyJukeCors(req, res) {
+	const origin = String(req.headers.origin || "").replace(/\/+$/, "");
+	res.setHeader("Vary", "Origin");
+	if (allowOrigins.has(origin)) {
+		res.setHeader("Access-Control-Allow-Origin", origin);
+		res.setHeader("Access-Control-Allow-Credentials", "true");
+		res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+		res.setHeader(
+			"Access-Control-Allow-Headers",
+			"Authorization, Content-Type, X-Auth-Kind, Range",
+		);
+		res.setHeader(
+			"Access-Control-Expose-Headers",
+			"Accept-Ranges, Content-Length, Content-Range",
+		);
+	}
+	if (String(req.method || "").toUpperCase() === "OPTIONS") {
+		res.writeHead(204);
+		res.end();
+		return true;
+	}
+	return false;
 }
 
 async function handleSearch(url) {
@@ -544,8 +598,24 @@ function handleFavorites(url, user, body, method) {
 export async function handleJukeHttp(req, res, url, body) {
 	const method = String(req.method || "GET").toUpperCase();
 	try {
+		if (applyJukeCors(req, res)) return;
 		if (url.pathname === "/api/music/search") return json(res, 200, await handleSearch(url));
-		if (url.pathname === "/api/juke/health") return json(res, 200, { ok: true, rooms: [...managers.keys()] });
+		if (url.pathname === "/api/music/lyric") {
+			const provider = String(url.searchParams.get("provider") || "qq").trim();
+			const id = String(url.searchParams.get("id") || "").trim();
+			if (!id) return text(res, 400, "");
+			const lyric = await registry.getLyric(provider, id);
+			return text(res, 200, typeof lyric === "string" ? lyric : "");
+		}
+		if (url.pathname === "/api/juke/health") {
+			return json(res, 200, {
+				ok: true,
+				rooms: [...managers.keys()],
+				providers: {
+					youtubeNative: existsSync(YTDLP_PATH),
+				},
+			});
+		}
 		if (url.pathname.startsWith("/api/music/stream")) {
 			const token = String(url.searchParams.get("token") || "");
 			const verified = verifyStreamProxyToken(token, SIGN_SECRET);
@@ -612,7 +682,38 @@ async function enqueuePacket(client, packet) {
 			track = normalizeMusicTrack(packet.track);
 		}
 		if (!track?.id) return done({ ok: false, error: "歌曲信息不完整" });
-		const result = await manager.enqueueTrack(track, actorOf(client));
+		if (track.provider === "youtube" && !existsSync(YTDLP_PATH)) {
+			const query = [track.title, track.artist].filter(Boolean).join(" ");
+			for (const provider of ["qq", "kugou"]) {
+				try {
+					let timer;
+					const fallback = await Promise.race([
+						registry.search(query, 5, provider, 1),
+						new Promise((resolve) => {
+							timer = setTimeout(() => resolve({ tracks: [] }), 4_000);
+						}),
+					]).finally(() => clearTimeout(timer));
+					const candidate = fallback.tracks?.[0];
+					if (candidate) {
+						track = normalizeMusicTrack(candidate);
+						break;
+					}
+				} catch {
+					// Try the next playable catalog.
+				}
+			}
+		}
+		let timeoutId;
+		const result = await Promise.race([
+			manager.enqueueTrack(track, actorOf(client)),
+			new Promise((resolve) => {
+				timeoutId = setTimeout(() => resolve({
+					ok: false,
+					code: "SOURCE_TEMPORARY",
+					error: "音源解析超时，请换一个音源或稍后再试",
+				}), 50_000);
+			}),
+		]).finally(() => clearTimeout(timeoutId));
 		done(result);
 		if (result.ok) broadcast(roomId, { type: "chat:notice", message: `${actorOf(client).name} 点播了《${track.title}》` });
 	} catch (error) {
