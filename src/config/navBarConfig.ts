@@ -54,6 +54,14 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// 留言
 			LinkPresets.Guestbook,
+
+			// 开往（Travellings）：友链接力项目，从顶级收进来给顶栏腾位置
+			{
+				name: "开往",
+				url: "https://www.travellings.cn/go.html",
+				external: true,
+				icon: "material-symbols:train-rounded",
+			},
 		],
 	});
 
@@ -201,23 +209,8 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		icon: "material-symbols:api",
 	});
 
-	// 开往（Travellings）：友链接力项目。官方要求外链必须放在「打开网站就能看到的地方」
-	// （顶栏 / 侧栏），所以给它一个顶级入口，而不是塞进「关于」子菜单。
-	// 图标用列车（对应徽标里的车头造型），与其他顶级项一样走 material-symbols，风格统一。
-	// ⚠️ 加图标会不会把顶栏挤爆？——不会：1024–1599px 由页脚注入的「紧凑模式」统一隐藏
-	//    顶级项图标（那段 CSS 的选择器命中所有 .dropdown-container 直接子项），这一档宽度
-	//    的排版与加图标前完全一致（实测余量仍是 1024px +40 / 1280px +194，一字不差）；
-	//    只有 ≥1600px 主题原样时才真的多出这个图标，实测余量 1600px +90px、1760px 以上 +218px，
-	//    全程无换行。改导航项数或文案后，用 `.workbuddy/scratch/nav-natural.cjs` 复核余量。
-	links.push({
-		name: "开往",
-		url: "https://www.travellings.cn/go.html",
-		external: true,
-		icon: "material-symbols:train-rounded",
-	});
-
 	// 十年之约「虫洞」：随机跳到一位还在更新的成员博客，要求入口放在显眼位置，
-	// 与「开往」同级放顶级入口。图标用旋涡，和虫洞的意象一致。
+	// 所以保留顶级入口（「开往」已收进「社交」给顶栏腾位置）。图标用旋涡，和虫洞的意象一致。
 	links.push({
 		name: "虫洞",
 		url: "https://www.foreverblog.cn/go.html",
