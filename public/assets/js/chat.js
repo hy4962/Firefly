@@ -3232,42 +3232,15 @@
 			return "已加入";
 		};
 
-		// 顶栏迷你播放条：切到搜索/歌单/历史时用吸顶条替代标题，
-		// 点一下回到歌词大播放器；进度线贴在条底，不额外占高度。
-		const jukeRenderMini = () => {
+		// 歌词 / 队列三态切换栏只在歌词页显示；切到搜索/歌单/历史时收起。
+		// 标题栏始终保留，不再用吸顶迷你条替代（与下方播放器重复）。
+		const jukeSyncPaneBar = () => {
 			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
 			if (!juke) return;
-			const mini = juke.querySelector("[data-juke-mini]");
 			const head = juke.querySelector("[data-juke-headtitle]");
 			const panebar = juke.querySelector("[data-juke-panebar]");
-			if (!mini || !head) return;
-			const show = jukeSig.tab !== "lyrics";
-			mini.hidden = !show;
-			head.hidden = show;
+			if (head) head.hidden = false;
 			if (panebar) panebar.hidden = jukeSig.tab !== "lyrics";
-			juke.dataset.tab = jukeSig.tab;
-			juke.dataset.pane = jukeSig.paneMode;
-			const cur = jukeSig.state && jukeSig.state.current;
-			const a = rt.jukeAudio;
-			const line = mini.querySelector("[data-juke-miniline]");
-			const song = mini.querySelector("[data-juke-minisong]");
-			const time = mini.querySelector("[data-juke-minitime]");
-			const cover = mini.querySelector("[data-juke-minicover]");
-			const listenBtn = mini.querySelector("[data-juke-mini-listen]");
-			const prog = mini.querySelector("[data-juke-miniprog]");
-			const lyricLine = jukeSig.lyrics.length && jukeSig.lrcIndex >= 0 ? jukeSig.lyrics[jukeSig.lrcIndex].text : "";
-			if (line) line.textContent = cur ? (lyricLine || cur.title || "正在播放") : "当前没有歌曲播放";
-			if (song) song.textContent = cur
-				? `${cur.title || ""} - ${cur.artist || "未知歌手"}${cur.kind === "rotation" ? " · 替代播放" : ""}`
-				: "点击打开点歌台去点歌";
-			const dur = a && isFinite(a.duration) && a.duration > 0 ? a.duration : Number(cur && cur.durationSec) || 0;
-			if (time) time.textContent = cur ? `${jukeDur(a ? a.currentTime : 0)} / ${jukeDur(dur)}` : "";
-			if (cover) cover.style.backgroundImage = cur && cur.cover ? jukeCover(cur.cover) : "";
-			if (listenBtn) {
-				listenBtn.classList.toggle("is-on", jukeSig.listening);
-				listenBtn.title = jukeSig.listening ? "停止收听" : "开启收听";
-			}
-			if (prog) prog.style.width = (dur > 0 ? Math.min(100, ((a ? a.currentTime : 0) / dur) * 100) : 0) + "%";
 		};
 
 		const jukeRenderProgress = () => {
@@ -3287,7 +3260,6 @@
 			}
 			if (ct) ct.textContent = jukeDur(cur);
 			if (du) du.textContent = jukeDur(dur);
-			jukeRenderMini();
 		};
 
 		const jukeRenderTrack = () => {
@@ -3926,7 +3898,7 @@
 				});
 			}
 			if (name === "history") jukeRenderHistory();
-			jukeRenderMini();
+			jukeSyncPaneBar();
 		};
 
 		const jukeSetSource = (source) => {
@@ -4096,12 +4068,6 @@
 					jukeSearch();
 					return;
 				}
-				const miniOpen = e.target.closest("[data-juke-mini-open]");
-				if (miniOpen) { jukeSwitchTab("lyrics"); return; }
-				const miniListen = e.target.closest("[data-juke-mini-listen]");
-				if (miniListen) { jukeToggleListen(); return; }
-				const miniNext = e.target.closest("[data-juke-mini-next]");
-				if (miniNext) { jukeSkip(); return; }
 				const paneBtn = e.target.closest("[data-juke-pane]");
 				if (paneBtn) {
 					jukeSig.paneMode = paneBtn.dataset.jukePane || "split";
@@ -4427,10 +4393,10 @@
 				if (e.detail && e.detail.isPlaying && a && !a.paused) a.pause();
 			});
 
-			// 初始化吸顶条与歌词/队列三态属性（swup 换页重跑也会到这里）
+			// 初始化歌词/队列三态属性（swup 换页重跑也会到这里）
 			juke.dataset.tab = jukeSig.tab;
 			juke.dataset.pane = jukeSig.paneMode;
-			jukeRenderMini();
+			jukeSyncPaneBar();
 
 			if (rt.jukeTimer) clearInterval(rt.jukeTimer);
 			// 只清自己的 timer：旧实例的间隔可能在新实例绑定后才醒过来，

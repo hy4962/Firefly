@@ -273,30 +273,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						</button>
 					</div>
 				</div>
-				<div class="tea-juke__mini" data-juke-mini hidden>
-					<div class="tea-juke__mini-progress"><i data-juke-miniprog></i></div>
-					<button type="button" class="tea-juke__mini-open" data-juke-mini-open aria-label="打开歌词与播放详情" title="点击打开大播放器与完整歌词">
-						<span class="tea-juke__mini-cover" data-juke-minicover></span>
-						<span class="tea-juke__mini-copy">
-							<span class="tea-juke__mini-line" data-juke-miniline>当前没有歌曲播放</span>
-							<span class="tea-juke__mini-sub">
-								<span class="tea-juke__mini-song" data-juke-minisong>点击打开点歌台去点歌</span>
-								<span class="tea-juke__mini-time" data-juke-minitime></span>
-							</span>
-						</span>
-					</button>
-					<span class="tea-juke__mini-actions">
-						<button type="button" class="tea-juke__mini-btn" data-juke-mini-listen aria-label="开启收听" title="开启收听">
-							<Icon is:inline name="material-symbols:headphones-rounded" />
-						</button>
-						<button type="button" class="tea-juke__mini-btn" data-juke-mini-next aria-label="下一曲" title="下一曲">
-							<Icon is:inline name="material-symbols:skip-next-rounded" />
-						</button>
-						<button type="button" class="tea-juke__mini-btn" data-juke-close aria-label="关闭点歌台" title="关闭点歌台">
-							<Icon is:inline name="material-symbols:close-rounded" />
-						</button>
-					</span>
-				</div>
 			</header>
 
 			<nav class="tea-juke__tabs" role="tablist">
@@ -3941,7 +3917,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-juke__live.is-busy { color: #c98a2b; }
 	.tea-juke__live.is-error { color: #c0563f; }
 
-	/* 顶栏固定 54px：标题与迷你播放条共用高度，切页签不跳动。 */
+	/* 顶栏固定 54px：只用标题栏，切页签不跳动。 */
 	.tea-juke__head {
 		height: 54px;
 		box-sizing: border-box;
@@ -3954,118 +3930,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		width: 100%;
 		min-width: 0;
 	}
-	.tea-juke__headtitle[hidden] { display: none; }
-	.tea-juke__mini {
-		position: relative;
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		width: 100%;
-		height: 100%;
-		min-width: 0;
-	}
-	.tea-juke__mini[hidden] { display: none; }
-	.tea-juke__mini-progress {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		height: 2px;
-		background: color-mix(in oklch, var(--primary) 12%, transparent);
-		pointer-events: none;
-	}
-	.tea-juke__mini-progress i {
-		display: block;
-		width: 0;
-		height: 100%;
-		background: var(--primary);
-		transition: width 220ms linear;
-	}
-	.tea-juke__mini-open {
-		display: flex;
-		align-items: center;
-		gap: 0.55rem;
-		flex: 1;
-		min-width: 0;
-		height: 100%;
-		padding: 0;
-		border: 0;
-		border-radius: 0.5rem;
-		background: transparent;
-		color: inherit;
-		text-align: left;
-		cursor: pointer;
-	}
-	.tea-juke__mini-cover {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex: none;
-		width: 2.1rem;
-		height: 2.1rem;
-		border-radius: 0.5rem;
-		background-color: var(--juke-soft);
-		background-position: center;
-		background-size: cover;
-		background-repeat: no-repeat;
-		overflow: hidden;
-	}
-	.tea-juke__mini-cover:empty::after {
-		content: "♪";
-		color: var(--juke-accent-text);
-		font-size: 0.9rem;
-	}
-	.tea-juke__mini-copy {
-		display: flex;
-		flex-direction: column;
-		gap: 0.1rem;
-		min-width: 0;
-		flex: 1;
-	}
-	.tea-juke__mini-line {
-		font-size: 0.75rem;
-		font-weight: 600;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		transition: color 0.15s;
-	}
-	.tea-juke__mini-open:hover .tea-juke__mini-line { color: var(--juke-accent-text); }
-	.tea-juke__mini-sub {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		min-width: 0;
-		font-size: 0.68rem;
-		color: var(--tea-muted-soft);
-	}
-	.tea-juke__mini-song {
-		min-width: 0;
-		flex: 1;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.tea-juke__mini-time { flex: none; font-variant-numeric: tabular-nums; }
-	.tea-juke__mini-actions { display: inline-flex; align-items: center; gap: 0.1rem; flex: none; }
-	.tea-juke__mini-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 1.85rem;
-		height: 1.85rem;
-		border: 0;
-		border-radius: 0.45rem;
-		background: transparent;
-		color: var(--tea-muted);
-		cursor: pointer;
-	}
-	.tea-juke__mini-btn:hover {
-		background: var(--btn-plain-bg-hover, rgba(128, 128, 128, 0.1));
-		color: var(--juke-accent-text);
-	}
-	.tea-juke__mini-btn svg { width: 1rem; height: 1rem; }
-	.tea-juke__mini-btn.is-on { color: var(--juke-accent-text); background: var(--juke-soft); }
 
 	/* 歌词 / 队列三态切换 */
 	.tea-juke__panebar {
