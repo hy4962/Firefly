@@ -129,15 +129,15 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						<div class="tea-bar__heading">
 							<h1 class="tea-bar__title">{title}</h1>
 							<span class="tea-conn" data-tea-conn><i></i><span data-tea-conn-text>连接中</span></span>
+							<button type="button" class="tea-room-switch" data-tea-sites-trigger aria-expanded="false" title="查看互联茶室友站" aria-label="查看互联茶室友站">
+								<Icon is:inline name="material-symbols:public-rounded" />
+								<span>互联茶室</span>
+								<b data-tea-sites-count>{peers.length + 1}</b><span class="tea-room-switch__unit">个站点</span>
+								<Icon is:inline name="material-symbols:expand-more-rounded" class="tea-room-switch__caret" />
+							</button>
 						</div>
 						<p class="tea-bar__sub">Matrix 互联大厅</p>
 					</div>
-					<button type="button" class="tea-room-switch" data-tea-sites-trigger aria-expanded="false" title="查看互联茶室友站" aria-label="查看互联茶室友站">
-						<Icon is:inline name="material-symbols:public-rounded" />
-						<span>互联茶室</span>
-						<b data-tea-sites-count>{peers.length + 1}</b><span class="tea-room-switch__unit">个站点</span>
-						<Icon is:inline name="material-symbols:expand-more-rounded" class="tea-room-switch__caret" />
-					</button>
 				</div>
 				<div class="tea-bar__tools">
 					<button type="button" class="tea-search-btn" data-tea-search-open title="翻聊天记录" aria-label="翻聊天记录">
@@ -4826,8 +4826,13 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			flex: 1;
 			gap: 0.4rem;
 		}
-		.tea-bar__brand > div {
+		/* 窄屏只藏标题和副标题，连接徽章与互联入口要留在标题栏 */
+		.tea-bar__title,
+		.tea-bar__sub {
 			display: none;
+		}
+		.tea-bar__heading {
+			gap: 0.35rem;
 		}
 		.tea-bar__mark {
 			width: 1.8rem;
@@ -4836,7 +4841,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		.tea-room-switch {
 			flex: none;
 			white-space: nowrap;
-			padding: 0 0.45rem;
+			padding: 0.2rem 0.45rem;
 		}
 		.tea-room-switch > span:first-of-type {
 			display: none;
@@ -4876,19 +4881,19 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 
 	/* ─── 互联友站 / 活跃线程浮层 ───────────────────────────── */
+	/* 与「已连接」同尺寸的紧凑徽章，紧跟在连接状态后面 */
 	.tea-room-switch {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.28rem;
-		height: 1.85rem;
-		padding: 0 0.55rem;
+		padding: 0.2rem 0.55rem;
 		border-radius: 999px;
-		border: 1px solid color-mix(in oklch, var(--primary) 26%, transparent);
+		border: 1px solid color-mix(in oklch, var(--primary) 30%, transparent);
 		background: color-mix(in oklch, var(--primary) 8%, transparent);
 		color: var(--primary);
 		font: inherit;
-		font-size: 0.72rem;
-		font-weight: 600;
+		font-size: 0.7rem;
+		font-weight: 500;
 		white-space: nowrap;
 		cursor: pointer;
 		transition: background 0.15s ease, border-color 0.15s ease;
@@ -4899,15 +4904,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		background: color-mix(in oklch, var(--primary) 16%, transparent);
 		border-color: color-mix(in oklch, var(--primary) 45%, transparent);
 	}
-	.tea-room-switch svg { width: 0.9rem; height: 0.9rem; }
-	.tea-room-switch b {
-		font-size: 0.66rem;
-		padding: 0.05rem 0.34rem;
-		border-radius: 999px;
-		background: color-mix(in oklch, var(--primary) 20%, transparent);
-	}
-	.tea-room-switch__unit { font-size: 0.66rem; font-weight: 400; opacity: 0.85; }
-	.tea-room-switch__caret { width: 0.8rem !important; height: 0.8rem !important; opacity: 0.7; }
+	.tea-room-switch svg { width: 0.8rem; height: 0.8rem; }
+	.tea-room-switch b { font-size: inherit; font-weight: 600; }
+	.tea-room-switch__unit { font-size: inherit; font-weight: 400; opacity: 0.85; }
+	.tea-room-switch__caret { width: 0.65rem !important; height: 0.65rem !important; opacity: 0.7; }
 	.tea-thread-pill {
 		display: inline-flex;
 		align-items: center;
