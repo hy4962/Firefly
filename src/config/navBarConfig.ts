@@ -176,11 +176,10 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "material-symbols:monitoring",
 			},
 
-			// 站点统计
+			// 站点统计（自建看板；原 umami 分享外链数据同源，合并为一个入口）
 			{
 				name: "站点统计",
-				url: "https://umami.0dm.cn/share/Z4DD4Y3q9CTFpBeM",
-				external: true,
+				url: "/analytics/",
 				icon: "material-symbols:analytics",
 			},
 		],
@@ -191,13 +190,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		name: "聊天茶室",
 		url: "/chat/",
 		icon: "material-symbols:emoji-food-beverage-outline-rounded",
-	});
-
-	// 站点统计：独立顶级入口，放在最后，不打断「内容 → 互动 → 我的」的分组
-	links.push({
-		name: "站点统计",
-		url: "/analytics/",
-		icon: "material-symbols:analytics",
 	});
 
 	// sukiai.cn：自建 API 站（New API），顶级外链入口
