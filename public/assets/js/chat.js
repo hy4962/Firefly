@@ -3232,15 +3232,14 @@
 			return "已加入";
 		};
 
-		// 歌词 / 队列三态切换栏只在歌词页显示；切到搜索/歌单/历史时收起。
-		// 标题栏始终保留，不再用吸顶迷你条替代（与下方播放器重复）。
+		// 标题栏始终保留；三态切换由控制栏的 cycle 按钮接管，独立 panebar 恒隐藏。
 		const jukeSyncPaneBar = () => {
 			const juke = root() ? root().querySelector("[data-tea-juke]") : null;
 			if (!juke) return;
 			const head = juke.querySelector("[data-juke-headtitle]");
 			const panebar = juke.querySelector("[data-juke-panebar]");
 			if (head) head.hidden = false;
-			if (panebar) panebar.hidden = jukeSig.tab !== "lyrics";
+			if (panebar) panebar.hidden = true;
 		};
 
 		const jukeRenderProgress = () => {
@@ -3281,9 +3280,13 @@
 			}
 			if (srcpill) {
 				if (cur) {
-					const src = jukeSourceLabel(cur);
-					const tail = cur.kind === "rotation" ? "轮播" : cur.requester ? `${cur.requester} 点的` : "点播";
-					srcpill.innerHTML = `<i></i><span>${esc(src)} · ${esc(tail)}</span>`;
+					// 对齐冷汐：点歌人 / 轮播歌单胶囊，前面带小封面圆点。
+					const isRot = cur.kind === "rotation";
+					const who = isRot
+						? (cur.rotationName || cur.requester || "歌单轮播")
+						: (cur.requester || "茶友点播");
+					const pic = cur.cover || cur.pic || "";
+					srcpill.innerHTML = `<i${pic ? ` style="background-image:${jukeCover(pic)}"` : ' class="tea-juke__srcpill--dot"'}></i><span>${esc(who)}</span>`;
 					srcpill.hidden = false;
 				} else {
 					srcpill.hidden = true;
@@ -4068,6 +4071,23 @@
 					jukeSearch();
 					return;
 				}
+				const paneCycle = e.target.closest("[data-juke-pane-cycle]");
+				if (paneCycle) {
+					const order = ["split", "lyrics", "queue"];
+					const at = order.indexOf(jukeSig.paneMode);
+					jukeSig.paneMode = order[(at + 1) % order.length];
+					const jk = e.target.closest("[data-tea-juke]");
+					if (jk) {
+						jk.dataset.pane = jukeSig.paneMode;
+						for (const b of jk.querySelectorAll("[data-juke-pane]")) {
+							b.classList.toggle("is-active", b.dataset.jukePane === jukeSig.paneMode);
+						}
+					}
+					const tip = { split: "歌词 / 队列分栏", lyrics: "只看歌词", queue: "只看队列" }[jukeSig.paneMode];
+					paneCycle.title = tip;
+					jukeSay(tip);
+					return;
+				}
 				const paneBtn = e.target.closest("[data-juke-pane]");
 				if (paneBtn) {
 					jukeSig.paneMode = paneBtn.dataset.jukePane || "split";
@@ -4216,7 +4236,7 @@
 					}
 					return;
 				}
-				const listen = e.target.closest("[data-juke-listen]");
+				const listen = e.target.closest("[data-juke-listen], [data-juke-live]");
 				if (listen) {
 					jukeToggleListen();
 					return;
