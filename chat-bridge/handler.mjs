@@ -2544,9 +2544,10 @@ async function handleJukeSearch(url, ip, env) {
 	const rawSource = clean(url.searchParams.get("source"), 12) || "all";
 	const source = rawSource === "all" || ["qq", "netease", "kugou", "youtube"].includes(rawSource) ? rawSource : "all";
 	const limit = Math.max(4, Math.min(20, Number(url.searchParams.get("limit")) || 12));
+	const page = Math.max(1, Math.min(20, Number(url.searchParams.get("page")) || 1));
 	try {
-		const items = await searchMusic(source, q, limit);
-		return json(200, { ok: true, items, source, q, serverNow: Date.now() });
+		const items = await searchMusic(source, q, limit, page);
+		return json(200, { ok: true, items, source, page, q, serverNow: Date.now() });
 	} catch (err) {
 		return fail(502, `曲库暂时不通：${String(err.message || err).slice(0, 60)}`);
 	}

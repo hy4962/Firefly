@@ -129,8 +129,8 @@ function cacheSet(key, value, ttl = 10 * 60_000) {
 
 // ── 搜索 ─────────────────────────────────────────────────────────────
 
-async function searchQQ(q, limit) {
-	const url = `https://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp?p=1&n=${limit}&w=${enc(q)}&format=json&inCharset=utf8&outCharset=utf-8`;
+async function searchQQ(q, limit, page = 1) {
+	const url = `https://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp?p=${page}&n=${limit}&w=${enc(q)}&format=json&inCharset=utf8&outCharset=utf-8`;
 	const data = await getJson(url, { Referer: "https://y.qq.com/" });
 	const list = data?.data?.song?.list || [];
 	return list
@@ -148,8 +148,8 @@ async function searchQQ(q, limit) {
 		.filter((t) => t && t.sourceId);
 }
 
-async function searchNetease(q, limit) {
-	const url = `https://music.163.com/api/cloudsearch/pc?s=${enc(q)}&type=1&limit=${limit}&offset=0`;
+async function searchNetease(q, limit, page = 1) {
+	const url = `https://music.163.com/api/cloudsearch/pc?s=${enc(q)}&type=1&limit=${limit}&offset=${(page - 1) * limit}`;
 	const data = await getJson(url, { Referer: "https://music.163.com/", Accept: "application/json" });
 	const list = data?.result?.songs || [];
 	return list
@@ -167,15 +167,15 @@ async function searchNetease(q, limit) {
 		.filter((t) => t && t.sourceId);
 }
 
-async function searchKugou(q, limit) {
+async function searchKugou(q, limit, page = 1) {
 	// 主通道：移动端 CDN（自带高清封面，不被频控拦）
-	const primary = `http://mobilecdn.kugou.com/api/v3/search/song?keyword=${enc(q)}&page=1&pagesize=${limit}&showtype=1`;
+	const primary = `http://mobilecdn.kugou.com/api/v3/search/song?keyword=${enc(q)}&page=${page}&pagesize=${limit}&showtype=1`;
 	let data;
 	try {
 		data = await getJson(primary, { Accept: "application/json" });
 	} catch (_) {
 		// 备用通道：complexsearch，主通道偶发异常时回退
-		const fallback = `https://complexsearch.kugou.com/v2/search/song?keyword=${enc(q)}&page=1&pagesize=${limit}&bitrate=0&isfuse=0`;
+		const fallback = `https://complexsearch.kugou.com/v2/search/song?keyword=${enc(q)}&page=${page}&pagesize=${limit}&bitrate=0&isfuse=0`;
 		data = await getJson(fallback, { Accept: "application/json" });
 	}
 	const list = data?.data?.info || [];
@@ -195,7 +195,9 @@ async function searchKugou(q, limit) {
 		.filter((t) => t && t.sourceId);
 }
 
-async function searchYouTube(q, limit) {
+async function searchYouTube(q, limit, page = 1) {
+	// InnerTube 没有简单的 offset，翻页需要 continuation 游标；首页已够兜底用。
+	if (page > 1) return [];
 	// YouTube Music 内部 InnerTube Web API。
 	// 注意：文章里那个 params（只看 Songs）过滤串已被官方改动，现在只会返回专辑，
 	// 所以这里不传 params，直接从返回的 itemSectionRenderer 里挑音乐条目。
@@ -267,20 +269,20 @@ async function searchYouTube(q, limit) {
 
 const SEARCHERS = { qq: searchQQ, netease: searchNetease, kugou: searchKugou, youtube: searchYouTube };
 
-export async function searchMusic(source, query, limit = 12) {
+export async function searchMusic(source, query, limit = 12, page = 1) {
 	const q = text(query, 60);
 	if (!q) return [];
-	const key = `search:${source}:${q}:${limit}`;
+	const key = `search:${source}:${q}:${limit}:${page}`;
 	const hit = cacheGet(key);
 	if (hit) return hit;
 
 	let items = [];
 	if (source === "all") {
 		const results = await Promise.allSettled([
-			searchQQ(q, Math.min(limit, 8)),
-			searchNetease(q, Math.min(limit, 8)),
-			searchKugou(q, Math.min(limit, 8)),
-			searchYouTube(q, Math.min(limit, 8)),
+			searchQQ(q, Math.min(limit, 8), page),
+			searchNetease(q, Math.min(limit, 8), page),
+			searchKugou(q, Math.min(limit, 8), page),
+			searchYouTube(q, Math.min(limit, 8), page),
 		]);
 		const buckets = results.map((r) => (r.status === "fulfilled" ? r.value : []));
 		// 轮流出结果，避免第一屏全是同一个平台
@@ -291,7 +293,7 @@ export async function searchMusic(source, query, limit = 12) {
 			}
 		}
 	} else if (SEARCHERS[source]) {
-		items = (await SEARCHERS[source](q, limit)).slice(0, limit);
+		items = (await SEARCHERS[source](q, limit, page)).slice(0, limit);
 	}
 	return cacheSet(key, items, 2 * 60_000);
 }
