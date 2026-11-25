@@ -45,10 +45,10 @@ export const siteConfig: SiteConfig = {
 	title: "折腾进行时",
 
 	// 站点副标题
-	subtitle: "0DM.CN",
+	subtitle: "0dm.cn",
 
 	// 站点 URL
-	site_url: "https://www.9ll.uk",
+	site_url: "https://www.0dm.cn",
 
 	// 站点描述
 	description:
