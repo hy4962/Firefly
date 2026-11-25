@@ -1008,22 +1008,35 @@
 
 		// ── 成员名片 ────────────────────────────────────────────
 		const mcState = { member: null, sort: "time" };
-		// 服务端全局播放历史（juke.state.history）按 requesterId 归属；
-		// 本机 localStorage 只作兜底，避免换设备/换浏览器后「点过的歌」一片空白。
+		// 新版点歌台改由 Svelte 组件通过 WebSocket 持有状态，旧脚本里已没有 jukeSig。
+		// 组件把最新 history 挂到 window.__teaJukeHistory，这里按 requesterKey / 昵称对齐成员。
+		// 本机 localStorage 仍作兜底，避免换设备/换浏览器后「点过的歌」一片空白。
 		const mcRemoteSongs = (id) => {
-			const hist = (jukeSig.state && jukeSig.state.history) || [];
+			let hist = [];
+			try {
+				hist = Array.isArray(window.__teaJukeHistory) ? window.__teaJukeHistory : [];
+			} catch (_) {
+				hist = [];
+			}
+			const member = mcState.member || {};
+			const nick = baseNick(member.nick || "").toLowerCase();
 			const out = [];
 			for (const t of hist) {
-				if (!t || !t.title) continue;
-				if (!id || (t.requesterId || "") !== id) continue; // 轮播曲 requesterId 为空，不归到任何人
+				if (!t) continue;
+				const track = t.track || t;
+				if (!track.title) continue;
+				const key = String(t.requesterKey || t.requesterId || t.lastRequesterKey || "");
+				const name = String(t.requesterName || t.lastRequesterName || "").toLowerCase();
+				const keyMatch = id && (key === id || key === `tea:${id}` || key === `matrix:${id}` || key === `name:${name}`);
+				const nameMatch = nick && name && name === nick;
+				if (!keyMatch && !nameMatch) continue; // 轮播曲没有归属人，不塞进任何名片
 				out.push({
-					name: t.title,
-					artist: t.artist || "",
-					pic: t.cover || "",
-					ts: Number(t.playedAt) || Number(t.addedAt) || 0,
-					// 保留点歌台原始 track：里面有 source/sourceId/key，点歌时可直接入队，
-					// 不必再靠「歌名+歌手」现搜（搜不到就静默失败）。
-					_track: t,
+					name: track.title,
+					artist: track.artist || "",
+					pic: track.cover || track.pic || "",
+					ts: Number(t.lastRequestedAt) || Number(t.requestedAt) || Number(t.playedAt) || Number(t.addedAt) || 0,
+					requestCount: Number(t.requestCount) || 0,
+					_track: track,
 				});
 			}
 			return out;
@@ -1035,13 +1048,15 @@
 			const remote = mcRemoteSongs(m.id);
 			const local = (store.songHistory[m.id] || []).map((s) => ({ ...s }));
 			const list = remote.length ? [...remote, ...local] : local;
-			// 同名同歌手合并次数，记录里 ts 是最近一次
+			// 同名同歌手合并次数，记录里 ts 是最近一次；服务端已带 requestCount 时直接采信
 			const map = new Map();
 			for (const s of list) {
 				const key = `${s.name}|${s.artist}`;
 				const prev = map.get(key);
-				if (prev) { prev.count++; if (s.ts > prev.ts) { prev.ts = s.ts; prev.pic = s.pic || prev.pic; prev._track = s._track || prev._track; } }
-				else map.set(key, { ...s, count: 1 });
+				if (prev) {
+					prev.count = Math.max(prev.count, Number(s.requestCount) || 0, prev.count + 1);
+					if (s.ts > prev.ts) { prev.ts = s.ts; prev.pic = s.pic || prev.pic; prev._track = s._track || prev._track; }
+				} else map.set(key, { ...s, count: Math.max(1, Number(s.requestCount) || 0) });
 			}
 			const all = [...map.values()];
 			all.sort((a, b) => mcState.sort === "count" ? b.count - a.count : b.ts - a.ts);
@@ -1193,17 +1208,7 @@
 			const rightPane = document.querySelector(".tea-membercard__right");
 			if (rightPane) rightPane.scrollTop = 0;
 			mcRenderSongs();
-			// 打开名片时静默刷新一次服务端全局历史，回来后若名片仍是这位成员就重绘
-			if (typeof jukeLoad === "function") {
-				const who = m.id;
-				jukeLoad().then(() => {
-					if (mcState.member && mcState.member.id === who) {
-						mcRenderSongs();
-						const num = document.querySelector("[data-tea-mc-songcount]");
-						if (num) num.textContent = String(mcSongs().length || "—");
-					}
-				}).catch(() => {});
-			}
+			// 新版点歌台的历史是 WebSocket 实时推送，名片打开时直接读最新快照即可。
 			const dlg = document.querySelector("[data-tea-membercard]");
 			if (!dlg) return;
 			if (dlg.open) return;
@@ -2804,8 +2809,10 @@
 			if (!ROOMS[key] || key === rt.room) return;
 			if (rt.saveReadMark) rt.saveReadMark();
 			rt.room = key;
-			// 实时通道按房间订阅，换房必须重连，否则还在收上一间房的推送
-			jukeConnectEvents();
+			// 实时通道由新版点歌台组件持有，换房时通知它按新房重连。
+			try {
+				window.dispatchEvent(new CustomEvent("tea:room-change", { detail: { room: key } }));
+			} catch (_) {}
 			rt.since = null;
 			rt.seen.clear();
 			// 换房要断掉上一间房的 typing 续期与待发回执，否则会把状态写到新房

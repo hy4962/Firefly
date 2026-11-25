@@ -38,7 +38,7 @@
 
 	const base = apiBase.replace(/\/+$/, "");
 	const clock = new MusicClock();
-	const activeRoomId = (() => {
+	let activeRoomId = $state((() => {
 		if (!import.meta.env.DEV || typeof window === "undefined") return roomId;
 		const override = new URLSearchParams(window.location.search)
 			.get("jukeRoom")
@@ -47,7 +47,7 @@
 		return override && /^[a-z0-9_-]{1,48}$/.test(override)
 			? override
 			: roomId;
-	})();
+	})());
 
 	let audioEl: HTMLAudioElement | null = $state(null);
 	let socket: WebSocket | null = null;
@@ -201,6 +201,15 @@
 			case "music:state": {
 				musicState = packet as RoomMusicState;
 				clock.seed(Number(packet.serverTime) || Date.now());
+				// 老茶室脚本的成员名片要读点歌历史，但新版状态只存在于这个组件里。
+				// 用一个只读快照桥过去，避免两套脚本各自维护服务端状态。
+				try {
+					(window as any).__teaJukeHistory = Array.isArray((packet as any).history)
+						? (packet as any).history
+						: [];
+				} catch {
+					// 隐私模式下忽略存储异常。
+				}
 				break;
 			}
 			case "music:request_result": {
@@ -256,27 +265,62 @@
 		const wsBase = base.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
 		const params = new URLSearchParams({ room: activeRoomId });
 		if (walineToken) params.set("token", walineToken);
+		let ws: WebSocket;
 		try {
-			socket = new WebSocket(`${wsBase}/juke/ws?${params.toString()}`);
+			ws = new WebSocket(`${wsBase}/juke/ws?${params.toString()}`);
 		} catch {
 			socket = null;
 			scheduleReconnect();
 			return;
 		}
-		socket.addEventListener("open", () => {
+		socket = ws;
+		ws.addEventListener("open", () => {
 			currentUser = readUser();
 			sendPacket({ type: "auth", roomId: activeRoomId, user: currentUser, siteName });
 			sampleClock();
 		});
-		socket.addEventListener("message", (event) => {
+		ws.addEventListener("message", (event) => {
 			try {
 				handlePacket(JSON.parse(String(event.data)));
 			} catch {
 				// 忽略未知推送。
 			}
 		});
-		socket.addEventListener("close", scheduleReconnect);
-		socket.addEventListener("error", () => socket?.close());
+		// 只有当前房间的连接断开才重连；换房主动关掉旧连接时不续命。
+		ws.addEventListener("close", () => {
+			if (socket === ws) scheduleReconnect();
+		});
+		ws.addEventListener("error", () => ws.close());
+	}
+
+	function switchRoom(room: string) {
+		if (!/^[a-z0-9_-]{1,48}$/.test(room) || room === activeRoomId) return;
+		if (reconnectTimer) {
+			clearTimeout(reconnectTimer);
+			reconnectTimer = null;
+		}
+		const oldSocket = socket;
+		socket = null;
+		if (oldSocket) oldSocket.close();
+		for (const waiter of requestWaiters.values()) clearTimeout(waiter.timer);
+		requestWaiters.clear();
+		socketPacketCache.clear();
+		musicState = null;
+		onlineMembers = [];
+		mentionMembers = [];
+		rotationAction = null;
+		try {
+			(window as any).__teaJukeHistory = [];
+		} catch {
+			// 忽略存储异常。
+		}
+		activeRoomId = room;
+		connect();
+	}
+
+	function handleRoomChange(event: Event) {
+		const room = String((event as CustomEvent)?.detail?.room || "").trim().toLowerCase();
+		if (room) switchRoom(room);
 	}
 
 	function scheduleReconnect() {
@@ -360,6 +404,7 @@
 		connect();
 		clockTimer = setInterval(sampleClock, 12_000);
 		window.addEventListener("tea:juke-search", handleExternalSearch);
+		window.addEventListener("tea:room-change", handleRoomChange);
 	});
 
 	function handleExternalSearch(event: Event) {
@@ -378,6 +423,7 @@
 		requestWaiters.clear();
 		socket?.close();
 		window.removeEventListener("tea:juke-search", handleExternalSearch);
+		window.removeEventListener("tea:room-change", handleRoomChange);
 		document.documentElement.removeAttribute("data-chat-page");
 	});
 </script>
