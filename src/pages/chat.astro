@@ -323,6 +323,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 						<h3 data-juke-title>还没开始听</h3>
 						<p data-juke-artist>从下面挑一首，或者让茶室随便放</p>
 						<span class="tea-juke__srcpill" data-juke-srcpill hidden></span>
+						<span class="tea-juke__favusers" data-juke-favusers hidden></span>
 					</div>
 					<div class="tea-juke__timeline">
 						<div class="tea-juke__times">
@@ -345,6 +346,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				</button>
 				<button type="button" class="tea-juke__ctrl tea-juke__fav" data-juke-fav title="收藏这首歌" aria-label="收藏这首歌">
 					<Icon is:inline name="material-symbols:star-outline-rounded" />
+				</button>
+				<button type="button" class="tea-juke__ctrl" data-juke-alt title="找其它可播版本" aria-label="找其它可播版本">
+					<Icon is:inline name="material-symbols:repeat-rounded" />
 				</button>
 				<button type="button" class="tea-juke__listen" data-juke-listen title="开始收听" aria-label="开始收听">
 					<Icon is:inline name="material-symbols:headphones-rounded" />
@@ -404,6 +408,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					<span data-juke-plname></span>
 					<button type="button" data-juke-pl-rotation hidden>设为轮播</button>
 				</div>
+				<div class="tea-juke__plmanage" data-juke-plmanage hidden></div>
+				<div class="tea-juke__favfilter" data-juke-favfilter hidden></div>
 				<div class="tea-juke__results" data-juke-pltracks><p class="tea-juke__empty">歌单还在路上…</p></div>
 			</div>
 			<div class="tea-juke__panel" data-juke-history role="tabpanel" hidden>
@@ -4132,6 +4138,15 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		color: var(--juke-accent-text);
 		font-size: 0.6rem;
 	}
+	.tea-juke .pl-tab__cover--fav {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: color-mix(in oklch, #f5b301 22%, transparent);
+		color: #f5b301;
+		font-size: 0.68rem;
+	}
+	.tea-juke .pl-tab--fav.is-active .pl-tab__cover--fav { background: color-mix(in oklch, #f5b301 34%, transparent); }
 	.tea-juke .pl-tab__name {
 		min-width: 0;
 		overflow: hidden;
@@ -4156,6 +4171,58 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-juke .pl-group[open] .pl-group__head::before { transform: rotate(90deg); }
 	.tea-juke .pl-group__items { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0.15rem 0 0.3rem; }
 	.tea-juke__plhead { background-size: cover; background-position: center; }
+	/* 歌单管理条（分享/刷新/删除/精选） */
+	.tea-juke__plmanage {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		padding: 0.3rem 0.15rem;
+	}
+	.tea-juke__plmanage[hidden] { display: none; }
+	.tea-juke__plmanage button {
+		padding: 0.2rem 0.52rem;
+		border: 1px solid color-mix(in oklch, var(--juke-accent-text) 22%, transparent);
+		border-radius: 0.45rem;
+		background: var(--juke-soft);
+		color: var(--tea-muted);
+		font-size: 0.65rem;
+		line-height: 1.2;
+		cursor: pointer;
+	}
+	.tea-juke__plmanage button:hover:not(:disabled) { color: var(--primary); border-color: color-mix(in oklch, var(--primary) 45%, transparent); }
+	.tea-juke__plmanage button:disabled { opacity: 0.5; cursor: default; }
+	.tea-juke__plmanage .pl-featured {
+		padding: 0.16rem 0.44rem;
+		border-radius: 999px;
+		background: color-mix(in oklch, #f5b301 20%, transparent);
+		color: #f5b301;
+		font-size: 0.6rem;
+	}
+	/* 全站收藏成员筛选条 */
+	.tea-juke__favfilter {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		padding: 0.3rem 0.15rem;
+	}
+	.tea-juke__favfilter[hidden] { display: none; }
+	.tea-juke__favfilter button {
+		padding: 0.18rem 0.5rem;
+		border: 1px solid transparent;
+		border-radius: 999px;
+		background: var(--juke-soft);
+		color: var(--tea-muted);
+		font-size: 0.62rem;
+		line-height: 1.2;
+		cursor: pointer;
+	}
+	.tea-juke__favfilter button.is-active {
+		border-color: color-mix(in oklch, #f5b301 45%, transparent);
+		background: color-mix(in oklch, #f5b301 14%, transparent);
+		color: #f5b301;
+	}
 
 	/* 搜索兜底提示 / 重试换源 / 加载更多 */
 	.tea-juke__fallback {
@@ -4390,6 +4457,28 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		background: linear-gradient(140deg, #f0a04b, #e0643b);
 	}
 	.tea-juke__srcpill span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	/* 全站收藏：当前曲目的收藏成员气泡 */
+	.tea-juke__favusers {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		margin-top: 0.36rem;
+		max-width: 100%;
+		padding: 0.16rem 0.48rem;
+		border-radius: 999px;
+		background: color-mix(in oklch, #f5b301 14%, transparent);
+		color: color-mix(in oklch, #f5b301 82%, currentColor);
+		font-size: 0.62rem;
+		line-height: 1.2;
+		cursor: default;
+	}
+	.tea-juke__favusers[hidden] { display: none; }
+	.tea-juke__favusers-star { color: #f5b301; font-size: 0.72rem; }
+	.tea-juke__favusers > span:last-child {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
