@@ -312,24 +312,72 @@
 		};
 
 		// ── 留言板 SSO ───────────────────────────────────────────
-		// 评论区（Waline 客户端）把账号放在 WALINE_USER，茶室把座位放在 tea.identity。
-		// 两个页面同源，localStorage 就是天然的会话中枢：
-		// 任意一边登录都往 WALINE_USER 写，另一边读它自动跟上；退出时一起清。
+		// 评论区和茶室同在 www.0dm.cn 下，localStorage 就是天然的会话中枢：
+		// 任意一边登录都往同一套键写，另一边读它自动跟上；退出时一起清。
+		// · WALINE_USER       —— @waline/client 时代的键，茶室自己一直用它
+		// · guestbook-chat-auth —— 现在留言板聊天组件（自写）真正读写的键
+		// 两边都写，旧键留给老逻辑兜底，新键才真能互通。
 		const WALINE_USER_KEY = "WALINE_USER";
 		const WALINE_META_KEY = "WALINE_USER_META";
+		const GUESTBOOK_AUTH_KEY = "guestbook-chat-auth";
+
+		const readGuestbookAuth = () => {
+			for (const box of [localStorage, sessionStorage]) {
+				try {
+					const v = JSON.parse(box.getItem(GUESTBOOK_AUTH_KEY) || "null");
+					if (v && v.token) return v;
+				} catch (_) {}
+			}
+			return null;
+		};
 
 		const walineUser = () => {
 			try {
 				const v = JSON.parse(localStorage.getItem(WALINE_USER_KEY) || "null");
-				return v && v.token ? v : null;
-			} catch (_) {
-				return null;
-			}
+				if (v && v.token) return v;
+			} catch (_) {}
+			const g = readGuestbookAuth();
+			if (!g) return null;
+			return { ...g, email: g.email || "", url: g.url || g.link || "" };
 		};
 
-		const saveWalineUser = (payload) => {
+		// 茶室这边拿到的会话顺手写回留言板组件那套键，切过去就是已登录。
+		// 组件对存储做严格校验（objectId 必须是数字、type 只能是 guest/administrator），
+		// 字段不齐宁可不写，别塞坏数据让评论区以为登录了又炸。
+		const syncGuestbookAuth = (user) => {
+			if (!user || !user.token) return;
+			const objectId = Number(user.objectId);
+			if (!Number.isFinite(objectId) || objectId <= 0) return;
+			const payload = {
+				...user,
+				objectId,
+				token: String(user.token),
+				display_name: String(user.display_name || user.nick || ""),
+				email: String(user.email || ""),
+				url: String(user.url || user.link || ""),
+				type: user.type === "administrator" || user.admin ? "administrator" : "guest",
+			};
+			const value = JSON.stringify(payload);
+			try {
+				if (payload.type === "administrator") {
+					// 管理员凭证只留在当前标签页，和留言板组件的策略一致
+					localStorage.removeItem(GUESTBOOK_AUTH_KEY);
+					sessionStorage.setItem(GUESTBOOK_AUTH_KEY, value);
+				} else if (payload.remember) {
+					sessionStorage.removeItem(GUESTBOOK_AUTH_KEY);
+					localStorage.setItem(GUESTBOOK_AUTH_KEY, value);
+				} else {
+					localStorage.removeItem(GUESTBOOK_AUTH_KEY);
+					sessionStorage.setItem(GUESTBOOK_AUTH_KEY, value);
+				}
+			} catch (_) {}
+		};
+
+		const saveWalineUser = (payload, sync = true) => {
 			if (!payload || !payload.token) return;
-			const user = { ...(payload.user || {}), token: payload.token };
+			const user = payload.user
+				? { ...payload.user, token: payload.token, remember: !!payload.user.remember || !!payload.remember }
+				: { ...payload };
 			try {
 				localStorage.setItem(WALINE_USER_KEY, JSON.stringify(user));
 				localStorage.setItem(
@@ -341,12 +389,15 @@
 					}),
 				);
 			} catch (_) {}
+			if (sync) syncGuestbookAuth(user);
 		};
 
 		const dropWalineUser = () => {
 			try {
 				localStorage.removeItem(WALINE_USER_KEY);
 				localStorage.removeItem(WALINE_META_KEY);
+				localStorage.removeItem(GUESTBOOK_AUTH_KEY);
+				sessionStorage.removeItem(GUESTBOOK_AUTH_KEY);
 			} catch (_) {}
 		};
 
@@ -2480,7 +2531,13 @@
 			if (rt.ssoWatch) return;
 			rt.ssoWatch = true;
 			window.addEventListener("storage", (e) => {
-				if (e.key !== WALINE_USER_KEY && e.key !== WALINE_META_KEY && e.key !== null) return;
+				if (
+					e.key !== WALINE_USER_KEY &&
+					e.key !== WALINE_META_KEY &&
+					e.key !== GUESTBOOK_AUTH_KEY &&
+					e.key !== null
+				)
+					return;
 				if (!root()) return;
 				if (!walineUser()) {
 					if (rt.visitor && rt.visitor.sso === "waline") {
@@ -2508,7 +2565,6 @@
 		const showForm = (which) => {
 			const forms = {
 				identity: document.querySelector("[data-tea-identity]"),
-				waline: document.querySelector("[data-tea-waline]"),
 				matrix: document.querySelector("[data-tea-matrix]"),
 			};
 			for (const [k, f] of Object.entries(forms)) if (f) f.hidden = k !== which;
@@ -2519,30 +2575,99 @@
 			}
 		};
 
-		const submitWaline = async (e) => {
-			e.preventDefault();
-			const form = document.querySelector("[data-tea-waline]");
-			if (!form) return;
-			const email = (form.elements.email.value || "").trim();
-			const password = form.elements.password.value || "";
-			const err = document.querySelector("[data-tea-waline-error]");
-			const btn = document.querySelector("[data-tea-waline-submit]");
-			const label = btn ? btn.querySelector("[data-tea-waline-label]") : null;
-			if (err) err.hidden = true;
-			if (btn) btn.disabled = true;
-			if (label) label.textContent = "正在登录…";
-			try {
-				const res = await api("/api/waline", { method: "POST", body: JSON.stringify({ email, password }) });
-				applyIdentity(res, { email });
-			} catch (e2) {
-				if (err) {
-					err.textContent = e2.message || "登录失败";
-					err.hidden = false;
-				}
-			} finally {
-				if (btn) btn.disabled = false;
-				if (label) label.textContent = "登录并进入";
+		// ── Waline 弹窗登录 ────────────────────────────────────────
+		// 和评论区同一套流程：开 /ui/login 小窗，登录成功后 admin 会向 opener
+		// postMessage({ type: "userInfo", data: { token, ...user } })，拿到票再换座位。
+		// 老的内嵌邮箱+密码表单已经去掉 —— Waline 开了 2FA / 第三方登录就走不通。
+		const walineBase = () => String(WALINE_BASE || "https://waline.0dm.cn").replace(/\/+$/, "");
+		const walineLoginUrl = (redirect) => {
+			const url = `${walineBase()}/ui/login?lng=zh-CN`;
+			return redirect ? `${url}&redirect=${encodeURIComponent(redirect)}` : url;
+		};
+		let walinePopup = null;
+
+		const walineTip = (text, isError = false) => {
+			const tip = document.querySelector("[data-tea-waline-tip]");
+			if (!tip) return;
+			tip.textContent = text || "";
+			tip.hidden = !text;
+			tip.classList.toggle("is-error", !!text && isError);
+		};
+
+		const openWalineLogin = () => {
+			// 手机上开不出像样的小窗，评论区也是整页跳 —— 保持一致
+			if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+				location.href = walineLoginUrl(location.href);
+				return;
 			}
+			const w = 1024;
+			const h = 600;
+			const left = Math.max(0, Math.round((window.screen.width - w) / 2));
+			const top = Math.max(0, Math.round((window.screen.height - h) / 2));
+			const features = `width=${w},height=${h},left=${left},top=${top},scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no`;
+			let win = null;
+			try {
+				win = window.open(walineLoginUrl(), "WalineLogin", features);
+			} catch (_) {
+				win = null;
+			}
+			if (!win || win.closed) {
+				// 被浏览器拦了（或者移动端不给开小窗）→ 整页跳登录页，登录完 redirect 回茶室
+				walineTip("小窗被拦了，正在跳到登录页…");
+				location.href = walineLoginUrl(location.href);
+				return;
+			}
+			walinePopup = win;
+			try {
+				win.focus();
+			} catch (_) {}
+			walineTip("已打开登录窗口，登录完成后会自动回到茶室。");
+		};
+
+		const acceptWalinePayload = async (data) => {
+			if (!data || !data.token) return;
+			saveWalineUser({ ...data });
+			try {
+				if (walinePopup && !walinePopup.closed) walinePopup.close();
+			} catch (_) {}
+			walinePopup = null;
+			walineTip("登录成功，正在入座…");
+			const ok = await seatFromWaline();
+			if (!ok) walineTip("Waline 登录成功，但茶室座位没开出来，稍后再试一次。", true);
+		};
+
+		const watchWalineLogin = () => {
+			if (rt.walineMsg) return;
+			rt.walineMsg = true;
+			window.addEventListener("message", (e) => {
+				let origin = "";
+				try {
+					origin = new URL(walineBase()).origin;
+				} catch (_) {
+					return;
+				}
+				if (e.origin !== origin) return;
+				const d = e.data;
+				if (!d || typeof d !== "object" || d.type !== "userInfo") return;
+				acceptWalinePayload(d.data);
+			});
+		};
+
+		// 新标签页/整页跳转模式回来时，URL 上会挂 ?token=，换完座位就清掉
+		const consumeWalineRedirect = async () => {
+			let token = "";
+			try {
+				const url = new URL(location.href);
+				token = url.searchParams.get("token") || "";
+				if (!token) return;
+				url.searchParams.delete("token");
+				const clean = `${url.pathname}${url.search}${url.hash}`;
+				history.replaceState(history.state, "", clean || "/chat/");
+			} catch (_) {
+				return;
+			}
+			saveWalineUser({ token }, false);
+			await seatFromWaline();
 		};
 
 		const submitMatrix = async (e) => {
@@ -4680,7 +4805,12 @@
 			renderSelf();
 			setGate(!!rt.visitor);
 			watchWaline();
-			if (!rt.visitor) seatFromWaline();
+			// 新标签页登录回来会带 ?token=，先把它换成座位，再走常规的「评论区已登录」兜底
+			if (!rt.visitor) {
+				consumeWalineRedirect().then(() => {
+					if (!rt.visitor) seatFromWaline();
+				});
+			}
 			killChrome();
 			setTimeout(killChrome, 300);
 			setTimeout(killChrome, 1200);
@@ -5561,26 +5691,15 @@
 			const walineOpen = document.querySelector("[data-tea-waline-open]");
 			if (walineOpen && walineOpen.dataset.bound !== "1") {
 				walineOpen.dataset.bound = "1";
-				walineOpen.addEventListener("click", () => showForm("waline"));
+				walineOpen.addEventListener("click", openWalineLogin);
 			}
-			const walineBack = document.querySelector("[data-tea-waline-back]");
-			if (walineBack && walineBack.dataset.bound !== "1") {
-				walineBack.dataset.bound = "1";
-				walineBack.addEventListener("click", () => showForm("identity"));
-			}
-			const walineForm = document.querySelector("[data-tea-waline]");
-			if (walineForm && walineForm.dataset.bound !== "1") {
-				walineForm.dataset.bound = "1";
-				walineForm.addEventListener("submit", submitWaline);
-			}
-			const walineClose = document.querySelector("[data-tea-waline-close]");
-			if (walineClose && walineClose.dataset.bound !== "1") {
-				walineClose.dataset.bound = "1";
-				walineClose.addEventListener("click", () => {
-					const dlg = document.querySelector("[data-tea-dialog]");
-					if (dlg) dlg.close();
-				});
-			}
+			// 「在新标签页登录」按当前站点拼，别再指到 /guestbook/（茶室域名下是 404）
+			const walineFallback = document.querySelector("[data-tea-waline-fallback]");
+			if (walineFallback) walineFallback.setAttribute("href", walineLoginUrl(location.href));
+			// 评论区地址也按当前站点拼：www.0dm.cn 和 www.9ll.uk 各回各的留言板，账号才通
+			const guestbookLink = document.querySelector("[data-tea-guestbook]");
+			if (guestbookLink) guestbookLink.setAttribute("href", `${location.origin}/guestbook/`);
+			watchWalineLogin();
 			const matrixOpen = document.querySelector("[data-tea-matrix-open]");
 			if (matrixOpen && matrixOpen.dataset.bound !== "1") {
 				matrixOpen.dataset.bound = "1";

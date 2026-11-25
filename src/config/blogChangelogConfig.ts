@@ -40,7 +40,7 @@ export const blogChangelogConfig: ChangelogEntry[] = [
 		items: [
 			{
 				category: "功能",
-				text: "茶室与 Waline 单点登录：一边登录两边通用，不用再为聊天单独注册一套账号",
+				text: "茶室与 Waline 单点登录：登录按钮直接弹 Waline 官方登录页（和评论区同一个窗口），登完自动入座；两边共用同一套账号存储，评论区登录过的话进茶室自动换座位。顺手修掉登录弹窗里那两个指到 404 的「评论区互通 / 新标签页打开」链接",
 			},
 			{
 				category: "功能",

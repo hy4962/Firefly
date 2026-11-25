@@ -543,19 +543,20 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<div class="tea-login__primary-head">
 					<b>Waline 账号登录</b>
 					<span class="tea-login__badge">推荐</span>
-					<a class="tea-login__link" href="/guestbook/" target="_blank" rel="noopener">评论区互通</a>
+					<a class="tea-login__link" href="https://www.0dm.cn/guestbook/" target="_blank" rel="noopener" data-tea-guestbook>评论区互通</a>
 				</div>
 				<p class="tea-login__desc">
-					点击下方按钮完成 Waline 登录或注册（支持账号密码、GitHub 等方式），即可拥有 <b>认证</b> 标识并解锁个人歌单。
+					点下方按钮会像评论区一样弹出 Waline 登录页（支持账号密码、GitHub 等方式），登完自动回到茶室，即可拥有 <b>认证</b> 标识并解锁个人歌单。
 				</p>
 				<button type="button" class="tea-btn tea-btn--primary tea-login__cta" data-tea-waline-open>
 					<Icon is:inline name="material-symbols:open-in-new-rounded" />
 					使用 Waline 账号登录
 				</button>
 				<div class="tea-login__foot">
-					<span>未弹出窗口或偏好新标签页？</span>
-					<a href="/guestbook/" target="_blank" rel="noopener">在新标签页打开 ↗</a>
+					<span>没弹出小窗？</span>
+					<a href="https://waline.0dm.cn/ui/login?lng=zh-CN" target="_blank" rel="noopener" data-tea-waline-fallback>在新标签页登录 ↗</a>
 				</div>
+				<p class="tea-login__tip" data-tea-waline-tip hidden></p>
 			</div>
 
 			<details class="tea-login__guest">
@@ -600,36 +601,6 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 			<button type="button" class="tea-dialog__back" data-tea-matrix-open>
 				<Icon is:inline name="material-symbols:admin-panel-settings-outline-rounded" /> 已有 Matrix 账号？登录
 			</button>
-		</form>
-
-		<form method="dialog" class="tea-dialog__inner" data-tea-waline hidden>
-			<header class="tea-dialog__head">
-				<span class="tea-dialog__icon"><Icon is:inline name="material-symbols:forum-outline-rounded" /></span>
-				<button type="button" class="tea-icon-btn tea-dialog__close" data-tea-waline-close aria-label="关闭">
-					<Icon is:inline name="material-symbols:close-rounded" />
-				</button>
-			</header>
-			<h3>用 Waline 账号进茶室</h3>
-			<p class="tea-dialog__desc">用留言板那个账号登录，昵称、头像和网站直接沿用。登录后评论区和茶室共用同一个账号，另一边也会自动登录。</p>
-
-			<label class="tea-field">
-				<span>邮箱</span>
-				<input type="email" name="email" autocomplete="email" maxlength="120" placeholder="you@example.com" required />
-			</label>
-			<label class="tea-field">
-				<span>密码</span>
-				<input type="password" name="password" autocomplete="current-password" maxlength="120" placeholder="Waline 密码" required />
-			</label>
-
-			<button type="submit" class="tea-btn tea-btn--primary tea-dialog__submit" data-tea-waline-submit>
-				<span data-tea-waline-label>登录并进入</span>
-				<Icon is:inline name="material-symbols:arrow-forward-rounded" />
-			</button>
-			<p class="tea-dialog__error" data-tea-waline-error hidden></p>
-			<button type="button" class="tea-dialog__back" data-tea-waline-back>
-				<Icon is:inline name="material-symbols:arrow-back-rounded" /> 用昵称和邮箱进入
-			</button>
-			<p class="tea-dialog__hint">还没注册过？先去留言板发一条评论注册，再回来登录。</p>
 		</form>
 
 		<form method="dialog" class="tea-dialog__inner" data-tea-matrix hidden>
@@ -774,7 +745,7 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 				<button type="button" class="tea-btn tea-btn--ghost tea-profile__logout" data-tea-profile-logout>
 					<Icon is:inline name="material-symbols:logout-rounded" /> 退出登录
 				</button>
-				<a class="tea-btn tea-btn--ghost" href="/guestbook/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-tea-waline-center>Waline 个人中心 ↗</a>
+				<a class="tea-btn tea-btn--ghost" href="https://www.0dm.cn/guestbook/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-tea-waline-center>Waline 个人中心 ↗</a>
 				<span class="tea-profile__spacer"></span>
 				<button type="button" class="tea-btn tea-btn--ghost" data-tea-profile-cancel>取消</button>
 				<button type="button" class="tea-btn tea-btn--primary tea-profile__save" data-tea-profile-save>保存资料</button>
@@ -5062,6 +5033,19 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		white-space: nowrap;
 	}
 	.tea-login__foot a:hover { text-decoration: underline; }
+	.tea-login__tip {
+		margin: 0;
+		padding: 0.42rem 0.55rem;
+		border-radius: 0.55rem;
+		font-size: 0.68rem;
+		line-height: 1.55;
+		color: var(--tea-muted);
+		background: color-mix(in oklch, var(--primary) 10%, transparent);
+	}
+	.tea-login__tip.is-error {
+		color: #b3341f;
+		background: color-mix(in oklch, #e2563f 14%, transparent);
+	}
 	.tea-login__guest {
 		border: 1px solid var(--tea-line);
 		border-radius: 0.85rem;
