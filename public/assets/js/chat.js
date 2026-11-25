@@ -4071,6 +4071,9 @@
 			if (d) d.textContent = r.desc;
 			const threadPill = q("[data-tea-threads-trigger]");
 			if (threadPill && rt.room === "chat") threadPill.hidden = true;
+			// 本站闲聊房不参与互联，不展示互联友站入口
+			const sitesTrigger = q("[data-tea-sites-trigger]");
+			if (sitesTrigger) sitesTrigger.hidden = rt.room === "chat";
 			for (const b of document.querySelectorAll("[data-room]")) {
 				b.classList.toggle("is-active", b.dataset.room === rt.room);
 			}
