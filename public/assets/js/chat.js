@@ -491,7 +491,7 @@
 			if (liveOnline) liveOnline.textContent = String(onlineCount);
 			if (liveTotal) liveTotal.textContent = totalCount > 0 ? String(totalCount) : "—";
 			if (countBox) countBox.title = totalCount > 0
-				? `${onlineCount} 人在线 · 累计 ${totalCount} 人聊过天`
+				? `${onlineCount} 人在线 · 累计 ${totalCount} 位茶友来过`
 				: `${onlineCount} 人在线`;
 		};
 

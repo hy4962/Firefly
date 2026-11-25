@@ -26,6 +26,7 @@ import {
 
 const DEFAULTS = {
 	MATRIX_HS: "https://matrix.0dm.cn",
+	PUBLIC_MATRIX_HS: "https://matrix.0dm.cn",
 	ROOM_ID: "!CKQYQ95MT69FlskJmkcEbSmkd72I6CTgnf_nITckm4I",
 	CHAT_ROOM_ID: "!SKwkPyDSYsvMsjJWCi:matrix.0dm.cn",
 	INDEX_ROOM_ID: "!rrPkhRAMIwcCDHUpTC:matrix.0dm.cn",
@@ -67,6 +68,9 @@ const isEventId = (s) => /^\$[^\s/]{1,250}$/.test(String(s ?? ""));
 
 const cfg = (env) => ({
 	hs: (env.MATRIX_HS || DEFAULTS.MATRIX_HS).replace(/\/$/, ""),
+	// 容器里 MATRIX_HS 走内网地址，但页面表单只能填公网地址。
+	// 登录校验要认这个公网别名，否则用户还没走到密码校验就被拦下来。
+	publicHs: (env.PUBLIC_MATRIX_HS || DEFAULTS.PUBLIC_MATRIX_HS).replace(/\/$/, ""),
 	room: env.ROOM_ID || DEFAULTS.ROOM_ID,
 	chatRoom: env.CHAT_ROOM_ID || DEFAULTS.CHAT_ROOM_ID,
 	indexRoom: env.INDEX_ROOM_ID || DEFAULTS.INDEX_ROOM_ID,
@@ -351,7 +355,9 @@ async function getActiveSenders(c, roomId) {
 	return set;
 }
 
-// 累计聊过天的人数需要翻完整房间历史；结果缓存十分钟，避免每次轮询都扫 Matrix。
+// 累计人数需要翻完整房间历史；结果缓存十分钟，避免每次轮询都扫 Matrix。
+// 不能只数 m.room.message 的 sender：外站账号在 Matrix 里常见「入座但没发言」，
+// 以发言者为准会把这些人全部漏掉，和友站的累计人数口径差一大截。
 const chatterCache = new Map();
 const CHATTER_CACHE_TTL = 10 * 60_000;
 const CHATTER_SCAN_TIMEOUT = 8_000;
@@ -360,7 +366,11 @@ async function scanTotalChatters(c, roomId) {
 	const senders = new Set();
 	let from = "";
 	for (let page = 0; page < 120; page += 1) {
-		const qs = new URLSearchParams({ dir: "b", limit: "1000" });
+		const qs = new URLSearchParams({
+			dir: "b",
+			limit: "1000",
+			filter: JSON.stringify({ types: ["m.room.message", "m.room.member"] }),
+		});
 		if (from) qs.set("from", from);
 		const { ok, data } = await mxJson(
 			c,
@@ -370,8 +380,15 @@ async function scanTotalChatters(c, roomId) {
 		if (!ok) throw new Error(data.error || "history scan failed");
 		const chunk = Array.isArray(data.chunk) ? data.chunk : [];
 		for (const ev of chunk) {
-			if (ev?.type !== "m.room.message" || !ev.sender) continue;
-			senders.add(ev.sender);
+			if (ev?.type === "m.room.message" && ev.sender) {
+				senders.add(ev.sender);
+			} else if (
+				ev?.type === "m.room.member" &&
+				ev.state_key &&
+				ev.content?.membership === "join"
+			) {
+				senders.add(ev.state_key);
+			}
 		}
 		const next = typeof data.end === "string" ? data.end : "";
 		if (!next || !chunk.length || next === from) break;
@@ -1098,7 +1115,9 @@ async function handleMatrixLogin(c, request, ip) {
 		return fail(400, "请求格式不对");
 	}
 	const hs = String(body.homeserver || "").replace(/\/$/, "");
-	if (hs !== c.hs) return fail(400, "目前只支持本站服务器");
+	// 页面填的是公网 Matrix 地址，容器里 MATRIX_HS 可能是内网地址；
+	// 两者都算本站，真正的账号密码交给 Matrix 自己校验。
+	if (hs !== c.hs && hs !== c.publicHs) return fail(400, "目前只支持本站服务器");
 
 	const denied = await rateCheck({}, ip, "enter");
 	if (denied) return fail(429, denied);
@@ -1171,6 +1190,63 @@ function cacheRoomEvents(roomId, events) {
 		for (const k of [...map.keys()].slice(0, map.size - 600)) map.delete(k);
 	}
 	return map;
+}
+
+// 常驻桥接同步：以前只有访客页面在轮询 /api/sync 时才会顺手收 presence 和新消息，
+// 页面一关，外站在线状态和刚联邦过来的消息就停在旧快照里。这里用桥接账号自己
+// 挂一条长轮询，持续把 presence / timeline 收进进程内缓存，跟访客是否在线解耦。
+const BRIDGE_RECENT_LIMIT = 200;
+const bridgeRecent = new Map(); // roomId -> [{ id, ts, raw }] 新到旧
+let bridgeSyncStarted = false;
+
+function rememberBridgeEvents(roomId, events) {
+	let recent = bridgeRecent.get(roomId) || [];
+	const seen = new Set(recent.map((x) => x.id));
+	for (const ev of events || []) {
+		if (!ev?.event_id || seen.has(ev.event_id)) continue;
+		seen.add(ev.event_id);
+		recent.push({ id: ev.event_id, ts: Number(ev.origin_server_ts) || 0, raw: ev });
+	}
+	recent.sort((a, b) => b.ts - a.ts);
+	if (recent.length > BRIDGE_RECENT_LIMIT) recent = recent.slice(0, BRIDGE_RECENT_LIMIT);
+	bridgeRecent.set(roomId, recent);
+	cacheRoomEvents(roomId, events);
+}
+
+function startBridgeSync(c) {
+	if (bridgeSyncStarted || !c.bridgeToken) return;
+	bridgeSyncStarted = true;
+	let since = "";
+	const roomIds = [...new Set([c.room, c.chatRoom].filter(Boolean))];
+	const filter = JSON.stringify({
+		room: {
+			rooms: roomIds,
+			timeline: { limit: 50 },
+			state: { lazy_load_members: true },
+			ephemeral: { types: ["m.receipt", "m.typing"] },
+		},
+		presence: { types: ["m.presence"] },
+	});
+	const pump = async () => {
+		let delay = 5000;
+		try {
+			const qs = `?timeout=25000&filter=${enc(filter)}` + (since ? `&since=${enc(since)}` : "");
+			const res = await mx(c, `/_matrix/client/v3/sync${qs}`, { token: c.bridgeToken });
+			if (!res.ok) throw new Error(`sync ${res.status}`);
+			const data = await res.json();
+			if (data.next_batch) since = data.next_batch;
+			applyPresenceEvents(data.presence?.events);
+			for (const roomId of roomIds) {
+				const timeline = data.rooms?.join?.[roomId]?.timeline?.events || [];
+				if (timeline.length) rememberBridgeEvents(roomId, timeline);
+			}
+			delay = 200;
+		} catch (_) {
+			// 失败时保留 since 重试；Matrix 会补发未确认的事件，重复项按 event_id 去重。
+		}
+		setTimeout(pump, delay);
+	};
+	void pump();
 }
 
 // ── 聊天记录搜索 ────────────────────────────────────────────────────
@@ -1445,13 +1521,22 @@ async function handleHistory(c, url, base, token) {
 		if (snap?.ok) mergeReceiptCache(room.id, readReceipts(await snap.json(), room.id, members, c, base));
 	} catch (_) {}
 	const cached = cacheRoomEvents(room.id, data.chunk);
-	const eventMap = new Map([...cached, ...(data.chunk || []).map((ev) => [ev.event_id, ev])]);
-	const messages = (data.chunk || [])
+	// 补上常驻桥接流最近收到的事件：访客自己的 Matrix 账号刚加入房间时，
+	// /messages 偶尔还没同步到外站刚发的那几条，页面就会出现「别人有、我没有」。
+	const historyEvents = data.chunk || [];
+	const historyIds = new Set(historyEvents.map((ev) => ev.event_id));
+	const recent = (bridgeRecent.get(room.id) || [])
+		.filter((x) => Date.now() - x.ts < 10 * 60_000 && !historyIds.has(x.id))
+		.sort((a, b) => a.ts - b.ts);
+	const mergedEvents = [...historyEvents, ...recent.map((x) => x.raw)];
+	const eventMap = new Map([...cached, ...mergedEvents.map((ev) => [ev.event_id, ev])]);
+	const messages = mergedEvents
 		.map((ev) => (ev.type === "m.room.message" || ev.type === "m.sticker" ? normalize(ev, members, c, base, eventMap) : null))
 		.filter(Boolean)
-		.reverse()
+		.sort((a, b) => a.ts - b.ts)
+		.slice(-limit)
 		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender) }));
-	const redactions = collectRedactions(data.chunk || [], members);
+	const redactions = collectRedactions(mergedEvents, members);
 	return json(200, { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, redactions, end: data.end || null });
 }
 
@@ -1488,16 +1573,23 @@ async function handleSync(c, url, base, token) {
 		if (rec) receipts[id] = { count: rec.count, readers: rec.readers.slice(0, 12) };
 	}
 	const timeline = data.rooms?.join?.[room.id]?.timeline?.events || [];
-	const reactions = collectReactions(timeline, members);
-	const cached = cacheRoomEvents(room.id, timeline);
-	const eventMap = new Map([...cached, ...timeline.map((ev) => [ev.event_id, ev])]);
-	const messages = timeline
+	const timelineIds = new Set(timeline.map((ev) => ev.event_id));
+	// 常驻桥接流比访客自己的 /sync 更早看见联邦消息时，用 event_id 去重后补进来，
+	// 这样页面不会等到对方服务器再推一遍才显示。
+	const recent = (bridgeRecent.get(room.id) || [])
+		.filter((x) => Date.now() - x.ts < 3 * 60_000 && !timelineIds.has(x.id))
+		.sort((a, b) => a.ts - b.ts);
+	const allTimeline = [...timeline, ...recent.map((x) => x.raw)];
+	const reactions = collectReactions(allTimeline, members);
+	const cached = cacheRoomEvents(room.id, allTimeline);
+	const eventMap = new Map([...cached, ...allTimeline.map((ev) => [ev.event_id, ev])]);
+	const messages = allTimeline
 		.map((ev) => (ev.type === "m.room.message" || ev.type === "m.sticker" ? normalize(ev, members, c, base, eventMap) : null))
 		.filter(Boolean)
 		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender), reactions: reactions.get(m.id) || [] }));
 	// reaction 更新可能指向历史消息，单独返回让前端就地合并
 	const reactionUpdates = Object.fromEntries(reactions.entries());
-	const redactions = collectRedactions(timeline, members);
+	const redactions = collectRedactions(allTimeline, members);
 	// m.typing 的 user_ids 里是当前正在输入的人
 	const typingEv = (data.rooms?.join?.[room.id]?.ephemeral?.events || [])
 		.filter((ev) => ev.type === "m.typing")
@@ -1552,8 +1644,10 @@ async function handleRoom(c, base, room, url) {
 	// getPresenceMap 有 20s 缓存 + 单请求 2.5s 超时并行，100+ 人也不会拖死接口。
 	const probeIds = [...members.keys()].slice(0, 140);
 	const presence = await getPresenceMap(c, room.id, probeIds);
+	// 友站会把最近几分钟仍有 presence 的 Matrix 用户算在线；
+	// 2 分钟太紧，外站心跳稍慢就会被漏掉，页面上就比友站少几个人。
 	const isOnline = (p) =>
-		p && Number(p.last_active_ago) <= 2 * 60 * 1000 && (p.presence === "online" || p.currently_active === true);
+		p && Number(p.last_active_ago) <= 5 * 60 * 1000 && (p.presence === "online" || p.currently_active === true);
 	const isPresent = (id) => {
 		const seen = seenAt.get(id);
 		if (seen && Date.now() - seen < SEEN_TTL) return true;
@@ -3060,6 +3154,9 @@ function requestOrigin(request) {
 // ── 入口 ────────────────────────────────────────────────────────────
 export async function handleRequest(request, env = {}) {
 	const c = cfg(env);
+	// 常驻同步流只起一次；它把 presence 和最新消息留在桥接进程里，
+	// 不再受「访客页面有没有开着」影响。
+	startBridgeSync(c);
 	// CYAPI 联调凭据：环境变量优先，便于随时轮换；未设置时用内置默认值
 	if (env.CYAPI_KEY) setCyapiKey(env.CYAPI_KEY);
 	const url = new URL(request.url);
