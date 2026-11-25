@@ -7039,32 +7039,6 @@ button.chat-read-receipts-wrap:active {
 	user-select: none;
 }
 
-/* 移动端点歌台：返回按钮固定在抽屉左上角，避免被长歌名挤出视口。 */
-@media (max-width: 767px) {
-	.tea-juke .chat-music-panel-topbar {
-		position: relative;
-	}
-
-	.tea-juke .chat-panel-close-btn {
-		position: absolute !important;
-		top: 50% !important;
-		left: 0.55rem !important;
-		z-index: 40;
-		display: inline-flex !important;
-		transform: translateY(-50%);
-	}
-
-	.tea-juke .chat-panel-header,
-	.tea-juke .chat-mini-player {
-		padding-left: 2.75rem;
-	}
-}
-
-
-
-
-
-
 
 
 
