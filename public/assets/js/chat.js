@@ -1787,11 +1787,11 @@
 			if (!list) return;
 			list.innerHTML = notices.length
 				? notices
-						.map((n) => `<div class="tea-notify__item${n.read ? "" : " is-unread"}" data-notice-id="${esc(n.id)}">
+						.map((n) => `<button type="button" class="tea-notify__item${n.read ? "" : " is-unread"}" data-notice-id="${esc(n.id)}" title="跳到这条消息">
 							<b>${esc(n.nick || "茶友")}${n.room === "chat" ? " · 闲聊/站点留言板" : " · 互联茶室"}</b>
 							<span>${esc(n.text || "")}</span>
 							<time>${esc(fmtTime(n.ts))}</time>
-						</div>`)
+						</button>`)
 						.join("")
 				: `<p class="tea-notify__empty">还没有新的提醒。</p>`;
 			if (pop && !pop.hidden) positionNotices();
@@ -1844,16 +1844,21 @@
 				e.stopPropagation();
 				const item = e.target.closest("[data-notice-id]");
 				if (!item) return;
+				const id = item.dataset.noticeId;
 				const n = notices.find((x) => x.id === item.dataset.noticeId);
 				if (n) n.read = true;
 				saveNotices();
 				renderNotices();
 				notifyPop.hidden = true;
-				if (n && n.room !== rt.room && typeof rt.switchRoom === "function") rt.switchRoom(n.room);
-				setTimeout(() => {
-					const el = feedEl()?.querySelector(`.tea-msg[data-id="${CSS.escape(item.dataset.noticeId)}"]`);
-					if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
-				}, n && n.room !== rt.room ? 900 : 60);
+				if (!id) return;
+				const targetRoom = n?.room === "chat" ? "chat" : "lobby";
+				if (targetRoom !== rt.room && typeof rt.switchRoom === "function") {
+					// switchRoom 会异步重拉历史；历史画完后再按 ID 定位。
+					rt.pendingJumpId = id;
+					rt.switchRoom(targetRoom);
+					return;
+				}
+				void jumpToMessage(id);
 			});
 			q("[data-tea-notify-read]")?.addEventListener("click", (e) => {
 				e.stopPropagation();
@@ -1981,6 +1986,11 @@
 						if (stick) scrollBottom(false);
 					}
 					rt.since = sync.next || null;
+				}
+				const pendingJump = rt.pendingJumpId;
+				if (pendingJump) {
+					rt.pendingJumpId = "";
+					setTimeout(() => void jumpToMessage(pendingJump), 60);
 				}
 				startLoop();
 
