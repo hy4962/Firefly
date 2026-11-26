@@ -805,7 +805,7 @@
 			// HTML 尺寸属性会让它按原图宽度算 shrink-to-fit，图片却被 CSS 限到 272px，
 			// 右边空出一大块。宽度只交给 CSS max-width 管。
 			const body = m.image
-				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" decoding="async" ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
+				? `<img src="${esc(m.image)}" alt="${m.emoticon ? "表情" : "图片"}" loading="lazy" decoding="async" ${m.emoticon ? 'class="tea-emoticon"' : "data-zoom"} />`
 				: m.video
 					? videoTag(m.video, m.videoInfo, m.poster) +
 						(m.text ? `<div class="tea-video__cap">${fmtText(m.text)}</div>` : "")

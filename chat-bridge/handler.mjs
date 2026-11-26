@@ -162,9 +162,10 @@ export function md5Hex(input) {
 }
 
 // ── Matrix 调用 ─────────────────────────────────────────────────────
-async function mx(c, path, { token, method = "GET", body, raw, headers = {} } = {}) {
+async function mx(c, path, { token, method = "GET", body, raw, headers = {}, signal } = {}) {
 	return fetch(c.hs + path, {
 		method,
+		signal,
 		headers: {
 			Authorization: `Bearer ${token || c.bridgeToken}`,
 			...((body || raw) && { "Content-Type": headers["Content-Type"] || "application/json" }),
@@ -214,11 +215,11 @@ function memberProfile(ev) {
 	};
 }
 
-async function getMembers(c, roomId, force = false) {
+async function getMembers(c, roomId, force = false, signal) {
 	if (!force && Date.now() - memberCache.at < 60_000 && memberCache.room === roomId && memberCache.map.size) {
 		return memberCache.map;
 	}
-	const { ok, data } = await mxJson(c, `/_matrix/client/v3/rooms/${enc(roomId)}/members`);
+	const { ok, data } = await mxJson(c, `/_matrix/client/v3/rooms/${enc(roomId)}/members`, { signal });
 	if (!ok) throw new Error(data.error || "members failed");
 
 	// 先统计冲突：join + invite 一起算（规范要求），展示时只给 join。
@@ -1502,20 +1503,43 @@ async function handleAround(c, url, base) {
 }
 
 // ── 接口 ────────────────────────────────────────────────────────────
-async function handleHistory(c, url, base, token) {
-	const room = roomOf(c, url);
-	const limit = Math.min(Number(url.searchParams.get("limit") || 50) || 50, LIMITS.history);
+async function buildHistory(c, room, limit, base, token) {
+	// Matrix 联邦房间偶尔会把 /messages 或 /sync 卡到 30 秒以上；这里给三条上游
+	// 统一设 8 秒硬超时，外层再用缓存兜底，别让访客页面一直停在「正在看看…」。
+	const signal = AbortSignal.timeout(8000);
+	const membersP = getMembers(c, room.id, false, signal).catch(() => new Map());
 	// 成员、消息、回执快照并行拉，别串成三次公网往返
-	const membersP = getMembers(c, room.id);
 	// /messages 的 limit 算的是「事件数」，不是「消息数」。房间新成员加入会产生大量
 	// m.room.member，前端要 60 条消息时前面全被成员事件吃掉 → 返回空，聊天记录像凭空消失。
 	// 加 RoomEventFilter 只取消息类事件，limit 才真正对应可见的消息条数。
 	const msgFilter = JSON.stringify({ types: ["m.room.message", "m.sticker", "m.room.redaction"] });
-	const msgP = mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}&filter=${enc(msgFilter)}`, { token });
+	const msgP = mx(c, `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=${limit}&filter=${enc(msgFilter)}`, { token, signal }).catch(() => null);
 	const filter = JSON.stringify({ room: { rooms: [room.id], ephemeral: { types: ["m.receipt"] } } });
-	const snapP = mx(c, `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}`, { token }).catch(() => null);
+	const snapP = mx(c, `/_matrix/client/v3/sync?timeout=0&filter=${enc(filter)}`, { token, signal }).catch(() => null);
 	const members = await membersP;
 	const res = await msgP;
+	if (!res || !res.ok) {
+		// 上游慢/挂时至少把常驻桥接流最近收到的消息吐出来，页面不用空等。
+		const recentRaw = (bridgeRecent.get(room.id) || [])
+			.filter((x) => Date.now() - x.ts < 10 * 60_000)
+			.sort((a, b) => a.ts - b.ts)
+			.slice(-limit);
+		const cachedRecent = cacheRoomEvents(room.id, recentRaw.map((x) => x.raw));
+		const eventMap = new Map([...cachedRecent, ...recentRaw.map((x) => [x.id, x.raw])]);
+		const messages = recentRaw
+			.map((x) => normalize(x.raw, members, c, base, eventMap))
+			.filter(Boolean)
+			.sort((a, b) => a.ts - b.ts)
+			.slice(-limit);
+		return {
+			ok: true,
+			room: { key: room.key, name: room.name, desc: room.desc },
+			messages,
+			redactions: collectRedactions(recentRaw.map((x) => x.raw), members),
+			end: null,
+			degraded: true,
+		};
+	}
 	const data = await res.json();
 	// 回执只在 sync 的 ephemeral 里；快照给历史消息带上已读名单。
 	try {
@@ -1539,7 +1563,72 @@ async function handleHistory(c, url, base, token) {
 		.slice(-limit)
 		.map((m) => ({ ...m, receipt: exactReceipt(room.id, m.id, m.sender) }));
 	const redactions = collectRedactions(mergedEvents, members);
-	return json(200, { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, redactions, end: data.end || null });
+	return { ok: true, room: { key: room.key, name: room.name, desc: room.desc }, messages, redactions, end: data.end || null };
+}
+
+// 历史接口是进房必打请求，却依赖 Matrix 联邦 /messages。给它加一层
+// 12 秒新鲜 / 5 分钟陈旧缓存：命中就秒回，陈旧命中后台刷新；上游卡住时
+// 最多等 6 秒就吐缓存，不再把整页拖过边缘节点的 30 秒超时。
+const HISTORY_TTL = 12_000;
+const HISTORY_STALE_TTL = 300_000;
+const historyCache = new Map();
+const historyInflight = new Map();
+let historyWarmStarted = false;
+const historyKey = (room, limit) => `${room.key}:${limit}`;
+
+function refreshHistory(c, room, limit, base, token) {
+	const key = historyKey(room, limit);
+	const running = historyInflight.get(key);
+	if (running) return running;
+	const task = buildHistory(c, room, limit, base, token)
+		.then((payload) => {
+			historyCache.set(key, { at: Date.now(), payload });
+			return payload;
+		})
+		.catch(() => null)
+		.finally(() => historyInflight.delete(key));
+	historyInflight.set(key, task);
+	return task;
+}
+
+async function handleHistory(c, url, base, token) {
+	const room = roomOf(c, url);
+	const limit = Math.min(Number(url.searchParams.get("limit") || 50) || 50, LIMITS.history);
+	const key = historyKey(room, limit);
+	const hit = historyCache.get(key);
+	const age = hit ? Date.now() - hit.at : Infinity;
+	if (age < HISTORY_TTL) return json(200, hit.payload);
+	if (hit && age < HISTORY_STALE_TTL) {
+		void refreshHistory(c, room, limit, base, token);
+		return json(200, hit.payload);
+	}
+	const running = historyInflight.get(key);
+	const payload = running
+		? await running
+		: await Promise.race([
+				refreshHistory(c, room, limit, base, token),
+				new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
+			]);
+	if (payload) return json(200, payload);
+	return json(200, {
+		ok: true,
+		room: { key: room.key, name: room.name, desc: room.desc },
+		messages: [],
+		redactions: [],
+		end: null,
+		degraded: true,
+	});
+}
+
+function warmHistory(c, base) {
+	if (historyWarmStarted) return;
+	historyWarmStarted = true;
+	for (const room of [
+		{ key: "lobby", id: c.room, ...ROOM_META.lobby },
+		{ key: "chat", id: c.chatRoom, ...ROOM_META.chat },
+	]) {
+		for (const limit of [60, 80]) void refreshHistory(c, room, limit, base, c.bridgeToken);
+	}
 }
 
 async function handleSync(c, url, base, token) {
@@ -1622,15 +1711,15 @@ async function roomAvatar(c, base, roomId) {
 	return "";
 }
 
-async function handleRoom(c, base, room, url) {
+async function buildRoom(c, base, room, url) {
 	if (url?.searchParams.get("light") === "1") {
 		const avatar = await roomAvatar(c, base, room.id);
-		return json(200, {
+		return {
 			ok: true,
 			room: { key: room.key, name: room.name, desc: room.desc, id: room.id, avatar },
 			members: [],
 			online: 0,
-		});
+		};
 	}
 	const [members, active, avatar, badges] = await Promise.all([
 		getMembers(c, room.id),
@@ -1711,7 +1800,50 @@ async function handleRoom(c, base, room, url) {
 			};
 		});
 	}
-	return json(200, out);
+	return out;
+}
+
+// /api/room 会探 presence、翻活跃发言、扫累计人数，任一联邦上游慢了都会
+// 把「在线人数」拖住。这里同样做新鲜/陈旧缓存，页面先拿旧快照，后台再刷新。
+const ROOM_TTL = 10_000;
+const roomCache = new Map();
+const roomInflight = new Map();
+const roomKey = (room, url) => `${room.key}:${url?.searchParams.get("light") === "1" ? "light" : "full"}`;
+function refreshRoom(c, base, room, url, key) {
+	const running = roomInflight.get(key);
+	if (running) return running;
+	const task = buildRoom(c, base, room, url)
+		.then((payload) => {
+			roomCache.set(key, { at: Date.now(), payload });
+			return payload;
+		})
+		.catch(() => null)
+		.finally(() => roomInflight.delete(key));
+	roomInflight.set(key, task);
+	return task;
+}
+
+async function handleRoom(c, base, room, url) {
+	const key = roomKey(room, url);
+	const hit = roomCache.get(key);
+	const age = hit ? Date.now() - hit.at : Infinity;
+	if (age < ROOM_TTL) return json(200, hit.payload);
+	if (hit && age < STALE_TTL) {
+		void refreshRoom(c, base, room, url, key);
+		return json(200, hit.payload);
+	}
+	const payload = await Promise.race([
+		refreshRoom(c, base, room, url, key),
+		new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
+	]);
+	if (payload) return json(200, payload);
+	return json(200, hit?.payload || {
+		ok: true,
+		room: { key: room.key, name: room.name, desc: room.desc, id: room.id, avatar: "" },
+		members: [],
+		online: 0,
+		totalChatters: 0,
+	});
 }
 
 /**
@@ -1810,12 +1942,9 @@ async function fetchThread(c, roomId, rootId, members, base, rootHint, countHint
 	return { root, replies, countHint: countHint || 0 };
 }
 
-async function handleThreads(c, url, base) {
+async function buildThreads(c, url, base) {
 	const room = roomOf(c, url);
 	const key = room.id;
-	if (Date.now() - threadCache.at < 20_000 && threadCache.key === key) {
-		return json(200, { ok: true, threads: threadCache.threads });
-	}
 	try {
 		const members = await getMembers(c, room.id);
 		const roots = await collectThreadRoots(c, room.id);
@@ -1858,13 +1987,44 @@ async function handleThreads(c, url, base) {
 			threads.push(...got.filter(Boolean));
 		}
 		threads.sort((a, b) => (b.summary.latestReply?.createdAt || 0) - (a.summary.latestReply?.createdAt || 0));
-		threadCache.at = Date.now();
-		threadCache.key = key;
-		threadCache.threads = threads;
-		return json(200, { ok: true, threads });
+		return threads;
 	} catch (err) {
-		return fail(502, "线程列表暂时取不到");
+		throw err;
 	}
+}
+
+const STALE_TTL = 300_000;
+const threadInflight = new Map();
+function refreshThreads(c, url, base, key) {
+	const running = threadInflight.get(key);
+	if (running) return running;
+	const task = buildThreads(c, url, base)
+		.then((threads) => {
+			threadCache.at = Date.now();
+			threadCache.key = key;
+			threadCache.threads = threads;
+			return threads;
+		})
+		.catch(() => null)
+		.finally(() => threadInflight.delete(key));
+	threadInflight.set(key, task);
+	return task;
+}
+
+async function handleThreads(c, url, base) {
+	const key = roomOf(c, url).id;
+	const age = threadCache.key === key ? Date.now() - threadCache.at : Infinity;
+	if (age < 20_000) return json(200, { ok: true, threads: threadCache.threads });
+	if (age < STALE_TTL) {
+		void refreshThreads(c, url, base, key);
+		return json(200, { ok: true, threads: threadCache.threads });
+	}
+	const threads = await Promise.race([
+		refreshThreads(c, url, base, key),
+		new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
+	]);
+	if (threads) return json(200, { ok: true, threads });
+	return json(200, { ok: true, threads: threadCache.key === key ? threadCache.threads : [] });
 }
 
 async function handleThreadDetail(c, url, base) {
@@ -1894,21 +2054,16 @@ async function handleThreadDetail(c, url, base) {
  */
 const pinCache = { at: 0, key: "", pins: [] };
 
-async function handlePins(c, url, base) {
+async function buildPins(c, url, base) {
 	const room = roomOf(c, url);
-	if (Date.now() - pinCache.at < 60_000 && pinCache.key === room.id) {
-		return json(200, { ok: true, pins: pinCache.pins });
-	}
 	try {
 		const st = await mxJson(c, `/_matrix/client/v3/rooms/${enc(room.id)}/state/m.room.pinned_events`, {
 			token: c.bridgeToken,
+			signal: AbortSignal.timeout(8000),
 		});
 		const ids = Array.isArray(st.data?.pinned) ? st.data.pinned.slice(0, 12) : [];
 		if (!ids.length) {
-			pinCache.at = Date.now();
-			pinCache.key = room.id;
-			pinCache.pins = [];
-			return json(200, { ok: true, pins: [] });
+			return [];
 		}
 		const wanted = new Set(ids);
 		const members = await getMembers(c, room.id);
@@ -1917,7 +2072,8 @@ async function handlePins(c, url, base) {
 		// 最多翻 4 页（每页 500），置顶通常是建站初期的老消息
 		for (let page = 0; page < 4 && found.size < wanted.size; page++) {
 			const q = `/_matrix/client/v3/rooms/${enc(room.id)}/messages?dir=b&limit=500${from ? `&from=${enc(from)}` : ""}`;
-			const res = await mx(c, q, { token: c.bridgeToken });
+		const res = await mx(c, q, { token: c.bridgeToken, signal: AbortSignal.timeout(8000) }).catch(() => null);
+		if (!res || (!res.ok && res.status !== 206)) break;
 			const data = await res.json().catch(() => ({}));
 			const eventMap = new Map((data.chunk || []).map((ev) => [ev.event_id, ev]));
 			for (const ev of data.chunk || []) {
@@ -1930,13 +2086,43 @@ async function handlePins(c, url, base) {
 			if (!from) break;
 		}
 		const pins = ids.map((id) => found.get(id)).filter(Boolean);
-		pinCache.at = Date.now();
-		pinCache.key = room.id;
-		pinCache.pins = pins;
-		return json(200, { ok: true, pins });
+		return pins;
 	} catch (err) {
-		return fail(502, "置顶消息暂时取不到");
+		throw err;
 	}
+}
+
+const pinInflight = new Map();
+function refreshPins(c, url, base, key) {
+	const running = pinInflight.get(key);
+	if (running) return running;
+	const task = buildPins(c, url, base)
+		.then((pins) => {
+			pinCache.at = Date.now();
+			pinCache.key = key;
+			pinCache.pins = pins;
+			return pins;
+		})
+		.catch(() => null)
+		.finally(() => pinInflight.delete(key));
+	pinInflight.set(key, task);
+	return task;
+}
+
+async function handlePins(c, url, base) {
+	const key = roomOf(c, url).id;
+	const age = pinCache.key === key ? Date.now() - pinCache.at : Infinity;
+	if (age < 60_000) return json(200, { ok: true, pins: pinCache.pins });
+	if (age < STALE_TTL) {
+		void refreshPins(c, url, base, key);
+		return json(200, { ok: true, pins: pinCache.pins });
+	}
+	const pins = await Promise.race([
+		refreshPins(c, url, base, key),
+		new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
+	]);
+	if (pins) return json(200, { ok: true, pins });
+	return json(200, { ok: true, pins: pinCache.key === key ? pinCache.pins : [] });
 }
 
 async function handleRecall(c, request, token, room) {
@@ -3184,6 +3370,8 @@ export async function handleRequest(request, env = {}) {
 	// 任何带访客 token 的请求都算一次心跳；whoami 有 5 分钟缓存，不额外打请求
 	if (visitorToken) whoAmI(c, visitorToken).then(touchSeen).catch(() => {});
 	const base = requestOrigin(request);
+	// 首个请求到达就后台预热进房必用的历史缓存，别等访客自己撞上慢速 /messages。
+	warmHistory(c, base);
 
 	let out;
 	try {
