@@ -2577,6 +2577,10 @@ html[data-chat-page]:is(.dark:not([data-chat-scheme="light"]), [data-chat-scheme
 	.chat-panel-close-btn {
 		display: inline-flex !important;
 	}
+	/* 移动端站点导航栏已经隐藏，外层容器不能再留桌面导航栏高度 */
+	html[data-chat-page] body #content-panel {
+		top: env(safe-area-inset-top, 0px) !important;
+	}
 }
 
 @media (width >= 768px) {
@@ -2617,10 +2621,6 @@ html[data-chat-page]:is(.dark:not([data-chat-scheme="light"]), [data-chat-scheme
 	html[data-chat-page] #top-row :is(#display-setting, #theme-mode-panel):not(.float-panel-closed) {
 		visibility: visible;
 		pointer-events: auto;
-	}
-
-	html[data-chat-page] body #content-panel {
-		top: env(safe-area-inset-top, 0px) !important;
 	}
 
 	.chat-page-container {
