@@ -147,6 +147,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 					</div>
 				</div>
 				<div class="tea-bar__tools">
+					<a class="tea-icon-btn tea-back-btn" href="/" title="返回博客" aria-label="返回博客">
+						<Icon is:inline name="material-symbols:arrow-back-rounded" />
+					</a>
 					<span class="tea-live-count" data-tea-live-count title="茶室在线人数">
 						<i aria-hidden="true"></i>
 						<b data-tea-live-online>0</b>
@@ -1955,6 +1958,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-icon-btn svg {
 		width: 1.15rem;
 		height: 1.15rem;
+	}
+	.tea-back-btn {
+		display: none;
+		text-decoration: none;
 	}
 
 	/* 互联提示条 */
@@ -5184,7 +5191,8 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	}
 	@media (max-width: 900px) {
 		.tea-app {
-			--tea-top: 3.6rem;
+			/* 移动端 #content-panel 已贴到安全区，这里不能再留桌面导航栏高度 */
+			--tea-top: calc(env(safe-area-inset-top, 0px) + 0.25rem);
 			left: 0.5rem;
 			right: 0.5rem;
 			bottom: 0.5rem;
@@ -5248,6 +5256,9 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		}
 		.tea-bar__tools {
 			gap: 0.25rem;
+		}
+		.tea-back-btn {
+			display: grid;
 		}
 		.tea-live-count {
 			height: 1.7rem;
