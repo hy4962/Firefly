@@ -102,7 +102,13 @@ const managers = new Map();
 const usersByToken = new Map();
 
 function roomOf(url, fallback = "chat") {
-	const raw = String(url?.searchParams?.get("room") || fallback || "chat").trim().toLowerCase();
+	// 历史接口的前端用 roomId，其余接口/WSS 用 room；两边都接受，避免读错房间的记录。
+	const raw = String(
+		url?.searchParams?.get("room") ||
+		url?.searchParams?.get("roomId") ||
+		fallback ||
+		"chat",
+	).trim().toLowerCase();
 	return /^[a-z0-9_-]{1,48}$/.test(raw) ? raw : "chat";
 }
 
