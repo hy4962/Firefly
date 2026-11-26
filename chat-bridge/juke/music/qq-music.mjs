@@ -60,6 +60,22 @@ function decodeHtmlEntities(input) {
     .replace(/&amp;/g, '&');
 }
 
+function decodeLyricField(value) {
+  let text = String(value ?? '').trim();
+  if (!text) return '';
+  if (!text.includes('[') && /^[A-Za-z0-9+/=\r\n]+$/.test(text)) {
+    try {
+      text = decodeBase64Utf8(text);
+    } catch {}
+  }
+  return decodeHtmlEntities(text).trim();
+}
+
+// QQ 同一个接口会返回 tlyric（翻译 LRC）；拼到原文后面，前端按时间戳合并显示。
+function withTranslationLrc(lyric, translation) {
+  return translation && translation.includes('[') ? `${lyric}\n${translation}` : lyric;
+}
+
 const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_SIZE = 200;
 
@@ -383,18 +399,11 @@ export class QQMusicProvider {
         .replace(/^MusicJsonCallback\(/, '')
         .replace(/\);?$/, '');
       const data = JSON.parse(jsonText);
-      if (typeof data.lyric !== 'string' || !data.lyric.trim()) {
+      const lyricText = decodeLyricField(data.lyric);
+      if (!lyricText) {
         return null;
       }
-
-      let lyricText = data.lyric.trim();
-      if (!lyricText.includes('[') && /^[A-Za-z0-9+/=\r\n]+$/.test(lyricText)) {
-        try {
-          lyricText = decodeBase64Utf8(lyricText);
-        } catch {}
-      }
-
-      return decodeHtmlEntities(lyricText);
+      return withTranslationLrc(lyricText, decodeLyricField(data.tlyric));
     } catch {
       return null;
     }

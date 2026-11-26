@@ -175,6 +175,7 @@ interface Props {
 interface LyricLine {
 	time: number;
 	text: string;
+	translation?: string;
 }
 
 const {
@@ -615,6 +616,7 @@ let lyricsContainer: HTMLDivElement | null = $state(null);
 let lyricFetchSeq = 0;
 let lastUserScrollAt = 0;
 let lastPlayUid = "";
+let lastLyricRoom = "";
 let soloCooldownRemainSec = $state(0);
 let pendingAutoUnmuteTrackId = "";
 let pendingAutoUnmuteAt = 0;
@@ -2564,6 +2566,7 @@ function parseLrc(raw: string): LyricLine[] {
 	const parsed: LyricLine[] = [];
 	for (const entry of rawEntries) {
 		let cleanText = entry.rawText;
+		let translation = "";
 		const splitMatch = cleanText.match(TRAILING_PAREN_RE);
 		if (splitMatch?.[1]?.trim() && splitMatch?.[2]?.trim()) {
 			const head = splitMatch[1].trim();
@@ -2577,11 +2580,12 @@ function parseLrc(raw: string): LyricLine[] {
 
 			if (isInlineBilingualTrack || isScriptTranslationPair) {
 				cleanText = head;
+				if (HAN_RE.test(tail)) translation = tail;
 			}
 		}
 
 		if (cleanText) {
-			parsed.push({ time: entry.time, text: cleanText });
+			parsed.push({ time: entry.time, text: cleanText, ...(translation ? { translation } : {}) });
 		}
 	}
 
@@ -2590,14 +2594,17 @@ function parseLrc(raw: string): LyricLine[] {
 	const deduped: LyricLine[] = [];
 	for (const line of parsed) {
 		const prev = deduped[deduped.length - 1];
-		if (
-			prev &&
-			Math.abs(line.time - prev.time) < 0.01 &&
-			NON_HAN_SCRIPT_RE.test(prev.text) &&
-			!HAN_RE.test(prev.text) &&
-			HAN_RE.test(line.text)
-		) {
-			continue;
+		if (prev && Math.abs(line.time - prev.time) < 0.01) {
+			// 上游 tlyric 会把中文翻译放在同一时间戳的第二行，合并到原行下面显示。
+			if (!prev.translation && HAN_RE.test(line.text) && NON_HAN_SCRIPT_RE.test(prev.text)) {
+				prev.translation = line.text;
+				continue;
+			}
+			if (!prev.translation && HAN_RE.test(prev.text) && NON_HAN_SCRIPT_RE.test(line.text)) {
+				line.translation = prev.text;
+				prev.text = line.text;
+				continue;
+			}
 		}
 		deduped.push(line);
 	}
@@ -2869,11 +2876,15 @@ $effect(() => {
 	if (!active) {
 		roomElapsed = 0;
 		localDuration = 0;
+		lastPlayUid = "";
+		lastLyricRoom = roomId;
 		void loadLyricsForUrl();
 		return;
 	}
-	if (active.uid !== lastPlayUid) {
+	// 切房间再切回来时，同一首歌的 UID 没变但歌词状态已被清空，必须重新加载。
+	if (active.uid !== lastPlayUid || roomId !== lastLyricRoom) {
 		lastPlayUid = active.uid;
+		lastLyricRoom = roomId;
 		coverLoadFailed = false;
 		localDuration = active.durationSec;
 		roomElapsed = computeExpectedElapsed();
@@ -4389,7 +4400,12 @@ $effect(() => {
                       class="w-full py-1 transition-all duration-300 leading-snug select-text cursor-text
                         {isCurrentLine ? 'text-[var(--chat-accent-text)] font-bold text-base' : 'text-sm text-[var(--chat-meta-color)]'}"
                     >
-                      {line.text}
+                      <div>{line.text}</div>
+                      {#if line.translation}
+                        <div class="mt-0.5 text-[0.82em] font-normal opacity-75 break-words">
+                          {line.translation}
+                        </div>
+                      {/if}
                     </div>
                   {/each}
                 {/if}

@@ -101,7 +101,9 @@ export class NeteaseMusicProvider {
     try {
       const data = await getJson('https://music.163.com/api/song/lyric',
         { id: sourceId, lv: '-1', kv: '-1', tv: '-1' }, 'https://music.163.com/');
-      return typeof data.lrc?.lyric === 'string' ? data.lrc.lyric : '';
+      const lyric = typeof data.lrc?.lyric === 'string' ? data.lrc.lyric : '';
+      const translation = typeof data.tlyric?.lyric === 'string' ? data.tlyric.lyric : '';
+      return translation && translation.includes('[') ? `${lyric}\n${translation}` : lyric;
     } catch {
       return '';
     }
