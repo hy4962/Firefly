@@ -311,6 +311,9 @@ export class MusicManager {
     } else {
       this.reshuffleRotationDeck();
     }
+    // 保存的轮播牌堆可能已经播完（remaining 为空）；恢复设置后要重建，
+    // 否则前端有轮播池却看不到任何待播歌曲。
+    if (!this.rotationDeck.length && this.fallbackTracks.length) this.reshuffleRotationDeck();
     this.preparedFallback = null;
     if (!this.savedState) this.savePlayback();
     if (start && (!this.current || this.current.isFallback)) {

@@ -230,7 +230,13 @@ function syncRotation(roomId, { start = true } = {}) {
 	sendState(roomId);
 }
 
-for (const roomId of ["chat", "interconnect"]) {
+const startupRooms = new Set([
+	"chat",
+	"interconnect",
+	"lobby",
+	...Object.keys(playlistData.rotations || {}),
+]);
+for (const roomId of startupRooms) {
 	getManager(roomId);
 	syncRotation(roomId, { start: false });
 }
