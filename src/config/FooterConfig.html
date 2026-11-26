@@ -467,6 +467,7 @@
 			// （备案审核期间曾暂停，2026-11-18 恢复）
 			{
 				path: /.*/,
+				skip: /^\/chat\/?$/,
 				id: "ff-recent-comments-js",
 				src: "/assets/js/recent-comments.js?v=6",
 			},
@@ -474,6 +475,7 @@
 				// 搜索预热：全站加载 —— 空转时就起 pagefind 的 worker/wasm/索引，
 				// 顺带把「回车 = 进第一条结果」补上（上游搜索框没有 Enter 处理）
 				path: /.*/,
+				skip: /^\/chat\/?$/,
 				id: "ff-search-warmup-js",
 				src: "/assets/js/search-warmup.js?v=1",
 			},
@@ -481,6 +483,7 @@
 				// 评论区「回复折叠」：全站加载 —— 每条评论下的回复默认展示 2 条，
 				// 多出来的收在「展开更多」后面。没有 #waline 的页面自动空转。
 				path: /.*/,
+				skip: /^\/chat\/?$/,
 				id: "ff-comment-reply-collapse-js",
 				src: "/assets/js/comment-reply-collapse.js?v=2",
 			},
@@ -488,6 +491,7 @@
 				// 评论区「回复引用」：全站加载 —— 顺着 wl-reply-to 的锚点把被回复那条
 				// 摘成引用块，免得只看到 `@昵称：` 却不知道在回哪句。
 				path: /.*/,
+				skip: /^\/chat\/?$/,
 				id: "ff-comment-reply-quote-js",
 				src: "/assets/js/comment-reply-quote.js?v=3",
 			},
@@ -512,6 +516,7 @@
 				// 「天气预报」卡片：全站加载 —— 数据来自 uapis.cn（免费无 key，按访客
 				// IP 定位），桌面挂右栏、移动端挂底部栏，挂载与渲染逻辑都在 js 里。
 				path: /.*/,
+				skip: /^\/chat\/?$/,
 				id: "ff-weather-js",
 				src: "/assets/js/weather-card.js?v=2",
 			},
@@ -534,6 +539,7 @@
 			for (i = 0; i < PAGE_SCRIPTS.length; i++) {
 				var entry = PAGE_SCRIPTS[i];
 				if (!entry.path.test(pathname)) continue;
+				if (entry.skip && entry.skip.test(pathname)) continue;
 				if (document.getElementById(entry.id)) continue;
 				var script = document.createElement("script");
 				script.id = entry.id;
