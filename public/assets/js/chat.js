@@ -1942,14 +1942,21 @@
 		const loadHistory = async () => {
 			// 正常时间线回来了，历史定位模式作废
 			rt.historyMode = false;
+			const room = rt.room;
 			const bar = q("[data-tea-historybar]");
 			if (bar) bar.hidden = true;
 			feedStatus(`<span class="tea-spinner"></span> 正在看看大家聊到哪儿了…`);
-			const histP = api(`/api/history?limit=60&room=${rt.room}`);
-			const syncP = api(`/api/sync?room=${rt.room}&timeout=0`).catch(() => null);
+			const histP = api(`/api/history?limit=60&room=${room}`);
+			const syncP = api(`/api/sync?room=${room}&timeout=0`).catch(() => null);
 			try {
 				// 1. 先画历史记录，不被 sync 和在线名单阻塞
-				const hist = await histP;
+				let hist = await histP;
+				// 后端偶发返回空列表时不要直接把时间线清空，短间隔重试两次。
+				for (let attempt = 0; attempt < 2 && !(hist.messages || []).length && rt.room === room; attempt++) {
+					await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+					hist = await api(`/api/history?limit=60&room=${room}`);
+				}
+				if (rt.room !== room) return;
 				feedStatus("");
 				const f = feedEl();
 				if (f) f.innerHTML = "";
@@ -1960,7 +1967,14 @@
 				rt.messages = msgs;
 				const seen = new Set(msgs.map((m) => m.id));
 				if (!msgs.length) {
-					feedStatus(`<div class="tea-empty"><b>茶室里还没人说话</b><span>要不你先开个话头？</span></div>`);
+					feedStatus(
+						`<div class="tea-empty"><b>茶室里还没人说话</b><span>要不你先开个话头？</span><button type="button" class="tea-btn tea-btn--ghost" data-tea-history-retry>重新加载</button></div>`,
+					);
+					const emptyRetry = q("[data-tea-history-retry]");
+					if (emptyRetry) emptyRetry.addEventListener("click", () => {
+						showError("");
+						loadHistory();
+					});
 				} else {
 					for (const m of msgs) renderMessage({ ...m, scroll: false });
 					applyRedactions(hist.redactions || []);
@@ -1979,6 +1993,8 @@
 				if (sync) {
 					const fresh = (sync.messages || []).filter((m) => !seen.has(m.id));
 					if (fresh.length) {
+						// 历史为空时显示过空状态，sync 又把消息带回来就撤掉它。
+						feedStatus("");
 						rt.messages = [...rt.messages, ...fresh].sort((a, b) => a.ts - b.ts);
 						const stick = atBottom();
 						for (const m of fresh) renderMessage({ ...m, scroll: false });

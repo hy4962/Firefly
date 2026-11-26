@@ -2192,6 +2192,10 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 	.tea-empty span {
 		font-size: 0.74rem;
 	}
+	.tea-empty button {
+		justify-self: center;
+		margin-top: 0.35rem;
+	}
 
 	.tea-day {
 		display: flex;
@@ -2834,6 +2838,26 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		background: color-mix(in oklch, var(--primary) 12%, transparent);
 	}
 	.tea-msg__action svg { width: 1rem; height: 1rem; display: block; }
+	/* 窄屏或触屏上气泡会占满可用宽度，外侧操作条会被消息流裁掉。
+	   把按钮收回气泡内部并预留底部空间，长消息也能点到回复。 */
+	@media (max-width: 640px), (hover: none) {
+		.tea-msg:not(.tea-msg--media) .tea-msg__text {
+			padding-bottom: 1.75rem;
+		}
+		.tea-msg__actions {
+			top: auto;
+			right: 0.25rem;
+			bottom: 0.2rem;
+			transform: none;
+			opacity: 0.72;
+			pointer-events: auto;
+		}
+		.tea-msg--mine .tea-msg__actions {
+			left: 0.25rem;
+			right: auto;
+			transform: none;
+		}
+	}
 	.tea-msg-menu {
 		position: fixed;
 		z-index: 140;
