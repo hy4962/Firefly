@@ -3186,6 +3186,10 @@
 				emojiPanel.style.left = left + "px";
 				emojiPanel.dataset.anchored = "1";
 			};
+			const closeEmojiPanel = () => {
+				emojiPanel.hidden = true;
+				emojiPanel.classList.remove("is-ready");
+			};
 			const insertAtCursor = (text, max = 4000) => {
 				const input = q("[data-tea-text]");
 				if (!input) return;
@@ -3277,12 +3281,19 @@
 			if (emojiToggle && emojiPanel) {
 				emojiToggle.addEventListener("click", (e) => {
 					e.stopPropagation();
-					const open = emojiPanel.hidden;
-					emojiPanel.hidden = !open;
-					if (!open) return;
+					if (!emojiPanel.hidden) {
+						closeEmojiPanel();
+						return;
+					}
 					// 每次打开都从第一套、空搜索词开始
 					emojiKeyword = "";
-					renderEmojiPanel(EMOTICON_SETS[0].id).then(() => setTimeout(positionEmojiPanel, 0));
+					// 先保持不可见，等内容高度和位置都算好再显示，避免闪到左下角。
+					emojiPanel.classList.remove("is-ready");
+					emojiPanel.hidden = false;
+					renderEmojiPanel(EMOTICON_SETS[0].id).then(() => {
+						positionEmojiPanel();
+						emojiPanel.classList.add("is-ready");
+					});
 				});
 				emojiPanel.addEventListener("input", (e) => {
 					if (!e.target.matches("[data-emoji-search]")) return;
@@ -3302,7 +3313,10 @@
 					if (tab) {
 						// 换分类就清掉搜索词，跟对方那套行为一致
 						emojiKeyword = "";
-						renderEmojiPanel(tab.dataset.emojiSet).then(() => setTimeout(positionEmojiPanel, 0));
+						renderEmojiPanel(tab.dataset.emojiSet).then(() => {
+							positionEmojiPanel();
+							emojiPanel.classList.add("is-ready");
+						});
 						return;
 					}
 					const charBtn = e.target.closest("[data-emoji-char]");
@@ -3313,7 +3327,7 @@
 					insertAtCursor(`[emoji:${setId}:${img.dataset.emojiName}]`);
 				});
 				document.addEventListener("click", (e) => {
-					if (!emojiPanel.hidden && !emojiPanel.contains(e.target) && e.target !== emojiToggle) emojiPanel.hidden = true;
+					if (!emojiPanel.hidden && !emojiPanel.contains(e.target) && e.target !== emojiToggle) closeEmojiPanel();
 				});
 				window.addEventListener("resize", () => {
 					if (!emojiPanel.hidden) positionEmojiPanel();

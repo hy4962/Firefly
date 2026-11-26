@@ -3553,6 +3553,14 @@ const selfSite = { name: "折腾进行时", owner: "HY", avatar: "/assets/images
 		border-radius: 0.85rem;
 		box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
 		background: var(--card-bg, #fff);
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+	}
+	.tea-emoji-panel.is-ready {
+		opacity: 1;
+		visibility: visible;
+		pointer-events: auto;
 	}
 	.tea-emoji-panel[data-anchored] { bottom: auto; left: auto; }
 	.tea-emoji-panel[hidden] {
