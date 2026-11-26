@@ -3031,6 +3031,167 @@
 			}
 		};
 
+		const setupPaneResizers = () => {
+			const shell = root();
+			const handles = shell ? [...shell.querySelectorAll("[data-tea-resizer]")] : [];
+			if (!shell || !handles.length) return;
+
+			const KEY = "__teaPaneWidths";
+			const MIN_SIDE = 240;
+			const MIN_JUKE = 280;
+			const MIN_CENTER = 360;
+			const MAX_SIDE = 480;
+			const MAX_JUKE = 512;
+			const clamp = (v, min, max) => Math.min(Math.max(v, min), Math.max(min, max));
+			const compact = () => window.matchMedia("(max-width: 1366px)").matches;
+			const wide = () => window.matchMedia("(min-width: 1241px)").matches;
+			const jukeVisible = () => wide() && !shell.classList.contains("is-juke-hidden");
+			const defaults = () => (compact() ? { side: 280, juke: 340 } : { side: 335, juke: 380 });
+
+			let saved = {};
+			try {
+				saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {};
+			} catch (_) {}
+			let customized = Boolean(Number(saved.side) || Number(saved.juke));
+			let sideWidth = Number(saved.side) || defaults().side;
+			let jukeWidth = Number(saved.juke) || defaults().juke;
+
+			const currentWidths = () => {
+				const sideEl = shell.querySelector(".tea-side");
+				const jukeEl = shell.querySelector(".tea-juke");
+				return {
+					side: sideEl ? Math.round(sideEl.getBoundingClientRect().width) : sideWidth,
+					juke: jukeEl ? Math.round(jukeEl.getBoundingClientRect().width) : jukeWidth,
+				};
+			};
+			const limits = () => {
+				const vw = shell.clientWidth || window.innerWidth;
+				return {
+					maxSide: Math.min(MAX_SIDE, vw - (jukeVisible() ? jukeWidth : 0) - MIN_CENTER),
+					maxJuke: Math.min(MAX_JUKE, vw - sideWidth - MIN_CENTER),
+				};
+			};
+			const syncAria = () => {
+				const { maxSide, maxJuke } = limits();
+				for (const handle of handles) {
+					const isSide = handle.dataset.teaResizer === "side";
+					handle.setAttribute("aria-valuemin", String(isSide ? MIN_SIDE : MIN_JUKE));
+					handle.setAttribute("aria-valuemax", String(Math.round(isSide ? maxSide : maxJuke)));
+					handle.setAttribute("aria-valuenow", String(Math.round(isSide ? sideWidth : jukeWidth)));
+				}
+			};
+			const apply = (persist = false) => {
+				if (window.matchMedia("(max-width: 900px)").matches) return;
+				const { maxSide, maxJuke } = limits();
+				sideWidth = clamp(sideWidth, MIN_SIDE, maxSide);
+				jukeWidth = clamp(jukeWidth, MIN_JUKE, maxJuke);
+				shell.style.setProperty("--tea-side-width", Math.round(sideWidth) + "px");
+				shell.style.setProperty("--tea-juke-width", Math.round(jukeWidth) + "px");
+				syncAria();
+				if (persist) {
+					try {
+						localStorage.setItem(KEY, JSON.stringify({ side: sideWidth, juke: jukeWidth }));
+					} catch (_) {}
+				}
+			};
+			const reset = () => {
+				customized = false;
+				try {
+					localStorage.removeItem(KEY);
+				} catch (_) {}
+				shell.style.removeProperty("--tea-side-width");
+				shell.style.removeProperty("--tea-juke-width");
+				const base = defaults();
+				sideWidth = base.side;
+				jukeWidth = base.juke;
+				const current = currentWidths();
+				sideWidth = current.side;
+				jukeWidth = current.juke;
+				syncAria();
+			};
+
+			if (customized) apply();
+			else {
+				const current = currentWidths();
+				sideWidth = current.side;
+				jukeWidth = current.juke;
+				syncAria();
+			}
+			shell.__teaApplyPaneWidths = () => {
+				if (customized) apply();
+				else syncAria();
+			};
+
+			for (const handle of handles) {
+				const kind = handle.dataset.teaResizer;
+				let pointerId = null;
+				let startX = 0;
+				let startSide = 0;
+				let startJuke = 0;
+
+				handle.addEventListener("pointerdown", (e) => {
+					if (window.matchMedia("(max-width: 900px)").matches) return;
+					if (kind === "juke" && !jukeVisible()) return;
+					e.preventDefault();
+					pointerId = e.pointerId;
+					startX = e.clientX;
+					startSide = sideWidth;
+					startJuke = jukeWidth;
+					handle.classList.add("is-dragging");
+					document.body.classList.add("is-tea-resizing");
+					try {
+						handle.setPointerCapture(pointerId);
+					} catch (_) {}
+				});
+				handle.addEventListener("pointermove", (e) => {
+					if (pointerId !== e.pointerId) return;
+					const dx = e.clientX - startX;
+					if (kind === "side") sideWidth = startSide + dx;
+					else jukeWidth = startJuke - dx;
+					customized = true;
+					apply();
+				});
+				const endDrag = (e) => {
+					if (pointerId !== e.pointerId) return;
+					try {
+						handle.releasePointerCapture(pointerId);
+					} catch (_) {}
+					pointerId = null;
+					handle.classList.remove("is-dragging");
+					document.body.classList.remove("is-tea-resizing");
+					apply(true);
+				};
+				handle.addEventListener("pointerup", endDrag);
+				handle.addEventListener("pointercancel", endDrag);
+				handle.addEventListener("lostpointercapture", endDrag);
+				handle.addEventListener("keydown", (e) => {
+					if (e.key === "Home") {
+						e.preventDefault();
+						reset();
+						return;
+					}
+					const step = e.key === "ArrowRight" ? 16 : e.key === "ArrowLeft" ? -16 : 0;
+					if (!step) return;
+					e.preventDefault();
+					if (kind === "side") sideWidth += step;
+					else jukeWidth -= step;
+					customized = true;
+					apply(true);
+				});
+				handle.addEventListener("dblclick", reset);
+			}
+
+			window.addEventListener("resize", () => {
+				if (customized) apply();
+				else {
+					const current = currentWidths();
+					sideWidth = current.side;
+					jukeWidth = current.juke;
+					syncAria();
+				}
+			});
+		};
+
 		const setup = () => {
 			const shell = root();
 			if (!shell || shell.dataset.ready === "1") return;
@@ -3046,6 +3207,7 @@
 			};
 			measure();
 			window.addEventListener("resize", measure);
+			setupPaneResizers();
 
 			// 登录态对账：留言板那边退出过 / 换过账号 → 这张座位作废
 			if (rt.visitor && rt.visitor.sso === "waline") {
@@ -4262,6 +4424,7 @@
 				jukeToggle.addEventListener("click", () => {
 					if (window.matchMedia("(min-width: 1241px)").matches) shell.classList.toggle("is-juke-hidden");
 					else shell.classList.toggle("is-juke-open");
+					shell.__teaApplyPaneWidths?.();
 				});
 			}
 			const roomsList = q("[data-tea-rooms]");
@@ -4328,6 +4491,7 @@
 							if (shell) {
 								if (window.matchMedia("(min-width: 1241px)").matches) shell.classList.remove("is-juke-hidden");
 								else shell.classList.add("is-juke-open");
+								shell.__teaApplyPaneWidths?.();
 							}
 							window.dispatchEvent(new CustomEvent("tea:juke-search", { detail: `${name} ${artist}`.trim() }));
 						} catch (err) {
