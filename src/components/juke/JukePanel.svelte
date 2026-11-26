@@ -138,6 +138,9 @@
 			const identityRaw = localStorage.getItem("tea.identity") || "";
 			const identity = identityRaw ? JSON.parse(identityRaw) : null;
 			if (identity?.token && identity?.id) {
+				// 旧座位是在后端补 OWNER_ID 之前开的，admin 还是 false。
+				// 直接按站长 Matrix ID 兜底，刷新页面就能恢复权限，不用重新登录。
+				const ownerId = "@heyuan:matrix.0dm.cn";
 				return {
 					userKey: `tea:${identity.id}`,
 					authType: "guest",
@@ -146,8 +149,7 @@
 					url: "",
 					badge: "访客",
 					badgeType: "tag",
-					// 站长用 Matrix 账号入座时，登录接口已经给了 admin 标记。
-					isAdmin: Boolean(identity.admin),
+					isAdmin: Boolean(identity.admin) || identity.id === ownerId,
 				};
 			}
 		} catch {
