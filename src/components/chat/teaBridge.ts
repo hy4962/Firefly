@@ -10,6 +10,82 @@ const TEA_HOSTS = new Set(["tea.0dm.cn", "tea.9ll.uk"]);
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 let nativeWebSocket: typeof WebSocket | null = null;
 
+const IMAGE_MARKDOWN_RE = /!\[([^\]]*)\]\((https?:\/\/[^)\s]+|mxc:\/\/[^)\s]+)\)/g;
+
+/** 把 Matrix 的 mxc:// 换成茶桥的 HTTP 代理地址，供 <img>/<video> 预览。 */
+export function matrixMediaHttpUrl(mxcUrl: string, serverUrl: string): string {
+	if (!/^mxc:\/\/[^\s/]+\/[^\s/]+$/.test(mxcUrl)) return "";
+	return `${serverUrl.replace(/\/+$/, "")}/api/media?u=${encodeURIComponent(mxcUrl)}`;
+}
+
+/** 从预设图片或 /api/media?u=... 代理地址里还原 mxc://；普通外链返回空串。 */
+export function mxcFromMediaUrl(raw: string): string {
+	const value = String(raw || "").trim();
+	if (/^mxc:\/\//.test(value)) return value;
+	try {
+		const href = typeof location !== "undefined" ? location.href : "https://example.invalid";
+		const u = new URL(value, href).searchParams.get("u") || "";
+		return /^mxc:\/\//.test(u) ? u : "";
+	} catch {
+		return "";
+	}
+}
+
+/** 把 ChatApp 的 chat:send 包转成茶桥 /api/send 的请求体。 */
+export function buildTeaSendBodies(packet: any): Array<Record<string, unknown>> {
+	const attachments: any[] = Array.isArray(packet?.attachments) ? packet.attachments : [];
+	const text = String(packet?.content || "");
+	const replyTo = String(packet?.replyToUid || "");
+	const threadRoot = String(packet?.threadRootUid || "");
+	const bodies: Array<Record<string, unknown>> = [];
+	// 从别处复制渲染好的图片时剪贴板可能只给 Markdown 文本。
+	// 这里转成 m.image，别让其他 Matrix 客户端看到 ![]() 原文。
+	const mdImages = [...text.matchAll(IMAGE_MARKDOWN_RE)]
+		.map((m) => ({ raw: m[0], alt: m[1] || "图片", mxc: mxcFromMediaUrl(m[2]) }))
+		.filter((img) => img.mxc);
+	if (mdImages.length) {
+		let caption = text;
+		for (const img of mdImages) caption = caption.replace(img.raw, " ");
+		caption = caption.replace(/\s+/g, " ").trim();
+		mdImages.forEach((img, i) => {
+			bodies.push({
+				text: i === 0 ? caption : "",
+				imageUrl: img.mxc,
+				filename: img.alt,
+				replyTo: i === 0 ? replyTo : "",
+				threadRoot: i === 0 ? threadRoot : "",
+			});
+		});
+		return bodies;
+	}
+	if (!attachments.length) {
+		bodies.push({ text, replyTo, threadRoot });
+		return bodies;
+	}
+	attachments.forEach((att, i) => {
+		const first = i === 0;
+		const mxc = mxcFromMediaUrl(String(att?.url || ""));
+		const base = {
+			text: first ? text : "",
+			filename: String(att?.name || ""),
+			replyTo: first ? replyTo : "",
+			threadRoot: first ? threadRoot : "",
+		};
+		if (att?.type === "image" && mxc) {
+			bodies.push({ ...base, imageUrl: mxc });
+		} else if (att?.type === "video" && mxc) {
+			bodies.push({ ...base, videoUrl: mxc });
+		} else {
+			// 文件/音频暂无原生附件事件，至少把链接发出去，别把消息吞掉。
+			bodies.push({
+				...base,
+				text: [base.text, String(att?.url || "")].filter(Boolean).join("\n"),
+			});
+		}
+	});
+	return bodies;
+}
+
 function isTeaBridgeSocket(url: string): boolean {
 	try {
 		const u = new URL(url, typeof location === "undefined" ? "https://localhost/" : location.href);
@@ -253,14 +329,11 @@ class TeaBridgeSocket extends EventTarget {
 		}
 		switch (packet?.type) {
 			case "chat:send": {
-				const first = (packet.attachments || [])[0] || {};
-				void this.post("/api/send", {
-					text: String(packet.content || ""),
-					imageUrl: first.type === "image" ? first.url : "",
-					videoUrl: first.type === "video" ? first.url : "",
-					filename: first.name || "",
-					replyTo: String(packet.replyToUid || ""),
-				});
+				let queue = Promise.resolve();
+				const send = (body: Record<string, unknown>) => {
+					queue = queue.then(() => this.post("/api/send", body));
+				};
+				for (const body of buildTeaSendBodies(packet)) send(body);
 				break;
 			}
 			case "chat:typing":

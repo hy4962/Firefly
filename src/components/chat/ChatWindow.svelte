@@ -33,10 +33,10 @@ import {
 	normalizeDotSpacing,
 	resolveExternalOrigin,
 	sanitizeChatUrl,
-	uploadChatImage,
 	uploadChatMedia,
 } from "./chatClient";
 import { positionChatFloating } from "./chatFloating";
+import { matrixMediaHttpUrl } from "./teaBridge";
 import {
 	type ChatImageQuality,
 	formatChatFileSize,
@@ -329,10 +329,7 @@ let uploadNote = $state("");
 let imageQuality = $state<ChatImageQuality>("compressed");
 const hasPendingImage = $derived(pendingImages.some((att) => att.type === "image"));
 // 已上传图片的原始文件，切换画质时用于重新上传（key 为当前附件地址）
-let pendingImageSources = new Map<
-	string,
-	{ file: File; prefer: "waline" | "chat" }
->();
+let pendingImageSources = new Map<string, { file: File }>();
 let isDraggingFiles = $state(false);
 let dragCounter = 0;
 let inputDragActive = $state(false);
@@ -4000,7 +3997,6 @@ function describePendingImages(): string {
 
 async function uploadImageAttachment(
 	file: File,
-	prefer: "waline" | "chat",
 	quality: ChatImageQuality = imageQuality,
 ): Promise<{
 	attachment: ImageAttachment;
@@ -4009,29 +4005,9 @@ async function uploadImageAttachment(
 }> {
 	const prepared = await prepareChatImageForSend(file, quality);
 	const chatBase = (chatServerUrl || "https://chat-server.lengxiqwq.com").trim();
-
-	// 粘贴/拖拽走 Waline（R2 + CDN），但原图超过 5MB 时只能回落到聊天网关
-	const useWaline =
-		prefer === "waline" &&
-		Boolean(walineServerUrl) &&
-		prepared.file.size <= 5 * 1024 * 1024;
-
-	if (useWaline) {
-		const { url } = await uploadChatImage(prepared.file, walineServerUrl);
-		return {
-			attachment: {
-				type: "image",
-				url,
-				name: prepared.file.name,
-				size: prepared.size,
-				width: prepared.width,
-				height: prepared.height,
-			},
-			originalSize: prepared.originalSize,
-			outputSize: prepared.size,
-		};
-	}
-
+	// Matrix 附件必须用 mxc://；Waline 的 HTTP 链接只有本端能看，别的
+	// Matrix 客户端不认。统一上传到茶桥的 Matrix media，再把 mxc 换成
+	// /api/media 代理地址供本地 <img> 预览。
 	if (!chatBase) {
 		throw new Error("未配置图片上传服务");
 	}
@@ -4039,7 +4015,7 @@ async function uploadImageAttachment(
 	return {
 		attachment: {
 			type: "image",
-			url: res.url,
+			url: matrixMediaHttpUrl(res.url, chatBase) || res.url,
 			name: res.name || prepared.file.name,
 			size: res.size || prepared.size,
 			width: prepared.width,
@@ -4059,7 +4035,7 @@ async function uploadPendingOriginals(): Promise<ImageAttachment[]> {
 			uploaded.push(att);
 			continue;
 		}
-		const result = await uploadImageAttachment(source.file, source.prefer, "original");
+		const result = await uploadImageAttachment(source.file, "original");
 		// 原图分支不做解码，宽高沿用选图时压缩版量到的值，避免消息气泡布局抖动
 		uploaded.push({
 			...result.attachment,
@@ -4100,12 +4076,9 @@ async function processImageFiles(files: FileList | File[]) {
 	isUploadingImage = true;
 	try {
 		for (const file of list.slice(0, remaining)) {
-			const result = await uploadImageAttachment(file, "waline");
+			const result = await uploadImageAttachment(file);
 			pendingImages = [...pendingImages, result.attachment];
-			pendingImageSources.set(result.attachment.url, {
-				file,
-				prefer: "waline",
-			});
+			pendingImageSources.set(result.attachment.url, { file });
 			uploadNote = describePendingImages();
 		}
 	} catch (err) {
@@ -4156,7 +4129,7 @@ async function processMediaFiles(files: FileList | File[]) {
 			);
 			const attachment: ImageAttachment = {
 				type: res.type,
-				url: res.url,
+				url: matrixMediaHttpUrl(res.url, chatBase) || res.url,
 				name: prepared?.file.name || res.name,
 				size: res.size || prepared?.size,
 				width: prepared?.width,
@@ -4164,7 +4137,7 @@ async function processMediaFiles(files: FileList | File[]) {
 			};
 			pendingImages = [...pendingImages, attachment];
 			if (isImage) {
-				pendingImageSources.set(attachment.url, { file, prefer: "chat" });
+				pendingImageSources.set(attachment.url, { file });
 				uploadNote = describePendingImages();
 			}
 		}
