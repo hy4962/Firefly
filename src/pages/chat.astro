@@ -3,6 +3,9 @@ import ChatApp from "@/components/chat/ChatApp.svelte";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import "@/styles/pages/chat.css";
 
+// 茶室暂时下线：访问 /chat/ 一律回首页，聊天代码和配置原样保留。
+return Astro.redirect("/");
+
 const title = "聊天室";
 const description = "一个连着 Matrix 公共大厅的聊天室，消息会同步到已接入的友站。";
 

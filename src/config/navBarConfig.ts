@@ -185,12 +185,12 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		],
 	});
 
-	// 聊天茶室：从「社交」子菜单提出来做顶级入口，和「低价米饭」一样用主题色高光
-	links.push({
-		name: "聊天茶室",
-		url: "/chat/",
-		icon: "material-symbols:emoji-food-beverage-outline-rounded",
-	});
+	// 聊天茶室：暂时下线，入口先撤掉；聊天页面和后端都没动，恢复时打开下面这段即可。
+	// links.push({
+	// 	name: "聊天茶室",
+	// 	url: "/chat/",
+	// 	icon: "material-symbols:emoji-food-beverage-outline-rounded",
+	// });
 
 	// sukiai.cn：自建 API 站（New API），顶级外链入口
 	// 标签用「低价米饭」而不是域名，顶栏不出现裸域名
