@@ -1386,6 +1386,53 @@ export async function uploadChatMedia(
 	return data.data;
 }
 
+export async function uploadChatAvatar(
+	blob: Blob,
+	chatServerUrl: string,
+	auth?: { kind: "waline" | "guest"; token: string } | null,
+): Promise<{ url: string }> {
+	const base = normalizeServerUrl(chatServerUrl);
+	if (!base) {
+		throw new Error("未配置头像上传服务");
+	}
+	if (blob.size > 2 * 1024 * 1024) {
+		throw new Error("头像图片超过 2MB 限制");
+	}
+	const token =
+		auth?.token?.trim() || readStoredWalineToken() || readStoredGuestToken();
+	const kind =
+		auth?.kind ||
+		(readStoredWalineToken()
+			? "waline"
+			: readStoredGuestToken()
+				? "guest"
+				: "");
+	if (!token) {
+		throw new Error("请先登录后再上传头像");
+	}
+	const headers: Record<string, string> = {
+		"Content-Type": blob.type || "image/webp",
+		Authorization: `Bearer ${token}`,
+	};
+	if (kind) {
+		headers["X-Auth-Kind"] = kind;
+	}
+	const resp = await fetch(`${base}/api/avatar/upload`, {
+		method: "POST",
+		headers,
+		body: blob,
+	});
+	const data = (await resp.json()) as {
+		ok?: boolean;
+		error?: string;
+		data?: { url?: string };
+	};
+	if (!resp.ok || !data.ok || !data.data?.url) {
+		throw new Error(data.error || "头像上传失败");
+	}
+	return { url: data.data.url };
+}
+
 export function getAvatarInitials(name?: string, fallback = "?"): string {
 	const cleaned = (name || "").replace(/\s+/g, "").trim();
 	if (!cleaned) return fallback;
